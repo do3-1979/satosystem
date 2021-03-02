@@ -16,6 +16,9 @@ def get_price(min, flag, before=0, after=0):
 	wait = flag["param"]["wait"]
 	price = []
 	params = {"periods" : min }
+
+	is_line_ntfied = False
+
 	if before != 0:
 		params["before"] = before
 	if after != 0:
@@ -31,7 +34,13 @@ def get_price(min, flag, before=0, after=0):
 			log = "Cryptowatchの価格取得でエラー発生 : " + str(e)
 			out_log(log, flag)
 			out_log("{0}秒待機してやり直します".format(wait), flag)
+			if is_line_ntfied == False:
+				line_notify(log)
+				is_line_ntfied = True
 			time.sleep(wait)
+
+	if is_line_ntfied == True:
+		line_notify("Cryptowatchの価格取得 復帰")
 
 	if data["result"][str(min)] is not None:
 		for i in data["result"][str(min)]:

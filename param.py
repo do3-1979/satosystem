@@ -6,7 +6,7 @@ is_total_test = False     # back test フラグ
 #start_period = "2020/7/28 0:00"       # back test フラグ
 start_period = "2020/12/1 0:00"       # back test フラグ
 #end_period = None                     # back test フラグ
-end_period = "2021/2/26 23:00"         # back test フラグ
+end_period = "2021/2/26 22:00"         # back test フラグ
 
 
 #--- 可変パラメタ --------------------
@@ -77,6 +77,6 @@ wait = 300                  # ループの待機時間
 order_retry_times = 3       # オーダー時の待機時間倍率
 slippage = 0.001            # 手数料・スリッページ
 
-line_notify_time_hour = [6,13,21] # 6時、13時、21時にLINE通知
+line_notify_time_hour = [6] # 6時、13時、21時にLINE通知
 
 #EOF

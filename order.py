@@ -17,7 +17,7 @@ def create_order( flag, symbol, type, side, amount, price=None ):
 	is_back_test = flag["param"]["is_back_test"]
 	order_retry_times = flag["param"]["order_retry_times"]
 	wait = flag["param"]["wait"]
-
+	is_line_ntfied = False
 	"""
 	引数
 	symbol(str) : 'BTC/USD'
@@ -30,7 +30,6 @@ def create_order( flag, symbol, type, side, amount, price=None ):
 		return 0
 
 	while True:
-		result = {}
 		try:
 			create_order = bybit.createOrder(
 				symbol,     # symbol　BTC/USD
@@ -41,9 +40,16 @@ def create_order( flag, symbol, type, side, amount, price=None ):
 			)
 			break
 		except ccxt.BaseError as e:
-			out_log("bybitのAPIでエラー発生 = {0}\n".format(e), flag)
+			log = "create_orderでエラー発生 : " + str(e)
+			out_log(log, flag)
 			out_log("注文の通信が失敗しました。{0}秒後に再トライします\n".format(wait*order_retry_times), flag)
+			if is_line_ntfied == False:
+				line_notify(log)
+				is_line_ntfied = True
 			time.sleep(wait*order_retry_times)
+
+	if is_line_ntfied == True:
+		line_notify("create_orderでエラー復帰")
 
 	return create_order
 
@@ -117,6 +123,8 @@ def cancel_order(order_id, flag):
 def get_collateral(flag):
 	order_retry_times = flag["param"]["order_retry_times"]
 	wait = flag["param"]["wait"]
+	is_line_ntfied = False
+	result = {}
 	"""
 	引数 : なし
 	戻り値
@@ -126,7 +134,7 @@ def get_collateral(flag):
 	"""
 
 	while True:
-		result = {}
+
 		try:
 			# 口座残高を取得
 			collateral = bybit.fetchBalance()
@@ -137,18 +145,29 @@ def get_collateral(flag):
 			result['used'] = collateral['used']['BTC']
 			# 使用可能
 			result['free'] = collateral['free']['BTC']
+			break
 
-			return result
 		except ccxt.BaseError as e:
-			out_log("bybitのAPIでエラー発生 = {0}\n".format(e), flag)
+			log = "get_collateralでエラー発生 : " + str(e)
+			out_log(log, flag)
 			out_log("口座残高取得が失敗しました。{0}秒後に再トライします\n".format(wait*order_retry_times), flag)
+			if is_line_ntfied == False:
+				line_notify(log)
+				is_line_ntfied = True
 			time.sleep(wait*order_retry_times)
+
+	if is_line_ntfied == True:
+		line_notify("get_collateralでエラー復帰")
+
+	return result
 
 # ポジション情報を取得する関数
 def get_position(flag):
 	order_retry_times = flag["param"]["order_retry_times"]
 	wait = flag["param"]["wait"]
 	symbol_type = flag["param"]["symbol_type"]
+	is_line_ntfied = False
+	result = {}
 	"""
 	引数 : なし
 	戻り値
@@ -164,7 +183,6 @@ def get_position(flag):
 		symbol = 'None'
 
 	while True:
-		result = {}
 		try:
 			position = bybit.privateGetPositionList({
 				'symbol' : symbol
@@ -181,12 +199,17 @@ def get_position(flag):
 				result['side'] = 'BUY'
 			else:
 				result['side'] = 'NONE'
-
-			return result
-
+			break
 		except ccxt.BaseError as e:
-			out_log("bybitのAPIでエラー発生 = {0}\n".format(e), flag)
+			log = "get_positionでエラー発生 : " + str(e)
+			out_log(log, flag)
 			out_log("ポジション情報取得が失敗しました。{0}秒後に再トライします\n".format(wait*order_retry_times), flag)
+			if is_line_ntfied == False:
+				line_notify(log)
+				is_line_ntfied = True
 			time.sleep(wait*order_retry_times)
 
-			return result
+	if is_line_ntfied == True:
+		line_notify("get_positionでエラー復帰")
+
+	return result
