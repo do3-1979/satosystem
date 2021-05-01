@@ -81,14 +81,31 @@ for period in period_list:
 
 	# バックテストに必要な時間軸のチャートをすべて取得
 	price_list = {}
+	price_tmp = []
+	price = []
 	for chart_sec in chart_sec_list:
 		#file_path = "../price_data/price_btcusd_" + str(chart_sec) + ".json"
 		#price_list[ chart_sec ] = get_price_from_file(chart_sec,file_path,flag_tmp, start_period, end_period )
-		price_list[ chart_sec ] = get_price(chart_sec,flag_tmp,after=1451606400)
+		price_tmp = get_price(chart_sec,flag_tmp,after=1451606400)
 		print("-----期間 {0}～{1}の{2}分軸の価格データをファイルから取得中-----".format( start_period, end_period, int(chart_sec/60) ))
 		#time.sleep(10)
 
+		start_unix = 0
+		end_unix = 9999999999
 
+		if start_period:
+			start_period = datetime.strptime(start_period,"%Y/%m/%d %H:%M")
+			start_unix = int(start_period.timestamp())
+		if end_period:
+			end_period = datetime.strptime( end_period,"%Y/%m/%d %H:%M")
+			end_unix = int(end_period.timestamp())
+
+		for i in range( len( price_tmp ) ):
+			unix_time = price_tmp[i]["close_time"]
+			if ( start_unix < unix_time ) and ( end_unix > unix_time ):
+				price.append( price_tmp[i] )
+
+		price_list[ chart_sec ] = price
 
 	# 総当たりのためのfor文の準備
 	combinations = [(chart_sec,
