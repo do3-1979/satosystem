@@ -4,9 +4,9 @@ is_total_test = False     # back test フラグ
 #start_period = None      # back test フラグ
 #start_period = "2019/10/28 0:00"      # back test フラグ
 #start_period = "2020/7/28 0:00"       # back test フラグ
-start_period = "2020/12/1 0:00"       # back test フラグ
+start_period = "2021/2/9 0:00"       # back test フラグ
 #end_period = None                     # back test フラグ
-end_period = "2021/2/26 22:00"         # back test フラグ
+end_period = "2021/5/1 21:00"         # back test フラグ
 
 
 #--- 可変パラメタ --------------------
@@ -21,9 +21,9 @@ chart_sec = 7200         # 2時間足を使用
 
 #--- エントリー判定 --------------------
 
-buy_term =	17           # 買いエントリーのブレイク期間の設定
-sell_term = 30           # 売りエントリーのブレイク期間の設定
-volatility_term = 8	     # 平均ボラティリティの計算に使う期間
+buy_term =	23           # 買いエントリーのブレイク期間の設定
+sell_term = 13           # 売りエントリーのブレイク期間の設定
+volatility_term = 3	     # 平均ボラティリティの計算に使う期間
 
 pivot_term = 1           # PIVOTの期間設定
 sma1_term = 7            # 移動平均線１（早い）期間の設定
@@ -48,12 +48,12 @@ judge_signal={
 }
 
 judge_volatility_ratio = 0.1000 # ボラティリティの終値比の下限値。下回った場合のみエントリ
-lot_limit_lower = 0.030  # 注文できる最小lot数計算倍率
+lot_limit_lower = 0.045  # 注文できる最小lot数計算倍率
 
 #--- ピラミッディング制御 --------------------
 
-trade_risk = 0.70        # 1トレードあたり口座の何％まで損失を許容するか
-entry_times = 10         # 何回に分けて追加ポジションを取るか
+trade_risk = 1.80        # 1トレードあたり口座の何％まで損失を許容するか
+entry_times = 7         # 何回に分けて追加ポジションを取るか
 entry_range = 2          # 何レンジごとに追加ポジションを取るか
 
 #--- ストップ制御 --------------------

@@ -23,12 +23,12 @@ lot_limit_lower_list  = [ prm.lot_limit_lower ]					# 最低注文lot数
 # バックテストのパラメーター設定(コメントアウトを外して使う)
 #---------------------------------------------------------------------------------------------
 #chart_sec_list  = { 7200, 3600, 300 } 		    # テストに使う時間軸
-#buy_term_list   = np.arange( 10, 20, 1 )     	# テストに使う上値ブレイクアウトの期間
-#sell_term_list  = np.arange( 25, 36, 1 ) 	    # テストに使う下値ブレイクアウトの期間
-#volatility_term_list  = np.arange( 7, 13, 1 ) 	# テストに使うボラティリティの期間
-stop_range_list  = np.arange( 2,11,1 )		    # テストに使うストップレンジの幅
-#trade_risk_list  = np.arange( 0.10, 2.10, 0.10 ) 	# テストに使う1トレード当たりの損失許容の幅
-#entry_times_list  = np.arange( 5, 15, 1 ) 	    # テストに使う分割回数の幅
+#buy_term_list   = np.arange( 23, 28, 1 )     	# テストに使う上値ブレイクアウトの期間
+#sell_term_list  = np.arange( 11, 16, 1 ) 	    # テストに使う下値ブレイクアウトの期間
+#volatility_term_list  = np.arange( 2, 5, 1 ) 	# テストに使うボラティリティの期間
+#stop_range_list  = np.arange( 2,11,1 )		    # テストに使うストップレンジの幅
+trade_risk_list  = np.arange( 0.50, 2.10, 0.10 ) 	# テストに使う1トレード当たりの損失許容の幅
+entry_times_list  = np.arange( 3, 8, 1 ) 	    # テストに使う分割回数の幅
 #entry_range_list  = np.arange( 1,6,1 )		    # テストに使う追加ポジションの幅
 #pivot_term_list  = np.arange( 1,10,1 ) 		# PIVOTの期間設定
 #sma1_term_list = np.arange( 5,15,1 )		    # 移動平均線（速） 
@@ -51,7 +51,7 @@ judge_signal_list = [
 #stop_AF_add_list = np.arange( 0.01,0.04,0.01) 	# 加速係数を増やす度合
 #stop_AF_max_list = np.arange( 0.15,0.55,0.05) 	# 加速係数の上限
 
-#lot_limit_lower_list = np.arange( 0.010,0.100,0.010)
+lot_limit_lower_list = np.arange( 0.005,0.046,0.005)
 
 """
 	{"START":"2018/7/1 0:00","END":"2018/8/1 0:00"},
@@ -76,8 +76,9 @@ judge_signal_list = [
 	{"START":"2020/2/1 0:00","END":"2020/3/1 0:00"},
 """
 #	{"START":"2019/11/1 0:00","END":"2020/3/11 23:00"},
+#	{"START":"2019/11/1 0:00","END":"2020/3/11 23:00"},
 period_list = [
-	{"START":"2021/1/1 0:00","END":"2021/2/9 23:00"},
+	{"START":"2021/2/9 0:00","END":"2021/5/01 21:00"},
 ]
 
 # テスト総数
