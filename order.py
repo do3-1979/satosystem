@@ -184,7 +184,7 @@ def get_position(flag):
 
 	while True:
 		try:
-			position = bybit.privateGetPositionList({
+			position = bybit.v2_private_get_position_list({
 				'symbol' : symbol
 			})
 			if position == []:

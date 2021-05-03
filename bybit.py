@@ -212,7 +212,7 @@ def get_position():
         result = {}
         try:
 
-            position = bybit.privateGetPositionList({
+            position = bybit.v2_private_get_position_list({
                 'symbol' : symbol
             })
             if position == []:
@@ -290,6 +290,7 @@ def line_notify( text ):
 
 is_line_notified = 1
 
+"""
 while(1):
     line_notify_time_hour = flag['param']['line_notify_time_hour']
 
@@ -313,7 +314,8 @@ while(1):
         # 現在の時間、ポジション数、証拠金
         line_notify(dt)
         is_line_notified = 1
+"""
 
-#bybit_test()
+bybit_test()
 
 #EOF
