@@ -191,7 +191,7 @@ def get_position(flag):
 				result['side'] = 'NONE'
 				result['lots'] = 0
 			else:
-				result['lots'] = position['result']['size']
+				result['lots'] = int(position['result']['size'])
 
 			if position['result']['side'] == 'Sell':
 				result['side'] = 'SELL'
