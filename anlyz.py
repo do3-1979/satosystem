@@ -66,11 +66,12 @@ def calc_stop_AF( data, flag ):
 	stop_AF_max = flag["param"]["stop_AF_max"]
 	stop = flag["position"]["stop"] 
 
+	# TODO ポジション追加中でも発動させる
 	#out_log("#-------------trail_stop start----------------\n", flag)
 	# まだ追加ポジションの取得中であれば何もしない
-	if flag["add-position"]["count"] < entry_times:
-		#out_log("#-------------trail_stop end----------------\n", flag)
-		return stop, flag
+	#if flag["add-position"]["count"] < entry_times:
+	#	#out_log("#-------------trail_stop end----------------\n", flag)
+	#	return stop, flag
 
 	# 高値／安値がエントリー価格からいくら離れたか計算
 	if flag["position"]["side"] == "BUY":

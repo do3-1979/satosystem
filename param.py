@@ -2,11 +2,9 @@
 is_back_test = True       # back test フラグ
 is_total_test = False     # back test フラグ
 #start_period = None      # back test フラグ
-#start_period = "2019/10/28 0:00"      # back test フラグ
-#start_period = "2020/7/28 0:00"       # back test フラグ
-start_period = "2021/2/9 0:00"       # back test フラグ
+start_period = "2021/6/1 0:00"       # back test フラグ
 #end_period = None                     # back test フラグ
-end_period = "2021/6/4 23:00"         # back test フラグ
+end_period = "2021/7/30 23:00"         # back test フラグ
 
 
 #--- 可変パラメタ --------------------
@@ -21,9 +19,9 @@ chart_sec = 7200         # 2時間足を使用
 
 #--- エントリー判定 --------------------
 
-buy_term =	23           # 買いエントリーのブレイク期間の設定
-sell_term = 15           # 売りエントリーのブレイク期間の設定
-volatility_term = 2	     # 平均ボラティリティの計算に使う期間
+buy_term =	18           # 買いエントリーのブレイク期間の設定
+sell_term = 14           # 売りエントリーのブレイク期間の設定
+volatility_term = 7	     # 平均ボラティリティの計算に使う期間
 
 pivot_term = 1           # PIVOTの期間設定
 sma1_term = 9            # 移動平均線１（早い）期間の設定
@@ -53,14 +51,14 @@ lot_limit_lower = 0.035  # 注文できる最小lot数計算倍率
 #--- ピラミッディング制御 --------------------
 
 trade_risk = 1.80        # 1トレードあたり口座の何％まで損失を許容するか
-entry_times = 9         # 何回に分けて追加ポジションを取るか
+entry_times = 11         # 何回に分けて追加ポジションを取るか
 entry_range = 2          # 何レンジごとに追加ポジションを取るか
 
 #--- ストップ制御 --------------------
 
 stop_range = 4           # 何レンジ幅にストップを入れるか
 stop_AF = 0.02           # 加速係数
-stop_AF_add = 0.02       # 加速係数を増やす度合
+stop_AF_add = 0.01       # 加速係数を増やす度合
 stop_AF_max = 0.30       # 加速係数の上限
 
 #--- 固定パラメタ --------------------
@@ -70,8 +68,7 @@ log_unit = "USD"            # 単位
 balance_limit = 10          # 注文できる最小証拠金[USD]
 
 levarage = 100              # レバレッジ倍率の設定
-start_funds = 0.017 * 30000 # シミュレーション時の初期資金[USD]
-#start_funds = 0.10 * 12000 # シミュレーション時の初期資金[USD]
+start_funds = 0.10 * 40000 # シミュレーション時の初期資金[USD]
 
 wait = 300                  # ループの待機時間
 order_retry_times = 3       # オーダー時の待機時間倍率

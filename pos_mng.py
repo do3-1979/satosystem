@@ -166,6 +166,7 @@ def add_position( data,last_data,flag ):
 				flag["order"]["exist"] = True
 				flag["order"]["side"] = "BUY"
 
+
 			if flag["position"]["side"] == "SELL":
 				entry_price = data["close_price"]
 				if is_back_test is True:
@@ -188,9 +189,9 @@ def add_position( data,last_data,flag ):
 			new_position_price = int(round(( flag["position"]["price"] * flag["position"]["lot"] + entry_price * lot ) / ( flag["position"]["lot"] + lot )))
 			#new_lot = np.round( (flag["position"]["lot"] + lot) * 100 ) / 100
 			new_lot = round( ( ( (flag["position"]["lot"] + lot) * 100 ) / 100 ), 7 )
-			# stopをSMAで計算する
-			#new_stop, flag = calc_stop( data, flag )
-			new_stop = stop
+			# 追加時のstopと現在のstopの小さいほうを採用。stopは現在値からの幅なので、負の値もありうる
+			new_stop = min( stop, flag["position"]["stop"])
+
 			flag["position"]["stop"] = new_stop
 			flag["position"]["price"] = new_position_price
 			flag["position"]["lot"] = new_lot
