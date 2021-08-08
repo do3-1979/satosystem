@@ -4,7 +4,7 @@ is_total_test = False     # back test フラグ
 #start_period = None      # back test フラグ
 start_period = "2021/6/1 0:00"       # back test フラグ
 #end_period = None                     # back test フラグ
-end_period = "2021/7/30 23:00"         # back test フラグ
+end_period = "2021/8/1 23:00"         # back test フラグ
 
 
 #--- 可変パラメタ --------------------
@@ -20,12 +20,17 @@ chart_sec = 7200         # 2時間足を使用
 #--- エントリー判定 --------------------
 
 buy_term =	18           # 買いエントリーのブレイク期間の設定
-sell_term = 14           # 売りエントリーのブレイク期間の設定
+sell_term = 13           # 売りエントリーのブレイク期間の設定
 volatility_term = 7	     # 平均ボラティリティの計算に使う期間
 
 pivot_term = 1           # PIVOTの期間設定
 sma1_term = 9            # 移動平均線１（早い）期間の設定
 sma2_term = 180          # 移動平均線２（遅い）期間の設定
+
+vroc_term = 50           # 出来高の変化率の設
+                         # VROC＝（最新の足の出来高 － n本前の足の出来高）÷ n本前の足の出来高 × 100
+vroc_thrsh = 200         # 出来高変化率の閾値(%)
+
 judge_line={
   "BUY" : "S2",          # ブレイク判断　PiVOT S2で買い
   "SELL": "R2"	         # ブレイク判断　PiVOT R2で売り

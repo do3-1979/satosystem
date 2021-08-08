@@ -119,6 +119,8 @@ def daemon( price, last_data, flag, need_term, chart_log ):
             chart_log["records"]["position_price"].append(position_price)
             chart_log["records"]["stop_price"].append(stop_price)
             chart_log["records"]["price_ohlc"].append(new_price)
+            chart_log["records"]["Volume"].append(new_price["Volume"])
+            chart_log["records"]["QuoteVolume"].append(new_price["QuoteVolume"])
             # SMAパラメタ
             sma1_term = flag["param"]["sma1_term"]
             sma2_term = flag["param"]["sma2_term"]
@@ -126,6 +128,11 @@ def daemon( price, last_data, flag, need_term, chart_log ):
             sma2 = calc_sma( sma2_term, last_data, new_price["close_price"])
             chart_log["records"]["SMA1"].append(sma1)
             chart_log["records"]["SMA2"].append(sma2)
+            # vrocパラメタ
+            vroc_term = flag["param"]["vroc_term"]
+            vroc = calc_vroc( vroc_term, last_data, new_price["Volume"])
+            chart_log["records"]["vroc"].append(vroc)
+            chart_log["records"]["vroc_thrsh"].append(flag["param"]["vroc_thrsh"])
             # donchianパラメタ計算
             buy_term = flag["param"]["buy_term"]
             sell_term = flag["param"]["sell_term"]

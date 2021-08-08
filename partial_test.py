@@ -28,6 +28,8 @@ param_sell_term = []
 param_pivot_term = []
 param_sma1_term = []
 param_sma2_term = []
+param_vroc_term = []
+param_vroc_thrsh = []
 param_volatility_term = []
 param_stop_range = []
 param_trade_risk = []
@@ -114,6 +116,8 @@ for period in period_list:
 					 pivot_term,
 					 sma1_term,
 					 sma2_term,
+					 vroc_term,
+					 vroc_thrsh,
 					 volatility_term,
 					 stop_range,
 					 trade_risk,
@@ -133,6 +137,8 @@ for period in period_list:
 		for pivot_term in pivot_term_list
 		for sma1_term in sma1_term_list
 		for sma2_term in sma2_term_list
+		for vroc_term in vroc_term_list
+		for vroc_thrsh in vroc_thrsh_list
 		for volatility_term in volatility_term_list
 		for stop_range in stop_range_list
 		for trade_risk in trade_risk_list
@@ -154,6 +160,8 @@ for period in period_list:
 		pivot_term, \
 		sma1_term, \
 		sma2_term, \
+		vroc_term, \
+		vroc_thrsh, \
 		volatility_term, \
 		stop_range, \
 		trade_risk, \
@@ -170,7 +178,7 @@ for period in period_list:
 
 		price = price_list[ chart_sec ]
 		last_data = []
-		need_term = max(buy_term,sell_term,volatility_term,pivot_term,sma1_term,sma2_term)
+		need_term = max(buy_term,sell_term,volatility_term,pivot_term,sma1_term,sma2_term,vroc_term)
 
 		# 進捗率
 		prog_cnt += 1
@@ -226,6 +234,8 @@ for period in period_list:
 			    "chart_sec":chart_sec,
 			    "buy_term":buy_term,
 			    "sell_term":sell_term,
+				"vroc_term":vroc_term,
+				"vroc_thrsh":vroc_thrsh,
 			    "pivot_term":pivot_term,
 			    "judge_line":judge_line,
 			    "judge_price":judge_price,
@@ -258,6 +268,8 @@ for period in period_list:
 				"position_price":[],
 				"stop_price":[],
 				"price_ohlc":[],
+				"Volume":[],
+				"QuoteVolume":[],
 				"volatility":[],
 				"donchian_h":[],
 				"donchian_l":[],
@@ -269,7 +281,9 @@ for period in period_list:
 				"S2":[],
 				"S3":[],
 				"SMA1":[],
-				"SMA2":[]
+				"SMA2":[],
+				"vroc":[],
+				"vroc_thrsh":[]
 			},
 		}
 
@@ -305,6 +319,8 @@ for period in period_list:
 		param_pivot_term.append( pivot_term )
 		param_sma1_term.append( sma1_term )
 		param_sma2_term.append( sma2_term )
+		param_vroc_term.append( vroc_term )
+		param_vroc_thrsh.append( vroc_thrsh )
 		param_volatility_term.append( volatility_term )
 		param_stop_range.append( stop_range )
 		param_trade_risk.append( trade_risk )
@@ -349,6 +365,8 @@ for period in period_list:
 			#"PIVOT期間"              :  param_pivot_term,
 			#"SMA1期間"               :  param_sma1_term,
 			#"SMA2期間"               :  param_sma2_term,
+			"vroc期間"               :  param_vroc_term,
+			"vroc閾値"               :  param_vroc_thrsh,
 			"ボラティリティ期間"      :  param_volatility_term,
 			"ストップレンジ"          :  param_stop_range,
 			"トレードリスク"          :  param_trade_risk,
@@ -379,6 +397,8 @@ for period in period_list:
 				  #"PIVOT期間",
 				  #"SMA1期間",
 				  #"SMA2期間",
+				  "vroc期間",
+				  "vroc閾値",
 				  "ボラティリティ期間",
 				  "ストップレンジ",
 				  "トレードリスク",

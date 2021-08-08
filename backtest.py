@@ -16,6 +16,8 @@ chart_log = {
 		"position_price":[],
 		"stop_price":[],
 		"price_ohlc":[],
+		"Volume":[],
+		"QuoteVolume":[],
 		"volatility":[],
 		"donchian_h":[],
 		"donchian_l":[],
@@ -27,7 +29,9 @@ chart_log = {
 		"S2":[],
 		"S3":[],
 		"SMA1":[],
-		"SMA2":[]
+		"SMA2":[],
+		"vroc":[],
+		"vroc_thrsh":[]
 	},
 }
 
@@ -58,6 +62,8 @@ def backtest(flag, last_data, chart_log):
 		"Price_ohlc"   :  chart_log["records"]["price_ohlc"],
 		"Donchian_h"   :  chart_log["records"]["donchian_h"],
 		"Donchian_l"   :  chart_log["records"]["donchian_l"],
+		"Volume"   :  chart_log["records"]["Volume"],
+		"QuoteVolume"   :  chart_log["records"]["QuoteVolume"],
 		"PIVOT"   :  chart_log["records"]["PIVOT"],
 		"R3"   :  chart_log["records"]["R3"],
 		"R2"   :  chart_log["records"]["R2"],
@@ -66,7 +72,9 @@ def backtest(flag, last_data, chart_log):
 		"S2"   :  chart_log["records"]["S2"],
 		"S1"   :  chart_log["records"]["S1"],
 		"SMA1"   :  chart_log["records"]["SMA1"],
-		"SMA2"   :  chart_log["records"]["SMA2"]
+		"SMA2"   :  chart_log["records"]["SMA2"],
+		"vroc"   :  chart_log["records"]["vroc"],
+		"vroc_thrsh"   :  chart_log["records"]["vroc_thrsh"]
 	})
 
 	# 連敗回数をカウントする
@@ -258,6 +266,9 @@ def backtest(flag, last_data, chart_log):
 		# サイズの解像度をあげる
 		plt.figure(figsize=(16, 9), dpi=500)
 
+		# 出来高もグラフに追加
+		plt.subplot2grid((5, 5), (0, 0), colspan = 5, rowspan = 3)
+
 		# pivot
 		if (flag["param"]["judge_signal"]["BUY"] == "pivot") or (flag["param"]["judge_signal"]["SELL"] == "pivot"):
 			plt.plot(chart.Date, chart.R3, color = "lime", label = "R3_" + str(flag["param"]["pivot_term"]), linestyle = "--", linewidth = "1")
@@ -283,11 +294,17 @@ def backtest(flag, last_data, chart_log):
 
 		#plt.plot( chart.Date, chart.Close_price )
 		#plt.plot( chart.Date, chart.Position_price )
-		plt.xlabel("Date")
 		plt.ylabel("Price")
 		plt.ylim([chart.Close_price.min(), chart.Close_price.max()])    # y方向の描画範囲を指定
 		plt.legend(loc=0)
-		plt.xticks(rotation=20) # X軸の目盛りを50度回転
+
+
+		# 出来高もグラフに追加
+		plt.subplot2grid((5, 5), (3, 0), colspan = 5, rowspan = 1)
+		plt.bar(chart.Date, chart.Volume,label ="Volume",width=0.05)
+		plt.subplot2grid((5, 5), (4, 0), colspan = 5, rowspan = 1)
+		plt.plot(chart.Date, chart.vroc, color = "blue",label ="VROC", linestyle = "-", linewidth = "1")
+		plt.plot(chart.Date, chart.vroc_thrsh, color = "red",label ="VROC_THRESHOLD", linestyle = "-", linewidth = "1")
 
 		# グラフ画像保存
 		file_name = str(format(datetime.now().strftime("%Y-%m-%d-%H-%M"))) + "-price_graph.png"

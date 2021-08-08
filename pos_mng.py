@@ -44,13 +44,15 @@ def get_price(min, flag, before=0, after=0):
 
 	if data["result"][str(min)] is not None:
 		for i in data["result"][str(min)]:
-			if i[1] != 0 and i[2] != 0 and i[3] != 0 and i[4] != 0:
+			if i[1] != 0 and i[2] != 0 and i[3] != 0 and i[4] != 0 and i[5] != 0 and i[6] != 0:
 				price.append({ "close_time" : i[0],
 					"close_time_dt" : datetime.fromtimestamp(i[0]).strftime('%Y/%m/%d %H:%M'),
 					"open_price" : i[1],
 					"high_price" : i[2],
 					"low_price" : i[3],
-					"close_price": i[4] })
+					"close_price": i[4],
+					"Volume" : i[5],
+					"QuoteVolume" : i[6],})
 		return price
 
 	else:
@@ -191,6 +193,7 @@ def add_position( data,last_data,flag ):
 			new_lot = round( ( ( (flag["position"]["lot"] + lot) * 100 ) / 100 ), 7 )
 			# 追加時のstopと現在のstopの小さいほうを採用。stopは現在値からの幅なので、負の値もありうる
 			new_stop = min( stop, flag["position"]["stop"])
+			#out_log("### new_stop = {} old_stop = {} result = {}\n".format(flag["position"]["stop"], stop, new_stop), flag)
 
 			flag["position"]["stop"] = new_stop
 			flag["position"]["price"] = new_position_price
@@ -222,9 +225,9 @@ def entry_signal( data, last_data, flag ):
 		#print("lot, {} min_lot {} \n".format(lot, min_lot))
 
 		if lot >= min_lot:
-			vola_check = check_volatility( data, last_data, flag )
-			if vola_check == False:
-				out_log("ボラティリティが閾値を下回っていないのでで注文を見送ります\n", flag)
+			vroc_check = check_vroc( data, last_data, flag )
+			if vroc_check == False:
+				out_log("出来高変化率が閾値を超えていないので注文を見送ります\n", flag)
 			else:
 				out_log("{0}USDで{1}lotの買い注文を出します\n".format(data["close_price"],lot), flag)
 				order_lot, flag = lot_to_amount(data, lot, flag)
@@ -256,9 +259,9 @@ def entry_signal( data, last_data, flag ):
 		lot,stop,flag = calculate_lot( last_data,data,flag )
 		min_lot = round(calc_min_lot( data, flag ), 7)
 		if lot >= min_lot:
-			vola_check = check_volatility( data, last_data, flag )
-			if vola_check == False:
-				out_log("ボラティリティが閾値を下回っていないのでで注文を見送ります\n", flag)
+			vroc_check = check_vroc( data, last_data, flag )
+			if vroc_check == False:
+				out_log("出来高変化率が閾値を超えていないので注文を見送ります\n", flag)
 			else:
 				out_log("{0}USDで{1}lotの売り注文を出します\n".format(data["close_price"],lot), flag)
 				order_lot, flag = lot_to_amount(data, lot, flag)

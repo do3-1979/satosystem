@@ -177,6 +177,8 @@ for chart_sec, \
 		    "pivot_term":pivot_term,
 			"sma1_term":sma1_term,
 			"sma2_term":sma2_term,
+			"vroc_term":vroc_term,
+			"vroc_thrsh":vroc_thrsh,
 		    "judge_line":judge_line,
 		    "judge_price":judge_price,
 	    	"judge_signal":judge_signal,
@@ -205,6 +207,8 @@ for chart_sec, \
 			"stop_price":[],
 			"price_ohlc":[],
 			"volatility":[],
+			"Volume":[],
+			"QuoteVolume":[],
 			"donchian_h":[],
 			"donchian_l":[],
 			"PIVOT":[],
@@ -215,7 +219,9 @@ for chart_sec, \
 			"S2":[],
 			"S3":[],
 			"SMA1":[],
-			"SMA2":[]
+			"SMA2":[],
+			"vroc":[],
+			"vroc_thrsh":[]
 		},
 	}
 

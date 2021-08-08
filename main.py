@@ -67,6 +67,8 @@ flag = {
 	    "pivot_term":pivot_term,
 	    "sma1_term":sma1_term,
 	    "sma2_term":sma2_term,
+		"vroc_term":vroc_term,
+		"vroc_thrsh":vroc_thrsh,
 	    "judge_line":judge_line,
 	    "judge_price":judge_price,
 	    "judge_signal":judge_signal,
@@ -96,6 +98,8 @@ chart_log = {
 		"position_price":[],
 		"stop_price":[],
 		"price_ohlc":[],
+		"Volume":[],
+		"QuoteVolume":[],
 		"volatility":[],
 		"donchian_h":[],
 		"donchian_l":[],
@@ -107,7 +111,9 @@ chart_log = {
 		"S2":[],
 		"S3":[],
 		"SMA1":[],
-		"SMA2":[]
+		"SMA2":[],
+		"vroc":[],
+		"vroc_thrsh":[]
 	},
 }
 
@@ -137,7 +143,7 @@ else:
 	price = get_price(chart_sec,flag,after=1451606400)
 
 last_data = []
-need_term = max(buy_term,sell_term,volatility_term,pivot_term,sma1_term,sma2_term)
+need_term = max(buy_term,sell_term,volatility_term,pivot_term,sma1_term,sma2_term,vroc_term)
 
 #-------- メインループ(バックテストでは抜ける) ---------
 daemon( price, last_data, flag, need_term, chart_log )

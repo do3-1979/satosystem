@@ -82,6 +82,7 @@ def calc_stop_AF( data, flag ):
 	# 最高値・最安値を更新したか調べる
 	if moved_range < 0 or flag["position"]["stop-EP"] >= moved_range:
 		#out_log("#-------------trail_stop end----------------\n", flag)
+		#out_log("### STOP stay moved_range = {} stop-EP = {} stop = {}\n".format(moved_range, flag["position"]["stop-EP"], stop), flag)	
 		return stop, flag
 	else:
 		flag["position"]["stop-EP"] = moved_range
@@ -102,6 +103,8 @@ def calc_stop_AF( data, flag ):
 		out_log("トレイリングストップの発動：ストップ位置を{}USDに動かして、加速係数を{}に更新します\n".format( round(flag["position"]["price"] + flag["position"]["stop"]) , flag["position"]["stop-AF"] ), flag)
 
 	#out_log("#-------------trail_stop end----------------\n", flag)
+
+	#out_log("### STOP change moved_range = {} stop-EP = {} stop = {}\n".format(moved_range, flag["position"]["stop-EP"], stop), flag)	
 
 	return stop, flag
 
@@ -246,6 +249,28 @@ def check_volatility( data, last_data, flag ):
 
 	return judge
 
+#-------------出来高変化率が閾値より大きくなっているか判定--------------
+def check_vroc( data, last_data, flag ):
+	judge = False
+	# パラメタテーブルからボラティリティ終値比の閾値を取得
+	term = flag["param"]["vroc_term"]
+	thrsh = flag["param"]["vroc_thrsh"]
+
+	# ボラティリティの終値比を計算
+	vroc = calc_vroc( term, last_data, data["Volume"])
+
+	out_log("{}前の出来高変化率の閾値{}に対し現在の値は{}でした\n".format( term, round(thrsh,1 ), round(vroc,1) ), flag)
+
+	# ボラティリティ/終値の比が閾値よりも小さければYES
+	if vroc <= thrsh:
+		judge = False
+		out_log("閾値を下回ったので判定OFFです\n", flag)
+	else:
+		judge = True
+		out_log("閾値を超えているので判定ONです\n", flag)
+
+	return judge
+
 # SMAによるゴールデンクロス・デッドクロスを判定する関数
 def sma_cross( data, last_data, flag ):
 	judge_price = flag["param"]["judge_price"]
@@ -282,6 +307,19 @@ def calc_sma( term, last_data, new_data ):
 	sum_value = sum(i["close_price"] for i in last_data[-1 * (term - 1) :]) + new_data # 最新データも反映させる
 	sma_value = round( sum_value / term )
 	return sma_value
+
+# 出来高の変化率を計算する関数
+# VROC＝（最新の足の出来高 － n本前の足の出来高）÷ n本前の足の出来高 × 10#
+def calc_vroc( term, last_data, new_data ):
+	prev_data = last_data[-1 * (term - 1)]
+	vroc_value = (new_data - prev_data["Volume"] ) * 100 / prev_data["Volume"]
+	vroc_value = round( vroc_value, 2 )
+	if vroc_value > 500:
+		vroc_value = 500
+	elif vroc_value < -200:
+		vroc_value = -200
+	#print("new_data {} last_vol {} vroc {}".format(new_data, prev_data["Volume"], vroc_value))
+	return vroc_value
 
 # ドンチャンブレイクを判定する関数
 def donchian( data,last_data, flag ):

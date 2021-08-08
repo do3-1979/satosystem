@@ -14,6 +14,8 @@ entry_range_list      = [ prm.entry_range ]						# 追加ポジションの幅
 pivot_term_list       = [ prm.pivot_term ]		 			    # PIVOTの期間設定
 sma1_term_list        = [ prm.sma1_term ]					  	# 移動平均線（速） 
 sma2_term_list        = [ prm.sma2_term ]					    # 移動平均線（遅）
+vroc_term_list        = [ prm.vroc_term ]					    # 出来高変化率の期間
+vroc_thrsh_list       = [ prm.vroc_thrsh ]					    # 出来高変化率の閾値
 judge_volatility_ratio_list = [ prm.judge_volatility_ratio ]    # ボラティリティ終値比
 stop_AF_list          = [ prm.stop_AF ] 						# 加速係数
 stop_AF_add_list      = [ prm.stop_AF_add ]						# 加速係数を増やす度合
@@ -23,16 +25,18 @@ lot_limit_lower_list  = [ prm.lot_limit_lower ]					# 最低注文lot数
 # バックテストのパラメーター設定(コメントアウトを外して使う)
 #---------------------------------------------------------------------------------------------
 #chart_sec_list  = { 7200, 3600, 300 } 		    # テストに使う時間軸
-#buy_term_list   = np.arange( 12, 20, 2 )     	# テストに使う上値ブレイクアウトの期間
-#sell_term_list  = np.arange( 12, 20, 2 ) 	    # テストに使う下値ブレイクアウトの期間
+buy_term_list   = np.arange( 12, 20, 1 )     	# テストに使う上値ブレイクアウトの期間
+sell_term_list  = np.arange( 12, 20, 1 ) 	    # テストに使う下値ブレイクアウトの期間
 #volatility_term_list  = np.arange( 5, 10, 1 ) 	# テストに使うボラティリティの期間
 #stop_range_list  = np.arange( 2,5,1 )		    # テストに使うストップレンジの幅
 #trade_risk_list  = np.arange( 0.50, 2.10, 0.10 ) 	# テストに使う1トレード当たりの損失許容の幅
-#entry_times_list  = np.arange( 7, 12, 1 ) 	    # テストに使う分割回数の幅
+entry_times_list  = np.arange( 7, 12, 1 ) 	    # テストに使う分割回数の幅
 #entry_range_list  = np.arange( 1,6,1 )		    # テストに使う追加ポジションの幅
 #pivot_term_list  = np.arange( 1,10,1 ) 		# PIVOTの期間設定
 #sma1_term_list = np.arange( 5,15,1 )		    # 移動平均線（速） 
 #sma2_term_list = np.arange( 100,200,10 )		# 移動平均線（遅）
+#vroc_term_list = np.arange( 10,110,10 )			# 出来高変化率の期間
+#vroc_thrsh_list = np.arange( 150,250,10 )		# 出来高変化率の閾値
 judge_line_list = [
 	{"BUY":"S2","SELL":"R2"},				    # サポートに第2ラインを使用
 #	{"BUY":"S1","SELL":"R1"},				    # サポートに第1ラインを使用
@@ -78,7 +82,7 @@ judge_signal_list = [
 #	{"START":"2019/11/1 0:00","END":"2020/3/11 23:00"},
 #	{"START":"2019/11/1 0:00","END":"2020/3/11 23:00"},
 period_list = [
-	{"START":"2021/6/1 0:00","END":"2021/7/30 21:00"},
+	{"START":"2021/6/1 0:00","END":"2021/8/8 21:00"},
 ]
 
 # テスト総数
@@ -93,6 +97,8 @@ entry_range_len = len(entry_range_list)
 pivot_term_len = len(pivot_term_list)
 sma1_term_len = len(sma1_term_list)
 sma2_term_len = len(sma2_term_list)
+vroc_term_len = len(vroc_term_list)
+vroc_thrsh_len = len(vroc_thrsh_list)
 judge_line_len = len(judge_line_list)
 judge_price_len = len(judge_price_list)
 judge_signal_len = len(judge_signal_list)
@@ -114,6 +120,8 @@ total_test_num = \
 	pivot_term_len * \
 	sma1_term_len * \
 	sma2_term_len * \
+	vroc_term_len * \
+	vroc_thrsh_len * \
 	judge_line_len * \
 	judge_price_len * \
 	judge_signal_len * \
