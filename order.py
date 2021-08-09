@@ -177,8 +177,11 @@ def get_position(flag):
 		result['lots'] # ロットサイズ
 		result['averageprice'] # 全ロットの平均価格
 	"""
+	# symbolはPrivate命令では/を除く。
 	if symbol_type == 'BTC/USD':
-		symbol = 'BTCUSD' # symbolはPrivate命令では/を除く。
+		symbol = 'BTCUSD'
+	elif symbol_type == 'ETH/USD':
+		symbol = 'ETHUSD'
 	else:
 		symbol = 'None'
 

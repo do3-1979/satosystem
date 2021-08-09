@@ -16,6 +16,7 @@ def get_price(min, flag, before=0, after=0):
 	wait = flag["param"]["wait"]
 	price = []
 	params = {"periods" : min }
+	symbol_type = flag["param"]["symbol_type"]
 
 	is_line_ntfied = False
 
@@ -26,7 +27,10 @@ def get_price(min, flag, before=0, after=0):
 
 	while True:
 		try:
-			response = requests.get("https://api.cryptowat.ch/markets/binance/btcusdt/ohlc", params, timeout = 5)
+			if symbol_type == 'BTC/USD':
+				response = requests.get("https://api.cryptowat.ch/markets/binance/btcusdt/ohlc", params, timeout = 5)
+			elif symbol_type == 'ETH/USD':
+				response = requests.get("https://api.cryptowat.ch/markets/binance/ethusdt/ohlc", params, timeout = 5)
 			response.raise_for_status()
 			data = response.json()
 			break

@@ -69,6 +69,7 @@ stop_AF_max = 0.30       # 加速係数の上限
 #--- 固定パラメタ --------------------
 
 symbol_type = "BTC/USD"     # 扱う通貨ペア
+#symbol_type = "ETH/USD"     # 扱う通貨ペア
 log_unit = "USD"            # 単位
 balance_limit = 10          # 注文できる最小証拠金[USD]
 

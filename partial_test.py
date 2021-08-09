@@ -75,6 +75,7 @@ for period in period_list:
 		},
 		"param":{
 			"wait":wait,
+			"symbol_type":symbol_type,
 		}
 	}
 

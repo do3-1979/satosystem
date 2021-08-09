@@ -113,6 +113,9 @@ def bybit_test():
 
     #pprint(bybit.api)
 
+    symbol = 'ETH/USD'
+    #symbol = 'BTC/USD'
+
     # get_collateral
     print("-----------------------------------")
     print("get_collateral test")
@@ -126,7 +129,7 @@ def bybit_test():
     """
     create_order(
         flag,
-        symbol = 'BTC/USD',
+        symbol = symbol,
         type='Market',
         side='Buy',
         amount=10
@@ -139,7 +142,7 @@ def bybit_test():
     """
     create_order(
         flag,
-        symbol = 'BTC/USD',
+        symbol = symbol,
         type='Market',
         side='Sell',
         amount=10
@@ -203,8 +206,12 @@ def get_position():
         result['averageprice'] # 全ロットの平均価格
     """
 
+    symbol = 'ETH/USD'
+
     if symbol_type == 'BTC/USD':
         symbol = 'BTCUSD' # symbolはPrivateでは/を除く。
+    elif symbol_type == 'ETH/USD':
+        symbol = 'ETHUSD' # symbolはPrivateでは/を除く。
     else:
         symbol = 'None'
 

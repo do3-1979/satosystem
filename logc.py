@@ -58,7 +58,11 @@ def out_log_with_line(log_msg, flag):
 
 # 時間と高値・安値をログに記録する関数
 def log_price( data, flag ):
-	log =  "時間： " + str(datetime.fromtimestamp(data["close_time"]).strftime('%Y/%m/%d %H:%M')) + " 高値： " + str(data["high_price"]) + " 安値： " + str(data["low_price"]) + " 終値： " + str(data["close_price"]) + "\n"
+	log =  "時間： " + str(datetime.fromtimestamp(data["close_time"]).strftime('%Y/%m/%d %H:%M')) + \
+			" 高値： " + str(data["high_price"]) + \
+			" 安値： " + str(data["low_price"]) + \
+			" 終値： " + str(data["close_price"]) +\
+			" 出来高： " + str(round(data["Volume"])) + "\n"
 	out_log(log, flag)
 	return flag
 

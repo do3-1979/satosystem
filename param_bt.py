@@ -25,11 +25,11 @@ lot_limit_lower_list  = [ prm.lot_limit_lower ]					# 最低注文lot数
 # バックテストのパラメーター設定(コメントアウトを外して使う)
 #---------------------------------------------------------------------------------------------
 #chart_sec_list  = { 7200, 3600, 300 } 		    # テストに使う時間軸
-buy_term_list   = np.arange( 12, 20, 1 )     	# テストに使う上値ブレイクアウトの期間
-sell_term_list  = np.arange( 12, 20, 1 ) 	    # テストに使う下値ブレイクアウトの期間
-#volatility_term_list  = np.arange( 5, 10, 1 ) 	# テストに使うボラティリティの期間
+buy_term_list   = np.arange( 10, 20, 2 )     	# テストに使う上値ブレイクアウトの期間
+sell_term_list  = np.arange( 10, 20, 2 ) 	    # テストに使う下値ブレイクアウトの期間
+volatility_term_list  = np.arange( 5, 15, 2 ) 	# テストに使うボラティリティの期間
 #stop_range_list  = np.arange( 2,5,1 )		    # テストに使うストップレンジの幅
-#trade_risk_list  = np.arange( 0.50, 2.10, 0.10 ) 	# テストに使う1トレード当たりの損失許容の幅
+trade_risk_list  = np.arange( 0.50, 2.10, 0.20 ) 	# テストに使う1トレード当たりの損失許容の幅
 entry_times_list  = np.arange( 7, 12, 1 ) 	    # テストに使う分割回数の幅
 #entry_range_list  = np.arange( 1,6,1 )		    # テストに使う追加ポジションの幅
 #pivot_term_list  = np.arange( 1,10,1 ) 		# PIVOTの期間設定
