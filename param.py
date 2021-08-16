@@ -3,8 +3,8 @@ is_back_test = True       # back test フラグ
 is_total_test = False     # back test フラグ
 #start_period = None      # back test フラグ
 start_period = "2021/6/1 0:00"       # back test フラグ
-#end_period = None                     # back test フラグ
-end_period = "2021/8/1 23:00"         # back test フラグ
+end_period = None                     # back test フラグ
+#end_period = "2021/8/16 23:00"         # back test フラグ
 
 
 #--- 可変パラメタ --------------------
@@ -19,9 +19,9 @@ chart_sec = 7200         # 2時間足を使用
 
 #--- エントリー判定 --------------------
 
-buy_term =	18           # 買いエントリーのブレイク期間の設定
-sell_term = 13           # 売りエントリーのブレイク期間の設定
-volatility_term = 7	     # 平均ボラティリティの計算に使う期間
+buy_term =	16           # 買いエントリーのブレイク期間の設定
+sell_term = 16           # 売りエントリーのブレイク期間の設定
+volatility_term = 5	     # 平均ボラティリティの計算に使う期間
 
 pivot_term = 1           # PIVOTの期間設定
 sma1_term = 9            # 移動平均線１（早い）期間の設定
@@ -55,8 +55,8 @@ lot_limit_lower = 0.035  # 注文できる最小lot数計算倍率
 
 #--- ピラミッディング制御 --------------------
 
-trade_risk = 1.80        # 1トレードあたり口座の何％まで損失を許容するか
-entry_times = 11         # 何回に分けて追加ポジションを取るか
+trade_risk = 1.90        # 1トレードあたり口座の何％まで損失を許容するか
+entry_times = 7         # 何回に分けて追加ポジションを取るか
 entry_range = 2          # 何レンジごとに追加ポジションを取るか
 
 #--- ストップ制御 --------------------
@@ -74,7 +74,7 @@ log_unit = "USD"            # 単位
 balance_limit = 10          # 注文できる最小証拠金[USD]
 
 levarage = 100              # レバレッジ倍率の設定
-start_funds = 0.10 * 40000 # シミュレーション時の初期資金[USD]
+start_funds = 0.1 * 40000 # シミュレーション時の初期資金[USD]
 
 wait = 300                  # ループの待機時間
 order_retry_times = 3       # オーダー時の待機時間倍率
