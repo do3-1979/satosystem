@@ -94,7 +94,7 @@ def daemon( price, last_data, flag, need_term, chart_log ):
 
         # ポジションがある場合
         if flag["position"]["exist"] == True:
-            flag = trail_stop( data,flag )
+            flag = trail_stop( new_price,flag )
             flag = stop_position( new_price,last_data,flag )
             flag = close_position( new_price,last_data,flag )
             flag = add_position( new_price,last_data,flag )
