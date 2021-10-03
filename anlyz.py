@@ -35,9 +35,11 @@ def calc_min_lot( data, flag ):
 	return lot
 
 # ストップ値を決定関数
-def calc_stop( data, flag ):
+def calc_stop( data, last_data, flag ):
+
 	#return calc_stop_sma( data, flag )
-	return calc_stop_AF( data, flag )
+	#return calc_stop_AF( data, flag )
+	return calc_stop_psar( data, last_data, flag )
 
 # ストップ値を移動平均線で決定関数
 def calc_stop_sma( data, flag ):
@@ -65,13 +67,6 @@ def calc_stop_AF( data, flag ):
 	stop_AF_add = flag["param"]["stop_AF_add"]
 	stop_AF_max = flag["param"]["stop_AF_max"]
 	stop = flag["position"]["stop"] 
-
-	# TODO ポジション追加中でも発動させる
-	#out_log("#-------------trail_stop start----------------\n", flag)
-	# まだ追加ポジションの取得中であれば何もしない
-	#if flag["add-position"]["count"] < entry_times:
-	#	#out_log("#-------------trail_stop end----------------\n", flag)
-	#	return stop, flag
 
 	# 高値／安値がエントリー価格からいくら離れたか計算
 	if flag["position"]["side"] == "BUY":
@@ -108,19 +103,122 @@ def calc_stop_AF( data, flag ):
 
 	return stop, flag
 
+# ストップ値をパラボリックASRにする関数
+# ポジションのBUY/SELLに応じてパラボリックSARの値をストップポジションとする
+def calc_stop_psar( data, last_data, flag ):
+	stop = flag["position"]["stop"] 
+	position_price = flag["position"]["price"]
+
+	tmp_data = []
+	tmp_data = last_data.copy()
+	tmp_data.append(data)
+	#print("last_data len {}, tmp_data len {}, last_data[-1] {} tmp_data[-1] {}".format(len(last_data), len(tmp_data), last_data[-1], tmp_data[-1]))
+
+	sar_result = calc_parabolic_sar( tmp_data, flag )
+	psarbull = sar_result["psarbull"][-1]
+	psarbear = sar_result["psarbear"][-1]
+
+	#print("psarbull {} psarbear {}".format(psarbull,psarbear))
+
+	tmp_stop = flag["position"]["stop"]
+
+	# BUYの時は現在値からpsarbullの差をstopとする。SELLはpserbear
+	if flag["position"]["side"] == "BUY" and psarbull != None:
+		tmp_stop = round(position_price - psarbull)
+	if flag["position"]["side"] == "SELL" and psarbear != None:
+		tmp_stop = round(psarbear - position_price)
+	
+	# 現在のstopより大きければ維持
+	stop = min( tmp_stop, stop )
+	stop = tmp_stop
+	flag["position"]["stop"] = stop
+
+	return stop, flag
+
+# パラボリックSARを計算する関数
+def calc_parabolic_sar( data, flag ):
+	iaf = flag["param"]["stop_AF_add"]
+	maxaf = flag["param"]["stop_AF_max"]
+
+	# データ成型
+	high = []
+	low = []
+	close = []
+	psar = []
+
+	datalen = len(data)
+
+	for i in range(0,datalen):
+		high.append(data[i]['high_price'])
+		low.append(data[i]['low_price'])
+		close.append(data[i]['close_price'])
+		psar = close
+
+	length = len(close)
+
+	psarbull = [None] * length
+	psarbear = [None] * length
+	bull = True
+	af = iaf
+	ep = low[0]
+	hp = high[0]
+	lp = low[0]
+
+	# 過去データからPSARを計算
+	for i in range(2,length):
+		if bull:
+			psar[i] = psar[i - 1] + af * (hp - psar[i - 1])
+			#print("{} psar[{}]:{:.2f}, af:{:.2f} hp:{:.2f} psar[{}]:{:.2f} last_data[{}]:{:.2f}".format(data[i]["close_time_dt"],i,psar[i],af,hp,i,psar[i-1],i,data[i]["close_price"]))
+		else:
+			psar[i] = psar[i - 1] + af * (lp - psar[i - 1])
+			#print("{} psar[{}]:{:.2f}, af:{:.2f} lp:{:.2f} psar[{}]:{:.2f} last_data[{}]:{:.2f}".format(data[i]["close_time_dt"],i,psar[i],af,lp,i,psar[i-1],i,data[i]["close_price"]))
+
+		reverse = False
+
+		if bull:
+			if low[i] < psar[i]:
+				bull = False
+				reverse = True
+				psar[i] = hp
+				lp = low[i]
+				af = iaf
+		else:
+			if high[i] > psar[i]:
+				bull = True
+				reverse = True
+				psar[i] = lp
+				hp = high[i]
+				af = iaf
+
+		if not reverse:
+			if bull:
+				if high[i] > hp:
+					hp = high[i]
+					af = min(af + iaf, maxaf)
+				if low[i - 1] < psar[i]:
+					psar[i] = low[i - 1]
+				if low[i - 2] < psar[i]:
+					psar[i] = low[i - 2]
+			else:
+				if low[i] < lp:
+					lp = low[i]
+					af = min(af + iaf, maxaf)
+				if high[i - 1] > psar[i]:
+					psar[i] = high[i - 1]
+				if high[i - 2] > psar[i]:
+					psar[i] = high[i - 2]
+		
+		if bull:
+			psarbull[i] = psar[i]
+		else:
+			psarbear[i] = psar[i]
+
+	return {"psar":psar, "psarbear":psarbear, "psarbull":psarbull}
+
 # トレイリングストップの関数
-def trail_stop( data,flag ):
+def trail_stop( data, last_data, flag ):
 
-	stop, flag = calc_stop( data, flag )
-
-	"""
-	if flag["position"]["side"] == "BUY":
-		flag["position"]["stop"] = stop
-		out_log("トレイリングストップ　{}USDに更新します\n".format( round( flag["position"]["price"] - stop ) ), flag)
-	elif flag["position"]["side"] == "SELL":
-		flag["position"]["stop"] = stop
-		out_log("トレイリングストップ　{}USDに更新します\n".format( round( flag["position"]["price"] + stop ) ), flag)
-	"""
+	stop, flag = calc_stop( data, last_data, flag )
 
 	return flag
 

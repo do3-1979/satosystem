@@ -196,17 +196,17 @@ def add_position( data,last_data,flag ):
 			#new_lot = np.round( (flag["position"]["lot"] + lot) * 100 ) / 100
 			new_lot = round( ( ( (flag["position"]["lot"] + lot) * 100 ) / 100 ), 7 )
 			# 追加時のstopと現在のstopの小さいほうを採用。stopは現在値からの幅なので、負の値もありうる
-			new_stop = min( stop, flag["position"]["stop"])
+			#new_stop = min( stop, flag["position"]["stop"])
 			#out_log("### new_stop = {} old_stop = {} result = {}\n".format(flag["position"]["stop"], stop, new_stop), flag)
 
-			flag["position"]["stop"] = new_stop
 			flag["position"]["price"] = new_position_price
+			flag["position"]["stop"],flag = calc_stop( data, last_data, flag )
 			flag["position"]["lot"] = new_lot
 
 			if flag["position"]["side"] == "BUY":
-				out_log("{0}USDの位置にストップを更新します\n".format(flag["position"]["price"] - new_stop), flag)
+				out_log("{0}USDの位置にストップを更新します\n".format(flag["position"]["price"] - flag["position"]["stop"]), flag)
 			elif flag["position"]["side"] == "SELL":
-				out_log("{0}USDの位置にストップを更新します\n".format(flag["position"]["price"] + new_stop), flag)
+				out_log("{0}USDの位置にストップを更新します\n".format(flag["position"]["price"] + flag["position"]["stop"]), flag)
 			out_log("現在のポジションの取得単価は{}USDです\n".format(flag["position"]["price"]), flag)
 			out_log("現在のポジションサイズは{}lotです\n".format(flag["position"]["lot"]), flag)
 
@@ -247,7 +247,7 @@ def entry_signal( data, last_data, flag ):
 				flag["order"]["side"] = "BUY"
 
 				# stopを計算する
-				#new_stop, flag = calc_stop( data, flag )
+				#new_stop, flag = calc_stop( data, last_data, flag )
 				new_stop = stop
 
 				out_log("{0}USDにストップを入れます\n".format(data["close_price"] - new_stop), flag)
@@ -281,7 +281,7 @@ def entry_signal( data, last_data, flag ):
 				flag["order"]["side"] = "SELL"
 
 				# stopを計算する
-				#new_stop, flag = calc_stop( data, flag )
+				#new_stop, flag = calc_stop( data, last_data, flag )
 				new_stop = stop
 
 				out_log("{0}USDにストップを入れます\n".format(data["close_price"] + new_stop), flag)
@@ -342,30 +342,6 @@ def close_position( data,last_data,flag ):
 			flag["position"]["stop-EP"] = 0
 			flag["add-position"]["count"] = 0
 
-			""" ドテン外し
-			lot,stop,flag = calculate_lot( last_data,data,flag )
-			min_lot = round(calc_min_lot( data, flag ), 7)
-			if lot >= min_lot:
-				out_log("{0}USDで{1}lotの売りの注文を入れてドテンします\n".format(data["close_price"],lot), flag)
-				order_lot, flag = lot_to_amount(data, lot, flag)
-
-				# ここに売り注文のコードを入れる
-				create_order(
-					flag,
-					symbol = symbol_type,
-					type='Market',
-					side='Sell',
-					amount=order_lot)
-				flag["order"]["exist"] = True
-				flag["order"]["side"] = "SELL"
-
-				out_log("{0}USDにストップを入れます\n".format(data["close_price"] + stop), flag)
-				flag["position"]["lot"],flag["position"]["stop"] = lot,stop
-				flag["position"]["exist"] = True
-				flag["position"]["side"] = "SELL"
-				flag["position"]["price"] = data["close_price"]
-			"""
-
 	if flag["position"]["side"] == "SELL":
 		if signal["side"] == "BUY":
 			out_log(str(data["close_price"]) + "USDあたりで成行注文を出してポジションを決済します\n", flag)
@@ -396,30 +372,6 @@ def close_position( data,last_data,flag ):
 			flag["position"]["stop-AF"] = stop_AF
 			flag["position"]["stop-EP"] = 0
 			flag["add-position"]["count"] = 0
-
-			""" ドテン外し
-			lot,stop,flag = calculate_lot( last_data,data,flag )
-			min_lot = round(calc_min_lot( data, flag ), 7)
-			if lot >= min_lot:
-				out_log("{0}USDで{1}lotの買いの注文を入れてドテンします\n".format(data["close_price"],lot), flag)
-				order_lot, flag = lot_to_amount(data, lot, flag)
-
-				# ここに買い注文のコードを入れる
-				create_order(
-					flag,
-					symbol = symbol_type,
-					type='Market',
-					side='Buy',
-					amount=order_lot)
-				flag["order"]["exist"] = True
-				flag["order"]["side"] = "BUY"
-
-				out_log("{0}USDにストップを入れます\n".format(data["close_price"] - stop), flag)
-				flag["position"]["lot"],flag["position"]["stop"] = lot,stop
-				flag["position"]["exist"] = True
-				flag["position"]["side"] = "BUY"
-				flag["position"]["price"] = data["close_price"]
-			"""
 
 	#out_log("#-------------close_position end----------------\n", flag)
 	return flag

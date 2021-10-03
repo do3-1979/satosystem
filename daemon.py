@@ -51,7 +51,7 @@ def daemon( price, last_data, flag, need_term, chart_log ):
             new_price = data # バックテスト用
         else:
             data = get_price(chart_sec, flag)
-            new_price = data[-2]
+            new_price = data[-2] # data[-1]は未確定の最新値
             stop_chk_price = data[-1]
             prev_price = last_data[-1]
 
@@ -81,6 +81,10 @@ def daemon( price, last_data, flag, need_term, chart_log ):
             #log_price( stop_chk_price, flag )
             #flag = stop_position( stop_chk_price,last_data,flag )
 
+            # TODO 
+            # エントリ、クローズ、ストップを2時間ではなく毎回チェックする
+            # → シミュレーションは最安値、最高値で判断が必要？？
+
             # ストップのみ毎回チェックする
             if flag["position"]["exist"]:
                 flag = stop_position( stop_chk_price,last_data,flag )
@@ -94,7 +98,7 @@ def daemon( price, last_data, flag, need_term, chart_log ):
 
         # ポジションがある場合
         if flag["position"]["exist"] == True:
-            flag = trail_stop( new_price,flag )
+            flag = trail_stop( new_price,last_data,flag )
             flag = stop_position( new_price,last_data,flag )
             flag = close_position( new_price,last_data,flag )
             flag = add_position( new_price,last_data,flag )
@@ -116,6 +120,7 @@ def daemon( price, last_data, flag, need_term, chart_log ):
             else:
                 position_price = 0
                 stop_price = 0
+
             chart_log["records"]["position_price"].append(position_price)
             chart_log["records"]["stop_price"].append(stop_price)
             chart_log["records"]["price_ohlc"].append(new_price)

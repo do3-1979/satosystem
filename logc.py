@@ -58,11 +58,24 @@ def out_log_with_line(log_msg, flag):
 
 # 時間と高値・安値をログに記録する関数
 def log_price( data, flag ):
-	log =  "時間： " + str(datetime.fromtimestamp(data["close_time"]).strftime('%Y/%m/%d %H:%M')) + \
-			" 高値： " + str(data["high_price"]) + \
-			" 安値： " + str(data["low_price"]) + \
-			" 終値： " + str(data["close_price"]) +\
-			" 出来高： " + str(round(data["Volume"])) + "\n"
+	
+	# ストップ値と取得価格を計算
+	stop = flag["position"]["stop"]
+	position_price = flag["position"]["price"]
+	stop_price = 0
+	if flag["position"]["exist"] == True:
+		if flag["position"]["side"] == "BUY":
+			stop_price = position_price - stop
+		if flag["position"]["side"] == "SELL":
+			stop_price = position_price + stop
+
+	log =  "時間：" + str(datetime.fromtimestamp(data["close_time"]).strftime('%Y/%m/%d %H:%M')) + \
+			"  高値：" + str(round(data["high_price"])) + \
+			"  安値：" + str(round(data["low_price"])) + \
+			"  終値：" + str(round(data["close_price"])) +\
+			"  取得単価：" + str(round(position_price)) +\
+			"  ストップ：" + str(round(stop_price)) +\
+			"  出来高：" + str(round(data["Volume"])) + "\n"
 	out_log(log, flag)
 	return flag
 

@@ -25,17 +25,17 @@ lot_limit_lower_list  = [ prm.lot_limit_lower ]					# 最低注文lot数
 # バックテストのパラメーター設定(コメントアウトを外して使う)
 #---------------------------------------------------------------------------------------------
 #chart_sec_list  = { 7200, 3600, 300 } 		    # テストに使う時間軸
-buy_term_list   = np.arange( 10, 20, 2 )     	# テストに使う上値ブレイクアウトの期間
-sell_term_list  = np.arange( 10, 20, 2 ) 	    # テストに使う下値ブレイクアウトの期間
-volatility_term_list  = np.arange( 5, 15, 2 ) 	# テストに使うボラティリティの期間
+#buy_term_list   = np.arange( 13, 19, 1 )     	# テストに使う上値ブレイクアウトの期間
+#sell_term_list  = np.arange( 13, 19, 1 ) 	    # テストに使う下値ブレイクアウトの期間
+#volatility_term_list  = np.arange( 5, 10, 1 ) 	# テストに使うボラティリティの期間
 #stop_range_list  = np.arange( 2,5,1 )		    # テストに使うストップレンジの幅
-trade_risk_list  = np.arange( 0.50, 2.10, 0.20 ) 	# テストに使う1トレード当たりの損失許容の幅
-entry_times_list  = np.arange( 7, 12, 1 ) 	    # テストに使う分割回数の幅
+#trade_risk_list  = np.arange( 1.00, 5.00, 0.10 ) 	# テストに使う1トレード当たりの損失許容の幅
+#entry_times_list  = np.arange( 6, 10, 1 ) 	    # テストに使う分割回数の幅
 #entry_range_list  = np.arange( 1,6,1 )		    # テストに使う追加ポジションの幅
 #pivot_term_list  = np.arange( 1,10,1 ) 		# PIVOTの期間設定
 #sma1_term_list = np.arange( 5,15,1 )		    # 移動平均線（速） 
 #sma2_term_list = np.arange( 100,200,10 )		# 移動平均線（遅）
-#vroc_term_list = np.arange( 10,110,10 )			# 出来高変化率の期間
+#vroc_term_list = np.arange( 5,100,5 )			# 出来高変化率の期間
 #vroc_thrsh_list = np.arange( 150,250,10 )		# 出来高変化率の閾値
 judge_line_list = [
 	{"BUY":"S2","SELL":"R2"},				    # サポートに第2ラインを使用
@@ -51,8 +51,8 @@ judge_signal_list = [
 #	{"BUY":"sma_cross","SELL":"sma_cross"}		# シグナルは移動平均線によるDC/GC
 ]
 #judge_volatility_ratio_list = np.arange( 0.0050,0.0250,0.0010 )    # ボラティリティ終値比
-#stop_AF_list = np.arange( 0.01,0.03,0.01) 		# 加速係数
-#stop_AF_add_list = np.arange( 0.01,0.04,0.01) 	# 加速係数を増やす度合
+#stop_AF_list = np.arange( 0.01,0.02,0.001) 		# 加速係数
+#stop_AF_add_list = np.arange( 0.01,0.10,0.005) 	# 加速係数を増やす度合
 #stop_AF_max_list = np.arange( 0.15,0.55,0.05) 	# 加速係数の上限
 
 #lot_limit_lower_list = np.arange( 0.005,0.046,0.005)
@@ -82,7 +82,7 @@ judge_signal_list = [
 #	{"START":"2019/11/1 0:00","END":"2020/3/11 23:00"},
 #	{"START":"2019/11/1 0:00","END":"2020/3/11 23:00"},
 period_list = [
-	{"START":"2021/6/1 0:00","END":"2021/8/8 21:00"},
+	{"START":"2021/8/1 0:00","END":"2021/10/03 23:00"},
 ]
 
 # テスト総数

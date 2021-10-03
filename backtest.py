@@ -8,6 +8,9 @@ import pandas as pd
 import numpy as np
 from pprint import pprint
 
+# -------分析機能----
+from anlyz import *
+
 # チャートを取得
 chart_log = {
 	"records":{
@@ -286,18 +289,13 @@ def backtest(flag, last_data, chart_log):
 		plt.plot(chart.Date, chart.SMA2, color = "green",label ="SMA_" + str(flag["param"]["sma2_term"]), linestyle = "-", linewidth = "2")
 		# Close_price
 		plt.plot(chart.Date, chart.Close_price, color = "red" , label ="close_price", linestyle = "-", linewidth = "2" )
-		#mpl_finance.candlestick_ohlc(ax, chart.Price_ohlc, width=2, alpha=0.5, colorup='r', colordown='b')
 		# position
 		plt.plot(chart.Date, chart.Position_price, color = "black",label ="position_price", linestyle = "-", linewidth = "1")
 		plt.plot(chart.Date, chart.Stop_price, color = "grey",label ="stop_price", linestyle = ":", linewidth = "1")
 
-
-		#plt.plot( chart.Date, chart.Close_price )
-		#plt.plot( chart.Date, chart.Position_price )
 		plt.ylabel("Price")
 		plt.ylim([chart.Close_price.min(), chart.Close_price.max()])    # y方向の描画範囲を指定
 		plt.legend(loc=0)
-
 
 		# 出来高もグラフに追加
 		plt.subplot2grid((5, 5), (3, 0), colspan = 5, rowspan = 1)
