@@ -401,7 +401,8 @@ def stop_position( data,last_data,flag ):
 			if is_back_test is True:
 				result = {}
 				result["side"] = flag["position"]["side"]
-				result["lots"] = flag["position"]["lot"] * data["low_price"]
+				# シミュレーションの場合は最安値でなくstop値近傍で制約したとする
+				result["lots"] = flag["position"]["lot"] * stop_price
 			else:
 				result = get_position(flag)
 
@@ -416,8 +417,8 @@ def stop_position( data,last_data,flag ):
 				flag["order"]["side"] = "SELL"
 
 			# stop値ではなく最安値を値を入れる。
-
-			records( flag,data,data["low_price"],"STOP" )
+			records( flag,data,stop_price,"STOP" )
+			#records( flag,data,data["low_price"],"STOP" )
 			flag["position"]["exist"] = False
 			flag["position"]["count"] = 0
 			flag["position"]["stop-AF"] = stop_AF
@@ -436,7 +437,8 @@ def stop_position( data,last_data,flag ):
 			if is_back_test is True:
 				result = {}
 				result["side"] = flag["position"]["side"]
-				result["lots"] = flag["position"]["lot"] * data["high_price"]
+				# シミュレーションの場合は最安値でなくstop値近傍で制約したとする
+				result["lots"] = flag["position"]["lot"] * stop_price
 			else:
 				result = get_position(flag)
 
@@ -451,8 +453,8 @@ def stop_position( data,last_data,flag ):
 				flag["order"]["side"] = "BUY"
 
 			# stop値ではなく約定時の値を入れる。
-
-			records( flag,data,data["high_price"],"STOP" )
+			records( flag,data,stop_price,"STOP" )
+			#records( flag,data,data["high_price"],"STOP" )
 			flag["position"]["exist"] = False
 			flag["position"]["count"] = 0
 			flag["position"]["stop-AF"] = stop_AF

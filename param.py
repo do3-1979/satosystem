@@ -4,7 +4,7 @@ is_total_test = False     # back test フラグ
 #start_period = None      # back test フラグ
 start_period = "2021/8/1 0:00"       # back test フラグ
 #end_period = None                     # back test フラグ
-end_period = "2021/10/03 23:00"         # back test フラグ
+end_period = "2021/10/30 23:00"         # back test フラグ
 
 
 #--- 可変パラメタ --------------------
@@ -21,7 +21,7 @@ chart_sec = 7200         # 2時間足を使用
 
 buy_term =	16           # 買いエントリーのブレイク期間の設定
 sell_term = 16           # 売りエントリーのブレイク期間の設定
-volatility_term = 8	     # 平均ボラティリティの計算に使う期間
+volatility_term = 5	     # 平均ボラティリティの計算に使う期間
 
 pivot_term = 1           # PIVOTの期間設定
 sma1_term = 9            # 移動平均線１（早い）期間の設定
@@ -52,7 +52,7 @@ judge_signal={
 }
 
 judge_volatility_ratio = 0.1000 # ボラティリティの終値比の下限値。下回った場合のみエントリ
-lot_limit_lower = 0.035  # 注文できる最小lot数計算倍率
+lot_limit_lower = 0.090  # 注文できる最小lot数計算倍率
 
 #--- ピラミッディング制御 --------------------
 
@@ -64,8 +64,9 @@ entry_range = 2          # 何レンジごとに追加ポジションを取る�
 
 stop_range = 4           # 何レンジ幅にストップを入れるか
 stop_AF = 0.01           # 加速係数
-stop_AF_add = 0.10       # 加速係数を増やす度合
-stop_AF_max = 0.50       # 加速係数の上限
+stop_AF_add = 0.15       # 加速係数を増やす度合
+stop_AF_max = 0.20       # 加速係数の上限
+
 
 #--- 固定パラメタ --------------------
 
