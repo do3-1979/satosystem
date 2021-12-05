@@ -1,4 +1,5 @@
 from datetime import datetime
+from logging import DEBUG
 import time
 import config_rt
 
@@ -17,10 +18,14 @@ def daemon( price, last_data, flag, need_term, chart_log ):
     chart_sec = flag["param"]["chart_sec"]
     wait = flag["param"]["wait"]
     line_notify_time_hour = flag["param"]["line_notify_time_hour"]
+    line_notify_profit_rate = flag["param"]["line_notify_profit_rate"]
+    slippage = flag["param"]["slippage"]
 
     i = 0
     is_line_notified = False
     is_line_notify_time = False
+
+    profit_notified = False
 
     while ( ( is_back_test == False ) or ( i < len(price) ) ):
 
@@ -77,17 +82,40 @@ def daemon( price, last_data, flag, need_term, chart_log ):
             if (is_line_notify_time == False) and (is_line_notified == True):
                 is_line_notified = False
 
-            # dbg
-            #log_price( stop_chk_price, flag )
-            #flag = stop_position( stop_chk_price,last_data,flag )
-
-            # TODO 
-            # エントリ、クローズ、ストップを2時間ではなく毎回チェックする
-            # → シミュレーションは最安値、最高値で判断が必要？？
-
-            # ストップのみ毎回チェックする
+            # ストップと利幅をチェックする
             if flag["position"]["exist"]:
                 flag = stop_position( stop_chk_price,last_data,flag )
+
+                # 利益計算
+                latest_price = stop_chk_price["close_price"]
+                entry_price = int(round(flag["position"]["price"] * flag["position"]["lot"]))
+                exit_price = int(round(latest_price * flag["position"]["lot"]))
+
+                # 値幅の計算
+                trade_cost = round( exit_price * slippage )
+                buy_profit = exit_price - entry_price - trade_cost
+                sell_profit = entry_price - exit_price - trade_cost
+                profit = max(buy_profit, sell_profit)
+
+                # 通知の判断[全資産の%]が閾値を超えたら通知する
+                result = get_collateral(flag)
+                balance = round(result['total'] * latest_price, 6)
+
+                # 閾値と比較
+                notify_thresh = round(profit * 100 / balance)
+                if notify_thresh >= line_notify_profit_rate:
+                    # 初回のみ通知
+                    if profit_notified == False:
+                        line_text = "\nポジション: " + flag["position"]["side"]
+                        line_text = line_text + "\n現在の利益率: " + str(notify_thresh) +" %"
+                        line_text = line_text + "\n利益: " + str(round(profit))
+                        # LINE通知
+                        line_notify(line_text)
+                        # 通知済フラグ ON
+                        profit_notified = True
+            else:
+                # ポジション解消で通知フラグをクリア
+                profit_notified = False
 
             # 値更新されるまでループする
             if new_price["close_time"] == prev_price["close_time"]:

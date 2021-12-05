@@ -2,9 +2,9 @@
 is_back_test = True       # back test フラグ
 is_total_test = False     # back test フラグ
 #start_period = None      # back test フラグ
-start_period = "2021/8/1 0:00"       # back test フラグ
+start_period = "2021/11/1 0:00"       # back test フラグ
 #end_period = None                     # back test フラグ
-end_period = "2021/10/30 23:00"         # back test フラグ
+end_period = "2021/12/5 23:00"         # back test フラグ
 
 
 #--- 可変パラメタ --------------------
@@ -76,12 +76,13 @@ log_unit = "USD"            # 単位
 balance_limit = 10          # 注文できる最小証拠金[USD]
 
 levarage = 100              # レバレッジ倍率の設定
-start_funds = 0.020 * 43000 # シミュレーション時の初期資金[USD]
+start_funds = 0.040 * 43000 # シミュレーション時の初期資金[USD]
 
 wait = 300                  # ループの待機時間
 order_retry_times = 3       # オーダー時の待機時間倍率
 slippage = 0.001            # 手数料・スリッページ
 
-line_notify_time_hour = [6] # 6時、13時、21時にLINE通知
+line_notify_time_hour = [11] # 6時、13時、21時にLINE通知 11時前後が変動が多い
+line_notify_profit_rate = 33 # 資産の30%の利益が出たらLINE通知する[%]
 
 #EOF

@@ -341,6 +341,30 @@ def close_position( data,last_data,flag ):
 			flag["position"]["stop-AF"] = stop_AF
 			flag["position"]["stop-EP"] = 0
 			flag["add-position"]["count"] = 0
+		else:
+			# シグナル未発生中に実際の口座とポジションの不一致を確認
+			# ポジションを持っていても実際の口座が0ならLINE通知して内部クローズ
+
+			# 口座残高を取得
+			if is_back_test is True:
+				result = {}
+				result["side"] = flag["position"]["side"]
+				result["lots"] = flag["position"]["lot"] * data["close_price"]
+			else:
+				result = get_position(flag)
+
+			# ポジションありでも口座が0の場合はLINE通知して初期化する
+			if (result["side"] == "BUY") and (result["lots"] == 0):
+				flag["position"]["exist"] = False
+				flag["position"]["count"] = 0
+				flag["position"]["stop-AF"] = stop_AF
+				flag["position"]["stop-EP"] = 0
+				flag["add-position"]["count"] = 0
+
+				lots = flag["position"]["lot"] * data["close_price"]
+				log = "\n口座の不整合検知\nポジション初期化\n" + result["side"] + ":" + str(lots)
+				out_log(log, flag)
+				line_notify(log)
 
 	if flag["position"]["side"] == "SELL":
 		if signal["side"] == "BUY":
@@ -372,11 +396,33 @@ def close_position( data,last_data,flag ):
 			flag["position"]["stop-AF"] = stop_AF
 			flag["position"]["stop-EP"] = 0
 			flag["add-position"]["count"] = 0
+		else:
+			# シグナル未発生中に実際の口座とポジションの不一致を確認
+			# ポジションを持っていても実際の口座が0ならLINE通知して内部クローズ
+
+			# 口座残高を取得
+			if is_back_test is True:
+				result = {}
+				result["side"] = flag["position"]["side"]
+				result["lots"] = flag["position"]["lot"] * data["close_price"]
+			else:
+				result = get_position(flag)
+
+			# ポジションありでも口座が0の場合はLINE通知して初期化する
+			if (result["side"] == "SELL") and (result["lots"] == 0):
+				flag["position"]["exist"] = False
+				flag["position"]["count"] = 0
+				flag["position"]["stop-AF"] = stop_AF
+				flag["position"]["stop-EP"] = 0
+				flag["add-position"]["count"] = 0
+
+				lots = flag["position"]["lot"] * data["close_price"]
+				log = "\n口座の不整合検知\nポジション初期化\n" + result["side"] + ":" + str(lots)
+				out_log(log, flag)
+				line_notify(log)
 
 	#out_log("#-------------close_position end----------------\n", flag)
 	return flag
-
-
 
 # 損切ラインにかかったら成行注文で決済する関数
 def stop_position( data,last_data,flag ):
