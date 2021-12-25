@@ -354,7 +354,7 @@ def close_position( data,last_data,flag ):
 				result = get_position(flag)
 
 			# ポジションありでも口座が0の場合はLINE通知して初期化する
-			if (result["side"] == "BUY") and (result["lots"] == 0):
+			if result["lots"] == 0:
 				flag["position"]["exist"] = False
 				flag["position"]["count"] = 0
 				flag["position"]["stop-AF"] = stop_AF
@@ -409,7 +409,7 @@ def close_position( data,last_data,flag ):
 				result = get_position(flag)
 
 			# ポジションありでも口座が0の場合はLINE通知して初期化する
-			if (result["side"] == "SELL") and (result["lots"] == 0):
+			if result["lots"] == 0:
 				flag["position"]["exist"] = False
 				flag["position"]["count"] = 0
 				flag["position"]["stop-AF"] = stop_AF

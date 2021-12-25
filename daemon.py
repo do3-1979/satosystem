@@ -27,6 +27,8 @@ def daemon( price, last_data, flag, need_term, chart_log ):
 
     profit_notified = False
 
+    #dbgflg = False
+
     while ( ( is_back_test == False ) or ( i < len(price) ) ):
 
         last_data_idx = 0
@@ -60,6 +62,17 @@ def daemon( price, last_data, flag, need_term, chart_log ):
             stop_chk_price = data[-1]
             prev_price = last_data[-1]
 
+            ### YMDDBG デバッグ用初期状態設定
+            """----------------------------------------------
+            if dbgflg == False:
+                flag["add-position"]["count"] = 1
+                flag["position"]["lot"],flag["position"]["stop"] = 0.3356221, 500
+                flag["position"]["exist"] = True
+                flag["position"]["side"] = "BUY"
+                flag["position"]["price"] = stop_chk_price["close_price"] - 2000
+                dbgflg = True
+            """
+
             # 指定した時間になったらLINE通知
             dt = datetime.now()
             is_line_notify_time = False
@@ -84,7 +97,7 @@ def daemon( price, last_data, flag, need_term, chart_log ):
 
             # ストップと利幅をチェックする
             if flag["position"]["exist"]:
-                flag = stop_position( stop_chk_price,last_data,flag )
+                ### 利幅を計算し、一定以上大きければ最新値にstop値を追従させる
 
                 # 利益計算
                 latest_price = stop_chk_price["close_price"]
@@ -104,15 +117,24 @@ def daemon( price, last_data, flag, need_term, chart_log ):
                 # 閾値と比較
                 notify_thresh = round(profit * 100 / balance)
                 if notify_thresh >= line_notify_profit_rate:
+                    # stop値を閾値に更新
+                    flag = trail_stop_neighbor( stop_chk_price, last_data, flag )
+                    log_price( stop_chk_price, flag ) #YMDDBG
+
                     # 初回のみ通知
                     if profit_notified == False:
-                        line_text = "\nポジション: " + flag["position"]["side"]
-                        line_text = line_text + "\n現在の利益率: " + str(notify_thresh) +" %"
-                        line_text = line_text + "\n利益: " + str(round(profit))
+                        line_text = "\nポジション： " + str(flag["position"]["side"])
+                        line_text = line_text + "\n現在の利益率： " + str(notify_thresh) +" %"
+                        line_text = line_text + "\n利益： " + str(round(profit))
                         # LINE通知
                         line_notify(line_text)
+                        out_log(line_text, flag)
                         # 通知済フラグ ON
                         profit_notified = True
+                
+                # 更新したstop値で決済判定
+                flag = stop_position( stop_chk_price,last_data,flag )
+
             else:
                 # ポジション解消で通知フラグをクリア
                 profit_notified = False

@@ -86,6 +86,7 @@ flag = {
 		"wait":wait,
 		"order_retry_times":order_retry_times,
 		"slippage":slippage,
+		"stop_neighbor":stop_neighbor,
 		"line_notify_time_hour":line_notify_time_hour,
 		"line_notify_profit_rate":line_notify_profit_rate
 	}

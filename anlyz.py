@@ -135,6 +135,39 @@ def calc_stop_psar( data, last_data, flag ):
 
 	return stop, flag
 
+# ストップ値を現在の値から固定値分のみずらした値に置く関数
+def trail_stop_neighbor( data, last_data, flag ):
+	# ストップ値は「ポジションの取得単価」に対する差額。ポジション取得単価より高い場合は負値。
+	# 現在の終値との差額を求めてから新しいストップ値を求める
+	prev_stop = new_stop = flag["position"]["stop"] 
+	stop_neighbor = flag["param"]["stop_neighbor"]
+	latest_close_price = data["close_price"]
+	position_price = flag["position"]["price"]
+
+	# 終値とストップ値の差額を出す
+	if flag["position"]["side"] == "BUY":
+		diff_price = latest_close_price - ( position_price - prev_stop )
+		# 終値との差分が固定値を超えていたらストップ値が固定値以下になるようにする
+		if diff_price > stop_neighbor:
+			# 新ストップ値はポジション取得単価と目標価格との差額
+			new_stop = position_price - ( latest_close_price - stop_neighbor )
+
+	if flag["position"]["side"] == "SELL":
+		diff_price = ( position_price + prev_stop ) - latest_close_price
+		# 終値との差分が固定値を超えていたらストップ値が固定値以下になるようにする
+		if diff_price > stop_neighbor:
+			# 新ストップ値 = 目標値 ( = 現在の終値 + 固定値) とポジション取得単価の差額
+			new_stop = ( latest_close_price + stop_neighbor ) - position_price
+
+	# 前回のストップ値より小さければ更新する(負値の場合は小さいほど終値に近い)
+	tmp_stop = min( prev_stop, new_stop )
+	flag["position"]["stop"] = tmp_stop
+
+	#print("diff {} prev_stop {} new_stop {} stop {}".format(diff_price, prev_stop, new_stop, tmp_stop))
+
+	return flag
+
+
 # パラボリックSARを計算する関数
 def calc_parabolic_sar( data, flag ):
 	iaf = flag["param"]["stop_AF_add"]
