@@ -78,11 +78,14 @@ balance_limit = 10          # 注文できる最小証拠金[USD]
 levarage = 100              # レバレッジ倍率の設定
 start_funds = 0.040 * 43000 # シミュレーション時の初期資金[USD]
 
-wait = 15                   # ループの待機時間
+wait = 180                  # ループの待機時間
+                            # cryptwatch のクレジット 24hあたり10で、OHLC1回で0.015消費するので
+                            # 1分あたり0.46回、3分で1回が上限となる
 order_retry_times = 2       # オーダー時の待機時間倍率
 slippage = 0.001            # 手数料・スリッページ
 
 stop_neighbor = 300         # リミット超過時の追従用閾値[usd]
+
 
 line_notify_time_hour = [11] # LINE通知する時刻（配列可）[時] ※11時前後が変動が多い
 line_notify_profit_rate = 20 # 利益が資産の一定割合以上出たらLINE通知する[%]

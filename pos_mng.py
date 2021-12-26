@@ -12,11 +12,13 @@ from order import *
 from anlyz import *
 
 # CryptowatchのAPIを使用する関数
+# TODO 最新値を取得する軽量版をつくる(cpuコストが1/3)
 def get_price(min, flag, before=0, after=0):
 	wait = flag["param"]["wait"]
 	price = []
 	params = {"periods" : min }
 	symbol_type = flag["param"]["symbol_type"]
+	allowance_remaining = 0
 
 	is_line_ntfied = False
 
@@ -46,6 +48,9 @@ def get_price(min, flag, before=0, after=0):
 	if is_line_ntfied == True:
 		line_notify("Cryptowatchの価格取得 復帰")
 
+	# API残credit取得
+	allowance_remaining = data["allowance"]["remaining"]
+
 	if data["result"][str(min)] is not None:
 		for i in data["result"][str(min)]:
 			if i[1] != 0 and i[2] != 0 and i[3] != 0 and i[4] != 0 and i[5] != 0 and i[6] != 0:
@@ -56,7 +61,8 @@ def get_price(min, flag, before=0, after=0):
 					"low_price" : i[3],
 					"close_price": i[4],
 					"Volume" : i[5],
-					"QuoteVolume" : i[6],})
+					"QuoteVolume" : i[6],
+					"allowance_remaining" : allowance_remaining})
 		return price
 
 	else:
