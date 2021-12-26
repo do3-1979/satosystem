@@ -75,7 +75,8 @@ def log_price( data, flag ):
 			"  終値：" + str(round(data["close_price"])) +\
 			"  取得単価：" + str(round(position_price)) +\
 			"  ストップ：" + str(round(stop_price)) +\
-			"  出来高：" + str(round(data["Volume"])) + "\n"
+			"  出来高：" + str(round(data["Volume"])) +\
+			"  API credit残：" + str(data["allowance_remaining"]) + "\n"
 	out_log(log, flag)
 	return flag
 
