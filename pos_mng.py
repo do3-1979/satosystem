@@ -69,6 +69,62 @@ def get_price(min, flag, before=0, after=0):
 		out_log("データが存在しません", flag)
 		return None
 
+def get_latest_price(min, flag, before=0, after=0):
+	wait = flag["param"]["wait"]
+	price = []
+	params = {"periods" : min }
+	symbol_type = flag["param"]["symbol_type"]
+	allowance_remaining = 0
+
+	is_line_ntfied = False
+
+	if before != 0:
+		params["before"] = before
+	if after != 0:
+		params["after"] = after
+
+	while True:
+		try:
+			if symbol_type == 'BTC/USD':
+				response = requests.get("https://api.cryptowat.ch/markets/binance/btcusdt/summary", params, timeout = 5)
+			elif symbol_type == 'ETH/USD':
+				response = requests.get("https://api.cryptowat.ch/markets/binance/ethusdt/summary", params, timeout = 5)
+			response.raise_for_status()
+			data = response.json()
+			break
+		except requests.exceptions.RequestException as e:
+			log = "Cryptowatchのlatest価格取得でエラー発生 : " + str(e)
+			out_log(log, flag)
+			out_log("{0}秒待機してやり直します".format(wait), flag)
+			if is_line_ntfied == False:
+				line_notify(log)
+				is_line_ntfied = True
+			time.sleep(wait)
+
+	if is_line_ntfied == True:
+		line_notify("Cryptowatchのlatest価格取得 復帰")
+
+	# API残credit取得
+	allowance_remaining = data["allowance"]["remaining"]
+
+	if data["result"]["price"] is not None:
+		if data["result"]["price"]["last"] != 0:
+			last_price = data["result"]["price"]["last"]
+			price.append({ "close_time" : 0,
+			"close_time_dt" : 0,
+			"open_price" : last_price,
+			"high_price" : last_price,
+			"low_price" : last_price,
+			"close_price": last_price,
+			"Volume" : 0,
+			"QuoteVolume" : 0,
+			"allowance_remaining" : allowance_remaining})
+			return price
+		else:
+			out_log("データが存在しません", flag)
+			return None
+
+
 # 価格ファイルからローソク足データを読み込む関数
 def get_price_from_file( min, path,flag,start_period = None, end_period = None ):
 	file = open(path,"r",encoding="utf-8")
