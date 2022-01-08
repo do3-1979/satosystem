@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from logging import DEBUG
 import time
 import config_rt
@@ -26,6 +26,9 @@ def daemon( price, last_data, flag, need_term, chart_log ):
     is_line_notify_time = False
 
     profit_notified = False
+    is_need_update = False
+    is_init_price = False
+    prev_close_time = datetime.now()
 
     #dbgflg = False
 
@@ -57,10 +60,27 @@ def daemon( price, last_data, flag, need_term, chart_log ):
             data = price[i]  # バックテスト用
             new_price = data # バックテスト用
         else:
-            data = get_price(chart_sec, flag)
-            new_price = data[-2] # data[-1]は未確定の最新値
-            stop_chk_price = data[-1]
-            prev_price = last_data[-1]
+            # period経過したらget_priceで足を取得
+            # period未満はwaitで規定の間隔で最新値のみ取得してストップ値と比較
+            # allowanceは1分に1回までならチェック可能
+            now_time = datetime.now()
+            next_time = prev_close_time + timedelta( seconds = chart_sec )
+            if now_time > next_time:
+                is_need_update = True
+
+            if is_need_update == True or is_init_price == False:
+                data = get_price(chart_sec, flag)
+                new_price = data[-2] # data[-1]は未確定の最新値
+                stop_chk_price = data[-1]
+                # 最新のclose_timeを保持
+                prev_close_time = datetime.fromtimestamp( new_price["close_time"] )
+                # 初回のみohlcを取得する
+                if is_init_price == False:
+                    is_init_price = True
+            else:
+                # 最新値を更新
+                data = get_latest_price(chart_sec, flag)
+                stop_chk_price = data[-1]
 
             ### YMDDBG デバッグ用初期状態設定
             """----------------------------------------------
@@ -72,8 +92,9 @@ def daemon( price, last_data, flag, need_term, chart_log ):
                 flag["position"]["price"] = stop_chk_price["close_price"] - 2000
                 dbgflg = True
             """
-
+            #-----------------------------
             # 指定した時間になったらLINE通知
+            #-----------------------------
             dt = datetime.now()
             is_line_notify_time = False
             for i in range(len(line_notify_time_hour)):
@@ -95,7 +116,9 @@ def daemon( price, last_data, flag, need_term, chart_log ):
             if (is_line_notify_time == False) and (is_line_notified == True):
                 is_line_notified = False
 
+            #-----------------------------
             # ストップと利幅をチェックする
+            #-----------------------------
             if flag["position"]["exist"]:
                 ### 利幅を計算し、一定以上大きければ最新値にstop値を追従させる
 
@@ -139,10 +162,15 @@ def daemon( price, last_data, flag, need_term, chart_log ):
                 # ポジション解消で通知フラグをクリア
                 profit_notified = False
 
+            #-----------------------------
             # 値更新されるまでループする
-            if new_price["close_time"] == prev_price["close_time"]:
+            #-----------------------------
+            if is_need_update == False:
                 time.sleep(time_wait)
                 continue
+            else:
+                # 更新フラグ初期化
+                is_need_update = False
 
         flag = log_price(new_price,flag)
 

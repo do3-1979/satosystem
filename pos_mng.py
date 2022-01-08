@@ -12,7 +12,6 @@ from order import *
 from anlyz import *
 
 # CryptowatchのAPIを使用する関数
-# TODO 最新値を取得する軽量版をつくる(cpuコストが1/3)
 def get_price(min, flag, before=0, after=0):
 	wait = flag["param"]["wait"]
 	price = []
@@ -110,8 +109,8 @@ def get_latest_price(min, flag, before=0, after=0):
 	if data["result"]["price"] is not None:
 		if data["result"]["price"]["last"] != 0:
 			last_price = data["result"]["price"]["last"]
-			price.append({ "close_time" : 0,
-			"close_time_dt" : 0,
+			price.append({ "close_time" : round(time.time()),
+			"close_time_dt" : datetime.now().strftime('%Y/%m/%d %H:%M'),
 			"open_price" : last_price,
 			"high_price" : last_price,
 			"low_price" : last_price,
@@ -479,7 +478,7 @@ def close_position( data,last_data,flag ):
 				flag["add-position"]["count"] = 0
 
 				lots = flag["position"]["lot"] * data["close_price"]
-				log = "\n口座の不整合検知\nポジション初期化\n" + result["side"] + ":" + str(lots)
+				log = "\n口座の不整合検知\nポジション初期化\n" + flag["position"]["side"] + ":" + str(round(lots),2)
 				out_log(log, flag)
 				line_notify(log)
 
