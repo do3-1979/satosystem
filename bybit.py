@@ -11,6 +11,8 @@ import config_rt
 from param import *
 # -------ログ機能--------
 from logc import *
+# -------資金管理機能--------
+from pos_mng import *
 
 bybit = ccxt.bybit()		  # 取引所の定義
 bybit.apiKey = config_rt.apiKey # APIキーを設定
@@ -98,115 +100,6 @@ flag = {
 	}
 }
 
-def get_latest_price(min, flag, before=0, after=0):
-	wait = flag["param"]["wait"]
-	price = []
-	params = {"periods" : min }
-	symbol_type = flag["param"]["symbol_type"]
-	allowance_remaining = 0
-
-	is_line_ntfied = False
-
-	if before != 0:
-		params["before"] = before
-	if after != 0:
-		params["after"] = after
-
-	while True:
-		try:
-			if symbol_type == 'BTC/USD':
-				response = requests.get("https://api.cryptowat.ch/markets/binance/btcusdt/summary", params, timeout = 5)
-			elif symbol_type == 'ETH/USD':
-				response = requests.get("https://api.cryptowat.ch/markets/binance/ethusdt/summary", params, timeout = 5)
-			response.raise_for_status()
-			data = response.json()
-			break
-		except requests.exceptions.RequestException as e:
-			log = "Cryptowatchの価格取得でエラー発生 : " + str(e)
-			out_log(log, flag)
-			out_log("{0}秒待機してやり直します".format(wait), flag)
-			if is_line_ntfied == False:
-				line_notify(log)
-				is_line_ntfied = True
-			time.sleep(wait)
-
-	if is_line_ntfied == True:
-		line_notify("Cryptowatchの価格取得 復帰")
-
-	# API残credit取得
-	allowance_remaining = data["allowance"]["remaining"]
-
-	if data["result"]["price"] is not None:
-		if data["result"]["price"]["last"] != 0:
-			last_price = data["result"]["price"]["last"]
-			price.append({ "close_time" : 0,
-			"close_time_dt" : 0,
-			"open_price" : last_price,
-			"high_price" : last_price,
-			"low_price" : last_price,
-			"close_price": last_price,
-			"Volume" : 0,
-			"QuoteVolume" : 0,
-			"allowance_remaining" : allowance_remaining})
-			return price
-		else:
-			out_log("データが存在しません", flag)
-			return None
-
-def get_price(min, flag, before=0, after=0):
-	wait = flag["param"]["wait"]
-	price = []
-	params = {"periods" : min }
-	symbol_type = flag["param"]["symbol_type"]
-	allowance_remaining = 0
-
-	is_line_ntfied = False
-
-	if before != 0:
-		params["before"] = before
-	if after != 0:
-		params["after"] = after
-
-	while True:
-		try:
-			if symbol_type == 'BTC/USD':
-				response = requests.get("https://api.cryptowat.ch/markets/binance/btcusdt/ohlc", params, timeout = 5)
-			elif symbol_type == 'ETH/USD':
-				response = requests.get("https://api.cryptowat.ch/markets/binance/ethusdt/ohlc", params, timeout = 5)
-			response.raise_for_status()
-			data = response.json()
-			break
-		except requests.exceptions.RequestException as e:
-			log = "Cryptowatchの価格取得でエラー発生 : " + str(e)
-			out_log(log, flag)
-			out_log("{0}秒待機してやり直します".format(wait), flag)
-			if is_line_ntfied == False:
-				line_notify(log)
-				is_line_ntfied = True
-			time.sleep(wait)
-
-	if is_line_ntfied == True:
-		line_notify("Cryptowatchの価格取得 復帰")
-
-	# API残credit取得
-	allowance_remaining = data["allowance"]["remaining"]
-
-	if data["result"]["price"] is not None:
-		if data["result"]["price"]["last"] != 0:
-			price.append({ "close_time" : "",
-			"close_time_dt" : "",
-			"open_price" : data["result"]["price"]["last"],
-			"high_price" : data["result"]["price"]["last"],
-			"low_price" : data["result"]["price"]["last"],
-			"close_price": data["result"]["price"]["last"],
-			"Volume" : 0,
-			"QuoteVolume" : 0,
-			"allowance_remaining" : allowance_remaining})
-			return price
-		else:
-			out_log("データが存在しません", flag)
-			return None
-
 # -------ログ機能--------
 from logc import *
 """
@@ -227,20 +120,30 @@ def bybit_test(flag):
     symbol = 'ETH/USD'
     #symbol = 'BTC/USD'
 
-    print("-----------------------------------")
-    print("get_price test")
-    print("-----------------------------------")
-
     while( 1 ):
         chart_sec = flag["param"]["chart_sec"]
-        #data = get_price(chart_sec, flag)
+
+        stop_price = 0
+
+        print("-----------------------------------")
+        print("get_price test")
+        print("-----------------------------------")
+
+        data = get_price(chart_sec, flag)
+        stop_chk_price = data[-1]
+        print(stop_chk_price)
+        flag = log_price(stop_chk_price,flag)
+        records( flag,stop_chk_price,stop_price,"STOP" )
+
+        print("-----------------------------------")
+        print("get_latest_price test")
+        print("-----------------------------------")
+
         data = get_latest_price(chart_sec, flag)
-
-        new_price = data[-1] # data[-1]は未確定の最新値
-        #stop_chk_price = data[-1]
-        #prev_price = last_data[-1]
-
-        flag = log_price(new_price,flag)
+        stop_chk_price = data[-1]
+        print(stop_chk_price)
+        flag = log_price(stop_chk_price,flag)
+        records( flag,stop_chk_price,stop_price,"STOP" )
 
         time.sleep(1)
 
