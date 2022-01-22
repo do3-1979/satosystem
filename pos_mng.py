@@ -423,7 +423,7 @@ def close_position( data,last_data,flag ):
 				flag["add-position"]["count"] = 0
 
 				lots = flag["position"]["lot"] * data["close_price"]
-				log = "\n口座の不整合検知\nポジション初期化\n" + result["side"] + ":" + str(lots)
+				log = "\n口座の不整合検知\nポジション初期化\n" + result["side"] + ":" + str(round(lots,2))
 				out_log(log, flag)
 				line_notify(log)
 
@@ -478,7 +478,7 @@ def close_position( data,last_data,flag ):
 				flag["add-position"]["count"] = 0
 
 				lots = flag["position"]["lot"] * data["close_price"]
-				log = "\n口座の不整合検知\nポジション初期化\n" + flag["position"]["side"] + ":" + str(round(lots),2)
+				log = "\n口座の不整合検知\nポジション初期化\n" + flag["position"]["side"] + ":" + str(round(lots,2))
 				out_log(log, flag)
 				line_notify(log)
 
