@@ -274,6 +274,17 @@ def add_position( data,last_data,flag ):
 			flag["add-position"]["count"] += 1
 			flag["add-position"]["last-entry-price"] = entry_price
 
+			# 利益計算
+			entry_price = int(round(new_position_price * new_lot))
+			now_price = int(round(current_price * new_lot))
+
+			# 値幅の計算
+			buy_profit = now_price - entry_price
+			sell_profit = entry_price - now_price
+			profit = max(buy_profit, sell_profit)
+			out_log("現在の利益は{} USDです\n".format(round(profit)), flag)
+
+
 	#out_log("#-------------add_position end----------------\n", flag)
 	return flag
 
@@ -316,6 +327,7 @@ def entry_signal( data, last_data, flag ):
 				flag["position"]["exist"] = True
 				flag["position"]["side"] = "BUY"
 				flag["position"]["price"] = data["close_price"]
+
 		else:
 			out_log("注文可能枚数{}が、最低注文単位{}に満たなかったので注文を見送ります\n".format(lot, min_lot), flag)
 
@@ -350,6 +362,7 @@ def entry_signal( data, last_data, flag ):
 				flag["position"]["exist"] = True
 				flag["position"]["side"] = "SELL"
 				flag["position"]["price"] = data["close_price"]
+
 		else:
 			out_log("注文可能枚数{}が、最低注文単位{}に満たなかったので注文を見送ります\n".format(lot, min_lot), flag)
 	#out_log("#-------------entry_signal end----------------\n", flag)
