@@ -30,6 +30,8 @@ def daemon( price, last_data, flag, need_term, chart_log ):
     is_init_price = False
     prev_close_time = datetime.now()
 
+    max_profit = 0
+
     #dbgflg = False
 
     while ( ( is_back_test == False ) or ( i < len(price) ) ):
@@ -129,9 +131,17 @@ def daemon( price, last_data, flag, need_term, chart_log ):
 
                 # 値幅の計算
                 trade_cost = round( exit_price * slippage )
-                buy_profit = exit_price - entry_price - trade_cost
-                sell_profit = entry_price - exit_price - trade_cost
+                buy_profit = 0
+                sell_profit = 0
+                if flag["position"]["side"] == "BUY":
+                    buy_profit = exit_price - entry_price - trade_cost
+                if flag["position"]["side"] == "SELL":
+                    sell_profit = entry_price - exit_price - trade_cost
                 profit = max(buy_profit, sell_profit)
+
+                # 利益の記録
+                max_profit = max(max_profit, profit)
+                out_log("時間：{}  現在利益：{} USD  最大利益：{} USD\n".format(str(datetime.now().strftime('%Y/%m/%d %H:%M')), profit, max_profit), flag)
 
                 # 通知の判断[全資産の%]が閾値を超えたら通知する
                 result = get_collateral(flag)
@@ -142,7 +152,7 @@ def daemon( price, last_data, flag, need_term, chart_log ):
                 if notify_thresh >= line_notify_profit_rate:
                     # stop値を閾値に更新
                     flag = trail_stop_neighbor( stop_chk_price, last_data, flag )
-                    log_price( stop_chk_price, flag ) #YMDDBG
+                    log_price( stop_chk_price, flag ) 
 
                     # 初回のみ通知
                     if profit_notified == False:
@@ -161,6 +171,7 @@ def daemon( price, last_data, flag, need_term, chart_log ):
             else:
                 # ポジション解消で通知フラグをクリア
                 profit_notified = False
+                max_profit = 0
 
             #-----------------------------
             # 値更新されるまでループする

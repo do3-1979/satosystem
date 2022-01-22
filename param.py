@@ -2,9 +2,9 @@
 is_back_test = False       # back test フラグ
 is_total_test = False     # back test フラグ
 #start_period = None      # back test フラグ
-start_period = "2021/11/1 0:00"       # back test フラグ
+start_period = "2021/12/1 0:00"       # back test フラグ
 #end_period = None                     # back test フラグ
-end_period = "2021/12/25 23:00"         # back test フラグ
+end_period = "2022/2/1 23:00"         # back test フラグ
 
 
 #--- 可変パラメタ --------------------
