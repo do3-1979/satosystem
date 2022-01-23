@@ -4,7 +4,7 @@ is_total_test = False     # back test フラグ
 #start_period = None      # back test フラグ
 start_period = "2021/12/1 0:00"       # back test フラグ
 #end_period = None                     # back test フラグ
-end_period = "2022/2/1 23:00"         # back test フラグ
+end_period = "2022/1/20 23:00"         # back test フラグ
 
 
 #--- 可変パラメタ --------------------
@@ -21,7 +21,7 @@ chart_sec = 7200         # 2時間足を使用
 
 buy_term =	16           # 買いエントリーのブレイク期間の設定
 sell_term = 16           # 売りエントリーのブレイク期間の設定
-volatility_term = 5	     # 平均ボラティリティの計算に使う期間
+volatility_term = 49	     # 平均ボラティリティの計算に使う期間
 
 pivot_term = 1           # PIVOTの期間設定
 sma1_term = 9            # 移動平均線１（早い）期間の設定
