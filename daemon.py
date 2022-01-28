@@ -227,6 +227,12 @@ def daemon( price, last_data, flag, need_term, chart_log ):
             vroc = calc_vroc( vroc_term, last_data, new_price["Volume"])
             chart_log["records"]["vroc"].append(vroc)
             chart_log["records"]["vroc_thrsh"].append(flag["param"]["vroc_thrsh"])
+            # PVO
+            s_term = flag["param"]["pvo_s_term"]
+            l_term = flag["param"]["pvo_l_term"]
+            pvo = calc_pvo( s_term, l_term, last_data, data )
+            chart_log["records"]["pvo"].append(pvo)
+            chart_log["records"]["pvo_thrsh"].append(flag["param"]["pvo_thrsh"])
             # donchianパラメタ計算
             buy_term = flag["param"]["buy_term"]
             sell_term = flag["param"]["sell_term"]

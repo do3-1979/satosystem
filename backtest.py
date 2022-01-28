@@ -34,7 +34,9 @@ chart_log = {
 		"SMA1":[],
 		"SMA2":[],
 		"vroc":[],
-		"vroc_thrsh":[]
+		"vroc_thrsh":[],
+		"pvo":[],
+		"pvo_thrsh":[]
 	},
 }
 
@@ -77,7 +79,9 @@ def backtest(flag, last_data, chart_log):
 		"SMA1"   :  chart_log["records"]["SMA1"],
 		"SMA2"   :  chart_log["records"]["SMA2"],
 		"vroc"   :  chart_log["records"]["vroc"],
-		"vroc_thrsh"   :  chart_log["records"]["vroc_thrsh"]
+		"vroc_thrsh"   :  chart_log["records"]["vroc_thrsh"],
+		"pvo"   :  chart_log["records"]["pvo"],
+		"pvo_thrsh"   :  chart_log["records"]["pvo_thrsh"]
 	})
 
 	# 連敗回数をカウントする
@@ -301,8 +305,11 @@ def backtest(flag, last_data, chart_log):
 		plt.subplot2grid((5, 5), (3, 0), colspan = 5, rowspan = 1)
 		plt.bar(chart.Date, chart.Volume,label ="Volume",width=0.05)
 		plt.subplot2grid((5, 5), (4, 0), colspan = 5, rowspan = 1)
-		plt.plot(chart.Date, chart.vroc, color = "blue",label ="VROC", linestyle = "-", linewidth = "1")
-		plt.plot(chart.Date, chart.vroc_thrsh, color = "red",label ="VROC_THRESHOLD", linestyle = "-", linewidth = "1")
+		#plt.plot(chart.Date, chart.vroc, color = "blue",label ="VROC", linestyle = "-", linewidth = "1")
+		#plt.plot(chart.Date, chart.vroc_thrsh, color = "red",label ="VROC_THRESHOLD", linestyle = "-", linewidth = "1")
+		plt.plot(chart.Date, chart.pvo, color = "blue",label ="PVO", linestyle = "-", linewidth = "1")
+		plt.plot(chart.Date, chart.pvo_thrsh, color = "red",label ="PVO_THRESHOLD", linestyle = "-", linewidth = "1")
+
 
 		# グラフ画像保存
 		file_name = str(format(datetime.now().strftime("%Y-%m-%d-%H-%M"))) + "-price_graph.png"

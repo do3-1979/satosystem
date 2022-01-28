@@ -30,6 +30,9 @@ param_sma1_term = []
 param_sma2_term = []
 param_vroc_term = []
 param_vroc_thrsh = []
+param_pvo_s_term = []
+param_pvo_l_term = []
+param_pvo_thrsh = []
 param_volatility_term = []
 param_stop_range = []
 param_trade_risk = []
@@ -119,6 +122,9 @@ for period in period_list:
 					 sma2_term,
 					 vroc_term,
 					 vroc_thrsh,
+					 pvo_s_term,
+					 pvo_l_term,
+					 pvo_thrsh,
 					 volatility_term,
 					 stop_range,
 					 trade_risk,
@@ -140,6 +146,9 @@ for period in period_list:
 		for sma2_term in sma2_term_list
 		for vroc_term in vroc_term_list
 		for vroc_thrsh in vroc_thrsh_list
+		for pvo_s_term in pvo_s_term_list
+		for pvo_l_term in pvo_l_term_list
+		for pvo_thrsh in pvo_thrsh_list
 		for volatility_term in volatility_term_list
 		for stop_range in stop_range_list
 		for trade_risk in trade_risk_list
@@ -163,6 +172,9 @@ for period in period_list:
 		sma2_term, \
 		vroc_term, \
 		vroc_thrsh, \
+		pvo_s_term, \
+		pvo_l_term, \
+		pvo_thrsh, \
 		volatility_term, \
 		stop_range, \
 		trade_risk, \
@@ -179,7 +191,7 @@ for period in period_list:
 
 		price = price_list[ chart_sec ]
 		last_data = []
-		need_term = max(buy_term,sell_term,volatility_term,pivot_term,sma1_term,sma2_term,vroc_term)
+		need_term = max(buy_term,sell_term,volatility_term,pivot_term,sma1_term,sma2_term,vroc_term,pvo_s_term,pvo_l_term)
 
 		# 進捗率
 		prog_cnt += 1
@@ -237,6 +249,9 @@ for period in period_list:
 			    "sell_term":sell_term,
 				"vroc_term":vroc_term,
 				"vroc_thrsh":vroc_thrsh,
+				"pvo_s_term":pvo_s_term,
+				"pvo_l_term":pvo_l_term,
+				"pvo_thrsh":pvo_thrsh,
 			    "pivot_term":pivot_term,
 			    "judge_line":judge_line,
 			    "judge_price":judge_price,
@@ -286,7 +301,9 @@ for period in period_list:
 				"SMA1":[],
 				"SMA2":[],
 				"vroc":[],
-				"vroc_thrsh":[]
+				"vroc_thrsh":[],
+				"pvo":[],
+				"pvo_thrsh":[]
 			},
 		}
 
@@ -324,6 +341,9 @@ for period in period_list:
 		param_sma2_term.append( sma2_term )
 		param_vroc_term.append( vroc_term )
 		param_vroc_thrsh.append( vroc_thrsh )
+		param_pvo_s_term.append( pvo_s_term )
+		param_pvo_l_term.append( pvo_l_term )
+		param_pvo_thrsh.append( pvo_thrsh )
 		param_volatility_term.append( volatility_term )
 		param_stop_range.append( stop_range )
 		param_trade_risk.append( trade_risk )
@@ -368,8 +388,11 @@ for period in period_list:
 			#"PIVOT期間"              :  param_pivot_term,
 			#"SMA1期間"               :  param_sma1_term,
 			#"SMA2期間"               :  param_sma2_term,
-			"vroc期間"               :  param_vroc_term,
-			"vroc閾値"               :  param_vroc_thrsh,
+			#"vroc期間"               :  param_vroc_term,
+			#"vroc閾値"               :  param_vroc_thrsh,
+			"PVO短期間"               :  param_pvo_s_term,
+			"PVO長期間"               :  param_pvo_l_term,
+			"PVO閾値"               :  param_pvo_thrsh,
 			"ボラティリティ期間"      :  param_volatility_term,
 			"ストップレンジ"          :  param_stop_range,
 			"トレードリスク"          :  param_trade_risk,
@@ -377,11 +400,11 @@ for period in period_list:
 			"追加ポジション"          :  param_entry_range,
 			#"判定ライン"             :  param_judge_line,
 			#"判定基準"               :  param_judge_price,
-			"ボラティリティ終値比"    :  param_judge_volatility_ratio,
+			#"ボラティリティ終値比"    :  param_judge_volatility_ratio,
 			#"判定シグナル"           :  param_judge_signal,
-			"加速係数"               :  param_stop_AF,
-			"加速係数AF"             :  param_stop_AF_add,
-			"加速係数MAX"            :  param_stop_AF_max,
+			#"加速係数"               :  param_stop_AF,
+			#"加速係数AF"             :  param_stop_AF_add,
+			#"加速係数MAX"            :  param_stop_AF_max,
 			"注文lot数の下限"        :  param_lot_limit_lower,
 			"トレード回数"  :  result_count,
 			"勝率"          :  result_winRate,
@@ -400,8 +423,11 @@ for period in period_list:
 				  #"PIVOT期間",
 				  #"SMA1期間",
 				  #"SMA2期間",
-				  "vroc期間",
-				  "vroc閾値",
+				  #"vroc期間",
+				  #"vroc閾値",
+				  "PVO短期間",
+				  "PVO長期間",
+				  "PVO閾値",
 				  "ボラティリティ期間",
 				  "ストップレンジ",
 				  "トレードリスク",
@@ -409,11 +435,11 @@ for period in period_list:
 				  "追加ポジション",
 				  #"判定ライン",
 				  #"判定基準",
-				  "ボラティリティ終値比",
+				  #"ボラティリティ終値比",
 				  #"判定シグナル",
-				  "加速係数",
-				  "加速係数AF",
-				  "加速係数MAX",
+				  #"加速係数",
+				  #"加速係数AF",
+				  #"加速係数MAX",
 				  "注文lot数の下限",
 				  "トレード回数",
 				  "勝率",

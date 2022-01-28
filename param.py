@@ -2,9 +2,9 @@
 is_back_test = False       # back test フラグ
 is_total_test = False     # back test フラグ
 #start_period = None      # back test フラグ
-start_period = "2021/12/1 0:00"       # back test フラグ
+start_period = "2021/9/1 0:00"       # back test フラグ
 #end_period = None                     # back test フラグ
-end_period = "2022/1/20 23:00"         # back test フラグ
+end_period = "2022/3/20 23:00"         # back test フラグ
 
 
 #--- 可変パラメタ --------------------
@@ -21,7 +21,7 @@ chart_sec = 7200         # 2時間足を使用
 
 buy_term =	16           # 買いエントリーのブレイク期間の設定
 sell_term = 16           # 売りエントリーのブレイク期間の設定
-volatility_term = 49	     # 平均ボラティリティの計算に使う期間
+volatility_term = 35     # 平均ボラティリティの計算に使う期間
 
 pivot_term = 1           # PIVOTの期間設定
 sma1_term = 9            # 移動平均線１（早い）期間の設定
@@ -31,6 +31,10 @@ vroc_term = 50           # 出来高の変化率の設
                          # VROC＝（最新の足の出来高 － n本前の足の出来高）÷ n本前の足の出来高 × 100
                          # https://manabu-blog.com/fx-volime-rate-of-change
 vroc_thrsh = 200         # 出来高変化率の閾値(%)
+
+pvo_s_term = 5           # 出来高オシレータのEMA（短)の期間
+pvo_l_term = 70          # 出来高オシレータのEMA（長)の期間
+pvo_thrsh = 120          # 出来高オシレータの閾値(%)
 
 judge_line={
   "BUY" : "S2",          # ブレイク判断　PiVOT S2で買い
@@ -56,7 +60,7 @@ lot_limit_lower = 0.090  # 注文できる最小lot数計算倍率
 
 #--- ピラミッディング制御 --------------------
 
-trade_risk = 1.90        # 1トレードあたり口座の何％まで損失を許容するか
+trade_risk = 3.00        # 1トレードあたり口座の何％まで損失を許容するか
 entry_times = 6         # 何回に分けて追加ポジションを取るか
 entry_range = 2          # 何レンジごとに追加ポジションを取るか
 

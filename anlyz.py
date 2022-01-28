@@ -167,7 +167,6 @@ def trail_stop_neighbor( data, last_data, flag ):
 
 	return flag
 
-
 # パラボリックSARを計算する関数
 def calc_parabolic_sar( data, flag ):
 	iaf = flag["param"]["stop_AF_add"]
@@ -402,6 +401,29 @@ def check_vroc( data, last_data, flag ):
 
 	return judge
 
+# check percentage volume osciilator
+def check_pvo( data, last_data, flag ):
+	judge = False
+	# パラメタテーブルからボラティリティ終値比の閾値を取得
+	s_term = flag["param"]["pvo_s_term"]
+	l_term = flag["param"]["pvo_l_term"]
+	thrsh = flag["param"]["pvo_thrsh"]
+
+	# ボラティリティの終値比を計算
+	pvo = calc_pvo( s_term, l_term, last_data, data )
+
+	out_log("PVO shrot {} long {} の閾値{}%に対し現在の値は{}%でした\n".format( s_term, l_term, round(thrsh,1 ), round(pvo,1) ), flag)
+
+	# PVOの閾値チェック
+	if pvo <= thrsh:
+		judge = False
+		out_log("PVO判定=OFF\n", flag)
+	else:
+		judge = True
+		out_log("PVO判定=ON\n", flag)
+
+	return judge
+
 # SMAによるゴールデンクロス・デッドクロスを判定する関数
 def sma_cross( data, last_data, flag ):
 	judge_price = flag["param"]["judge_price"]
@@ -433,11 +455,65 @@ def sma_cross( data, last_data, flag ):
 
 	return {"side" : None , "price":0}
 
+# EMAを得る
+# Exponential Moving Average（指数平滑移動平均）。MACDを算出する際に使ったり結構多用します。
+# 過去よりも現在の方が影響が強いという考えを入れた移動平均値で、現在に近いレートほど重みをつけて計算します。
+# 計算式は
+# E(t) = E(t-1) + 2/(n+1)(直近の終値 – E(t-1))
+# data : price list
+# n    : period
+def calc_ema( term, data ):
+	i=0
+	chk_1=0
+	chk_1_sum=0
+	et_1=0
+	result = []
+	for p in data:
+		i = len(result)
+		if i <= (term - 1):
+			#SMA
+			chk_1_sum = sum(result)
+			chk_1 = (float(chk_1_sum) + float(p)) / (i + 1)
+			result += [chk_1]
+		else:
+			#EMA
+			et_1 = result[-1]
+			result += [float(et_1 + 2 / (term + 1) * (float(p) - et_1))]
+	return result[-1]
+
 # SMAを計算する関数
 def calc_sma( term, last_data, new_data ):
 	sum_value = sum(i["close_price"] for i in last_data[-1 * (term - 1) :]) + new_data # 最新データも反映させる
 	sma_value = round( sum_value / term )
 	return sma_value
+
+# Percentage Volume Oscillator (PVO)は、出来高を対象としたモメンタムオシレーターです。
+# PVOは、2つのボリュームベースの移動平均の差を、大きい方の移動平均に対する割合として測定します。
+# MACDやPercentage Price Oscillator (PPO)と同様に、シグナルライン、ヒストグラム、センターラインで表示されます。
+# PVOは、短い方の出来高EMAが長い方の出来高EMAを上回っている場合は正の値を示し、短い方の出来高EMAが下回っている場合は
+# 負の値を示します。この指標は、出来高の上昇と下降を定義するために使用することができ、その後、他のシグナルを確認
+# または否定するために使用することができます。一般的には、PVOが上昇または正の値を示したときに、ブレイクアウトまたは
+# サポートブレークが成立します。
+# ( ( 出来高のshort_term日EMA ー 出来高のlong_term日EMA ) / 出来高のlong_term日EMA ) × 100
+def calc_pvo( s_term, l_term, last_data, new_data ):
+	volume_data = []
+	
+	data_len = max( s_term, l_term )
+	# 出来高の必要数を配列に格納
+	for i in last_data[ (-1* data_len): ]:
+		volume_data.append(i["Volume"])
+	
+	# 最新の値も追加する
+	volume_data.append(new_data["Volume"])
+	# 短いほうのEMAを計算
+	short_ema = calc_ema( s_term, volume_data )
+	# 長いほうのEMAを計算
+	long_ema = calc_ema( l_term, volume_data )
+	# PVOを計算
+	pvo_value = ( ( short_ema - long_ema ) * 100 / long_ema )
+	#print("pvo_value = {}\n".format(pvo_value))
+
+	return pvo_value
 
 # 出来高の変化率を計算する関数
 # VROC＝（最新の足の出来高 － n本前の足の出来高）÷ n本前の足の出来高 × 10#
