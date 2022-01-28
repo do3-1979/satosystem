@@ -69,6 +69,9 @@ flag = {
 	    "sma2_term":sma2_term,
 		"vroc_term":vroc_term,
 		"vroc_thrsh":vroc_thrsh,
+		"pvo_s_term":pvo_s_term,
+		"pvo_l_term":pvo_l_term,
+		"pvo_thrsh":pvo_thrsh,
 	    "judge_line":judge_line,
 	    "judge_price":judge_price,
 	    "judge_signal":judge_signal,
@@ -115,7 +118,9 @@ chart_log = {
 		"SMA1":[],
 		"SMA2":[],
 		"vroc":[],
-		"vroc_thrsh":[]
+		"vroc_thrsh":[],
+		"pvo":[],
+		"pvo_thrsh":[]
 	},
 }
 

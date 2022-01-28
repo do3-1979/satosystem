@@ -301,9 +301,9 @@ def entry_signal( data, last_data, flag ):
 		#print("lot, {} min_lot {} \n".format(lot, min_lot))
 
 		if lot >= min_lot:
-			vroc_check = check_vroc( data, last_data, flag )
-			if vroc_check == False:
-				out_log("出来高変化率が閾値を超えていないので注文を見送ります\n", flag)
+			pvo_check = check_pvo( data, last_data, flag )
+			if pvo_check == False:
+				out_log("PVOが閾値を超えていないので注文を見送ります\n", flag)
 			else:
 				out_log("{0}USDで{1}lotの買い注文を出します\n".format(data["close_price"],lot), flag)
 				order_lot, flag = lot_to_amount(data, lot, flag)
@@ -336,9 +336,9 @@ def entry_signal( data, last_data, flag ):
 		lot,stop,flag = calculate_lot( last_data,data,flag )
 		min_lot = round(calc_min_lot( data, flag ), 7)
 		if lot >= min_lot:
-			vroc_check = check_vroc( data, last_data, flag )
-			if vroc_check == False:
-				out_log("出来高変化率が閾値を超えていないので注文を見送ります\n", flag)
+			pvo_check = check_pvo( data, last_data, flag )
+			if pvo_check == False:
+				out_log("PVOが閾値を超えていないので注文を見送ります\n", flag)
 			else:
 				out_log("{0}USDで{1}lotの売り注文を出します\n".format(data["close_price"],lot), flag)
 				order_lot, flag = lot_to_amount(data, lot, flag)
