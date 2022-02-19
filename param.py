@@ -2,7 +2,7 @@
 is_back_test = False       # back test フラグ
 is_total_test = False     # back test フラグ
 #start_period = None      # back test フラグ
-start_period = "2021/9/1 0:00"       # back test フラグ
+start_period = "2022/1/1 0:00"       # back test フラグ
 #end_period = None                     # back test フラグ
 end_period = "2022/3/20 23:00"         # back test フラグ
 
@@ -90,6 +90,6 @@ stop_neighbor = 300         # リミット超過時の追従用閾値[usd]
 
 
 line_notify_time_hour = [11] # LINE通知する時刻（配列可）[時] ※11時前後が変動が多い
-line_notify_profit_rate = 20 # 利益が資産の一定割合以上出たらLINE通知する[%]
+line_notify_profit_rate = 300 # 利益が資産の一定割合以上出たらLINE通知する[%]
 
 #EOF
