@@ -185,9 +185,9 @@ def daemon( price, last_data, flag, need_term, chart_log ):
                 new_close_time = datetime.fromtimestamp( new_price["close_time"] )
                 last_close_time = datetime.fromtimestamp( last_data[-1]["close_time"] )
         
-                if new_close_time != last_close_time:
+                if new_close_time == last_close_time:
                     out_log("時刻未更新検出。再取得\n", flag)
-                    time.sleep(5)
+                    time.sleep(time_wait)
                     continue
         
                 # 更新フラグ初期化
