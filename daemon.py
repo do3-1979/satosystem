@@ -176,10 +176,20 @@ def daemon( price, last_data, flag, need_term, chart_log ):
             #-----------------------------
             # 値更新されるまでループする
             #-----------------------------
+            # new_priceの時刻が前回と同じ場合があるため、保存済の最新値と時刻が同じなら再取得する
             if is_need_update == False:
                 time.sleep(time_wait)
                 continue
             else:
+                # 保存済の最新地のclose timeと今回のclose timeが一致していたら再取得
+                new_close_time = datetime.fromtimestamp( new_price["close_time"] )
+                last_close_time = datetime.fromtimestamp( last_data[-1]["close_time"] )
+        
+                if new_close_time != last_close_time:
+                    out_log("時刻未更新検出。再取得\n", flag)
+                    time.sleep(5)
+                    continue
+        
                 # 更新フラグ初期化
                 is_need_update = False
 
