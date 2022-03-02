@@ -23,12 +23,17 @@ def out_log(log_msg, flag):
 	# print出力 ※logger .infoなら要らない
 	# print(log_msg.strip("\n"))
 
+	# 時刻をログに追加
+	dt = datetime.now()
+	log_msg_withtime = str(dt.strftime('[%x %X]:'))
+	log_msg_withtime = log_msg_withtime + log_msg
+
 	if is_total_test == False:
 		# ログ出力
-		logger.info(log_msg.strip("\n"))
+		logger.info(log_msg_withtime.strip("\n"))
 
 	# ファイル出力
-	flag["records"]["log"].append(log_msg)
+	flag["records"]["log"].append(log_msg_withtime)
 
 # LINEに通知する関数
 def line_notify( text ):
@@ -45,16 +50,21 @@ def out_log_with_line(log_msg, flag):
 	# print出力 ※logger .infoなら要らない
 	# print(log_msg.strip("\n"))
 
+	# 時刻をログに追加
+	dt = datetime.now()
+	log_msg_withtime = str(dt.strftime('[%x %X]:'))
+	log_msg_withtime = log_msg_withtime + log_msg
+
 	if is_total_test == False:
 		# ログ出力
-		logger.info(log_msg.strip("\n"))
+		logger.info(log_msg_withtime.strip("\n"))
 
 	# LINE通知
 	if is_back_test is False:
 		line_notify("\n" + log_msg)
 
 	# ファイル出力
-	flag["records"]["log"].append(log_msg)
+	flag["records"]["log"].append(log_msg_withtime)
 
 # 時間と高値・安値をログに記録する関数
 def log_price( data, flag ):
