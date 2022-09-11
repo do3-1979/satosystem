@@ -2,9 +2,9 @@
 is_back_test = False       # back test フラグ
 is_total_test = False     # back test フラグ
 #start_period = None      # back test フラグ
-start_period = "2022/4/1 0:00"       # back test フラグ
+start_period = "2022/7/1 0:00"       # back test フラグ
 #end_period = None                     # back test フラグ
-end_period = "2022/6/30 23:00"         # back test フラグ
+end_period = "2022/9/30 23:00"         # back test フラグ
 
 
 #--- 可変パラメタ --------------------
@@ -34,7 +34,7 @@ vroc_thrsh = 200         # 出来高変化率の閾値(%)
 
 pvo_s_term = 5           # 出来高オシレータのEMA（短)の期間
 pvo_l_term = 70          # 出来高オシレータのEMA（長)の期間
-pvo_thrsh = 120          # 出来高オシレータの閾値(%)
+pvo_thrsh = 20          # 出来高オシレータの閾値(%)
 
 judge_line={
   "BUY" : "S2",          # ブレイク判断　PiVOT S2で買い
@@ -61,15 +61,15 @@ lot_limit_lower = 0.090  # 注文できる最小lot数計算倍率
 #--- ピラミッディング制御 --------------------
 
 trade_risk = 3.00        # 1トレードあたり口座の何％まで損失を許容するか
-entry_times = 6         # 何回に分けて追加ポジションを取るか
+entry_times = 8         # 何回に分けて追加ポジションを取るか
 entry_range = 2          # 何レンジごとに追加ポジションを取るか
 
 #--- ストップ制御 --------------------
 
 stop_range = 4           # 何レンジ幅にストップを入れるか
 stop_AF = 0.01           # 加速係数
-stop_AF_add = 0.15       # 加速係数を増やす度合
-stop_AF_max = 0.20       # 加速係数の上限
+stop_AF_add = 0.07       # 加速係数を増やす度合
+stop_AF_max = 0.40       # 加速係数の上限
 
 
 #--- 固定パラメタ --------------------
