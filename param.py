@@ -2,9 +2,9 @@
 is_back_test = False       # back test フラグ
 is_total_test = False     # back test フラグ
 #start_period = None      # back test フラグ
-start_period = "2022/7/1 0:00"       # back test フラグ
+start_period = "2023/1/1 0:00"       # back test フラグ
 #end_period = None                     # back test フラグ
-end_period = "2022/9/30 23:00"         # back test フラグ
+end_period = "2023/3/30 23:00"         # back test フラグ
 
 
 #--- 可変パラメタ --------------------
@@ -56,7 +56,7 @@ judge_signal={
 }
 
 judge_volatility_ratio = 0.1000 # ボラティリティの終値比の下限値。下回った場合のみエントリ
-lot_limit_lower = 0.090  # 注文できる最小lot数計算倍率
+lot_limit_lower = 0.0001  # 注文できる最小lot数計算倍率
 
 #--- ピラミッディング制御 --------------------
 
@@ -80,7 +80,7 @@ log_unit = "USD"            # 単位
 balance_limit = 10          # 注文できる最小証拠金[USD]
 
 levarage = 100              # レバレッジ倍率の設定
-start_funds = 0.022 * 22000 # シミュレーション時の初期資金[USD]
+start_funds = 0.002 * 23000 # シミュレーション時の初期資金[USD]
 
 wait = 60                   # ループの待機時間
 order_retry_times = 2       # オーダー時の待機時間倍率
