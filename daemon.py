@@ -141,7 +141,6 @@ def daemon( price, last_data, flag, need_term, chart_log ):
 
                 # 利益の記録
                 max_profit = max(max_profit, profit)
-                out_log("時間：{}  現在利益：{} USD  最大利益：{} USD\n".format(str(datetime.now().strftime('%Y/%m/%d %H:%M')), profit, max_profit), flag)
 
                 # 通知の判断[全資産の%]が閾値を超えたら通知する
                 result = get_collateral(flag)
@@ -154,6 +153,8 @@ def daemon( price, last_data, flag, need_term, chart_log ):
                 # エントリ時の資産 = 総資産 - 利益
                 # 利益率 = ( 利益 / エントリ時の資産 ) x 100 [%]
                 notify_thresh = round(profit * 100 / (balance - profit))
+
+                out_log("時間：{}  現在利益：{} USD  現在資産：{} USD  利益率：{} %  瞬間最大利益：{} USD \n".format(str(datetime.now().strftime('%Y/%m/%d %H:%M')), profit, balance, notify_thresh, max_profit), flag)
                 if notify_thresh >= line_notify_profit_rate:
                     # stop値を閾値に更新
                     flag = trail_stop_neighbor( stop_chk_price, last_data, flag )
