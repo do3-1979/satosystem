@@ -30,7 +30,7 @@ from anlyz import *
 flag = {
 	"position":{
 		"exist" : False,
-		"side" : "BUY",
+		"side" : "SELL",
 		"price": 0,
 		"stop":0,
 		"stop-AF": stop_AF,
@@ -159,11 +159,12 @@ def bybit_test(flag):
 
     print(stop_chk_price)
 
-    latest_price = 25895
-    #latest_price = stop_chk_price["close_price"]
-    entry_price = int(round(24828 * 0.1053132))
+    #latest_price = 25895
+    latest_price = stop_chk_price["close_price"]
+    entry_price = int(round(28000 * 0.1053132))
     exit_price = int(round(latest_price * 0.1053132))
 
+    max_profit = 0
     trade_cost = 0
     buy_profit = 0
     sell_profit = 0
@@ -172,6 +173,7 @@ def bybit_test(flag):
     if flag["position"]["side"] == "SELL":
         sell_profit = entry_price - exit_price - trade_cost
     profit = max(buy_profit, sell_profit)
+    max_profit = max(max_profit, profit)
 
     result = get_collateral()
 
@@ -190,6 +192,7 @@ def bybit_test(flag):
     line_text = line_text + "\n利益： " + str(round(profit))
     # LINE通知
     print(line_text)
+    print("時間：{}  現在利益：{} USD  現在資産：{} USD  利益率：{} %  瞬間最大利益：{} USD \n".format(str(datetime.now().strftime('%Y/%m/%d %H:%M')), profit, balance, notify_thresh, max_profit))
 
     print("-----------------------------------")
     print("createOrder BUY test")
