@@ -1,8 +1,8 @@
 #--- システムパラメタ --------------------
-is_back_test = False       # back test フラグ
+is_back_test = False      # back test フラグ
 is_total_test = False     # back test フラグ
 #start_period = None      # back test フラグ
-start_period = "2023/1/1 0:00"       # back test フラグ
+start_period = "2023/2/1 0:00"       # back test フラグ
 #end_period = None                     # back test フラグ
 end_period = "2023/3/30 23:00"         # back test フラグ
 

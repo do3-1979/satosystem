@@ -30,7 +30,7 @@ from anlyz import *
 flag = {
 	"position":{
 		"exist" : False,
-		"side" : "",
+		"side" : "BUY",
 		"price": 0,
 		"stop":0,
 		"stop-AF": stop_AF,
@@ -117,9 +117,10 @@ def bybit_test(flag):
 
     #pprint(bybit.api)
 
-    symbol = 'ETH/USD'
-    #symbol = 'BTC/USD'
+    #symbol = 'ETH/USD'
+    symbol = 'BTC/USD'
 
+    """
     while( 1 ):
         chart_sec = flag["param"]["chart_sec"]
 
@@ -146,12 +147,49 @@ def bybit_test(flag):
         records( flag,stop_chk_price,stop_price,"STOP" )
 
         time.sleep(1)
+    """
 
     # get_collateral
     print("-----------------------------------")
     print("get_collateral test")
     print("-----------------------------------")
-    #get_collateral()
+
+    data = get_latest_price(chart_sec, flag)
+    stop_chk_price = data[-1]
+
+    print(stop_chk_price)
+
+    latest_price = 25895
+    #latest_price = stop_chk_price["close_price"]
+    entry_price = int(round(24828 * 0.1053132))
+    exit_price = int(round(latest_price * 0.1053132))
+
+    trade_cost = 0
+    buy_profit = 0
+    sell_profit = 0
+    if flag["position"]["side"] == "BUY":
+        buy_profit = exit_price - entry_price - trade_cost
+    if flag["position"]["side"] == "SELL":
+        sell_profit = entry_price - exit_price - trade_cost
+    profit = max(buy_profit, sell_profit)
+
+    result = get_collateral()
+
+    #balanceは利益も含んでるため、総資産からエントリ前の資産を引く必要がある
+    # 総資産 = 総lot数 x 現在の価格
+    # 利益 = 購入したlot数 x (現在の価格 - 平均取得単価)
+    # エントリ時の資産 = 総資産 - 利益
+    # 利益率 = ( 利益 / エントリ時の資産 ) x 100 [%]
+    #balance = round(0.009044 * latest_price, 6)
+    balance = round(result['total'] * latest_price, 6)
+
+    # 閾値と比較
+    notify_thresh = round(profit * 100 / (balance - profit))
+    line_text = "\nポジション： " + str(flag["position"]["side"])
+    line_text = line_text + "\n現在の利益率： " + str(notify_thresh) +" %"
+    line_text = line_text + "\n利益： " + str(round(profit))
+    # LINE通知
+    print(line_text)
 
     print("-----------------------------------")
     print("createOrder BUY test")

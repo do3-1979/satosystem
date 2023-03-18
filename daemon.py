@@ -148,7 +148,12 @@ def daemon( price, last_data, flag, need_term, chart_log ):
                 balance = round(result['total'] * latest_price, 6)
 
                 # 閾値と比較
-                notify_thresh = round(profit * 100 / balance)
+                # balanceは利益も含んでるため、総資産からエントリ前の資産を引く必要がある
+                # 総資産 = 総lot数 x 現在の価格
+                # 利益 = 購入したlot数 x (現在の価格 - 平均取得単価)
+                # エントリ時の資産 = 総資産 - 利益
+                # 利益率 = ( 利益 / エントリ時の資産 ) x 100 [%]
+                notify_thresh = round(profit * 100 / (balance - profit))
                 if notify_thresh >= line_notify_profit_rate:
                     # stop値を閾値に更新
                     flag = trail_stop_neighbor( stop_chk_price, last_data, flag )
