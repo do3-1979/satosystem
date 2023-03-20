@@ -136,6 +136,7 @@ def calc_stop_psar( data, last_data, flag ):
 	return stop, flag
 
 # ストップ値を現在の値から固定値分のみずらした値に置く関数
+# TODO 300USD固定をやめる 現在価格の0.011程度にするべき
 def trail_stop_neighbor( data, last_data, flag ):
 	# ストップ値は「ポジションの取得単価」に対する差額。ポジション取得単価より高い場合は負値。
 	# 現在の終値との差額を求めてから新しいストップ値を求める
@@ -255,6 +256,16 @@ def trail_stop( data, last_data, flag ):
 	return flag
 
 # 注文ロットを計算する関数
+# TODO 注文ロットのボラ計算外して資産からの割合のみにする
+# ボラティリティからリスクを考慮したロット数にしているがボラティリティがそこまで有効とは思えない
+# ボラティリティ期間は現在35で固定。一定期間値動きがなかったら小さくなる。値動きが大きいと大きくなる
+# ボラティリティは2hだと70hなのでおよそ3日分
+# ロット数を低く抑えて分割数を多くするか、ロット数を高くして分割数を減らすか。
+# ロット数が高いと、エントリ失敗したときのダメージが高くなる？
+# ロット数を低くすると、急な変化で1回しか積めない場合、利益が少ない？　→　追加時に複数lot積めるか？
+# →　できそう create order後にwaitが必要かもしれない
+# →　ロット数の幅と、分割数のみでシミュレートしてみる
+# ATRをパラボリックで計算するためにボラティリティは必要
 def calculate_lot( last_data,data,flag ):
 	is_back_test = flag["param"]["is_back_test"]
 	balance_limit = flag["param"]["balance_limit"]
@@ -289,6 +300,7 @@ def calculate_lot( last_data,data,flag ):
 
 		# １回の注文単位（ロット数）と、追加ポジの基準レンジを計算する
 		volatility = calculate_volatility( last_data, flag )
+		# 従来だと4 x 100～1000で、300くらい　→ 1200usdがストップ幅
 		stop = stop_range * volatility
 		# 四捨五入 np.round()
 		# 切り捨て np.trunc()
@@ -296,6 +308,17 @@ def calculate_lot( last_data,data,flag ):
 		# 切り上げ np.ceil()
 		# ゼロに近いほうに丸める np.fix()
 		# calc_lot = np.floor( balance * trade_risk * 100 / stop ) / 100
+		# stop = stop_range * lot_ratio * balance
+		# TODO calc_lotの戦略の見直し
+		# trade_liskをそのまま活用する
+		# calc_lot = 1トレードで購入するロットサイズ
+		# unit-size = 1トレードで購入する分割ロットサイズ
+		#  = 総資産 x トレードリスク / 分割数
+		# 失っていい資産 x レバレッジ / ストップ幅で変動する可能性のある幅　が、購入資産
+		# 値動きが少ないと、ロット数が大きくなる
+		# 値動きが激しいと、ロット数が少なくなる
+		# → 変動がなかった場合に大きく購入し、変動中は小さくする戦略となっている
+		# stop幅を小さくし、分割数を増やすとどうなるか。
 		calc_lot = round( ( balance * 100 * trade_risk / stop / 100 ), 7 )
 
 		#print("volatility = {}\nstop = {}\ncalc_lot = {}\n".format(volatility, stop, calc_lot))

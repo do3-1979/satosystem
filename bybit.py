@@ -96,6 +96,7 @@ flag = {
 		"wait":wait,
 		"order_retry_times":order_retry_times,
 		"slippage":slippage,
+		"stop_neighbor":stop_neighbor,
 		"line_notify_time_hour":line_notify_time_hour
 	}
 }
@@ -192,7 +193,9 @@ def bybit_test(flag):
     line_text = line_text + "\n利益： " + str(round(profit))
     # LINE通知
     print(line_text)
-    print("時間：{}  現在利益：{} USD  現在資産：{} USD  利益率：{} %  瞬間最大利益：{} USD \n".format(str(datetime.now().strftime('%Y/%m/%d %H:%M')), profit, balance, notify_thresh, max_profit))
+    print("時間：{}  現在利益：{:.2f} USD  現在資産：{:.2f} USD  利益率：{} %  瞬間最大利益：{:.2f} USD \n".format(str(datetime.now().strftime('%Y/%m/%d %H:%M')), profit, balance, notify_thresh, max_profit))
+
+    #trail_stop_neighbor( data, latest_price, flag )
 
     print("-----------------------------------")
     print("createOrder BUY test")

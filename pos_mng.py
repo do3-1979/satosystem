@@ -191,6 +191,7 @@ def add_position( data,last_data,flag ):
 
 
 		# 価格がエントリー方向に基準レンジ分だけ進んだか判定する
+		# TODO エントリー後にレンジ未達なら複数連続発行可能か確認
 		should_add_position = False
 		if flag["position"]["side"] == "BUY" and (current_price - last_entry_price) > unit_range:
 			should_add_position = True
@@ -224,6 +225,7 @@ def add_position( data,last_data,flag ):
 				order_lot, flag = lot_to_amount(data, lot, flag)
 
 				# ここに買い注文のコードを入れる
+				# TODO 連続オーダ時のwaitの必要性の調査
 				create_order(
 					flag,
 					symbol = symbol_type,
@@ -243,6 +245,7 @@ def add_position( data,last_data,flag ):
 				order_lot, flag = lot_to_amount(data, lot, flag)
 
 				# ここに売り注文のコードを入れる
+				# TODO 連続オーダ時のwaitの必要性の調査
 				create_order(
 					flag,
 					symbol = symbol_type,
