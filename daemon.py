@@ -154,7 +154,7 @@ def daemon( price, last_data, flag, need_term, chart_log ):
                 # 利益率 = ( 利益 / エントリ時の資産 ) x 100 [%]
                 notify_thresh = round(profit * 100 / (balance - profit))
 
-                out_log("時間：{}  現在利益：{} USD  現在資産：{} USD  利益率：{} %  瞬間最大利益：{} USD \n".format(str(datetime.now().strftime('%Y/%m/%d %H:%M')), profit, balance, notify_thresh, max_profit), flag)
+                out_log("時間：{}  現在利益：{:.2f} USD  現在資産：{:.2f} USD  利益率：{} %  瞬間最大利益：{:.2f} USD \n".format(str(datetime.now().strftime('%Y/%m/%d %H:%M')), profit, balance, notify_thresh, max_profit), flag)
                 if notify_thresh >= line_notify_profit_rate:
                     # stop値を閾値に更新
                     flag = trail_stop_neighbor( stop_chk_price, last_data, flag )
