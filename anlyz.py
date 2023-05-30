@@ -130,7 +130,6 @@ def calc_stop_psar( data, last_data, flag ):
 	
 	# 現在のstopより大きければ維持
 	stop = min( tmp_stop, stop )
-	stop = tmp_stop
 	flag["position"]["stop"] = stop
 
 	return stop, flag
