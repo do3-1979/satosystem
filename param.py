@@ -1,10 +1,10 @@
 #--- システムパラメタ --------------------
-is_back_test = False      # back test フラグ
+is_back_test = True      # back test フラグ
 is_total_test = False     # back test フラグ
 #start_period = None      # back test フラグ
-start_period = "2023/1/1 0:00"       # back test フラグ
+start_period = "2023/5/1 0:00"       # back test フラグ
 #end_period = None                     # back test フラグ
-end_period = "2023/3/31 23:00"         # back test フラグ
+end_period = "2023/5/30 23:00"         # back test フラグ
 
 
 #--- 可変パラメタ --------------------
@@ -35,6 +35,13 @@ vroc_thrsh = 200         # 出来高変化率の閾値(%)
 pvo_s_term = 5           # 出来高オシレータのEMA（短)の期間
 pvo_l_term = 70          # 出来高オシレータのEMA（長)の期間
 pvo_thrsh = 20          # 出来高オシレータの閾値(%)
+
+#TODO 2023/5/30
+# 出来高は、bybitとcryptowatchでまったく違う
+# cryptowatchから価格取得するのをbybitからに変更したほうがいい
+# cryptowatchとbybitの価格取得部分をIF化して今のAPIを維持を検討する
+# cryptowatchで見ても、2023/4月以前と以後で出来高がぜんぜん違う
+# bybitとcryptowatchの出来高は相関がない　交換所ごとに傾向が違うと思われる
 
 judge_line={
   "BUY" : "S2",          # ブレイク判断　PiVOT S2で買い
