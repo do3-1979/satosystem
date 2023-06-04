@@ -71,17 +71,17 @@ def daemon( price, last_data, flag, need_term, chart_log ):
                 is_need_update = True
 
             if is_need_update == True or is_init_price == False:
-                data = get_price(chart_sec, flag)
+                data = get_latest_price(flag)
                 new_price = data[-2] # data[-1]は未確定の最新値
                 stop_chk_price = data[-1]
-                # 最新のclose_timeを保持
+                # 最新のclose_timeを保持 bybitの場合はlatestは
                 prev_close_time = datetime.fromtimestamp( new_price["close_time"] )
                 # 初回のみohlcを取得する
                 if is_init_price == False:
                     is_init_price = True
             else:
                 # 最新値を更新
-                data = get_latest_price(chart_sec, flag)
+                data = get_latest_price(flag)
                 stop_chk_price = data[-1]
 
             ### YMDDBG デバッグ用初期状態設定

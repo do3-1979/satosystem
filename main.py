@@ -125,10 +125,6 @@ chart_log = {
 }
 
 if is_back_test is True:
-	#file_path = "../price_data/price_btcusd_" + str(chart_sec) + ".json"
-	#price = get_price_from_file(chart_sec, file_path, flag, start_period, end_period)
-	price_tmp = get_price(chart_sec,flag,after=1451606400)
-
 	start_unix = 0
 	end_unix = 9999999999
 
@@ -139,6 +135,7 @@ if is_back_test is True:
 		end_period = datetime.strptime( end_period,"%Y/%m/%d %H:%M")
 		end_unix = int(end_period.timestamp())
 
+	price_tmp = get_price(flag, start_unix, end_unix)
 	price = []
 
 	for i in range( len(price_tmp) ):
@@ -147,8 +144,9 @@ if is_back_test is True:
 			price.append(price_tmp[i])
 
 else:
-	price = get_price(chart_sec,flag,after=1451606400)
+	price = get_latest_price(flag)
 
+# TODO 23/6/4 get_latest_priceがneed_term未満の場合に動作しない（limit = 200なので、need_termがそれを超えるとNG)
 last_data = []
 need_term = max(buy_term,sell_term,volatility_term,pivot_term,sma1_term,sma2_term,vroc_term)
 
