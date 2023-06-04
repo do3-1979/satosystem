@@ -34,8 +34,7 @@ flag_tmp = {
 price_list = {}
 for chart_sec in chart_sec_list:
 	file_path = "../price_data/price_btcusd_" + str(chart_sec) + ".json"
-	price_list[ chart_sec ] = get_price_from_file(chart_sec,file_path,flag_tmp)
-	#price_list[ chart_sec ] = get_price(chart_sec,flag_tmp,after=1451606400)
+	price_list[ chart_sec ] = get_price_from_file(file_path,flag_tmp)
 	print("-----{}分軸の価格データをファイルから取得中-----".format( int(chart_sec/60) ))
 	#time.sleep(10)
 

@@ -2,10 +2,10 @@
 is_back_test = True      # back test フラグ
 is_total_test = False     # back test フラグ
 #start_period = None      # back test フラグ
-start_period = "2023/5/1 0:00"       # back test フラグ
+start_period = "2023/2/15 0:00"       # back test フラグ
 #end_period = None                     # back test フラグ
-end_period = "2023/5/30 23:00"         # back test フラグ
-
+end_period = "2023/5/4 21:00"         # back test フラグ
+# TODO 6/4 end_period が現実時間より後だとget_last_priceの応答が帰らない
 
 #--- 可変パラメタ --------------------
 
@@ -36,8 +36,7 @@ pvo_s_term = 5           # 出来高オシレータのEMA（短)の期間
 pvo_l_term = 70          # 出来高オシレータのEMA（長)の期間
 pvo_thrsh = 20          # 出来高オシレータの閾値(%)
 
-#TODO 2023/5/30
-# 出来高は、bybitとcryptowatchでまったく違う
+# TODO 2023/5/30 出来高は、bybitとcryptowatchでまったく違う > DONE
 # cryptowatchから価格取得するのをbybitからに変更したほうがいい
 # cryptowatchとbybitの価格取得部分をIF化して今のAPIを維持を検討する
 # cryptowatchで見ても、2023/4月以前と以後で出来高がぜんぜん違う

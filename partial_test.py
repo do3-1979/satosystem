@@ -79,6 +79,7 @@ for period in period_list:
 		"param":{
 			"wait":wait,
 			"symbol_type":symbol_type,
+			"chart_sec":chart_sec
 		}
 	}
 
@@ -90,11 +91,7 @@ for period in period_list:
 	price_tmp = []
 	price = []
 	for chart_sec in chart_sec_list:
-		#file_path = "../price_data/price_btcusd_" + str(chart_sec) + ".json"
-		#price_list[ chart_sec ] = get_price_from_file(chart_sec,file_path,flag_tmp, start_period, end_period )
-		price_tmp = get_price(chart_sec,flag_tmp,after=1451606400)
 		print("-----期間 {0}～{1}の{2}分軸の価格データをファイルから取得中-----".format( start_period, end_period, int(chart_sec/60) ))
-		#time.sleep(10)
 
 		start_unix = 0
 		end_unix = 9999999999
@@ -105,6 +102,8 @@ for period in period_list:
 		if end_period:
 			end_period = datetime.strptime( end_period,"%Y/%m/%d %H:%M")
 			end_unix = int(end_period.timestamp())
+
+		price_tmp = get_price(flag_tmp, start_unix, end_unix)
 
 		for i in range( len( price_tmp ) ):
 			unix_time = price_tmp[i]["close_time"]
