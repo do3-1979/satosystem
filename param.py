@@ -2,9 +2,9 @@
 is_back_test = True      # back test フラグ
 is_total_test = False     # back test フラグ
 #start_period = None      # back test フラグ
-start_period = "2023/2/15 0:00"       # back test フラグ
+start_period = "2023/2/1 0:00"       # back test フラグ
 #end_period = None                     # back test フラグ
-end_period = "2023/5/4 21:00"         # back test フラグ
+end_period = "2023/3/30 21:00"         # back test フラグ
 # TODO 6/4 end_period が現実時間より後だとget_last_priceの応答が帰らない
 
 #--- 可変パラメタ --------------------
@@ -41,6 +41,26 @@ pvo_thrsh = 20          # 出来高オシレータの閾値(%)
 # cryptowatchとbybitの価格取得部分をIF化して今のAPIを維持を検討する
 # cryptowatchで見ても、2023/4月以前と以後で出来高がぜんぜん違う
 # bybitとcryptowatchの出来高は相関がない　交換所ごとに傾向が違うと思われる
+
+# TODO 2023/7/23 基本的な戦略の見直し方
+# ・トレンドフォローであること
+# ・パラボリックSARでストップをフォローし、利益を確保すること
+# ・ストップ値は1min単位で最新値を取得し判断している
+# ・エントリー、追加ポジ取得は2hごとに判断している > エントリ前に動ききってしまい、
+# 　エントリー直後に反転した場合に大損するリスクがある
+# TODO エントリーを1min単位で判断する
+# ・判断するためには毎回シグナルの計算が必要
+
+# TODO 2023/7/23 長期間(6か月)で大トレンドだけ拾えるようなシグナルのフィルタが必要
+# どうやって？
+# ＞各パラメタ調整の意味から考える
+# buy_temr, sell_term → 期間が長くなるほど、静　→　動　の変化を検出する
+# volatilyty_term = 期間が長くなるほど、出来高の変化を受けにくい　出来高が大きい時ほど小さなエントリになる
+# trade_risk = 高くするほど、フォロー失敗したときの損失が大きく、削られる
+# entry_time = 分割するほど、フォロー失敗したときのリスクが減る
+# vroc = 大きくするほど、出来高変化率をフィルタできる
+#
+# 
 
 judge_line={
   "BUY" : "S2",          # ブレイク判断　PiVOT S2で買い
