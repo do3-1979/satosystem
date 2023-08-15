@@ -1,10 +1,10 @@
 #--- システムパラメタ --------------------
-is_back_test = True      # back test フラグ
+is_back_test = False      # back test フラグ
 is_total_test = False     # back test フラグ
 #start_period = None      # back test フラグ
-start_period = "2023/2/1 0:00"       # back test フラグ
+start_period = "2023/3/1 0:00"       # back test フラグ
 #end_period = None                     # back test フラグ
-end_period = "2023/3/30 21:00"         # back test フラグ
+end_period = "2023/4/14 21:00"         # back test フラグ
 # TODO 6/4 end_period が現実時間より後だとget_last_priceの応答が帰らない
 
 #--- 可変パラメタ --------------------
@@ -19,8 +19,8 @@ chart_sec = 7200         # 2時間足を使用
 
 #--- エントリー判定 --------------------
 # TODO ボラティリティ、ストップ幅、分割数は上昇期、下降期で異なる。毎月見直すのが有効
-buy_term =	16           # 買いエントリーのブレイク期間の設定
-sell_term = 16           # 売りエントリーのブレイク期間の設定
+buy_term =	22           # 買いエントリーのブレイク期間の設定
+sell_term = 29           # 売りエントリーのブレイク期間の設定
 volatility_term = 6     # 平均ボラティリティの計算に使う期間
 
 pivot_term = 1           # PIVOTの期間設定
@@ -34,7 +34,7 @@ vroc_thrsh = 200         # 出来高変化率の閾値(%)
 
 pvo_s_term = 5           # 出来高オシレータのEMA（短)の期間
 pvo_l_term = 70          # 出来高オシレータのEMA（長)の期間
-pvo_thrsh = 20          # 出来高オシレータの閾値(%)
+pvo_thrsh =  20          # 出来高オシレータの閾値(%)
 
 # TODO 2023/5/30 出来高は、bybitとcryptowatchでまったく違う > DONE
 # cryptowatchから価格取得するのをbybitからに変更したほうがいい
@@ -59,8 +59,10 @@ pvo_thrsh = 20          # 出来高オシレータの閾値(%)
 # trade_risk = 高くするほど、フォロー失敗したときの損失が大きく、削られる
 # entry_time = 分割するほど、フォロー失敗したときのリスクが減る
 # vroc = 大きくするほど、出来高変化率をフィルタできる
-#
 # 
+# パラメタの修正ステップ
+# １．半年間で継続的に上昇できるように
+# ２．撤退時のリスクを減らせるように
 
 judge_line={
   "BUY" : "S2",          # ブレイク判断　PiVOT S2で買い
@@ -86,16 +88,17 @@ lot_limit_lower = 0.0001  # 注文できる最小lot数計算倍率
 
 #--- ピラミッディング制御 --------------------
 
-trade_risk = 3.00        # 1トレードあたり口座の何％まで損失を許容するか
-entry_times = 18         # 何回に分けて追加ポジションを取るか
+trade_risk = 0.85        # 1トレードあたり口座の何％まで損失を許容するか
+entry_times = 10         # 何回に分けて追加ポジションを取るか
 entry_range = 2          # 何レンジごとに追加ポジションを取るか
 
 #--- ストップ制御 --------------------
 
+
 stop_range = 1           # 何レンジ幅にストップを入れるか
 stop_AF = 0.01           # 加速係数
-stop_AF_add = 0.07       # 加速係数を増やす度合
-stop_AF_max = 0.40       # 加速係数の上限
+stop_AF_add = 0.10       # 加速係数を増やす度合
+stop_AF_max = 0.20       # 加速係数の上限
 
 
 #--- 固定パラメタ --------------------
