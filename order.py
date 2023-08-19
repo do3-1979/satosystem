@@ -20,7 +20,7 @@ def create_order( flag, symbol, type, side, amount, price=None ):
 	is_line_ntfied = False
 	"""
 	引数
-	symbol(str) : 'BTC/USD'
+	symbol(str) : 'BTCUSD'
 	type(str) : 'Limit' -> 指値　/ 'Market' -> 成行
 	side(str) : 'Buy' -> 買い / 'Sell' -> 売り
 	amount(float/int) -> 注文枚数
@@ -29,10 +29,18 @@ def create_order( flag, symbol, type, side, amount, price=None ):
 	if is_back_test is True:
 		return 0
 
+	# symbolはPrivate命令では/を除く。
+	if symbol == 'BTC/USD':
+		symbol_arg = 'BTCUSD'
+	elif symbol == 'ETH/USD':
+		symbol_arg = 'ETHUSD'
+	else:
+		symbol_arg = 'None'
+
 	while True:
 		try:
 			create_order = bybit.createOrder(
-				symbol,     # symbol　BTC/USD
+				symbol_arg, # symbol　BTCUSD
 				type,       # type market/limit
 				side,       # side Buy/Sell
 				amount,
@@ -187,20 +195,20 @@ def get_position(flag):
 
 	while True:
 		try:
-			position = bybit.v2_private_get_position_list({
-				'symbol' : symbol
-			})
+			position = bybit.fetch_positions(symbol)
+
 			if position == []:
 				result['side'] = 'NONE'
 				result['lots'] = 0
 			else:
-				result['lots'] = int(position['result']['size'])
+				result['lots'] = position[0]['info']['size']
 
-			if position['result']['side'] == 'Sell':
+			# position[0]のinfoメンバから取り出す
+			if position[0]['info']['side'] == 'Sell':
 				result['side'] = 'SELL'
-			elif position['result']['side'] == 'Buy':
+			elif position[0]['info']['side'] == 'Buy':
 				result['side'] = 'BUY'
-			else:
+			else: #include 'None'
 				result['side'] = 'NONE'
 			break
 		except ccxt.BaseError as e:
