@@ -105,128 +105,51 @@ flag = {
 
 # -------ログ機能--------
 from logc import *
-"""
-create_order(
-    flag,
-    symbol = symbol_type,
-    type='Market',
-    side='Buy',
-    amount=result["lots"])
-"""
 
 def bybit_test(flag):
 
-    while True:
-        print("-----------------------------------")
-        print("get_price test")
-        print("-----------------------------------")
+    symbol_type = 'BTC/USD'
 
-        start_period = "2023/5/1 0:00"       # back test フラグ
-        end_period = "2023/6/4 23:00"         # back test フラグ
-
-        if start_period:
-            start_period = datetime.strptime(start_period,"%Y/%m/%d %H:%M")
-            start_unix = int(start_period.timestamp())
-        if end_period:
-            end_period = datetime.strptime(end_period,"%Y/%m/%d %H:%M")
-            end_unix = int(end_period.timestamp())
-        print(start_unix)
-        print(end_unix)
-        data = get_ohlcv(flag, start_unix, end_unix)
-
-        pprint(data[0])
-        pprint(data[-1])
-
-        #data = get_last_ohlcv(flag)
-
-        #pprint(data[0])
-        #pprint(data[-1])
-        #pprint(len(data))
-
-        ##time.sleep(1)
-        #break
-
-        #data = get_latest_price(flag)
-        #time.sleep(1)
-
-    # get_collateral
-    print("-----------------------------------")
-    print("get_collateral test")
-    print("-----------------------------------")
-
-    data = get_latest_price(chart_sec, flag)
-    stop_chk_price = data[-1]
-
-    print(stop_chk_price)
-
-    #latest_price = 25895
-    latest_price = stop_chk_price["close_price"]
-    entry_price = int(round(28000 * 0.1053132))
-    exit_price = int(round(latest_price * 0.1053132))
-
-    max_profit = 0
-    trade_cost = 0
-    buy_profit = 0
-    sell_profit = 0
-    if flag["position"]["side"] == "BUY":
-        buy_profit = exit_price - entry_price - trade_cost
-    if flag["position"]["side"] == "SELL":
-        sell_profit = entry_price - exit_price - trade_cost
-    profit = max(buy_profit, sell_profit)
-    max_profit = max(max_profit, profit)
-
-    result = get_collateral()
-
-    #balanceは利益も含んでるため、総資産からエントリ前の資産を引く必要がある
-    # 総資産 = 総lot数 x 現在の価格
-    # 利益 = 購入したlot数 x (現在の価格 - 平均取得単価)
-    # エントリ時の資産 = 総資産 - 利益
-    # 利益率 = ( 利益 / エントリ時の資産 ) x 100 [%]
-    #balance = round(0.009044 * latest_price, 6)
-    balance = round(result['total'] * latest_price, 6)
-
-    # 閾値と比較
-    notify_thresh = round(profit * 100 / (balance - profit))
-    line_text = "\nポジション： " + str(flag["position"]["side"])
-    line_text = line_text + "\n現在の利益率： " + str(notify_thresh) +" %"
-    line_text = line_text + "\n利益： " + str(round(profit))
-    # LINE通知
-    print(line_text)
-    print("時間：{}  現在利益：{:.2f} USD  現在資産：{:.2f} USD  利益率：{} %  瞬間最大利益：{:.2f} USD \n".format(str(datetime.now().strftime('%Y/%m/%d %H:%M')), profit, balance, notify_thresh, max_profit))
-
-    #trail_stop_neighbor( data, latest_price, flag )
-
-    print("-----------------------------------")
-    print("createOrder BUY test")
-    print("-----------------------------------")
-    flag = {}
-    """
-    create_order(
-        flag,
-        symbol = symbol,
-        type='Market',
-        side='Buy',
-        amount=10
-    )
-    """
-
-    print("-----------------------------------")
-    print("createOrder BUY test")
-    print("-----------------------------------")
-    """
-    create_order(
-        flag,
-        symbol = symbol,
-        type='Market',
-        side='Sell',
-        amount=10
-    )
-    """
+    if symbol_type == 'BTC/USD':
+        symbol = 'BTCUSD' # symbolはPrivateでは/を除く。
+    elif symbol_type == 'ETH/USD':
+        symbol = 'ETHUSD' # symbolはPrivateでは/を除く。
+    else:
+        symbol = 'None'
 
     print("-----------------------------------")
     print("get position test")
     print("-----------------------------------")
-    #get_position()
+    pprint( get_position() )
+
+    print("-----------------------------------")
+    print("get_collateral test")
+    print("-----------------------------------")
+    pprint( get_collateral() )
+
+    print("-----------------------------------")
+    print("createOrder BUY test")
+    print("-----------------------------------")
+
+    create_order(
+        flag,
+        symbol,
+        type='Market',
+        side='Buy',
+        amount=1
+    )
+    
+    print("-----------------------------------")
+    print("createOrder SELL test")
+    print("-----------------------------------")
+
+    create_order(
+        flag,
+        symbol,
+        type='Market',
+        side='Sell',
+        amount=1
+    )
 
 def get_collateral():
     order_retry_times = 3
@@ -253,7 +176,7 @@ def get_collateral():
             result['free'] = collateral['free']['BTC']
 
             # debug
-            pprint(result)
+            # pprint(result)
 
             return result
 
@@ -277,8 +200,6 @@ def get_position():
         result['averageprice'] # 全ロットの平均価格
     """
 
-    symbol = 'ETH/USD'
-
     if symbol_type == 'BTC/USD':
         symbol = 'BTCUSD' # symbolはPrivateでは/を除く。
     elif symbol_type == 'ETH/USD':
@@ -289,24 +210,25 @@ def get_position():
     while True:
         result = {}
         try:
+            position = bybit.fetch_positions(symbol)
 
-            position = bybit.v2_private_get_position_list({
-                'symbol' : symbol
-            })
             if position == []:
                 result['side'] = 'NONE'
                 result['lots'] = 0
             else:
-                result['lots'] = position['result']['size']
+                result['lots'] = position[0]['info']['size']
 
-                if position['result']['side'] == 'Sell':
+                # position[0]のinfoメンバから取り出す
+                if position[0]['info']['side'] == 'Sell':
                     result['side'] = 'SELL'
-                elif position['result']['side'] == 'Buy':
+                elif position[0]['info']['side'] == 'Buy':
                     result['side'] = 'BUY'
-                else:
+                else: #include 'None'
                     result['side'] = 'NONE'
-            # debug
-            pprint(result)
+
+            #debug
+            # pprint(position[0]['info'])
+            # pprint(result)
 
             return result
 
@@ -325,7 +247,7 @@ def create_order( flag, symbol, type, side, amount, price=None ):
     #out_log("#-------------create_order start----------------\n", flag)
     """
     引数
-    symbol(str) : 'BTC/USD'
+    symbol(str) : 'BTCUSD'
     type(str) : 'Limit' -> 指値　/ 'Market' -> 成行
     side(str) : 'Buy' -> 買い / 'Sell' -> 売り
     amount(float/int) -> 注文枚数
@@ -365,34 +287,6 @@ def line_notify( text ):
 #--------------------------------------------------------------
 # main 処理
 #--------------------------------------------------------------
-
-is_line_notified = 1
-
-"""
-while(1):
-    line_notify_time_hour = flag['param']['line_notify_time_hour']
-
-    # 稼働状況をLINE通知
-    time.sleep(1)
-
-    dt = datetime.now()
-    print('{}:{}:{}>'.format(dt.hour,dt.minute,dt.second))
-
-    # 通知時間で初回なら
-    for i in range(len(line_notify_time_hour)):
-        if (line_notify_time_hour[i] == dt.second) and (is_line_notified == 1):
-            is_line_notified = 0
-
-    if is_line_notified == 0:
-        # LINE通知メッセージ作成
-        result_pos = get_position()
-        result_col = get_collateral()
-        #line_text =  "\n時間： " + str(datetime.fromtimestamp(new_price["close_time"]).strftime('%Y/%m/%d %H:%M')) + "\n高値： " + str(new_price["high_price"]) + "\n安値： " + str(new_price["low_price"]) + "\n終値： " + str(new_price["close_price"]) + "\n"
-        #line_text = line_text + "\nポジション:{}\nロット:{}\n拘束中証拠金:{}\n使用可能証拠金:{}\n".format(result_pos["side"],result_pos["lots"],round(result_col["used"],4),round(result_col["free"],4))
-        # 現在の時間、ポジション数、証拠金
-        line_notify(dt)
-        is_line_notified = 1
-"""
 
 bybit_test( flag )
 
