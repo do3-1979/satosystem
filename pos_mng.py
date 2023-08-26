@@ -308,7 +308,7 @@ def close_position( data,last_data,flag ):
 			out_log(str(data["close_price"]) + "USDあたりで成行注文を出してポジションを決済します\n", flag)
 
 			# 決済の成行注文コードを入れる
-			if is_back_test is True:
+			if (is_back_test is True) or (is_order_back_test is True):
 				result = {}
 				result["side"] = flag["position"]["side"]
 				result["lots"] = flag["position"]["lot"] * data["close_price"]
@@ -338,7 +338,7 @@ def close_position( data,last_data,flag ):
 			# ポジションを持っていても実際の口座が0ならLINE通知して内部クローズ
 
 			# 口座残高を取得
-			if is_back_test is True:
+			if (is_back_test is True) or (is_order_back_test is True):
 				result = {}
 				result["side"] = flag["position"]["side"]
 				result["lots"] = flag["position"]["lot"] * data["close_price"]
@@ -363,7 +363,7 @@ def close_position( data,last_data,flag ):
 			out_log(str(data["close_price"]) + "USDあたりで成行注文を出してポジションを決済します\n", flag)
 
 			# 決済の成行注文コードを入れる
-			if is_back_test is True:
+			if (is_back_test is True) or (is_order_back_test is True):
 				result = {}
 				result["side"] = flag["position"]["side"]
 				result["lots"] = flag["position"]["lot"] * data["close_price"]
@@ -393,7 +393,7 @@ def close_position( data,last_data,flag ):
 			# ポジションを持っていても実際の口座が0ならLINE通知して内部クローズ
 
 			# 口座残高を取得
-			if is_back_test is True:
+			if (is_back_test is True) or (is_order_back_test is True):
 				result = {}
 				result["side"] = flag["position"]["side"]
 				result["lots"] = flag["position"]["lot"] * data["close_price"]
@@ -436,7 +436,7 @@ def stop_position( data,last_data,flag ):
 
 			# 決済の成行注文コードを入れる
 
-			if is_back_test is True:
+			if (is_back_test is True) or (is_order_back_test is True):
 				result = {}
 				result["side"] = flag["position"]["side"]
 				# シミュレーションの場合は最安値でなくstop値近傍で制約したとする
@@ -472,7 +472,7 @@ def stop_position( data,last_data,flag ):
 			#out_log(str(stop_price) + "USDあたりで成行注文を出してポジションを決済します\n", flag)
 
 			# 決済の成行注文コードを入れる
-			if is_back_test is True:
+			if (is_back_test is True) or (is_order_back_test is True):
 				result = {}
 				result["side"] = flag["position"]["side"]
 				# シミュレーションの場合は最安値でなくstop値近傍で制約したとする

@@ -26,7 +26,7 @@ def create_order( flag, symbol, type, side, amount, price=None ):
 	amount(float/int) -> 注文枚数
 	price(float/int) -> 注文価格(成行の場合は省略可)
 	"""
-	if is_back_test is True:
+	if (is_back_test is True) or (is_order_back_test is True):
 		return 0
 
 	# symbolはPrivate命令では/を除く。
@@ -70,7 +70,7 @@ def check_order(flag):
 	引数 : なし
 	戻り値 : 未約定の注文ID
 	"""
-	if is_back_test is True:
+	if (is_back_test is True) or (is_order_back_test is True):
 		return 0
 
 	while True:
