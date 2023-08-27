@@ -28,16 +28,15 @@ def get_price(flag, before=0, after=0):
 		out_log("データが存在しません", flag)
 		return None
 
-def get_latest_price(flag):
+def get_latest_price(flag, chart_sec):
 	price = []
-	price = get_last_ohlcv(flag)
+	price = get_last_ohlcv(flag, chart_sec)
 
 	if price is not None:
 		return price
 	else:
 		out_log("データが存在しません", flag)
 		return None
-
 
 # 価格ファイルからローソク足データを読み込む関数
 def get_price_from_file( min, path,flag,start_period = None, end_period = None ):
