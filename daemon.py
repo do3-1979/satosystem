@@ -12,6 +12,10 @@ from order import *
 # -------分析機能----
 from anlyz import *
 
+# TODO 8/28 bybitは、2hチャートの最新[-1]要素は、確定した最後の値になっている
+# 2hの最新を取得していても、その時の市場の最新の値ではない
+# ストップ値の最終値を得るには、別の時間のチャートを使うしかない
+
 def daemon( price, last_data, flag, need_term, chart_log ):
     # パラメタ展開
     is_back_test = flag["param"]["is_back_test"]
@@ -51,7 +55,7 @@ def daemon( price, last_data, flag, need_term, chart_log ):
                 i += 1
                 continue
             else:
-                last_data_idx = -1 * (need_term - i + 1)
+                last_data_idx = -1 * (need_term - i)
                 last_data.append(price[last_data_idx])
                 flag = log_price(price[last_data_idx],flag)
                 i += 1
@@ -71,17 +75,19 @@ def daemon( price, last_data, flag, need_term, chart_log ):
                 is_need_update = True
 
             if is_need_update == True or is_init_price == False:
-                data = get_latest_price(flag)
-                new_price = data[-2] # data[-1]は未確定の最新値
-                stop_chk_price = data[-1]
+                data = get_latest_price(flag, chart_sec)
+                new_price = data[-1] # 確定済の最新の値
+                data = get_latest_price(flag, 60)
+                stop_chk_price = data[-1] # ストップ値の確認は、1m足のチャートを使う
                 # 最新のclose_timeを保持 bybitの場合はlatestは
                 prev_close_time = datetime.fromtimestamp( new_price["close_time"] )
                 # 初回のみohlcを取得する
                 if is_init_price == False:
                     is_init_price = True
+
             else:
                 # 最新値を更新
-                data = get_latest_price(flag)
+                data = get_latest_price(flag, 60)
                 stop_chk_price = data[-1]
 
             ### YMDDBG デバッグ用初期状態設定
@@ -189,8 +195,8 @@ def daemon( price, last_data, flag, need_term, chart_log ):
             else:
                 # 保存済の最新地のclose timeと今回のclose timeが一致していたら再取得
                 new_close_time = datetime.fromtimestamp( new_price["close_time"] )
-                last_close_time = datetime.fromtimestamp( last_data[-2]["close_time"] )
-        
+                last_close_time = datetime.fromtimestamp( last_data[-1]["close_time"] )
+
                 if new_close_time == last_close_time:
                     out_log("時刻未更新検出。再取得\n", flag)
                     time.sleep(time_wait)

@@ -144,7 +144,8 @@ if is_back_test is True:
 			price.append(price_tmp[i])
 
 else:
-	price = get_latest_price(flag)
+	chart_sec = flag["param"]["chart_sec"]
+	price = get_latest_price(flag, chart_sec)
 
 # TODO 23/6/4 get_latest_priceがneed_term未満の場合に動作しない（limit = 200なので、need_termがそれを超えるとNG)
 last_data = []

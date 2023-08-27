@@ -102,7 +102,7 @@ def get_ohlcv(flag, start_time, end_time):
         out_log("データが存在しません", flag)
         return None
 
-def get_last_ohlcv(flag):
+def get_last_ohlcv(flag, chart_sec):
     # 制御用パラメタ初期化
     wait = flag["param"]["wait"]
     symbol_type = flag["param"]["symbol_type"]
@@ -114,12 +114,18 @@ def get_last_ohlcv(flag):
 
     # 設定可能なパラメタ：1,3,5,15,30,60,120,240,360,720,D,M,W
     # Bybitは分単位なのでsec -> micに変換する
-    chart_unit = (flag["param"]["chart_sec"]) / 60
+    chart_unit = chart_sec / 60
     if chart_unit == 60:
         timeframe = '1h'
     elif chart_unit == 120:
         timeframe = '2h'
-    
+    elif chart_unit == 1:
+        timeframe = '1m'
+    elif chart_unit == 3:
+        timeframe = '3m'
+    elif chart_unit == 5:
+        timeframe = '5m'
+
     if symbol_type == 'BTC/USD':
         market = "BTCUSD"
     elif symbol_type == 'ETH/USD':
