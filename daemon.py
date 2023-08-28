@@ -55,7 +55,7 @@ def daemon( price, last_data, flag, need_term, chart_log ):
                 i += 1
                 continue
             else:
-                last_data_idx = -1 * (need_term - i)
+                last_data_idx = -1 * (need_term - i + 1)
                 last_data.append(price[last_data_idx])
                 flag = log_price(price[last_data_idx],flag)
                 i += 1
@@ -76,7 +76,7 @@ def daemon( price, last_data, flag, need_term, chart_log ):
 
             if is_need_update == True or is_init_price == False:
                 data = get_latest_price(flag, chart_sec)
-                new_price = data[-1] # 確定済の最新の値
+                new_price = data[-2] # 確定済の最新の値
                 data = get_latest_price(flag, 60)
                 stop_chk_price = data[-1] # ストップ値の確認は、1m足のチャートを使う
                 # 最新のclose_timeを保持 bybitの場合はlatestは
