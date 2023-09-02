@@ -75,12 +75,14 @@ def daemon( price, last_data, flag, need_term, chart_log ):
                 is_need_update = True
 
             if is_need_update == True or is_init_price == False:
+                # bybitの足は、最新の時刻は確定したデータの時刻になっている 23:00なら、21:00のデータが確定済
+                # 時刻だけ最新から取得する。データは１つ前のものを使う
                 data = get_latest_price(flag, chart_sec)
                 new_price = data[-2] # 確定済の最新の値
+                prev_close_time = datetime.fromtimestamp( data[-1]["close_time"] )
+                # 1分足の最新の終値を得る
                 data = get_latest_price(flag, 60)
-                stop_chk_price = data[-1] # ストップ値の確認は、1m足のチャートを使う
-                # 最新のclose_timeを保持 bybitの場合はlatestは
-                prev_close_time = datetime.fromtimestamp( new_price["close_time"] )
+                stop_chk_price = data[-1]
                 # 初回のみohlcを取得する
                 if is_init_price == False:
                     is_init_price = True

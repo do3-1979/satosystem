@@ -3,9 +3,9 @@ is_back_test = False      # back test フラグ
 is_order_back_test = True # back test フラグ
 is_total_test = False     # back test フラグ
 #start_period = None      # back test フラグ
-start_period = "2022/4/1 0:00"       # back test フラグ
+start_period = "2023/8/1 0:00"       # back test フラグ
 #end_period = None                     # back test フラグ
-end_period = "2022/7/25 21:00"         # back test フラグ
+end_period = "2023/9/1 21:00"         # back test フラグ
 # TODO 6/4 end_period が現実時間より後だとget_last_priceの応答が帰らない
 
 #--- 可変パラメタ --------------------
@@ -77,6 +77,10 @@ pvo_thrsh =  20          # 出来高オシレータの閾値(%)
 # 最近は出来高が少なく、一度トレンドが発生すると一気に値動きが起きる
 # 大きすぎるドローダウンをなんとかしなけれあ
 # 取引をダミーにして、実動作を確認してみる？
+# 取引額はボラティリティに依存しているが、ボラが小さくなったときにエントリが大きくなって損失を出しているのでは？
+# TODO 2023/9/1
+# エントリをボラティリティに依存させないようにしてみる
+
 
 judge_line={
   "BUY" : "S2",          # ブレイク判断　PiVOT S2で買い
