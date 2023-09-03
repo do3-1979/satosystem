@@ -16,8 +16,8 @@ class RiskManagement:
         :param risk_percentage: リスク許容度（%）
         :param account_balance: アカウントの残高
         """
-        self.risk_percentage = risk_percentage
-        self.account_balance = account_balance
+        self.risk_percentage = Config.get_risk_percentage()
+        self.account_balance = Config.get_account_balance()
 
     def calculate_position_size(self, entry_price, stop_loss_price):
         """
@@ -31,12 +31,8 @@ class RiskManagement:
         return position_size
 
 if __name__ == "__main__":
-    # リスク許容度とアカウント残高を設定
-    risk_percentage = 2.0  # リスク許容度（2%）
-    account_balance = 10000  # アカウント残高（USD）
-
-    # RiskManagementクラスの初期化
-    risk_manager = RiskManagement(risk_percentage, account_balance)
+    # RiskManagement クラスの初期化
+    risk_manager = RiskManagement()
 
     # エントリー価格とストップロス価格を設定
     entry_price = 100  # エントリー価格（USD）
@@ -45,4 +41,5 @@ if __name__ == "__main__":
     # ポジションサイズを計算
     position_size = risk_manager.calculate_position_size(entry_price, stop_loss_price)
     print(f'Position Size: {position_size} units')
+
 
