@@ -106,6 +106,32 @@ flag = {
 # -------ログ機能--------
 from logc import *
 
+def bybit_test_data_generate(flag):
+    start_unix = 0
+    end_unix = 9999999999
+
+    start_period = "2023/8/1 0:00"       # back test フラグ
+    end_period = "2023/9/1 21:00"         # back test フラグ
+
+    if start_period:
+        start_period = datetime.strptime(start_period,"%Y/%m/%d %H:%M")
+        start_unix = int(start_period.timestamp())
+    if end_period:
+        end_period = datetime.strptime( end_period,"%Y/%m/%d %H:%M")
+        end_unix = int(end_period.timestamp())
+
+    price_tmp = get_price(flag, start_unix, end_unix)
+    price = []
+
+    for i in range( len(price_tmp) ):
+        unix_time = price_tmp[i]["close_time"]
+        if ( start_unix < unix_time ) and ( end_unix > unix_time ):
+            price.append(price_tmp[i])
+
+    # priceをJSON形式で書き出す
+    with open('price_data.json', 'w', encoding='utf-8') as json_file:
+        json.dump(price, json_file, ensure_ascii=False, indent=4)
+
 def bybit_test(flag):
 
     symbol_type = 'BTC/USD'
@@ -288,6 +314,7 @@ def line_notify( text ):
 # main 処理
 #--------------------------------------------------------------
 
-bybit_test( flag )
+#bybit_test( flag )
+bybit_test_data_generate( flag )
 
 #EOF
