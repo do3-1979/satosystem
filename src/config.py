@@ -1,11 +1,11 @@
 """
-Configクラス:
+Config クラス:
 
 ボットの設定情報を格納するクラスです。APIキー、トレードの間隔、戦略の選択などの設定を保持します。
 
-このサンプルコードでは、Configクラスが設定ファイル（config.iniなど）から
+このサンプルコードでは、Config クラスが設定ファイル（config.ini など）から
 APIキー、APIシークレット、および他の設定情報を読み込むメソッドを提供しています。
-設定情報の読み込みにはPythonの標準ライブラリであるconfigparserを使用しています。
+設定情報の読み込みには Python の標準ライブラリである configparser を使用しています。
 """
 
 import configparser
@@ -16,23 +16,47 @@ class Config:
 
     @classmethod
     def get_api_key(cls):
+        """
+        APIキーを取得します.
+
+        Returns:
+            str: APIキー
+        """
         return cls.config['API']['api_key']
 
     @classmethod
     def get_api_secret(cls):
+        """
+        APIシークレットを取得します.
+
+        Returns:
+            str: APIシークレット
+        """
         return cls.config['API']['api_secret']
 
     @classmethod
     def get_risk_percentage(cls):
+        """
+        リスク割合を取得します.
+
+        Returns:
+            float: リスク割合
+        """
         return float(cls.config['RiskManagement']['risk_percentage'])
 
     @classmethod
     def get_account_balance(cls):
+        """
+        アカウント残高を取得します.
+
+        Returns:
+            float: アカウント残高
+        """
         return float(cls.config['RiskManagement']['account_balance'])
 
 
 if __name__ == "__main__":
-    # Configクラスの初期化は不要です
+    # Config クラスの初期化は不要です
     # 設定ファイルの名前
     config_file = 'config.ini'
 

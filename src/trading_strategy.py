@@ -11,12 +11,15 @@ TradingStrategyクラス:
 必要に応じて、エントリー条件とエグジット条件をカスタマイズし、自分の取引戦略に合わせて設定できます。
 また、このクラスを拡張してさまざまな取引戦略を実装できます。
 """
+
 class TradingStrategy:
     def __init__(self, entry_condition, exit_condition):
         """
-        取引戦略クラスを初期化
-        :param entry_condition: エントリー条件の関数
-        :param exit_condition: エグジット条件の関数
+        取引戦略クラスを初期化します。
+
+        Args:
+            entry_condition (function): エントリー条件の関数
+            exit_condition (function): エグジット条件の関数
         """
         self.entry_condition = entry_condition
         self.exit_condition = exit_condition
@@ -24,9 +27,13 @@ class TradingStrategy:
 
     def evaluate_entry(self, price_data):
         """
-        エントリー条件を評価し、エントリーするかどうかを決定
-        :param price_data: 価格データ
-        :return: エントリーが成功した場合はTrue、それ以外はFalse
+        エントリー条件を評価し、エントリーするかどうかを決定します。
+
+        Args:
+            price_data (dict): 価格データ
+
+        Returns:
+            bool: エントリーが成功した場合はTrue、それ以外はFalse
         """
         if self.entry_condition(price_data):
             # エントリー条件を満たす場合、ポジションを開くなどの操作を行う
@@ -36,9 +43,13 @@ class TradingStrategy:
 
     def evaluate_exit(self, price_data):
         """
-        エグジット条件を評価し、ポジションをクローズするかどうかを決定
-        :param price_data: 価格データ
-        :return: エグジットが成功した場合はTrue、それ以外はFalse
+        エグジット条件を評価し、ポジションをクローズするかどうかを決定します。
+
+        Args:
+            price_data (dict): 価格データ
+
+        Returns:
+            bool: エグジットが成功した場合はTrue、それ以外はFalse
         """
         if self.exit_condition(price_data):
             # エグジット条件を満たす場合、ポジションをクローズなどの操作を行う

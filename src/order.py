@@ -3,22 +3,39 @@ Orderクラス:
 
 注文情報を格納するクラスです。注文のタイプ（買い/売り）、通貨ペア、数量、価格などの情報を保持します。
 
-このサンプルコードでは、Orderクラスが注文に関連する情報を保持し、
-to_dict() メソッドを使用して注文情報を辞書形式で取得できるようになっています。
-また、サンプルとしてLimit注文とMarket注文の作成例も示しています。
-注文情報を辞書形式で取得することで、取引所APIに注文を送信する際に便利です。
-必要に応じて、このクラスを拡張して注文に関連する他の情報を追加することができます。
-
+Args:
+    symbol (str): 通貨ペア (例: 'BTC/USD')
+    side (str): 注文の方向 ('buy'または'sell')
+    quantity (float): 注文数量
+    price (float, optional): 注文価格 (limit注文の場合にのみ指定). Defaults to None.
+    order_type (str, optional): 注文タイプ ('limit'または'market'). Defaults to 'limit'.
 """
+
 class Order:
     def __init__(self, symbol, side, quantity, price=None, order_type='limit'):
-        self.symbol = symbol  # 通貨ペア (例: 'BTC/USD')
-        self.side = side  # 注文の方向 ('buy'または'sell')
-        self.quantity = quantity  # 注文数量
-        self.price = price  # 注文価格 (limit注文の場合にのみ指定)
-        self.order_type = order_type  # 注文タイプ ('limit'または'market')
+        """
+        Orderクラスを初期化します。
+
+        Args:
+            symbol (str): 通貨ペア (例: 'BTC/USD')
+            side (str): 注文の方向 ('buy'または'sell')
+            quantity (float): 注文数量
+            price (float, optional): 注文価格 (limit注文の場合にのみ指定). Defaults to None.
+            order_type (str, optional): 注文タイプ ('limit'または'market'). Defaults to 'limit'.
+        """
+        self.symbol = symbol
+        self.side = side
+        self.quantity = quantity
+        self.price = price
+        self.order_type = order_type
 
     def to_dict(self):
+        """
+        注文情報を辞書形式で取得します。
+
+        Returns:
+            dict: 注文情報の辞書
+        """
         order_dict = {
             'symbol': self.symbol,
             'side': self.side,
@@ -31,17 +48,3 @@ class Order:
 
     def __str__(self):
         return f"Order: {self.side} {self.quantity} {self.symbol} at {self.price} ({self.order_type})"
-
-# 注文のサンプル
-if __name__ == "__main__":
-    # Limit注文
-    limit_order = Order(symbol='BTC/USD', side='buy', quantity=1, price=45000)
-    print(limit_order)
-
-    # Market注文
-    market_order = Order(symbol='ETH/USD', side='sell', quantity=5, order_type='market')
-    print(market_order)
-
-    # 注文情報を辞書形式で取得
-    order_info = limit_order.to_dict()
-    print(order_info)
