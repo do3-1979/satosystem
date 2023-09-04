@@ -9,22 +9,29 @@ RiskManagementクラス:
 
 必要に応じて、リスク許容度やアカウント残高の設定を変更し、ポジションサイズを計算できます。また、このクラスを拡張してさまざまなリスク管理戦略を実装できます。
 """
+
 class RiskManagement:
     def __init__(self, risk_percentage=2.0, account_balance=10000):
         """
-        リスク管理クラスを初期化
-        :param risk_percentage: リスク許容度（%）
-        :param account_balance: アカウントの残高
+        リスク管理クラスを初期化します。
+
+        Args:
+            risk_percentage (float): リスク許容度（%）
+            account_balance (float): アカウントの残高
         """
-        self.risk_percentage = Config.get_risk_percentage()
-        self.account_balance = Config.get_account_balance()
+        self.risk_percentage = risk_percentage
+        self.account_balance = account_balance
 
     def calculate_position_size(self, entry_price, stop_loss_price):
         """
-        ポジションサイズを計算
-        :param entry_price: エントリー価格
-        :param stop_loss_price: ストップロス価格
-        :return: ポジションサイズ
+        ポジションサイズを計算します。
+
+        Args:
+            entry_price (float): エントリー価格
+            stop_loss_price (float): ストップロス価格
+
+        Returns:
+            float: ポジションサイズ
         """
         risk_amount = (self.account_balance * self.risk_percentage) / 100
         position_size = risk_amount / (entry_price - stop_loss_price)
@@ -41,5 +48,3 @@ if __name__ == "__main__":
     # ポジションサイズを計算
     position_size = risk_manager.calculate_position_size(entry_price, stop_loss_price)
     print(f'Position Size: {position_size} units')
-
-

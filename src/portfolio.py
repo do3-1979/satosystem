@@ -12,7 +12,7 @@ get_asset_quantity() メソッドで保有数量を取得し、update_asset_quan
 必要に応じて、このクラスを拡張してポートフォリオに関連する他の情報を追加できます。
 
 """
-import BybitExchange  # BybitExchange クラスのインポート
+import bybit_exchange  # BybitExchange クラスのインポート
 import Config  # Config クラスのインポート
 
 # Portfolio クラスの定義
