@@ -35,6 +35,7 @@ Usage:
     print("注文結果:", order_response)
 """
 import ccxt
+from config import Config
 from exchange import Exchange  # Exchange モジュールをインポート
 
 class BybitExchange(Exchange):
@@ -64,7 +65,7 @@ class BybitExchange(Exchange):
         Returns:
             dict: 口座の残高情報
         """
-        balance = self.exchange.fetch_balance()
+        balance = self.exchange.fetchBalance()
         return balance
 
     def execute_order(self, symbol, side, quantity, price, order_type):
@@ -107,17 +108,14 @@ class BybitExchange(Exchange):
 
         return response
 
-# ユーザーごとの API キーと API シークレットを設定
-api_key = 'YOUR_API_KEY'
-api_secret = 'YOUR_API_SECRET'
+if __name__ == "__main__":
+    # BybitExchange クラスを初期化F
+    exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
 
-# BybitExchange クラスを初期化
-exchange = BybitExchange(api_key, api_secret)
+    # 口座残高情報を取得
+    balance = exchange.get_account_balance()
+    print("口座残高:", balance)
 
-# 口座残高情報を取得
-balance = exchange.get_account_balance()
-print("口座残高:", balance)
-
-# 注文を発行 (例: BTC/USD マーケットで1BTC を買う)
-order_response = exchange.execute_order('BTC/USD', 'buy', 1, None, 'market')
-print("注文結果:", order_response)
+    # 注文を発行 (例: BTC/USD マーケットで1BTC を買う)
+    order_response = exchange.execute_order('BTCUSD', 'buy', 1, None, 'market')
+    print("注文結果:", order_response)
