@@ -275,7 +275,7 @@ def calculate_lot( last_data,data,flag ):
 	levarage = flag["param"]["levarage"]
 
 	# 口座残高を取得する
-	if is_back_test is True:
+	if (is_back_test) or (is_order_back_test):
 		balance = flag["records"]["funds"]
 	else:
 		result = get_collateral(flag)
