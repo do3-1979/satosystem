@@ -11,9 +11,10 @@ Bot クラスは定期的に口座残高を取得し、取引戦略に渡して�
 また、取引戦略については YourStrategy() の部分にあなたの取引戦略クラスを指定してください。
 取引戦略クラスは、口座残高や市場データを分析し、トレード判断を返すロジックを実装する必要があります。
 """
-import config
 import time
-import bybit_exchange
+from bybit_exchange import BybitExchange  # BybitExchange クラスのインポート
+from config import Config  # Config クラスのインポート
+from trading_strategy import TradingStrategy
 
 class Bot:
     def __init__(self, exchange, strategy):
@@ -39,6 +40,8 @@ class Bot:
                 balance = self.exchange.get_account_balance()
 
                 # 取引戦略に口座残高を渡してトレード判断を取得
+                # TODO strategyクラスにmake_trade_decisionメソッドを追加する
+                # TODO trade_decisionは辞書型　Orderクラスを作ったが活用してない
                 trade_decision = self.strategy.make_trade_decision(balance)
 
                 # 取引戦略からの判断に基づいて注文を実行
@@ -72,10 +75,10 @@ class Bot:
 
 if __name__ == "__main__":
     # 取引所クラスを初期化
-    exchange = BybitExchange()
+    exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
 
     # 取引戦略クラスを初期化
-    strategy = YourStrategy()  # ここに自分の取引戦略クラスを指定
+    strategy = TradingStrategy()  # ここに自分の取引戦略クラスを指定
 
     # Bot クラスを初期化
     bot = Bot(exchange, strategy)
