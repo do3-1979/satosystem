@@ -151,8 +151,11 @@ def daemon( price, last_data, flag, need_term, chart_log ):
                 max_profit = max(max_profit, profit)
 
                 # 通知の判断[全資産の%]が閾値を超えたら通知する
-                result = get_collateral(flag)
-                balance = round(result['total'] * latest_price, 6)
+                if is_order_back_test:
+                    balance = flag["records"]["funds"]
+                else:
+                    result = get_collateral(flag)
+                    balance = round(result['total'] * latest_price, 6)
 
                 # 閾値と比較
                 # balanceは利益も含んでるため、総資産からエントリ前の資産を引く必要がある
