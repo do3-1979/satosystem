@@ -56,6 +56,7 @@ flag = {
 	},
 	"param":{
 		"is_back_test":is_back_test,
+		"is_order_back_test":is_order_back_test,
 		"is_total_test":is_total_test,
 	    "symbol_type":symbol_type,
 	    "log_unit":log_unit,

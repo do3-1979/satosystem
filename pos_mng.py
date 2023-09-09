@@ -292,6 +292,7 @@ def entry_signal( data, last_data, flag ):
 # ドテン注文は外す
 def close_position( data,last_data,flag ):
 	is_back_test = flag["param"]["is_back_test"]
+	is_order_back_test = flag["param"]["is_order_back_test"]
 	symbol_type = flag["param"]["symbol_type"]
 	stop_AF = flag["param"]["stop_AF"]
 	#out_log("#-------------close_position start----------------\n", flag)
@@ -418,6 +419,7 @@ def close_position( data,last_data,flag ):
 # 損切ラインにかかったら成行注文で決済する関数
 def stop_position( data,last_data,flag ):
 	is_back_test = flag["param"]["is_back_test"]
+	is_order_back_test = flag["param"]["is_order_back_test"]
 	chart_sec = flag["param"]["chart_sec"]
 	symbol_type = flag["param"]["symbol_type"]
 	stop_AF = flag["param"]["stop_AF"]

@@ -19,6 +19,7 @@ from anlyz import *
 def daemon( price, last_data, flag, need_term, chart_log ):
     # パラメタ展開
     is_back_test = flag["param"]["is_back_test"]
+    is_order_back_test = flag["param"]["is_order_back_test"]
     chart_sec = flag["param"]["chart_sec"]
     wait = flag["param"]["wait"]
     line_notify_time_hour = flag["param"]["line_notify_time_hour"]
@@ -151,7 +152,7 @@ def daemon( price, last_data, flag, need_term, chart_log ):
                 max_profit = max(max_profit, profit)
 
                 # 通知の判断[全資産の%]が閾値を超えたら通知する
-                if is_order_back_test:
+                if is_order_back_test is True:
                     balance = flag["records"]["funds"]
                 else:
                     result = get_collateral(flag)
