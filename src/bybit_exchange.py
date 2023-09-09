@@ -39,7 +39,7 @@ import time
 from datetime import datetime
 from config import Config
 from logger import Logger
-from exchange import Exchange  # Exchange モジュールをインポート
+from exchange import Exchange
 
 class BybitExchange(Exchange):
     def __init__(self, api_key, api_secret):
@@ -111,7 +111,7 @@ class BybitExchange(Exchange):
 
         return response
 
-    def get_price(self):
+    def get_ohlcv_data(self):
         """
         取引情報を取得
 
@@ -119,7 +119,7 @@ class BybitExchange(Exchange):
             list: 価格データのリスト
         """
         err_occuerd = False
-        price = []
+        ohlcv_data = []
 
         # 設定可能なパラメタ：1,3,5,15,30,60,120,240,360,720,D,M,W
         time_frame = Config.get_time_frame()
@@ -143,7 +143,6 @@ class BybitExchange(Exchange):
 
         get_time = start_utc
         while get_time < end_utc:
-
             # 価格取得
             while True:
                 try:
@@ -172,7 +171,7 @@ class BybitExchange(Exchange):
                     ohlcv[i][3] != 0 and \
                     ohlcv[i][4] != 0 and \
                     ohlcv[i][5] != 0:
-                        price.append({ "close_time" : tmp_time,
+                        ohlcv_data.append({ "close_time" : tmp_time,
                         "close_time_dt" : datetime.fromtimestamp(tmp_time).strftime('%Y/%m/%d %H:%M'),
                         "open_price" : ohlcv[i][1],
                         "high_price" : ohlcv[i][2],
@@ -183,7 +182,7 @@ class BybitExchange(Exchange):
                     break
             get_time = tmp_time
 
-        return price
+        return ohlcv_data
 
 if __name__ == "__main__":
     # BybitExchange クラスを初期化
@@ -212,7 +211,7 @@ if __name__ == "__main__":
     print("価格データを取得")
     print("----------")
     start_price_time = time.time()
-    price_data = exchange.get_price()
+    ohlcv_data = exchange.get_ohlcv_data()
     end_price_time = time.time()
     
     # 表示するエントリーのインデックスを指定
@@ -220,7 +219,7 @@ if __name__ == "__main__":
 
     # 選択したエントリーを表示
     for index in selected_entries:
-        entry = price_data[index]
+        entry = ohlcv_data[index]
         print(f"選択した価格データ:{index}")
         print(f"時刻: {entry['close_time_dt']}")
         print(f"開始価格: {entry['open_price']}")

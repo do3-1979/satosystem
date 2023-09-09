@@ -57,6 +57,34 @@ class Config:
         return float(cls.config['RiskManagement']['account_balance'])
     
     @classmethod
+    def get_leverage(cls):
+        return int(cls.config['RiskManagement']['leverage'])
+
+    @classmethod
+    def get_entry_times(cls):
+        return int(cls.config['RiskManagement']['entry_times'])
+
+    @classmethod
+    def get_entry_range(cls):
+        return int(cls.config['RiskManagement']['entry_range'])
+
+    @classmethod
+    def get_stop_range(cls):
+        return int(cls.config['RiskManagement']['stop_range'])
+
+    @classmethod
+    def get_stop_AF(cls):
+        return float(cls.config['RiskManagement']['stop_AF'])
+
+    @classmethod
+    def get_stop_AF_add(cls):
+        return float(cls.config['RiskManagement']['stop_AF_add'])
+
+    @classmethod
+    def get_stop_AF_max(cls):
+        return float(cls.config['RiskManagement']['stop_AF_max'])
+    
+    @classmethod
     def get_market(cls):
         """
         マーケットを取得します.
@@ -123,6 +151,86 @@ class Config:
         end_time = pytz.timezone('UTC').localize(end_time)
         end_unix = int(end_time.timestamp())
         return end_unix
+    
+    @classmethod
+    def get_volatility_term(cls):
+        """
+        ボラティリティ期間を取得します.
+
+        Returns:
+            int: ボラティリティ期間
+        """
+        return int(cls.config['Strategy']['volatility_term'])
+
+    @classmethod
+    def get_donchian_buy_term(cls):
+        """
+        ドンチャン買い期間を取得します.
+
+        Returns:
+            int: ドンチャン買い期間
+        """
+        return int(cls.config['Strategy']['donchian_buy_term'])
+
+    @classmethod
+    def get_donchian_sell_term(cls):
+        """
+        ドンチャン売り期間を取得します.
+
+        Returns:
+            int: ドンチャン売り期間
+        """
+        return int(cls.config['Strategy']['donchian_sell_term'])
+
+    @classmethod
+    def get_pvo_s_term(cls):
+        """
+        PVO短期間を取得します.
+
+        Returns:
+            int: PVO短期間
+        """
+        return int(cls.config['Strategy']['pvo_s_term'])
+
+    @classmethod
+    def get_pvo_l_term(cls):
+        """
+        PVO長期間を取得します.
+
+        Returns:
+            int: PVO長期間
+        """
+        return int(cls.config['Strategy']['pvo_l_term'])
+
+    @classmethod
+    def get_pvo_threshold(cls):
+        """
+        PVO閾値を取得します.
+
+        Returns:
+            int: PVO閾値
+        """
+        return int(cls.config['Strategy']['pvo_threshold'])
+
+    @classmethod
+    def get_lot_limit_lower(cls):
+        """
+        最小ロット数計算倍率を取得します.
+
+        Returns:
+            float: 最小ロット数計算倍率
+        """
+        return float(cls.config['Potfolio']['lot_limit_lower'])
+
+    @classmethod
+    def get_balance_limit(cls):
+        """
+        最小証拠金を取得します.
+
+        Returns:
+            float: 最小証拠金
+        """
+        return float(cls.config['Potfolio']['balance_limit'])
 
     @classmethod
     def get_server_retry_wait(cls):
@@ -144,6 +252,7 @@ class Config:
         """
         return int(cls.config['Setting']['bot_operation_cycle'])
 
+
 if __name__ == "__main__":
     # APIキーとAPIシークレットを取得
     api_key = Config.get_api_key()
@@ -155,8 +264,26 @@ if __name__ == "__main__":
     # 他の設定情報を取得
     risk_percentage = Config.get_risk_percentage()
     account_balance = Config.get_account_balance()
+    leverage = Config.get_leverage()
+    entry_times = Config.get_entry_times()
+    entry_range = Config.get_entry_range()
+    stop_range = Config.get_stop_range()
+    stop_AF = Config.get_stop_AF()
+    stop_AF_add = Config.get_stop_AF_add()
+    stop_AF_max = Config.get_stop_AF_max()
+    lot_limit_lower = Config.get_lot_limit_lower()
+    balance_limit = Config.get_balance_limit()
     print(f'Risk Percentage: {risk_percentage}')
     print(f'Account Balance: {account_balance}')
+    print(f'Leverage: {leverage}')
+    print(f'Entry Times: {entry_times}')
+    print(f'Entry Range: {entry_range}')
+    print(f'Stop Range: {stop_range}')
+    print(f'Stop AF: {stop_AF}')
+    print(f'Stop AF Add: {stop_AF_add}')
+    print(f'Stop AF Max: {stop_AF_max}')
+    print(f'Lot Limit Lower: {lot_limit_lower}')
+    print(f'Balance Limit: {balance_limit}')
 
     # Market セクションの情報を取得
     market = Config.get_market()
@@ -176,8 +303,23 @@ if __name__ == "__main__":
     print(f'Start Time (UTC): {start_utc}')
     print(f'End Time (UTC): {end_utc}')
 
+    # Strategy セクションの情報を取得
+    volatility_term = Config.get_volatility_term()
+    donchian_buy_term = Config.get_donchian_buy_term()
+    donchian_sell_term = Config.get_donchian_sell_term()
+    pvo_s_term = Config.get_pvo_s_term()
+    pvo_l_term = Config.get_pvo_l_term()
+    pvo_threshold = Config.get_pvo_threshold()
+    print(f'Volatility Term: {volatility_term}')
+    print(f'Donchian Buy Term: {donchian_buy_term}')
+    print(f'Donchian Sell Term: {donchian_sell_term}')
+    print(f'PVO Short Term: {pvo_s_term}')
+    print(f'PVO Long Term: {pvo_l_term}')
+    print(f'PVO Threshold: {pvo_threshold}')
+
     # Setting セクションの情報を取得
     server_retry_wait = Config.get_server_retry_wait()
     bot_operation_cycle = Config.get_bot_operation_cycle()
     print(f'Server Retry Wait: {server_retry_wait}')
     print(f'Bot Operation Cycle: {bot_operation_cycle}')
+    
