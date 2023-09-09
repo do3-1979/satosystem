@@ -1,11 +1,11 @@
 #--- システムパラメタ --------------------
-is_back_test = False      # back test フラグ
-is_order_back_test = True # back test フラグ
+is_back_test = True      # back test フラグ
+is_order_back_test = False # back test フラグ
 is_total_test = False     # back test フラグ
 #start_period = None      # back test フラグ
-start_period = "2023/8/1 0:00"       # back test フラグ
+start_period = "2023/8/18 0:00"       # back test フラグ
 #end_period = None                     # back test フラグ
-end_period = "2023/9/1 21:00"         # back test フラグ
+end_period = "2023/9/8 15:00"         # back test フラグ
 # TODO 6/4 end_period が現実時間より後だとget_last_priceの応答が帰らない
 
 #--- 可変パラメタ --------------------
@@ -80,6 +80,7 @@ pvo_thrsh =  20          # 出来高オシレータの閾値(%)
 # 取引額はボラティリティに依存しているが、ボラが小さくなったときにエントリが大きくなって損失を出しているのでは？
 # TODO 2023/9/1
 # エントリをボラティリティに依存させないようにしてみる
+# ボラを長くしてもstopを大きくしても傾向が変わらず利益が減るだけ
 
 
 judge_line={

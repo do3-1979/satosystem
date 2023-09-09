@@ -156,7 +156,7 @@ def bybit_test(flag):
     print("-----------------------------------")
     print("createOrder BUY test")
     print("-----------------------------------")
-
+    """
     create_order(
         flag,
         symbol,
@@ -164,11 +164,13 @@ def bybit_test(flag):
         side='Buy',
         amount=1
     )
+    """
     
     print("-----------------------------------")
     print("createOrder SELL test")
     print("-----------------------------------")
 
+    """
     create_order(
         flag,
         symbol,
@@ -176,6 +178,7 @@ def bybit_test(flag):
         side='Sell',
         amount=1
     )
+    """
 
 def get_collateral():
     order_retry_times = 3
@@ -314,7 +317,7 @@ def line_notify( text ):
 # main 処理
 #--------------------------------------------------------------
 
-#bybit_test( flag )
-bybit_test_data_generate( flag )
+bybit_test( flag )
+#bybit_test_data_generate( flag )
 
 #EOF
