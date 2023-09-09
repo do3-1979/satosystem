@@ -29,6 +29,7 @@ class TradingStrategy:
 
     def __init__(self):
         self.position = None
+        self.price = []
 
     def entry_condition(self, price_data):
         """
