@@ -15,6 +15,7 @@ bybit.secret = config_rt.secret # APIシークレットを設定
 # 売買注文の約定確認を行う関数
 def create_order( flag, symbol, type, side, amount, price=None ):
 	is_back_test = flag["param"]["is_back_test"]
+	is_order_back_test = flag["param"]["is_order_back_test"]
 	order_retry_times = flag["param"]["order_retry_times"]
 	wait = flag["param"]["wait"]
 	is_line_ntfied = False
@@ -64,6 +65,7 @@ def create_order( flag, symbol, type, side, amount, price=None ):
 # 売買注文の約定確認を行う関数
 def check_order(flag):
 	is_back_test = flag["param"]["is_back_test"]
+	is_order_back_test = flag["param"]["is_order_back_test"]
 	order_retry_times = flag["param"]["order_retry_times"]
 	wait = flag["param"]["wait"]
 	"""

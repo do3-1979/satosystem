@@ -1,6 +1,7 @@
 from datetime import datetime
 import time
 from pprint import pprint
+from memory_profiler import profile
 
 import ccxt
 import config_rt

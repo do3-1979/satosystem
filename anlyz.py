@@ -267,6 +267,7 @@ def trail_stop( data, last_data, flag ):
 # ATRをパラボリックで計算するためにボラティリティは必要
 def calculate_lot( last_data,data,flag ):
 	is_back_test = flag["param"]["is_back_test"]
+	is_order_back_test = flag["param"]["is_order_back_test"]
 	balance_limit = flag["param"]["balance_limit"]
 	stop_range = flag["param"]["stop_range"]
 	trade_risk = flag["param"]["trade_risk"]
@@ -275,7 +276,7 @@ def calculate_lot( last_data,data,flag ):
 	levarage = flag["param"]["levarage"]
 
 	# 口座残高を取得する
-	if (is_back_test) or (is_order_back_test):
+	if (is_back_test is True) or (is_order_back_test is True):
 		balance = flag["records"]["funds"]
 	else:
 		result = get_collateral(flag)
