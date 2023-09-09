@@ -10,7 +10,7 @@ APIキー、APIシークレット、および他の設定情報を読み込む�
 
 import configparser
 from datetime import datetime
-import pytz  # pytz ライブラリをインポート
+import pytz
 
 class Config:
     config = configparser.ConfigParser()
@@ -45,7 +45,7 @@ class Config:
             float: リスク割合
         """
         return float(cls.config['RiskManagement']['risk_percentage'])
-
+    
     @classmethod
     def get_account_balance(cls):
         """
@@ -58,30 +58,72 @@ class Config:
     
     @classmethod
     def get_leverage(cls):
+        """
+        レバレッジを取得します.
+
+        Returns:
+            int: レバレッジ
+        """
         return int(cls.config['RiskManagement']['leverage'])
 
     @classmethod
     def get_entry_times(cls):
+        """
+        エントリー回数を取得します.
+
+        Returns:
+            int: エントリー回数
+        """
         return int(cls.config['RiskManagement']['entry_times'])
 
     @classmethod
     def get_entry_range(cls):
+        """
+        エントリー範囲を取得します.
+
+        Returns:
+            int: エントリー範囲
+        """
         return int(cls.config['RiskManagement']['entry_range'])
 
     @classmethod
     def get_stop_range(cls):
+        """
+        ストップ範囲を取得します.
+
+        Returns:
+            int: ストップ範囲
+        """
         return int(cls.config['RiskManagement']['stop_range'])
 
     @classmethod
     def get_stop_AF(cls):
+        """
+        ストップアンドリバースファクター（AF）を取得します.
+
+        Returns:
+            float: ストップアンドリバースファクター（AF）
+        """
         return float(cls.config['RiskManagement']['stop_AF'])
 
     @classmethod
     def get_stop_AF_add(cls):
+        """
+        ストップアンドリバースファクター（AF）の追加値を取得します.
+
+        Returns:
+            float: ストップアンドリバースファクター（AF）の追加値
+        """
         return float(cls.config['RiskManagement']['stop_AF_add'])
 
     @classmethod
     def get_stop_AF_max(cls):
+        """
+        ストップアンドリバースファクター（AF）の最大値を取得します.
+
+        Returns:
+            float: ストップアンドリバースファクター（AF）の最大値
+        """
         return float(cls.config['RiskManagement']['stop_AF_max'])
     
     @classmethod
@@ -322,4 +364,3 @@ if __name__ == "__main__":
     bot_operation_cycle = Config.get_bot_operation_cycle()
     print(f'Server Retry Wait: {server_retry_wait}')
     print(f'Bot Operation Cycle: {bot_operation_cycle}')
-    
