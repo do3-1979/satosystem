@@ -193,9 +193,7 @@ class BybitExchange(Exchange):
 
         Returns:
             dict: 最新の価格情報
-        """
-        ticker_data = []
-        
+        """        
         # マーケット変換
         market_type = Config.get_market()
         if market_type == 'BTC/USD':
@@ -204,10 +202,9 @@ class BybitExchange(Exchange):
             symbol = "ETHUSD"
         
         ticker = self.exchange.fetch_ticker(symbol)
-        
-        ticker_data = {"price" : ticker["last"], "Volume" : ticker["baseVolume"]}
+        price = ticker["last"]
                            
-        return ticker_data
+        return price
 
 
 if __name__ == "__main__":
@@ -256,11 +253,8 @@ if __name__ == "__main__":
         print("----------")
 
     print("BTC/USD の最新価格情報")
-    for i in range(3):
-        ticker_data = exchange.fetch_ticker('BTC/USD')
-        print(f"価格: {ticker_data['price']}")
-        print(f"出来高: {ticker_data['Volume']}") # TODO 出来高の値が大きすぎる
-        time.sleep(1)
+    price = exchange.fetch_ticker('BTC/USD')
+    print(f"価格: {price}")
     print("----------")
 
     print("口座残高情報取得にかかった時間: {:.2f}秒".format(end_balance_time - start_balance_time))
