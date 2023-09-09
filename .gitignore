@@ -11,6 +11,8 @@
 *.zip
 
 #任意のファイル・ディレクトリ
+backtest/
+.pytest_cache/
 __pycache__/
 candle_chart/
 config_rt.py
@@ -18,3 +20,6 @@ config2.ini
 src/__pycache__/
 test/__pycache__/
 *.code-workspace
+aws_login.sh
+README_0816_サーバ移動用バックアップ.md
+ターミナル起動メモ
