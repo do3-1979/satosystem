@@ -184,6 +184,32 @@ class BybitExchange(Exchange):
 
         return ohlcv_data
 
+    def fetch_ticker(self, market_type):
+        """
+        指定されたペアの最新の価格情報を取得します.
+
+        Args:
+            symbol (str): 取得するペアのシンボル (例: 'BTC/USD')
+
+        Returns:
+            dict: 最新の価格情報
+        """
+        ticker_data = []
+        
+        # マーケット変換
+        market_type = Config.get_market()
+        if market_type == 'BTC/USD':
+            symbol = "BTCUSD"
+        elif market_type == 'ETH/USD':
+            symbol = "ETHUSD"
+        
+        ticker = self.exchange.fetch_ticker(symbol)
+        
+        ticker_data = {"price" : ticker["last"], "Volume" : ticker["baseVolume"]}
+                           
+        return ticker_data
+
+
 if __name__ == "__main__":
     # BybitExchange クラスを初期化
     exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
@@ -228,6 +254,14 @@ if __name__ == "__main__":
         print(f"終値: {entry['close_price']}")
         print(f"出来高: {entry['Volume']}")
         print("----------")
+
+    print("BTC/USD の最新価格情報")
+    for i in range(3):
+        ticker_data = exchange.fetch_ticker('BTC/USD')
+        print(f"価格: {ticker_data['price']}")
+        print(f"出来高: {ticker_data['Volume']}") # TODO 出来高の値が大きすぎる
+        time.sleep(1)
+    print("----------")
 
     print("口座残高情報取得にかかった時間: {:.2f}秒".format(end_balance_time - start_balance_time))
     print("価格データ取得にかかった時間: {:.2f}秒".format(end_price_time - start_price_time))
