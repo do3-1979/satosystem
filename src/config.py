@@ -176,7 +176,7 @@ class Config:
         """
         start_time_str = cls.config['Period']['start_time']
         start_time = datetime.strptime(start_time_str, "%Y/%m/%d %H:%M")
-        start_time = pytz.timezone('UTC').localize(start_time)
+        #start_time = pytz.timezone('UTC').localize(start_time)
         start_unix = int(start_time.timestamp())
         return start_unix
 
@@ -190,7 +190,7 @@ class Config:
         """
         end_time_str = cls.config['Period']['end_time']
         end_time = datetime.strptime(end_time_str, "%Y/%m/%d %H:%M")
-        end_time = pytz.timezone('UTC').localize(end_time)
+        #end_time = pytz.timezone('UTC').localize(end_time)
         end_unix = int(end_time.timestamp())
         return end_unix
     
