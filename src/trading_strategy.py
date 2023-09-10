@@ -135,7 +135,7 @@ class TradingStrategy:
 
         """
         # 価格を取得
-        self.ohlcv_data = self.exchange.get_ohlcv_data()
+        self.ohlcv_data = self.exchange.fetch_ohlcv()
         price_data = self.ohlcv_data[-1]["close_price"] # TODO Tickerで最新値のみ得る
         volume = self.ohlcv_data[-1]["Volume"] # TODO Tickerで最新値のみ得る
         
