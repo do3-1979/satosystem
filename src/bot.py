@@ -12,12 +12,13 @@ Bot クラスは定期的に口座残高を取得し、取引戦略に渡して�
 取引戦略クラスは、口座残高や市場データを分析し、トレード判断を返すロジックを実装する必要があります。
 """
 import time
-from bybit_exchange import BybitExchange  # BybitExchange クラスのインポート
-from config import Config  # Config クラスのインポート
+from bybit_exchange import BybitExchange
+from config import Config
 from trading_strategy import TradingStrategy
+from risk_management import RiskManagement
 
 class Bot:
-    def __init__(self, exchange, strategy):
+    def __init__(self, exchange, strategy, risk_management):
         """
         Bot クラスの初期化
 
@@ -27,8 +28,8 @@ class Bot:
         """
         self.exchange = exchange
         self.strategy = strategy
-        self.api_key = Config.get_api_key()  # Config クラスから api_key を取得
-        self.api_secret = Config.get_api_secret()  # Config クラスから api_secret を取得
+        self.risk_management = risk_management
+        self.bot_operation_cycle = Config.get_bot_operation_cycle()
 
     def run(self):
         """
@@ -39,18 +40,37 @@ class Bot:
                 # 取引所から口座残高を取得
                 balance = self.exchange.get_account_balance()
 
+                # 最新価格を取得
+                price = self.exchange.fetch_ticker()
+
                 # 取引戦略に口座残高を渡してトレード判断を取得
                 # TODO strategyクラスにmake_trade_decisionメソッドを追加する
                 # TODO trade_decisionは辞書型　Orderクラスを作ったが活用してない
                 trade_decision = self.strategy.make_trade_decision(balance)
+                # ボラティリティを取得
+                volatility = self.strategy.get_volatility()
+
+                # 取引量を決定
+                quantity = self.risk_management.calculate_position_size(balance, price, volatility)
 
                 # 取引戦略からの判断に基づいて注文を実行
                 if trade_decision:
                     order_response = self.execute_order(trade_decision)
                     print("注文実行:", order_response)
+                    
+                # TODO portfolio更新
+
+                # TODO 出口判断を取得
+                
+                # TODO 出口取引を決定
+                if trade_decision:
+                    order_response = self.execute_order(trade_decision)
+                    print("清算実行:", order_response)
+
+                # TODO portfolio更新
 
                 # 一定の待ち時間を設けてループを繰り返す
-                time.sleep(60)  # 例: 1 分ごとに実行
+                time.sleep(self.bot_operation_cycle)
 
             except Exception as e:
                 print("エラー発生:", str(e))
@@ -78,10 +98,13 @@ if __name__ == "__main__":
     exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
 
     # 取引戦略クラスを初期化
-    strategy = TradingStrategy()  # ここに自分の取引戦略クラスを指定
+    strategy = TradingStrategy()
+
+    # 取引戦略クラスを初期化
+    risk_management = RiskManagement(exchange)
 
     # Bot クラスを初期化
-    bot = Bot(exchange, strategy)
+    bot = Bot(exchange, strategy, risk_management)
 
     # ボットを実行
     bot.run()

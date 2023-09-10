@@ -112,6 +112,14 @@ class BybitExchange(Exchange):
         return response
 
     def __get_nearest_epoch_time(self, end_epoch):
+        """_summary_
+
+        Args:
+            end_epoch (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
         # 現在のローカル時刻を取得
         current_local_time = datetime.now()
         current_local_epoch = int(current_local_time.timestamp())
