@@ -144,7 +144,7 @@ class BybitExchange(Exchange):
         
         return epoch_time
 
-    def get_ohlcv_data(self):
+    def fetch_ohlcv(self):
         """
         取引情報を取得
 
@@ -270,7 +270,7 @@ if __name__ == "__main__":
     print("価格データを取得")
     print("----------")
     start_price_time = time.time()
-    ohlcv_data = exchange.get_ohlcv_data()
+    ohlcv_data = exchange.fetch_ohlcv()
     end_price_time = time.time()
     
     # 表示するエントリーのインデックスを指定
