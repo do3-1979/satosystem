@@ -111,6 +111,39 @@ class BybitExchange(Exchange):
 
         return response
 
+    def __get_nearest_epoch_time(self, end_epoch):
+        # 現在のローカル時刻を取得
+        current_local_time = datetime.now()
+        current_local_epoch = int(current_local_time.timestamp())
+        
+        # 古い時刻を採用
+        if end_epoch < current_local_epoch:
+            target_epoch = end_epoch
+            target_time = datetime.fromtimestamp(target_epoch)
+        else:
+            target_epoch = current_local_epoch
+            target_time = current_local_time
+        
+        # 指定された時刻リスト
+        target_near_times = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23]
+        
+        # 現在の時刻から分と秒を0に設定
+        target_time = target_time.replace(minute=0, second=0)
+        
+        # 最も近い時刻を選択
+        nearest_time = min(target_near_times, key=lambda x: abs(x - target_time.hour))
+        
+        # 現在の年月日を取得
+        year = target_time.year
+        month = target_time.month
+        day = target_time.day
+        
+        # 選択した時刻でepoch時間を作成
+        epoch_time_str = datetime(year, month, day, nearest_time, 0, 0)
+        epoch_time = int(epoch_time_str.timestamp())
+        
+        return epoch_time
+
     def get_ohlcv_data(self):
         """
         取引情報を取得
@@ -136,13 +169,16 @@ class BybitExchange(Exchange):
             market = "ETHUSD"
 
         # 期間指定
-        start_utc = Config.get_start_utc()
-        end_utc = Config.get_end_utc()
+        start_epoch = Config.get_start_epoch()
+        end_epoch = Config.get_end_epoch()
 
         server_retry_wait = Config.get_server_retry_wait()
+        
+        # 終端時間の計算
+        end_epoch_fixed = self.__get_nearest_epoch_time(end_epoch)
 
-        get_time = start_utc
-        while get_time < end_utc:
+        get_time = start_epoch
+        while get_time < end_epoch_fixed:
             # 価格取得
             while True:
                 try:
@@ -165,7 +201,7 @@ class BybitExchange(Exchange):
             for i in range(len(ohlcv)):
                 # 終端時間を超えないかぎり取得
                 tmp_time = ohlcv[i][0] / 1000 
-                if tmp_time < end_utc:
+                if tmp_time < end_epoch_fixed:
                     if ohlcv[i][1] != 0 and \
                     ohlcv[i][2] != 0 and \
                     ohlcv[i][3] != 0 and \
@@ -184,7 +220,7 @@ class BybitExchange(Exchange):
 
         return ohlcv_data
 
-    def fetch_ticker(self, market_type):
+    def fetch_ticker(self):
         """
         指定されたペアの最新の価格情報を取得します.
 
@@ -252,8 +288,8 @@ if __name__ == "__main__":
         print(f"出来高: {entry['Volume']}")
         print("----------")
 
-    print("BTC/USD の最新価格情報")
-    price = exchange.fetch_ticker('BTC/USD')
+    print(f"{Config.get_market()} の最新価格情報")
+    price = exchange.fetch_ticker()
     print(f"価格: {price}")
     print("----------")
 
