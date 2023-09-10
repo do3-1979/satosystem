@@ -167,31 +167,37 @@ class Config:
         return cls.config['Period']['end_time']
 
     @classmethod
-    def get_start_utc(cls):
+    def get_start_epoch(cls):
         """
-        開始時刻をUTC時間で取得します.
+        開始時刻をepoch時間で取得します.
 
         Returns:
-            datetime: 開始時刻 (UTC)
+            datetime: 開始時刻 (epoch)
         """
         start_time_str = cls.config['Period']['start_time']
         start_time = datetime.strptime(start_time_str, "%Y/%m/%d %H:%M")
-        #start_time = pytz.timezone('UTC').localize(start_time)
+        #start_time = pytz.timezone('epoch').localize(start_time)
         start_unix = int(start_time.timestamp())
         return start_unix
 
     @classmethod
-    def get_end_utc(cls):
+    def get_end_epoch(cls):
         """
-        終了時刻をUTC時間で取得します.
+        終了時刻をepoch時間で取得します.
 
         Returns:
-            datetime: 終了時刻 (UTC)
+            datetime: 終了時刻 (epoch)
         """
+        end_unix = 9999999999
         end_time_str = cls.config['Period']['end_time']
-        end_time = datetime.strptime(end_time_str, "%Y/%m/%d %H:%M")
-        #end_time = pytz.timezone('UTC').localize(end_time)
-        end_unix = int(end_time.timestamp())
+
+        if (end_time_str == "None") or (end_time_str == ""):
+            pass
+        else:
+            end_time = datetime.strptime(end_time_str, "%Y/%m/%d %H:%M")
+            #end_time = pytz.timezone('epoch').localize(end_time)
+            end_unix = int(end_time.timestamp())
+
         return end_unix
     
     @classmethod
@@ -339,11 +345,11 @@ if __name__ == "__main__":
     print(f'Start Time: {start_time}')
     print(f'End Time: {end_time}')
 
-    # Period セクションの情報を取得 (UTC時間)
-    start_utc = Config.get_start_utc()
-    end_utc = Config.get_end_utc()
-    print(f'Start Time (UTC): {start_utc}')
-    print(f'End Time (UTC): {end_utc}')
+    # Period セクションの情報を取得 (epoch時間)
+    start_epoch = Config.get_start_epoch()
+    end_epoch = Config.get_end_epoch()
+    print(f'Start Time (epoch): {start_epoch}')
+    print(f'End Time (epoch): {end_epoch}')
 
     # Strategy セクションの情報を取得
     volatility_term = Config.get_volatility_term()
