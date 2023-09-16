@@ -99,12 +99,11 @@ class BybitExchange(Exchange):
 
         return usd_balance + eth_balance
 
-    def execute_order(self, symbol, side, quantity, price, order_type):
+    def execute_order(self, side, quantity, price, order_type):
         """
         注文を発行します.
 
         Args:
-            symbol (str): トレードするペアのシンボル (例: 'BTC/USD')
             side (str): 注文のタイプ ('buy' または 'sell')
             quantity (float): 注文数量
             price (float or None): 注文価格 (市場注文の場合は None)
@@ -115,14 +114,14 @@ class BybitExchange(Exchange):
         """
         if order_type == 'limit':
             order = self.exchange.create_limit_order(
-                symbol=symbol,
+                symbol=self.market,
                 side=side,
                 amount=quantity,
                 price=price
             )
         elif order_type == 'market':
             order = self.exchange.create_market_order(
-                symbol=symbol,
+                symbol=self.market,
                 side=side,
                 amount=quantity
             )

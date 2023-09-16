@@ -11,11 +11,9 @@ TradingStrategyクラスはエントリー条件とエグジット条件を評�
 必要に応じて、エントリー条件とエグジット条件をカスタマイズし、自分の取引戦略に合わせて設定できます。
 また、このクラスを拡張してさまざまな取引戦略を実装できます。
 """
-from datetime import datetime
-from config import Config
 from logger import Logger
-from bybit_exchange import BybitExchange
-import json
+from price_data_management import PriceDataManagement
+from risk_management import RiskManagement
 
 class TradingStrategy:
     """
@@ -32,80 +30,127 @@ class TradingStrategy:
 
     """
 
-    def __init__(self):
+    def __init__(self, price_data_management, risk_manager):
         self.logger = Logger()
+        self.trade_decision = { "decision": None, "side": None, "order_type": "Market"}
+        self.price_data_management = price_data_management
+        self.risk_manager = risk_manager
  
-    def evaluate_entry(self, price_data):
+    def evaluate_entry(self):
         """
         エントリー条件を評価し、エントリーするかどうかを決定します。
 
-        Args:
-            price_data (dict): 価格データ
+        """
+        side = None
+        decision = None
+        
+        # シグナルをチェック
+        signals = self.price_data_management.get_signals()
+        
+        # PVO有効範囲かつドンチャンチャネルブレイク発生
+        if signals["pvo"]["signal"] == True:
+            if signals["donchian"]["signal"] == True:
+                if signals["pvo"]["side"] == "BUY":
+                    side = "BUY"
+                    decision = "ENTRY"
+                elif signals["pvo"]["side"] == "SELL":
+                    side = "SELL"
+                    decision = "ENTRY"
 
-        Returns:
-            bool: エントリーが成功した場合はTrue、それ以外はFalse
+        # 保有状態を確認
+        # TODO
+        
+        self.trade_decision["side"] = side
+        self.trade_decision["decision"] = decision
+
+        return
+    
+    def evaluate_add(self):
+        """
+        ピラミッド条件を評価し、買い増しするかどうかを決定します。
 
         """
-        if self.entry_condition(price_data):
-            self.position = {"entry_price": price_data["close_price"]}
-            return True
-        return False
+        side = None
+        decision = None
+        position_side = None
+        
+        # 保有状態を確認 ※ポジションなければ戻す
+        # TODO
+        if position_side != None:
+            # 追加レンジ幅を取得
+            range = self.risk_manager.get_entry_range()
+            
+            # 前回取得値を取得
+            last_entry_price = self.risk_manager.get_last_entry_price()
+            
+            # 現在値のレンジ幅超過を確認
+            price = self.price_data_management.get_ticker()
+            
+            # 価格がエントリー方向に基準レンジ分だけ進んだか判定する
+            if position_side == "BUY" and (price - last_entry_price) > range:
+                side = "BUY"
+                decision = "ADD"
+            elif position_side == "SELL" and (last_entry_price - price) > range:
+                side = "SELL"
+                decision = "ADD"
+        
+        self.trade_decision["side"] = side
+        self.trade_decision["decision"] = decision
 
-    def evaluate_add(self, price_data):
-        """
-        ピラミッディング条件を評価し、ピラミッディングするかどうかを決定します。
+        return
 
-        Args:
-            price_data (dict): 価格データ
-
-        Returns:
-            bool: ピラミッディングが成功した場合はTrue、それ以外はFalse
-
-        """
-        if self.add_condition(price_data):
-            # ピラミッディングの条件を満たす場合の処理
-            return True
-        return False
-
-    def evaluate_exit(self, price_data):
+    def evaluate_exit(self):
         """
         エグジット条件を評価し、ポジションをクローズするかどうかを決定します。
 
-        Args:
-            price_data (dict): 価格データ
-
-        Returns:
-            bool: エグジットが成功した場合はTrue、それ以外はFalse
-
         """
-        if self.exit_condition(price_data):
-            self.position = None
-            return True
-        return False
+        side = None
+        decision = None
+        position_side = None
 
-    def make_trade_decision(self, balance):
+        # 保有状態を確認 ※ポジションなければ戻す
+        # TODO
+        # position_side = 
+
+        # ストップ値取得
+        stop_price = self.risk_manager.get_stop_price()
+        
+        # 現在値取得
+        price = self.price_data_management.get_ticker()
+        
+        # 現在値とストップ値比較
+        if position_side == "BUY":
+            if price < stop_price:
+                side = "SELL"
+                decision = "EXIT"
+        elif position_side == "SELL":
+            if price > stop_price:
+                side = "BUY"
+                decision = "EXIT"
+
+        self.trade_decision["side"] = side
+        self.trade_decision["decision"] = decision
+
+        return
+
+    def make_trade_decision(self):
         """
         トレードの実行判断を行います。
 
-        Args:
-            action (str): トレードアクション ('buy' または 'sell')
-            price_data (dict): 価格データ
-
         """
-             
-        # トレードの実行判断
-        # オーダーサイズ、サイドを返す
-        # self.evaluate_entry()
-        # self.evaluate_add()
+        self.evaluate_entry()
+        self.evaluate_add()
+        self.evaluate_exit()
  
-        return None
+        return self.trade_decision
 
 if __name__ == "__main__":
     # TradingStrategyクラスの初期化
-    strategy = TradingStrategy()
-
-    balance = 10000
+    price_data_management = PriceDataManagement()
+    risk_manager = RiskManagement(price_data_management)
+    strategy = TradingStrategy(price_data_management, risk_manager)
 
     # 取引情報を決定
-    strategy.make_trade_decision(balance)
+    trade_decision = strategy.make_trade_decision()
+    print(trade_decision)
 
