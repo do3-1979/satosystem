@@ -11,20 +11,18 @@ RiskManagementクラス:
 """
 from config import Config
 from logger import Logger
+from price_data_management import PriceDataManagement
 from bybit_exchange import BybitExchange
 import time
 
 class RiskManagement:
-    def __init__(self, exchange):
+    def __init__(self, price_data_management):
         """
         リスク管理クラスを初期化します。
 
-        Args:
-            risk_percentage (float): リスク許容度（%）
-            account_balance (float): アカウントの残高
         """
-        self.exchange = exchange
         self.logger = Logger()
+        self.price_data_management = price_data_management
         self.risk_percentage = Config.get_risk_percentage()
         self.account_balance = Config.get_account_balance()
 
@@ -46,15 +44,48 @@ class RiskManagement:
         self.stop_AF_max = Config.get_stop_AF_max()
         self.stop_ATR = 0
 
+        # ストップ値
+        self.stop_price = 0
+        self.last_entry_price = 0
+
+    def get_stop_price(self):
+        
+        return self.stop_price
+    
+    def get_entry_range(self):
+        
+        return self.entry_range * self.position_size
+
+    def get_last_entry_price(self):
+        
+        # TODO 値更新
+        return self.last_entry_price
+
+    def update_risk_status(self):
+        
+        # TODO 実装
+        self.calcurate_stop_price()
+        
+        return
+
     def calcurate_stop_price(self):
         
         # TODO 初回のstop値取得
         # TODO パラボリックSAR計算
         # TODO ストップレンジとの比較
         
+        # ポジション保有状態
+        # TODO
+        
+        # 現在値取得
+        # TODO
+        
+        # 現在値からレンジ幅でストップ値を計算
+        # TODO
+        
         return
 
-    def calculate_position_size(self, balance_tether, price, volatility):
+    def calculate_position_size(self, balance_tether, price):
         """
         ポジションサイズ[通貨単位]を計算します。
 
@@ -74,6 +105,7 @@ class RiskManagement:
         else:
             # 初回のstop値を計算
             # ボラティリティの幅からストップ幅を計算
+            volatility = self.price_data_management.get_volatility()
             stop_range = self.initial_stop_range * volatility
             # 総購入数は、総資産 x 失っていい割合 / ボラティリティで動きうる幅で決定
             total_size = round( ( balance_tether * 100 * self.risk_percentage / stop_range / 100 ), 7 )
@@ -109,13 +141,11 @@ class RiskManagement:
 
         return position_size
 
-from trading_strategy import TradingStrategy
-
 if __name__ == "__main__":
     # RiskManagement クラスの初期化
     exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
-    strategy = TradingStrategy()
-    risk_manager = RiskManagement(exchange)
+    price_data_management = PriceDataManagement()
+    risk_manager = RiskManagement(price_data_management)
 
     # 最新の値を取得
     price = exchange.fetch_ticker()
@@ -127,9 +157,8 @@ if __name__ == "__main__":
     balance_tether = 200
 
     # 取引情報を決定
-    strategy.make_trade_decision(balance_tether)
-    volatility = strategy.get_volatility()
+    price_data_management.update_price_data()
 
     # ポジションサイズを計算
-    position_size = risk_manager.calculate_position_size(balance_tether, price, volatility)
+    position_size = risk_manager.calculate_position_size(balance_tether, price)
     print(f'Position Size: {position_size}')

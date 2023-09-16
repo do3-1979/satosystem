@@ -19,6 +19,7 @@ from price_data_management import PriceDataManagement
 from bybit_exchange import BybitExchange
 from trading_strategy import TradingStrategy
 from risk_management import RiskManagement
+from order import Order
 
 class Bot:
     def __init__(self, exchange, strategy, risk_management, price_data_management):
@@ -57,8 +58,13 @@ class Bot:
                 self.price_data_management.show_latest_ohlcv()
                 # 最新価格を取得
                 price = self.price_data_management.get_ticker()
-                # ボラティリティを取得
-                volatility = self.price_data_management.get_volatility()
+
+                # シグナル発生ログ
+                # TODO 頻度を減らす
+                self.price_data_management.show_latest_signals()
+
+                # リスク制御を更新
+                # TODO 
 
                 # 取引所から口座残高を取得
                 #balance = self.exchange.get_account_balance_total()
@@ -68,32 +74,35 @@ class Bot:
                 # 取引戦略に口座残高を渡してトレード判断を取得
                 # TODO trade_decisionは辞書型　Orderクラスを作ったが活用してない
                 # --------------------------------------------
-                trade_decision = self.strategy.make_trade_decision(balance)
+                trade_decision = self.strategy.make_trade_decision()
 
                 # --------------------------------------------
-                # 取引戦略からの判断に基づいて注文を実行
+                # 取引決定の場合
                 # --------------------------------------------
-                position_size = self.risk_management.calculate_position_size(balance, price, volatility)
-                quantity = position_size * price
+                if trade_decision["decision"] != None:
+                    # --------------------------------------------
+                    # 清算時は全ポジション
+                    if trade_decision["decision"] == "EXIT":
+                        # TODO 保有資産を取得
+                        quantity = 0
+                    # リスクからポジションサイズ決定
+                    else:
+                        position_size = self.risk_management.calculate_position_size(balance, price)
+                        quantity = position_size * price
 
-                if trade_decision:
-                    order_response = self.execute_order(trade_decision)
+                    # 注文クラス作成
+                    order = Order(trade_decision["side"],
+                                    quantity,
+                                    price,
+                                    trade_decision["order_type"])
+
+                    order_response = self.execute_order(order)
                     print("注文実行:", order_response)
+                    # TODO エラー処理
 
-                # --------------------------------------------
-                # TODO portfolio更新
-                # --------------------------------------------                    
-
-                # TODO 出口判断を取得
-                
-                # TODO 出口取引を決定
-                if trade_decision:
-                    order_response = self.execute_order(trade_decision)
-                    print("清算実行:", order_response)
-
-                # --------------------------------------------
-                # TODO portfolio更新
-                # --------------------------------------------                    
+                    # --------------------------------------------
+                    # TODO portfolio更新
+                    # --------------------------------------------
 
                 # 一定の待ち時間を設けてループを繰り返す
                 time.sleep(self.bot_operation_cycle)
@@ -102,7 +111,7 @@ class Bot:
                 print("エラー発生:", str(e))
                 time.sleep(self.bot_operation_cycle)
 
-    def execute_order(self, trade_decision):
+    def execute_order(self, order):
         """
         注文を実行します。
 
@@ -112,26 +121,26 @@ class Bot:
         Returns:
             dict: 注文の実行結果
         """
-        symbol = trade_decision['symbol']
-        side = trade_decision['side']
-        quantity = trade_decision['quantity']
-        price = trade_decision['price']
-        order_type = trade_decision['order_type']
+        symbol = order['symbol']
+        side = order['side']
+        quantity = order['quantity']
+        price = order['price']
+        order_type = order['order_type']
         order_response = self.exchange.execute_order(symbol, side, quantity, price, order_type)
         return order_response
 
 if __name__ == "__main__":
     # 取引所クラスを初期化
     exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
-
-    # 取引戦略クラスを初期化
-    strategy = TradingStrategy()
-
-    # 取引戦略クラスを初期化
-    risk_management = RiskManagement(exchange)
-
+    
     # 価格情報クラスを初期化
     price_data_management = PriceDataManagement()
+
+    # リスク戦略クラスを初期化
+    risk_management = RiskManagement(price_data_management)
+
+    # 取引戦略クラスを初期化
+    strategy = TradingStrategy(price_data_management, risk_management)
 
     # Bot クラスを初期化
     bot = Bot(exchange, strategy, risk_management, price_data_management)

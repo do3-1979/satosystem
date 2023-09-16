@@ -89,7 +89,6 @@ class PriceDataManagement:
         high_sum = sum(i["high_price"] for i in ohlcv_data[-1 * volatility_term :])
         low_sum = sum(i["low_price"] for i in ohlcv_data[-1 * volatility_term :])
         volatility = round((high_sum - low_sum) / volatility_term)
-        self.volatility = volatility
         return volatility
 
     def show_latest_ticker(self):
@@ -121,9 +120,7 @@ class PriceDataManagement:
         """
         最新のトレードシグナルを表示するメソッドです。
         """
-        print("----------")
         self.logger.log("トレードシグナル:")
-        print("----------")
         for signal_type, signal_info in self.signals.items():
             self.logger.log(f"{signal_type}: Signal = {signal_info['signal']}, Side = {signal_info['side']}")
 
