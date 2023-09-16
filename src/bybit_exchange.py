@@ -70,6 +70,20 @@ class BybitExchange(Exchange):
         """
         balance = self.exchange.fetchBalance()
         return balance
+    
+    def get_account_balance_total(self):
+        """
+        口座上の使用可能な証拠金残高を取得します.
+
+        Returns:
+            int: 口座上の使用可能な証拠金残高
+        """
+        balance = self.exchange.fetchBalance()
+
+        usd_balance = balance['BTC']['total']
+        eth_balance = balance['ETH']['total']
+
+        return usd_balance + eth_balance
 
     def execute_order(self, symbol, side, quantity, price, order_type):
         """
@@ -273,6 +287,12 @@ if __name__ == "__main__":
     print("ETH Used: ", eth_balance['used'])
     print("ETH Free: ", eth_balance['free'])
     print("ETH Total: ", eth_balance['total'])
+
+    print("----------")
+    print("口座残高総合取得")
+    print("----------")
+    balance = exchange.get_account_balance_total()
+    print(f"balance : {balance}")
 
     print("----------")
     print("価格データを取得")

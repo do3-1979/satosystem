@@ -11,7 +11,9 @@ Bot クラスは定期的に口座残高を取得し、取引戦略に渡して�
 また、取引戦略については YourStrategy() の部分にあなたの取引戦略クラスを指定してください。
 取引戦略クラスは、口座残高や市場データを分析し、トレード判断を返すロジックを実装する必要があります。
 """
+import os
 import time
+from logger import Logger
 from bybit_exchange import BybitExchange
 from config import Config
 from trading_strategy import TradingStrategy
@@ -28,6 +30,7 @@ class Bot:
         """
         self.exchange = exchange
         self.strategy = strategy
+        self.logger = Logger()
         self.risk_management = risk_management
         self.bot_operation_cycle = Config.get_bot_operation_cycle()
 
@@ -38,20 +41,21 @@ class Bot:
         while True:
             try:
                 # 取引所から口座残高を取得
-                balance = self.exchange.get_account_balance()
-
+                #balance = self.exchange.get_account_balance_total()
+                # TODO balanceの意味が決まってない BTCなのかBTCUSDなのか
+                balance = 10000
                 # 最新価格を取得
                 price = self.exchange.fetch_ticker()
 
                 # 取引戦略に口座残高を渡してトレード判断を取得
-                # TODO strategyクラスにmake_trade_decisionメソッドを追加する
                 # TODO trade_decisionは辞書型　Orderクラスを作ったが活用してない
                 trade_decision = self.strategy.make_trade_decision(balance)
                 # ボラティリティを取得
                 volatility = self.strategy.get_volatility()
 
                 # 取引量を決定
-                quantity = self.risk_management.calculate_position_size(balance, price, volatility)
+                position_size = self.risk_management.calculate_position_size(balance, price, volatility)
+                quantity = position_size * price
 
                 # 取引戦略からの判断に基づいて注文を実行
                 if trade_decision:
@@ -74,6 +78,7 @@ class Bot:
 
             except Exception as e:
                 print("エラー発生:", str(e))
+                time.sleep(self.bot_operation_cycle)
 
     def execute_order(self, trade_decision):
         """
