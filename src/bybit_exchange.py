@@ -55,6 +55,20 @@ class BybitExchange(Exchange):
         self.api_key = api_key
         self.api_secret = api_secret
 
+        # 設定可能なパラメタ：1,3,5,15,30,60,120,240,360,720,D,M,W
+        time_frame = Config.get_time_frame()
+        if time_frame == 60:
+            self.timeframe = '1h'
+        elif time_frame == 120:
+            self.timeframe = '2h'
+
+        # マーケット変換
+        market_type = Config.get_market()
+        if market_type == 'BTC/USD':
+            self.market = "BTCUSD"
+        elif market_type == 'ETH/USD':
+            self.market = "ETHUSD"
+
         self.exchange = ccxt.bybit({
             'apiKey': api_key,
             'secret': api_secret,
@@ -176,20 +190,6 @@ class BybitExchange(Exchange):
         err_occuerd = False
         ohlcv_data = []
 
-        # 設定可能なパラメタ：1,3,5,15,30,60,120,240,360,720,D,M,W
-        time_frame = Config.get_time_frame()
-        if time_frame == 60:
-            timeframe = '1h'
-        elif time_frame == 120:
-            timeframe = '2h'
-
-        # マーケット変換
-        market_type = Config.get_market()
-        if market_type == 'BTC/USD':
-            market = "BTCUSD"
-        elif market_type == 'ETH/USD':
-            market = "ETHUSD"
-
         # 期間指定
         start_epoch = Config.get_start_epoch()
         end_epoch = Config.get_end_epoch()
@@ -205,8 +205,8 @@ class BybitExchange(Exchange):
             while True:
                 try:
                     ohlcv = self.exchange.fetch_ohlcv(
-                        symbol = market,
-                        timeframe = timeframe,
+                        symbol = self.market,
+                        timeframe = self.timeframe,
                         since = int(get_time * 1000), # bybitはミリ秒なので1000倍
                     )
                     break
@@ -240,6 +240,48 @@ class BybitExchange(Exchange):
                     break
             get_time = tmp_time
 
+        return ohlcv_data
+
+    def fetch_latest_ohlcv(self):
+        """
+        最新取引情報を取得
+
+        Returns:
+            list: 価格データのリスト
+        """
+        err_occuerd = False
+        ohlcv_data = []
+
+        server_retry_wait = Config.get_server_retry_wait()
+
+        while True:
+            try:
+                ohlcv = self.exchange.fetch_ohlcv(
+                    symbol = self.market,
+                    timeframe = self.timeframe,
+                )
+                break
+            except ccxt.BaseError as e:
+                log_error(f"最新価格取得エラー:{str(e)}")
+                if err_occuerd == False:
+                    err_occuerd = True
+                time.sleep(server_retry_wait)
+
+        if err_occuerd == True:
+            log_error("最新価格取得エラー復帰")
+
+        # 終端時間を超えないかぎり取得
+        
+        latest_ohlcv = ohlcv[-1]
+        tmp_time = latest_ohlcv[0] / 1000 
+        ohlcv_data.append({ "close_time" : tmp_time,
+            "close_time_dt" : datetime.fromtimestamp(tmp_time).strftime('%Y/%m/%d %H:%M'),
+            "open_price" : latest_ohlcv[1],
+            "high_price" : latest_ohlcv[2],
+            "low_price" : latest_ohlcv[3],
+            "close_price": latest_ohlcv[4],
+            "Volume" : latest_ohlcv[5]})
+        
         return ohlcv_data
 
     def fetch_ticker(self):
@@ -323,6 +365,22 @@ if __name__ == "__main__":
 
     print("口座残高情報取得にかかった時間: {:.2f}秒".format(end_balance_time - start_balance_time))
     print("価格データ取得にかかった時間: {:.2f}秒".format(end_price_time - start_price_time))
+
+    print("----------")
+    print("価格データを取得")
+    print("----------")
+    start_price_time = time.time()
+    ohlcv_data = exchange.fetch_latest_ohlcv()
+    end_price_time = time.time()
+
+    entry = ohlcv_data[0]
+    print(f"時刻: {entry['close_time_dt']}")
+    print(f"開始価格: {entry['open_price']}")
+    print(f"最高価格: {entry['high_price']}")
+    print(f"最低価格: {entry['low_price']}")
+    print(f"終値: {entry['close_price']}")
+    print(f"出来高: {entry['Volume']}")
+    print("----------")
 
     # 注文を発行 (例: BTC/USD マーケットで1BTC を買う)
     # order_response = exchange.execute_order('BTCUSD', 'buy', 1, None, 'market')
