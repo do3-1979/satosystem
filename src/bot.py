@@ -14,13 +14,14 @@ Bot クラスは定期的に口座残高を取得し、取引戦略に渡して�
 import os
 import time
 from logger import Logger
-from bybit_exchange import BybitExchange
 from config import Config
+from price_data_management import PriceDataManagement
+from bybit_exchange import BybitExchange
 from trading_strategy import TradingStrategy
 from risk_management import RiskManagement
 
 class Bot:
-    def __init__(self, exchange, strategy, risk_management):
+    def __init__(self, exchange, strategy, risk_management, price_data_management):
         """
         Bot クラスの初期化
 
@@ -30,39 +31,58 @@ class Bot:
         """
         self.exchange = exchange
         self.strategy = strategy
-        self.logger = Logger()
         self.risk_management = risk_management
+        self.price_data_management = price_data_management
+        self.logger = Logger()
+
         self.bot_operation_cycle = Config.get_bot_operation_cycle()
 
     def run(self):
         """
         ボットのメインループを実行します。口座残高を取得し、取引戦略に基づいてトレードを実行します。
         """
+        self.logger.log("--- BOT START -----------------------------------------")
+        config_instance = Config()
+        self.logger.log(str(config_instance))
+        self.logger.log("-------------------------------------------------------")
+
         while True:
             try:
+                # --------------------------------------------
+                # 最初に価格情報の更新
+                # --------------------------------------------
+                self.price_data_management.update_price_data()
+                
+                # 取得情報を表示
+                self.price_data_management.show_latest_ohlcv()
+                # 最新価格を取得
+                price = self.price_data_management.get_ticker()
+                # ボラティリティを取得
+                volatility = self.price_data_management.get_volatility()
+
                 # 取引所から口座残高を取得
                 #balance = self.exchange.get_account_balance_total()
-                # TODO balanceの意味が決まってない BTCなのかBTCUSDなのか
                 balance = 10000
-                # 最新価格を取得
-                price = self.exchange.fetch_ticker()
 
+                # --------------------------------------------
                 # 取引戦略に口座残高を渡してトレード判断を取得
                 # TODO trade_decisionは辞書型　Orderクラスを作ったが活用してない
+                # --------------------------------------------
                 trade_decision = self.strategy.make_trade_decision(balance)
-                # ボラティリティを取得
-                volatility = self.strategy.get_volatility()
 
-                # 取引量を決定
+                # --------------------------------------------
+                # 取引戦略からの判断に基づいて注文を実行
+                # --------------------------------------------
                 position_size = self.risk_management.calculate_position_size(balance, price, volatility)
                 quantity = position_size * price
 
-                # 取引戦略からの判断に基づいて注文を実行
                 if trade_decision:
                     order_response = self.execute_order(trade_decision)
                     print("注文実行:", order_response)
-                    
+
+                # --------------------------------------------
                 # TODO portfolio更新
+                # --------------------------------------------                    
 
                 # TODO 出口判断を取得
                 
@@ -71,7 +91,9 @@ class Bot:
                     order_response = self.execute_order(trade_decision)
                     print("清算実行:", order_response)
 
+                # --------------------------------------------
                 # TODO portfolio更新
+                # --------------------------------------------                    
 
                 # 一定の待ち時間を設けてループを繰り返す
                 time.sleep(self.bot_operation_cycle)
@@ -108,8 +130,11 @@ if __name__ == "__main__":
     # 取引戦略クラスを初期化
     risk_management = RiskManagement(exchange)
 
+    # 価格情報クラスを初期化
+    price_data_management = PriceDataManagement()
+
     # Bot クラスを初期化
-    bot = Bot(exchange, strategy, risk_management)
+    bot = Bot(exchange, strategy, risk_management, price_data_management)
 
     # ボットを実行
     bot.run()

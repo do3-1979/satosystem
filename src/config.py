@@ -312,6 +312,38 @@ class Config:
         """
         return int(cls.config['Setting']['bot_operation_cycle'])
 
+    def __str__(self):
+        """
+        コンフィグ内容を可読性よく文字列として表現するメソッドです。
+        """
+        config_str = f"\nRisk Percentage: {self.get_risk_percentage()}\n"
+        config_str += f"Account Balance: {self.get_account_balance()}\n"
+        config_str += f"Leverage: {self.get_leverage()}\n"
+        config_str += f"Entry Times: {self.get_entry_times()}\n"
+        config_str += f"Entry Range: {self.get_entry_range()}\n"
+        config_str += f"Stop Range: {self.get_stop_range()}\n"
+        config_str += f"Stop AF: {self.get_stop_AF()}\n"
+        config_str += f"Stop AF Add: {self.get_stop_AF_add()}\n"
+        config_str += f"Stop AF Max: {self.get_stop_AF_max()}\n"
+        config_str += f"Lot Limit Lower: {self.get_lot_limit_lower()}\n"
+        config_str += f"Balance Tether Limit: {self.get_balance_tether_limit()}\n"
+        config_str += f"Market: {self.get_market()}\n"
+        config_str += f"Market Unit: {self.get_market_unit_pair()}\n"
+        config_str += f"Time Frame: {self.get_time_frame()}\n"
+        config_str += f"Start Time: {self.get_start_time()}\n"
+        config_str += f"End Time: {self.get_end_time()}\n"
+        config_str += f"Start Time (epoch): {self.get_start_epoch()}\n"
+        config_str += f"End Time (epoch): {self.get_end_epoch()}\n"
+        config_str += f"Volatility Term: {self.get_volatility_term()}\n"
+        config_str += f"Donchian Buy Term: {self.get_donchian_buy_term()}\n"
+        config_str += f"Donchian Sell Term: {self.get_donchian_sell_term()}\n"
+        config_str += f"PVO Short Term: {self.get_pvo_s_term()}\n"
+        config_str += f"PVO Long Term: {self.get_pvo_l_term()}\n"
+        config_str += f"PVO Threshold: {self.get_pvo_threshold()}\n"
+        config_str += f"Server Retry Wait: {self.get_server_retry_wait()}\n"
+        config_str += f"Bot Operation Cycle: {self.get_bot_operation_cycle()}"
+
+        return config_str
 
 if __name__ == "__main__":
     # APIキーとAPIシークレットを取得
@@ -384,3 +416,8 @@ if __name__ == "__main__":
     bot_operation_cycle = Config.get_bot_operation_cycle()
     print(f'Server Retry Wait: {server_retry_wait}')
     print(f'Bot Operation Cycle: {bot_operation_cycle}')
+
+    # コンフィグ一覧表示
+    config_instance = Config()
+    print("----------")
+    print(str(config_instance))
