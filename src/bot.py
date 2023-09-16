@@ -19,10 +19,11 @@ from price_data_management import PriceDataManagement
 from bybit_exchange import BybitExchange
 from trading_strategy import TradingStrategy
 from risk_management import RiskManagement
+from portfolio import Portfolio
 from order import Order
 
 class Bot:
-    def __init__(self, exchange, strategy, risk_management, price_data_management):
+    def __init__(self, exchange, strategy, risk_management, price_data_management, portfolio):
         """
         Bot クラスの初期化
 
@@ -34,8 +35,10 @@ class Bot:
         self.strategy = strategy
         self.risk_management = risk_management
         self.price_data_management = price_data_management
+        self.portfolio = portfolio
         self.logger = Logger()
 
+        self.market_type = Config.get_market()
         self.bot_operation_cycle = Config.get_bot_operation_cycle()
 
     def run(self):
@@ -75,7 +78,6 @@ class Bot:
                 # TODO trade_decisionは辞書型　Orderクラスを作ったが活用してない
                 # --------------------------------------------
                 trade_decision = self.strategy.make_trade_decision()
-
                 # --------------------------------------------
                 # 取引決定の場合
                 # --------------------------------------------
@@ -83,12 +85,13 @@ class Bot:
                     # --------------------------------------------
                     # 清算時は全ポジション
                     if trade_decision["decision"] == "EXIT":
-                        # TODO 保有資産を取得
-                        quantity = 0
+                        # 保有資産を取得
+                        position_size = self.portfolio.get_position_quantity(self.market_type)
                     # リスクからポジションサイズ決定
                     else:
                         position_size = self.risk_management.calculate_position_size(balance, price)
-                        quantity = position_size * price
+                    # ベースに帰着
+                    quantity = position_size * price
 
                     # 注文クラス作成
                     order = Order(trade_decision["side"],
@@ -96,13 +99,15 @@ class Bot:
                                     price,
                                     trade_decision["order_type"])
 
+                    print("order:", order)
                     order_response = self.execute_order(order)
                     print("注文実行:", order_response)
                     # TODO エラー処理
 
                     # --------------------------------------------
-                    # TODO portfolio更新
+                    # portfolio更新
                     # --------------------------------------------
+                    self.portfolio.update_position_quantity(self.market_type, quantity, order.side)
 
                 # 一定の待ち時間を設けてループを繰り返す
                 time.sleep(self.bot_operation_cycle)
@@ -132,18 +137,21 @@ class Bot:
 if __name__ == "__main__":
     # 取引所クラスを初期化
     exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
+
+    # 資産管理クラスを初期化（唯一であること TODO シングルトン化）
+    portfolio = Portfolio()
     
-    # 価格情報クラスを初期化
+    # 価格情報クラスを初期化（唯一であること TODO シングルトン化）
     price_data_management = PriceDataManagement()
 
     # リスク戦略クラスを初期化
     risk_management = RiskManagement(price_data_management)
 
     # 取引戦略クラスを初期化
-    strategy = TradingStrategy(price_data_management, risk_management)
+    strategy = TradingStrategy(price_data_management, risk_management, portfolio)
 
     # Bot クラスを初期化
-    bot = Bot(exchange, strategy, risk_management, price_data_management)
+    bot = Bot(exchange, strategy, risk_management, price_data_management, portfolio)
 
     # ボットを実行
     bot.run()
