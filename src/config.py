@@ -378,7 +378,7 @@ if __name__ == "__main__":
     print(f'Balance Thther Limit: {balance_tether_limit}')
 
     # Market セクションの情報を取得
-    market = Config.get_market()
+    market = orderorder
     time_frame = Config.get_time_frame()
     market_unit_pair = Config.get_market_unit_pair()
     print(f'Market: {market}')
