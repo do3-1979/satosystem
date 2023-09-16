@@ -11,9 +11,11 @@ TradingStrategyクラスはエントリー条件とエグジット条件を評�
 必要に応じて、エントリー条件とエグジット条件をカスタマイズし、自分の取引戦略に合わせて設定できます。
 また、このクラスを拡張してさまざまな取引戦略を実装できます。
 """
+from datetime import datetime
 from config import Config
 from logger import Logger
 from bybit_exchange import BybitExchange
+import json
 
 class TradingStrategy:
     """
@@ -112,7 +114,6 @@ class TradingStrategy:
         """
         return self.volatility
 
-
     def calcurate_volatility(self, ohlcv_data):
         """_summary_
 
@@ -142,36 +143,51 @@ class TradingStrategy:
         tmp_ohlcv_data = []
         
         # 価格を取得
-        tmp_ohlcv_data = self.exchange.fetch_ohlcv()
+        tmp_ohlcv_data = self.exchange.fetch_ohlcv()        
         price = self.exchange.fetch_ticker()
-        
+        # YMDDBG
+        # file = open("/home/satoshi/work/satosystem/test/test_data/price_data.json","r",encoding="utf-8")
+        # tmp_ohlcv_data = json.load(file)
+        # YMDDBG
+        latest_ohlcv_data = tmp_ohlcv_data[-1]
+
         # 初回は値更新のみ
         if self.prev_close_time == 0:
             # 価格データを更新
-            self.prev_close_time = tmp_ohlcv_data[-1]["close_time"]
+            self.prev_close_time = latest_ohlcv_data['close_time']
             self.ohlcv_data = tmp_ohlcv_data
             self.volatility = self.calcurate_volatility(tmp_ohlcv_data)
 
+            self.logger.log(f"ティッカー値: {price}")
+
             return
-        # 価格データ更新があれば
-        elif self.prev_close_time < tmp_ohlcv_data[-1]["close_time"]:
+        
+        # 価格データ更新時に判断
+        elif self.prev_close_time < latest_ohlcv_data['close_time']:
+            self.logger.log(f"終値時間: {datetime.fromtimestamp(latest_ohlcv_data['close_time']).strftime('%Y/%m/%d %H:%M')}"
+                f"  高値: {round(latest_ohlcv_data['high_price'])}"
+                f"  安値: {round(latest_ohlcv_data['low_price'])}"
+                f"  終値: {round(latest_ohlcv_data['close_price'])}"
+                f"  出来高: {round(latest_ohlcv_data['Volume'])}")
+            
             # トレード判断に必要な情報を更新
             self.signal_donchian = self.__evaluate_donchian(self.ohlcv_data, price)
-            volume = tmp_ohlcv_data[-1]["Volume"]
+            volume = latest_ohlcv_data["Volume"]
             self.signal_pvo = self.__evaluate_pvo(self.ohlcv_data, volume)
             
             self.logger.log(f"donchian : {self.signal_donchian}")
             self.logger.log(f"pvo : {self.signal_pvo}")
             # 価格データを更新
-            self.prev_close_time = tmp_ohlcv_data[-1]["close_time"]
+            self.prev_close_time = latest_ohlcv_data["close_time"]
             self.ohlcv_data = tmp_ohlcv_data
             self.volatility = self.calcurate_volatility(tmp_ohlcv_data)
             
-        # トレードの実行判断
-        # オーダーサイズ、サイドを返す
-        # self.evaluate_entry()
-        # self.evaluate_add()
-        # self.evaluate_exit()
+            # トレードの実行判断
+            # オーダーサイズ、サイドを返す
+            # self.evaluate_entry()
+            # self.evaluate_add()
+        else:
+            self.logger.log(f"ティッカー値: {price}")
 
         return None
 

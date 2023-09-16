@@ -12,6 +12,7 @@ RiskManagementクラス:
 from config import Config
 from logger import Logger
 from bybit_exchange import BybitExchange
+import time
 
 class RiskManagement:
     def __init__(self, exchange):
@@ -28,7 +29,7 @@ class RiskManagement:
         self.account_balance = Config.get_account_balance()
 
         self.lot_limit_lower = Config.get_lot_limit_lower()
-        self.balance_limit = Config.get_balance_limit()
+        self.balance_tether_limit = Config.get_balance_tether_limit()
         self.capital_exhausted = False
         
         # 分割制御
@@ -53,9 +54,9 @@ class RiskManagement:
         
         return
 
-    def calculate_position_size(self, balance, price, volatility):
+    def calculate_position_size(self, balance_tether, price, volatility):
         """
-        ポジションサイズを計算します。
+        ポジションサイズ[通貨単位]を計算します。
 
         Args:
             entry_price (float): エントリー価格
@@ -67,15 +68,15 @@ class RiskManagement:
         position_size = 0
 
         # 口座残高が最低額を下回ったらエラーとする
-        if balance < self.balance_limit:
-            self.logger.log_error(f"証拠金{balance}が最低額{balance_limit}を下回ったので発注できません")
+        if balance_tether < self.balance_tether_limit:
+            self.logger.log_error(f"証拠金{balance_tether}が最低額{self.balance_tether_limit}を下回ったので発注できません")
             self.capital_exhausted = True
         else:
             # 初回のstop値を計算
             # ボラティリティの幅からストップ幅を計算
             stop_range = self.initial_stop_range * volatility
             # 総購入数は、総資産 x 失っていい割合 / ボラティリティで動きうる幅で決定
-            total_size = round( ( balance * 100 * self.risk_percentage / stop_range / 100 ), 7 )
+            total_size = round( ( balance_tether * 100 * self.risk_percentage / stop_range / 100 ), 7 )
             # 分割購入するので1買い当たりのサイズに変換
             tmp_size = round( ( total_size * 100 / self.entry_times / 100 ) , 7 )
 
@@ -98,9 +99,9 @@ class RiskManagement:
             """
 
             # 証拠金から購入可能な上限を得る
-            balance_max_size = round( ( balance * self.leverage  * 100 / price / 100 ) , 7 )
+            max_size = round( ( balance_tether * self.leverage  * 100 / price / 100 ) , 7 )
             # 分割サイズを購入可能上限未満にする
-            position_size = min(balance_max_size, tmp_size)
+            position_size = min(max_size, tmp_size)
             # クラスに記憶
             self.position_size = position_size
             # 購入可能上限に分割数をかけたものが総購入サイズ
@@ -122,12 +123,13 @@ if __name__ == "__main__":
     balance = exchange.get_account_balance()
     # BTCのused、free、total情報を表示
     #usd_balance = balance['BTC']['free']
-    usd_balance = 20000 
+    #balance_tether = balance * price 
+    balance_tether = 200
 
     # 取引情報を決定
-    strategy.make_trade_decision(usd_balance)
+    strategy.make_trade_decision(balance_tether)
     volatility = strategy.get_volatility()
 
     # ポジションサイズを計算
-    position_size = risk_manager.calculate_position_size(usd_balance, price, volatility)
-    print(f'Position Size: {position_size} units')
+    position_size = risk_manager.calculate_position_size(balance_tether, price, volatility)
+    print(f'Position Size: {position_size}')

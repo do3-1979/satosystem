@@ -137,6 +137,18 @@ class Config:
         return str(cls.config['Market']['market'])
 
     @classmethod
+    def get_market_unit_pair(cls):
+        """
+        マーケットからユニットペアを取得します.
+
+        Returns:
+            str: マーケット情報から取得したユニットペア
+        """
+        market_info = cls.config['Market']['market']
+        unit_pair = market_info[:3]  # マーケット情報から先頭の3文字を取得
+        return unit_pair
+
+    @classmethod
     def get_time_frame(cls):
         """
         時間軸を取得します.
@@ -271,14 +283,14 @@ class Config:
         return float(cls.config['Potfolio']['lot_limit_lower'])
 
     @classmethod
-    def get_balance_limit(cls):
+    def get_balance_tether_limit(cls):
         """
         最小証拠金を取得します.
 
         Returns:
             float: 最小証拠金
         """
-        return float(cls.config['Potfolio']['balance_limit'])
+        return float(cls.config['Potfolio']['balance_tether_limit'])
 
     @classmethod
     def get_server_retry_wait(cls):
@@ -320,7 +332,7 @@ if __name__ == "__main__":
     stop_AF_add = Config.get_stop_AF_add()
     stop_AF_max = Config.get_stop_AF_max()
     lot_limit_lower = Config.get_lot_limit_lower()
-    balance_limit = Config.get_balance_limit()
+    balance_tether_limit = Config.get_balance_tether_limit()
     print(f'Risk Percentage: {risk_percentage}')
     print(f'Account Balance: {account_balance}')
     print(f'Leverage: {leverage}')
@@ -331,12 +343,14 @@ if __name__ == "__main__":
     print(f'Stop AF Add: {stop_AF_add}')
     print(f'Stop AF Max: {stop_AF_max}')
     print(f'Lot Limit Lower: {lot_limit_lower}')
-    print(f'Balance Limit: {balance_limit}')
+    print(f'Balance Thther Limit: {balance_tether_limit}')
 
     # Market セクションの情報を取得
     market = Config.get_market()
     time_frame = Config.get_time_frame()
+    market_unit_pair = Config.get_market_unit_pair()
     print(f'Market: {market}')
+    print(f'Market Unit: {market_unit_pair}')
     print(f'Time Frame: {time_frame}')
 
     # Period セクションの情報を取得

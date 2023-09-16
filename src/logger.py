@@ -8,12 +8,28 @@ Loggerクラス:
 Loggerクラスのインスタンスを作成し、log() メソッドと log_error() メソッドを使用してログメッセージを出力できます。
 必要に応じてログレベルやフォーマットをカスタマイズすることができます。
 """
-
 import os
 import logging
 
 class Logger:
-    def __init__(self, log_file='log.txt'):
+    _instance = None  # シングルトンインスタンスを格納するクラス変数
+
+    def __new__(cls, log_file='log.txt'):
+        """
+        シングルトンインスタンスを生成または既存のインスタンスを返します。
+
+        Args:
+            log_file (str): ログを保存するファイル名
+
+        Returns:
+            Logger: Loggerクラスの唯一のインスタンス
+        """
+        if cls._instance is None:
+            cls._instance = super(Logger, cls).__new__(cls)
+            cls._instance._initialize(log_file)
+        return cls._instance
+
+    def _initialize(self, log_file):
         """
         Loggerクラスを初期化します。
 

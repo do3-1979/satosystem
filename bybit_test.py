@@ -129,7 +129,7 @@ def bybit_test_data_generate(flag):
             price.append(price_tmp[i])
 
     # priceをJSON形式で書き出す
-    with open('price_data.json', 'w', encoding='utf-8') as json_file:
+    with open('price_data2.json', 'w', encoding='utf-8') as json_file:
         json.dump(price, json_file, ensure_ascii=False, indent=4)
 
 def bybit_test(flag):
@@ -317,7 +317,7 @@ def line_notify( text ):
 # main 処理
 #--------------------------------------------------------------
 
-bybit_test( flag )
-#bybit_test_data_generate( flag )
+#bybit_test( flag )
+bybit_test_data_generate( flag )
 
 #EOF
