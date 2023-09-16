@@ -12,66 +12,44 @@ get_asset_quantity() メソッドで保有数量を取得し、update_asset_quan
 必要に応じて、このクラスを拡張してポートフォリオに関連する他の情報を追加できます。
 
 """
-from bybit_exchange import BybitExchange  # BybitExchange クラスのインポート
 from config import Config  # Config クラスのインポート
 
 # Portfolio クラスの定義
 class Portfolio:
-    def __init__(self, exchange):
-        self.assets = {}  # ポートフォリオ内の各通貨の保有数量
-        self.exchange = exchange  # 取引所クラスのインスタンス
+    def __init__(self):
+        self.positions = {"BTC/USD": {"quantity": 0, "side": None}, "ETH/USD": {"quantity": 0, "side": None}}  # ポートフォリオ内の各通貨の保有ポジション量
 
-    def get_asset_quantity(self, symbol):
+    def get_position_quantity(self, symbol):
         """
-        指定した通貨の保有数量を取得
-        :param symbol: 通貨ペア (例: 'BTC/USD')
-        :return: 保有数量
+        指定した通貨の保有ポジション量を取得
         """
-        if symbol in self.assets:
-            return self.assets[symbol]
+        if symbol in self.positions:
+            return self.positions[symbol]
         return 0
 
-    def update_asset_quantity(self, symbol, quantity):
+    def update_position_quantity(self, symbol, quantity, side):
         """
-        通貨の保有数量を更新
-        :param symbol: 通貨ペア (例: 'BTC/USD')
-        :param quantity: 更新後の数量
+        通貨の保有ポジション量を更新
         """
-        self.assets[symbol] = quantity
-
-    def get_account_balance(self):
-        """
-        口座の資産残高を取得し、ポートフォリオに反映
-        """
-        balance = self.exchange.get_account_balance()
-        for asset in balance['total']:
-            if asset != 'USD':
-                symbol = f"{asset}/USD"  # 通貨ペアを作成
-                quantity = balance['total'][asset]
-                self.update_asset_quantity(symbol, quantity)
+        self.positions[symbol]["quantity"] = quantity
+        self.positions[symbol]["side"] = side
 
     def __str__(self):
         portfolio_str = "Portfolio:\n"
-        for symbol, quantity in self.assets.items():
-            portfolio_str += f"{symbol}: {quantity}\n"
+        for symbol, detail in self.positions.items():
+            portfolio_str += f"{symbol}: {detail}\n"
         return portfolio_str
 
 # ポートフォリオのサンプル
 if __name__ == "__main__":
-    # 取引所クラスを初期化
-    exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
-
     # ポートフォリオクラスを初期化
-    portfolio = Portfolio(exchange)
+    portfolio = Portfolio()
 
-    # 口座の資産残高を取得し、ポートフォリオに反映
-    portfolio.get_account_balance()
+    portfolio.update_position_quantity("BTC/USD", 1000, "BUY")
+    
+    btc = portfolio.get_position_quantity('BTC/USD')
 
-    # 保有数量を取得して表示
-    btc_quantity = portfolio.get_asset_quantity('BTC/USD')
-    eth_quantity = portfolio.get_asset_quantity('ETH/USD')
-    print(f"BTC/USD quantity: {btc_quantity}")
-    print(f"ETH/USD quantity: {eth_quantity}")
+    print(f"BTC/USD position quantity: {btc['quantity']} side: {btc['side']}")
 
     # ポートフォリオ全体を表示
     print(portfolio)

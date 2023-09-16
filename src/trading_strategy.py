@@ -12,8 +12,10 @@ TradingStrategyクラスはエントリー条件とエグジット条件を評�
 また、このクラスを拡張してさまざまな取引戦略を実装できます。
 """
 from logger import Logger
+from config import Config
 from price_data_management import PriceDataManagement
 from risk_management import RiskManagement
+from portfolio import Portfolio
 
 class TradingStrategy:
     """
@@ -30,11 +32,12 @@ class TradingStrategy:
 
     """
 
-    def __init__(self, price_data_management, risk_manager):
+    def __init__(self, price_data_management, risk_manager, portfolio):
         self.logger = Logger()
         self.trade_decision = { "decision": None, "side": None, "order_type": "Market"}
         self.price_data_management = price_data_management
         self.risk_manager = risk_manager
+        self.portfolio = portfolio
  
     def evaluate_entry(self):
         """
@@ -58,10 +61,13 @@ class TradingStrategy:
                     decision = "ENTRY"
 
         # 保有状態を確認
-        # TODO
+        market = Config.get_market()
+        portfolio = self.portfolio.get_position_quantity(market)
         
-        self.trade_decision["side"] = side
-        self.trade_decision["decision"] = decision
+        # ポジションがなかったら
+        if portfolio["quantity"] == 0:
+            self.trade_decision["side"] = side
+            self.trade_decision["decision"] = decision
 
         return
     
@@ -108,25 +114,27 @@ class TradingStrategy:
         decision = None
         position_side = None
 
-        # 保有状態を確認 ※ポジションなければ戻す
-        # TODO
-        # position_side = 
-
-        # ストップ値取得
-        stop_price = self.risk_manager.get_stop_price()
+        # 保有状態を確認
+        market = Config.get_market()
+        portfolio = self.portfolio.get_position_quantity(market)
         
-        # 現在値取得
-        price = self.price_data_management.get_ticker()
-        
-        # 現在値とストップ値比較
-        if position_side == "BUY":
-            if price < stop_price:
-                side = "SELL"
-                decision = "EXIT"
-        elif position_side == "SELL":
-            if price > stop_price:
-                side = "BUY"
-                decision = "EXIT"
+        # ポジションがあったら
+        if portfolio["quantity"] != 0:
+            # ストップ値取得
+            stop_price = self.risk_manager.get_stop_price()
+            
+            # 現在値取得
+            price = self.price_data_management.get_ticker()
+            
+            # 現在値とストップ値比較
+            if position_side == "BUY":
+                if price < stop_price:
+                    side = "SELL"
+                    decision = "EXIT"
+            elif position_side == "SELL":
+                if price > stop_price:
+                    side = "BUY"
+                    decision = "EXIT"
 
         self.trade_decision["side"] = side
         self.trade_decision["decision"] = decision
@@ -146,9 +154,10 @@ class TradingStrategy:
 
 if __name__ == "__main__":
     # TradingStrategyクラスの初期化
+    portfolio = Portfolio()
     price_data_management = PriceDataManagement()
     risk_manager = RiskManagement(price_data_management)
-    strategy = TradingStrategy(price_data_management, risk_manager)
+    strategy = TradingStrategy(price_data_management, risk_manager, portfolio)
 
     # 取引情報を決定
     trade_decision = strategy.make_trade_decision()
