@@ -66,8 +66,10 @@ class Bot:
                 # TODO 頻度を減らす
                 self.price_data_management.show_latest_signals()
 
+                # --------------------------------------------
                 # リスク制御を更新
-                # TODO 
+                # --------------------------------------------
+                self.risk_management.update_risk_status()
 
                 # 取引所から口座残高を取得
                 #balance = self.exchange.get_account_balance_total()
@@ -75,7 +77,6 @@ class Bot:
 
                 # --------------------------------------------
                 # 取引戦略に口座残高を渡してトレード判断を取得
-                # TODO trade_decisionは辞書型　Orderクラスを作ったが活用してない
                 # --------------------------------------------
                 trade_decision = self.strategy.make_trade_decision()
                 # --------------------------------------------
