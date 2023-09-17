@@ -18,8 +18,32 @@ from config import Config  # Config クラスのインポート
 class Portfolio:
     def __init__(self):
         self.positions = {"BTC/USD": {"quantity": 0, "side": None}, "ETH/USD": {"quantity": 0, "side": None}}  # ポートフォリオ内の各通貨の保有ポジション量
+        self.market_type = Config.get_market()
 
-    def get_position_quantity(self, symbol):
+    def get_position_quantity(self):
+        """
+        指定した通貨の保有ポジション量を取得
+        """
+        if self.market_type in self.positions:
+            return self.positions[self.market_type]
+        return 0
+
+    def get_position_side(self):
+        """
+        指定した通貨の保有ポジション量を取得
+        """
+        if self.market_type in self.positions:
+            return self.positions[self.market_type]["side"]
+        return None
+
+    def update_position_quantity(self, quantity, side):
+        """
+        通貨の保有ポジション量を更新
+        """
+        self.positions[self.market_type]["quantity"] = quantity
+        self.positions[self.market_type]["side"] = side
+
+    def get_position_quantity_with_symbol(self, symbol):
         """
         指定した通貨の保有ポジション量を取得
         """
@@ -27,7 +51,15 @@ class Portfolio:
             return self.positions[symbol]
         return 0
 
-    def update_position_quantity(self, symbol, quantity, side):
+    def get_position_side_with_symbol(self, symbol):
+        """
+        指定した通貨の保有ポジション量を取得
+        """
+        if symbol in self.positions:
+            return self.positions[symbol]["side"]
+        return None
+
+    def update_position_quantity_with_symbol(self, symbol, quantity, side):
         """
         通貨の保有ポジション量を更新
         """
@@ -45,9 +77,15 @@ if __name__ == "__main__":
     # ポートフォリオクラスを初期化
     portfolio = Portfolio()
 
-    portfolio.update_position_quantity("BTC/USD", 1000, "BUY")
+    portfolio.update_position_quantity_with_symbol("BTC/USD", 1000, "BUY")
     
-    btc = portfolio.get_position_quantity('BTC/USD')
+    btc = portfolio.get_position_quantity_with_symbol('BTC/USD')
+
+    print(f"BTC/USD position quantity: {btc['quantity']} side: {btc['side']}")
+
+    portfolio.update_position_quantity(2000, "BUY")
+    
+    btc = portfolio.get_position_quantity()
 
     print(f"BTC/USD position quantity: {btc['quantity']} side: {btc['side']}")
 

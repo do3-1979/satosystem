@@ -13,16 +13,18 @@ from config import Config
 from logger import Logger
 from price_data_management import PriceDataManagement
 from bybit_exchange import BybitExchange
+from portfolio import Portfolio
 import time
 
 class RiskManagement:
-    def __init__(self, price_data_management):
+    def __init__(self, price_data_management, portfolio):
         """
         リスク管理クラスを初期化します。
 
         """
         self.logger = Logger()
         self.price_data_management = price_data_management
+        self.portfolio = portfolio
         self.risk_percentage = Config.get_risk_percentage()
         self.account_balance = Config.get_account_balance()
 
@@ -34,23 +36,19 @@ class RiskManagement:
         self.leverage = Config.get_leverage()
         self.entry_times = Config.get_entry_times()
         self.entry_range = Config.get_entry_range()
-        self.position_size = 0
+        self.position_size = 0 
         self.total_size = 0
         # ストップ制御
-        self.initial_stop_range = Config.get_stop_range()
-        self.stop_range = Config.get_stop_range()
+        self.initial_stop_range = Config.get_stop_range() # ボラを基準としたサイズ
         self.stop_AF = Config.get_stop_AF()
         self.stop_AF_add = Config.get_stop_AF_add()
         self.stop_AF_max = Config.get_stop_AF_max()
         self.stop_ATR = 0
 
         # ストップ値
-        self.stop_price = 0
-        self.last_entry_price = 0
-
-    def get_stop_price(self):
-        
-        return self.stop_price
+        self.stop_offset = 0 # 価格ベース
+        self.stop_price = 0 # 価格ベース
+        self.last_entry_price = 0 # 価格ベース
     
     def get_entry_range(self):
         
@@ -63,25 +61,160 @@ class RiskManagement:
 
     def update_risk_status(self):
         
-        # TODO 実装
-        self.calcurate_stop_price()
+        self.__update_stop_price()
         
         return
 
-    def calcurate_stop_price(self):
+    def get_stop_price(self):
         
-        # TODO 初回のstop値取得
-        # TODO パラボリックSAR計算
-        # TODO ストップレンジとの比較
+        return self.stop_price
+
+    # パラボリックSARを計算する関数
+    def __calc_parabolic_sar(self, data):
+        iaf = self.stop_AF_add
+        maxaf = self.stop_AF_max
+
+        # データ成型
+        high = []
+        low = []
+        close = []
+        psar = []
+
+        datalen = len(data)
+
+        for i in range(0,datalen):
+            high.append(data[i]['high_price'])
+            low.append(data[i]['low_price'])
+            close.append(data[i]['close_price'])
+            psar = close
+
+        length = len(close)
+
+        psarbull = [None] * length
+        psarbear = [None] * length
+        bull = True
+        af = iaf
+        ep = low[0]
+        hp = high[0]
+        lp = low[0]
+
+        # 過去データからPSARを計算
+        for i in range(2,length):
+            if bull:
+                psar[i] = psar[i - 1] + af * (hp - psar[i - 1])
+            else:
+                psar[i] = psar[i - 1] + af * (lp - psar[i - 1])
+
+            reverse = False
+
+            if bull:
+                if low[i] < psar[i]:
+                    bull = False
+                    reverse = True
+                    psar[i] = hp
+                    lp = low[i]
+                    af = iaf
+            else:
+                if high[i] > psar[i]:
+                    bull = True
+                    reverse = True
+                    psar[i] = lp
+                    hp = high[i]
+                    af = iaf
+
+            if not reverse:
+                if bull:
+                    if high[i] > hp:
+                        hp = high[i]
+                        af = min(af + iaf, maxaf)
+                    if low[i - 1] < psar[i]:
+                        psar[i] = low[i - 1]
+                    if low[i - 2] < psar[i]:
+                        psar[i] = low[i - 2]
+                else:
+                    if low[i] < lp:
+                        lp = low[i]
+                        af = min(af + iaf, maxaf)
+                    if high[i - 1] > psar[i]:
+                        psar[i] = high[i - 1]
+                    if high[i - 2] > psar[i]:
+                        psar[i] = high[i - 2]
+            
+            if bull:
+                psarbull[i] = psar[i]
+            else:
+                psarbear[i] = psar[i]
+
+        return {"psar":psar, "psarbear":psarbear, "psarbull":psarbull}
+
+    # ストップ値をパラボリックASRにする関数
+    # ポジションのBUY/SELLに応じてパラボリックSARの値をストップポジションとする
+    def __calc_stop_psar(self, data):
+        # 現在のストップレンジ
+        prev_stop_offset = self.stop_offset
+        # 現在の平均取得単価
+        # TODO ポートフォリオから取得
+        position_price = 00000
+
+        sar_result = self.__calc_parabolic_sar( data )
+        psarbull = sar_result["psarbull"][-1]
+        psarbear = sar_result["psarbear"][-1]
+
+        # BUYの時は現在値からpsarbullの差をstopとする。SELLはpserbear
+        if self.portfolio.get_position_side() == "BUY" and psarbull != None:
+            tmp_stop_offset = round(position_price - psarbull)
+        if self.portfolio.get_position_side() == "SELL" and psarbear != None:
+            tmp_stop_offset = round(psarbear - position_price)
         
-        # ポジション保有状態
-        # TODO
+        # 現在のstopより大きければ維持
+        stop = min( prev_stop_offset, tmp_stop_offset )
+
+        return stop
+
+    def __follow_price_surge(self, data, last_data, flag ):
+        # ストップ値は「ポジションの取得単価」に対する差額。ポジション取得単価より高い場合は負値。
+        # 現在の終値との差額を求めてから新しいストップ値を求める
+        prev_stop_offset = self.stop_offset
+        surge_follow_price_ratio = flag["param"]["stop_neighbor"]
+        latest_close_price = data["close_price"]
+        position_price = flag["position"]["price"]
+
+        # 終値とストップ値の差額を出す
+        if self.portfolio.get_position_side() == "BUY":
+            diff_price = latest_close_price - ( position_price - prev_stop_offset )
+            # 終値との差分が固定値を超えていたらストップ値が固定値以下になるようにする
+            if diff_price > stop_neighbor:
+                # 新ストップ値はポジション取得単価と目標価格との差額
+                tmp_stop_offset = position_price - ( latest_close_price - stop_neighbor )
+
+        if self.portfolio.get_position_side() == "SELL":
+            diff_price = ( position_price + prev_stop_offset ) - latest_close_price
+            # 終値との差分が固定値を超えていたらストップ値が固定値以下になるようにする
+            if diff_price > stop_neighbor:
+                # 新ストップ値 = 目標値 ( = 現在の終値 + 固定値) とポジション取得単価の差額
+                tmp_stop_offset = ( latest_close_price + stop_neighbor ) - position_price
+
+        return tmp_stop_offset
+
+    def __update_stop_price(self):
+        # 現在のstop値取得
+        prev_stop_offset = self.stop_offset
+          
+        # ポジションがある場合
+        position = self.portfolio.get_position_quantity()
+        quantity = position["quantity"]
         
-        # 現在値取得
-        # TODO
-        
-        # 現在値からレンジ幅でストップ値を計算
-        # TODO
+        if quantity != 0:
+            # パラボリックSAR計算
+            ohlcv_data = self.price_data_management.get_ohlcv_data()
+            psar_stop_offset = self.__calc_stop_psar(ohlcv_data)
+
+            # チャートに依存せず急騰時に追従する
+            price = self.price_data_management.get_ticker()
+            price_surge_stop_offset = self.__follow_price_surge(ohlcv_data, price)
+
+            # 現在値からレンジ幅でストップ値を計算
+            self.stop_offset = min(prev_stop_offset, psar_stop_offset, price_surge_stop_offset)
         
         return
 

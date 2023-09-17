@@ -180,7 +180,16 @@ class PriceDataManagement:
             self.volatility = self.calcurate_volatility(tmp_ohlcv_data)
             # update last data
             self.prev_close_time = last_ohlcv_data["close_time"]
-            self.ohlcv_data = tmp_ohlcv_data
+            # 最新行を追加し、最古を削除する
+            self.logger.log(f"行追加前")
+            self.logger.log(f"最古行: {self.ohlcv_data[0]['close_time_dt']}")
+            self.logger.log(f"最新行: {self.ohlcv_data[-1]['close_time_dt']}")
+            self.ohlcv_data.append( last_ohlcv_data )
+            del self.ohlcv_data[0]
+            self.logger.log(f"行追加行")
+            self.logger.log(f"最古行: {self.ohlcv_data[0]['close_time_dt']}")
+            self.logger.log(f"最新行: {self.ohlcv_data[-1]['close_time_dt']}")
+            self.logger.log(f"len {len(self.ohlcv_data.append)}")
 
         return
 

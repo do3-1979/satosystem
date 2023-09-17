@@ -83,6 +83,8 @@ class Bot:
                 # --------------------------------------------
                 # シグナル発生
                 self.price_data_management.show_latest_signals()
+                # 決定状態を表示
+                self.logger.log(strategy)
                 
                 # 清算時は全ポジション
                 if trade_decision["decision"] == "EXIT":
@@ -100,15 +102,15 @@ class Bot:
                                 price,
                                 trade_decision["order_type"])
 
-                print("order:", order)
+                self.logger.log("order:", order)
                 order_response = self.execute_order(order)
-                print("注文実行:", order_response)
+                self.logger.log("注文実行:", order_response)
                 # TODO エラー処理
 
                 # --------------------------------------------
                 # portfolio更新
                 # --------------------------------------------
-                self.portfolio.update_position_quantity(self.market_type, quantity, order.side)
+                self.portfolio.update_position_quantity(quantity, order.side)
 
             # 一定の待ち時間を設けてループを繰り返す
             time.sleep(self.bot_operation_cycle)
@@ -142,11 +144,11 @@ if __name__ == "__main__":
     # 資産管理クラスを初期化（唯一であること TODO シングルトン化）
     portfolio = Portfolio()
     
-    # 価格情報クラスを初期化（唯一であること TODO シングルトン化）
+    # 価格情報クラスを初期化
     price_data_management = PriceDataManagement()
 
     # リスク戦略クラスを初期化
-    risk_management = RiskManagement(price_data_management)
+    risk_management = RiskManagement(price_data_management, portfolio)
 
     # 取引戦略クラスを初期化
     strategy = TradingStrategy(price_data_management, risk_management, portfolio)
