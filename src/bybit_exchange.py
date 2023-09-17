@@ -54,6 +54,7 @@ class BybitExchange(Exchange):
 
         self.api_key = api_key
         self.api_secret = api_secret
+        self.logger = Logger()
 
         # 設定可能なパラメタ：1,3,5,15,30,60,120,240,360,720,D,M,W
         time_frame = Config.get_time_frame()
@@ -210,13 +211,13 @@ class BybitExchange(Exchange):
                     )
                     break
                 except ccxt.BaseError as e:
-                    log_error(f"価格取得エラー:{str(e)}")
+                    self.logger.log_error(f"価格取得エラー:{str(e)}")
                     if err_occuerd == False:
                         err_occuerd = True
                     time.sleep(server_retry_wait)
 
             if err_occuerd == True:
-                log_error("価格取得エラー復帰")
+                self.logger.log_error("価格取得エラー復帰")
 
             # データ成型
             for i in range(len(ohlcv)):
@@ -261,13 +262,13 @@ class BybitExchange(Exchange):
                 )
                 break
             except ccxt.BaseError as e:
-                log_error(f"最新価格取得エラー:{str(e)}")
+                self.logger.log_error(f"最新価格取得エラー:{str(e)}")
                 if err_occuerd == False:
                     err_occuerd = True
                 time.sleep(server_retry_wait)
 
         if err_occuerd == True:
-            log_error("最新価格取得エラー復帰")
+            self.logger.log_error("最新価格取得エラー復帰")
 
         # 終端時間を超えないかぎり取得
         

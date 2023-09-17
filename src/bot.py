@@ -50,72 +50,72 @@ class Bot:
         self.logger.log(str(config_instance))
         self.logger.log("-------------------------------------------------------")
 
+        # tryはエラーなくなるまで未実装
         while True:
-            try:
-                # --------------------------------------------
-                # 最初に価格情報の更新
-                # --------------------------------------------
-                self.price_data_management.update_price_data()
-                
-                # 取得情報を表示
-                self.price_data_management.show_latest_ohlcv()
-                # 最新価格を取得
-                price = self.price_data_management.get_ticker()
+        #    try:
+            # --------------------------------------------
+            # 最初に価格情報の更新
+            # --------------------------------------------
+            self.price_data_management.update_price_data()
+            
+            # 取得情報を表示
+            self.price_data_management.show_latest_ohlcv()
+            # 最新価格を取得
+            price = self.price_data_management.get_ticker()
 
-                # シグナル発生ログ
-                # TODO 頻度を減らす
+            # --------------------------------------------
+            # リスク制御を更新
+            # --------------------------------------------
+            self.risk_management.update_risk_status()
+
+            # 取引所から口座残高を取得
+            #balance = self.exchange.get_account_balance_total()
+            balance = 10000
+
+            # --------------------------------------------
+            # 取引戦略に口座残高を渡してトレード判断を取得
+            # --------------------------------------------
+            trade_decision = self.strategy.make_trade_decision()
+            # --------------------------------------------
+            # 取引決定の場合
+            # --------------------------------------------
+            if trade_decision["decision"] != None:
+                # --------------------------------------------
+                # シグナル発生
                 self.price_data_management.show_latest_signals()
+                
+                # 清算時は全ポジション
+                if trade_decision["decision"] == "EXIT":
+                    # 保有資産を取得
+                    position_size = self.portfolio.get_position_quantity(self.market_type)
+                # リスクからポジションサイズ決定
+                else:
+                    position_size = self.risk_management.calculate_position_size(balance, price)
+                # ベースに帰着
+                quantity = position_size * price
+
+                # 注文クラス作成
+                order = Order(trade_decision["side"],
+                                quantity,
+                                price,
+                                trade_decision["order_type"])
+
+                print("order:", order)
+                order_response = self.execute_order(order)
+                print("注文実行:", order_response)
+                # TODO エラー処理
 
                 # --------------------------------------------
-                # リスク制御を更新
+                # portfolio更新
                 # --------------------------------------------
-                self.risk_management.update_risk_status()
+                self.portfolio.update_position_quantity(self.market_type, quantity, order.side)
 
-                # 取引所から口座残高を取得
-                #balance = self.exchange.get_account_balance_total()
-                balance = 10000
+            # 一定の待ち時間を設けてループを繰り返す
+            time.sleep(self.bot_operation_cycle)
 
-                # --------------------------------------------
-                # 取引戦略に口座残高を渡してトレード判断を取得
-                # --------------------------------------------
-                trade_decision = self.strategy.make_trade_decision()
-                # --------------------------------------------
-                # 取引決定の場合
-                # --------------------------------------------
-                if trade_decision["decision"] != None:
-                    # --------------------------------------------
-                    # 清算時は全ポジション
-                    if trade_decision["decision"] == "EXIT":
-                        # 保有資産を取得
-                        position_size = self.portfolio.get_position_quantity(self.market_type)
-                    # リスクからポジションサイズ決定
-                    else:
-                        position_size = self.risk_management.calculate_position_size(balance, price)
-                    # ベースに帰着
-                    quantity = position_size * price
-
-                    # 注文クラス作成
-                    order = Order(trade_decision["side"],
-                                    quantity,
-                                    price,
-                                    trade_decision["order_type"])
-
-                    print("order:", order)
-                    order_response = self.execute_order(order)
-                    print("注文実行:", order_response)
-                    # TODO エラー処理
-
-                    # --------------------------------------------
-                    # portfolio更新
-                    # --------------------------------------------
-                    self.portfolio.update_position_quantity(self.market_type, quantity, order.side)
-
-                # 一定の待ち時間を設けてループを繰り返す
-                time.sleep(self.bot_operation_cycle)
-
-            except Exception as e:
-                print("エラー発生:", str(e))
-                time.sleep(self.bot_operation_cycle)
+            #except Exception as e:
+            #    print("エラー発生:", str(e))
+            #   time.sleep(self.bot_operation_cycle)
 
     def execute_order(self, order):
         """
