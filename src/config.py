@@ -14,7 +14,7 @@ import pytz
 
 class Config:
     config = configparser.ConfigParser()
-    config.read('config2.ini')
+    config.read('config2.ini',encoding="utf-8_sig")
 
     @classmethod
     def get_api_key(cls):
@@ -378,7 +378,7 @@ if __name__ == "__main__":
     print(f'Balance Thther Limit: {balance_tether_limit}')
 
     # Market セクションの情報を取得
-    market = orderorder
+    market = Config.get_market()
     time_frame = Config.get_time_frame()
     market_unit_pair = Config.get_market_unit_pair()
     print(f'Market: {market}')
