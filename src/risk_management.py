@@ -56,18 +56,17 @@ class RiskManagement:
         return self.entry_range * self.position_size
 
     def get_last_entry_price(self):
-        
-        # TODO 値更新
         return self.last_entry_price
 
+    def update_last_entry_price(self, price):
+        self.last_entry_price = price
+        return
+
     def update_risk_status(self):
-        
         self.__update_stop_price()
-        
         return
 
     def get_stop_price(self):
-        
         return self.stop_price
 
     # パラボリックSARを計算する関数
@@ -148,18 +147,22 @@ class RiskManagement:
 
         return {"psar":psar, "psarbear":psarbear, "psarbull":psarbull}
 
-    # ストップ値をパラボリックASRにする関数
-    # ポジションのBUY/SELLに応じてパラボリックSARの値をストップポジションとする
     def __calc_stop_psar(self, data):
+        """
+        ストップ値をパラボリックASRにする関数
+        
+        ポジションのBUY/SELLに応じてパラボリックSARの値をストップポジションとする
+        """
+
         # 現在のストップレンジ
         prev_stop_offset = self.stop_offset
-        # 現在の平均取得単価
-        # TODO ポートフォリオから取得
-        position_price = 00000
 
         sar_result = self.__calc_parabolic_sar( data )
         psarbull = sar_result["psarbull"][-1]
         psarbear = sar_result["psarbear"][-1]
+
+        # 現在の平均取得単価
+        position_price = self.portfolio.get_position_price()
 
         # BUYの時は現在値からpsarbullの差をstopとする。SELLはpserbear
         if self.portfolio.get_position_side() == "BUY" and psarbull != None:
@@ -203,6 +206,7 @@ class RiskManagement:
         # ポジションがある場合
         position = self.portfolio.get_position_quantity()
         quantity = position["quantity"]
+        side = position["side"]
         
         if quantity != 0:
             # パラボリックSAR計算
@@ -215,10 +219,15 @@ class RiskManagement:
 
             # 現在値からレンジ幅でストップ値を計算
             self.stop_offset = min(prev_stop_offset, psar_stop_offset, price_surge_stop_offset)
+            
+            if side == "BUY":
+                self.stop_price = price - self.stop_offset
+            if side == "SELL":
+                self.stop_price = price + self.stop_offset
         
         return
 
-    def calculate_position_size(self, balance_tether, price):
+    def calculate_position_size(self, balance_tether):
         """
         ポジションサイズ[通貨単位]を計算します。
 
@@ -239,14 +248,15 @@ class RiskManagement:
             # 初回のstop値を計算
             # ボラティリティの幅からストップ幅を計算
             volatility = self.price_data_management.get_volatility()
+            price = self.price_data_management.get_ticker()
             stop_range = self.initial_stop_range * volatility
+
             # 総購入数は、総資産 x 失っていい割合 / ボラティリティで動きうる幅で決定
             total_size = round( ( balance_tether * 100 * self.risk_percentage / stop_range / 100 ), 7 )
             # 分割購入するので1買い当たりのサイズに変換
             tmp_size = round( ( total_size * 100 / self.entry_times / 100 ) , 7 )
 
             # TODO stop値計算に移動
-            # self.stop_range = stop_range
             # self.stop_ATR = round( volatility )
 
             """
@@ -277,8 +287,9 @@ class RiskManagement:
 if __name__ == "__main__":
     # RiskManagement クラスの初期化
     exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
+    portfolio = Portfolio()
     price_data_management = PriceDataManagement()
-    risk_manager = RiskManagement(price_data_management)
+    risk_manager = RiskManagement(price_data_management, portfolio)
 
     # 最新の値を取得
     price = exchange.fetch_ticker()
@@ -293,5 +304,5 @@ if __name__ == "__main__":
     price_data_management.update_price_data()
 
     # ポジションサイズを計算
-    position_size = risk_manager.calculate_position_size(balance_tether, price)
-    print(f'Position Size: {position_size}')
+    position_size = risk_manager.calculate_position_size(balance_tether)
+    print(f'Position Size[BTC]: {position_size} Position size[USD/BTC]: {price*position_size}')

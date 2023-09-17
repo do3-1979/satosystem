@@ -92,6 +92,7 @@ class TradingStrategy:
             price = self.price_data_management.get_ticker()
             
             # 価格がエントリー方向に基準レンジ分だけ進んだか判定する
+            # TODO rangeはprice x ボラ x 2の値。妥当？
             if position_side == "BUY" and (price - last_entry_price) > range:
                 side = "BUY"
                 decision = "ADD"
@@ -157,7 +158,7 @@ if __name__ == "__main__":
     # TradingStrategyクラスの初期化
     portfolio = Portfolio()
     price_data_management = PriceDataManagement()
-    risk_manager = RiskManagement(price_data_management)
+    risk_manager = RiskManagement(price_data_management, portfolio)
     strategy = TradingStrategy(price_data_management, risk_manager, portfolio)
 
     # 取引情報を決定

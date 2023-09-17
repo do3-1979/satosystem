@@ -50,7 +50,7 @@ class Bot:
         self.logger.log(str(config_instance))
         self.logger.log("-------------------------------------------------------")
 
-        # tryはエラーなくなるまで未実装
+        # TODO tryはエラーなくなるまで未実装
         while True:
         #    try:
             # --------------------------------------------
@@ -91,7 +91,7 @@ class Bot:
                     # 保有資産を取得
                     position_size = self.portfolio.get_position_quantity(self.market_type)
                 # リスクからポジションサイズ決定
-                else:
+                else: # TODO "ADD" の場合、連続追加発注を検討するべき
                     position_size = self.risk_management.calculate_position_size(balance, price)
                 # ベースに帰着
                 quantity = position_size * price
@@ -110,7 +110,19 @@ class Bot:
                 # --------------------------------------------
                 # portfolio更新
                 # --------------------------------------------
-                self.portfolio.update_position_quantity(quantity, order.side)
+                self.risk_management.update_last_entry_price(price)
+                
+                if trade_decision["decision"] == "EXIT":
+                    self.portfolio.clear_position_quantity()
+                elif trade_decision["decision"] == "ENTRY" or trade_decision["decision"] == "ADD":
+                    self.add_position_quantity(quantity, trade_decision["side"], price)
+
+            # --------------------------------------------
+            # ログに記録
+            # --------------------------------------------
+            # TODO すべての制御情報をjsonファイルに出力
+            # ファイルはナンバリングして別ファイルに出力できるようにする
+            # jsonからexcelに出力してグラフを自動生成するutiilを開発する
 
             # 一定の待ち時間を設けてループを繰り返す
             time.sleep(self.bot_operation_cycle)
@@ -129,15 +141,22 @@ class Bot:
         Returns:
             dict: 注文の実行結果
         """
-        symbol = order['symbol']
+        symbol = order['symbol'] # execute orderには使わない
         side = order['side']
         quantity = order['quantity']
-        price = order['price']
         order_type = order['order_type']
-        order_response = self.exchange.execute_order(symbol, side, quantity, price, order_type)
+        if order_type == 'limit':
+            price = order['price']
+        else:
+            price = 0
+
+        order_response = self.exchange.execute_order(side, quantity, price, order_type)
         return order_response
 
 if __name__ == "__main__":
+    # bot class test flag
+    bot_order_test = False
+    
     # 取引所クラスを初期化
     exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
 
@@ -156,5 +175,14 @@ if __name__ == "__main__":
     # Bot クラスを初期化
     bot = Bot(exchange, strategy, risk_management, price_data_management, portfolio)
 
-    # ボットを実行
-    bot.run()
+    if bot_order_test == True:
+        # 注文クラス作成
+        price = price_data_management.get_ticker()
+        order = Order("BTC/USD", "buy", 1, price, "market")
+
+        print(f"order test: {order}")
+        order_response = bot.execute_order(order.to_dict())
+        print(f"注文実行:{order_response}")
+    else:
+        # ボットを実行
+        bot.run()

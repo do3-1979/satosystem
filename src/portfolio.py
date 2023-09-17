@@ -48,13 +48,25 @@ class Portfolio:
         """
         通貨の保有ポジション量を更新
         """
-        # TODO sideのチェック
-        # TODO position_price を平均取得単価で計算しなおし
-        # 既存のquantity * position_price + 取得したquantity * position_price / 総quantity
-        # TODO 最後にquantity の更新
-        self.positions[self.market_type]["quantity"] = quantity
-        self.positions[self.market_type]["side"] = side
-        self.positions[self.market_type]["position_price"] = 0
+        current_quantity = self.positions[self.market_type]["quantity"]
+        current_position_price = self.positions[self.market_type]["position_price"]
+        current_side = self.positions[self.market_type]["side"]
+        
+        if current_quantity == 0 or current_side != side:
+            # 初回の追加購入または既存ポジションとのsideが異なる場合
+            self.positions[self.market_type]["quantity"] = quantity
+            self.positions[self.market_type]["side"] = side
+            self.positions[self.market_type]["position_price"] = price
+        else:
+            # 既存のポジションがある場合、平均取得単価を計算しなおす
+            new_quantity = current_quantity + quantity
+            new_position_price = ((current_quantity * current_position_price) + (quantity * price)) / new_quantity
+            
+            self.positions[self.market_type]["quantity"] = new_quantity
+            self.positions[self.market_type]["side"] = side
+            self.positions[self.market_type]["position_price"] = new_position_price
+
+        return
 
     def clear_position_quantity(self):
         """
@@ -98,17 +110,27 @@ if __name__ == "__main__":
     # ポートフォリオクラスを初期化
     portfolio = Portfolio()
 
-    portfolio.update_position_quantity_with_symbol("BTC/USD", 1000, "BUY")
+    #portfolio.update_position_quantity_with_symbol("BTC/USD", 1000, "BUY")
     
-    btc = portfolio.get_position_quantity_with_symbol('BTC/USD')
+    #btc = portfolio.get_position_quantity_with_symbol('BTC/USD')
 
-    print(f"BTC/USD position quantity: {btc['quantity']} side: {btc['side']}")
+    #print(f"BTC/USD position quantity: {btc['quantity']} side: {btc['side']}")
 
-    portfolio.update_position_quantity(2000, "BUY")
-    
+    portfolio.add_position_quantity(100, "BUY", 20000)
+    portfolio.add_position_quantity(200, "BUY", 30000)
     btc = portfolio.get_position_quantity()
-
-    print(f"BTC/USD position quantity: {btc['quantity']} side: {btc['side']}")
-
-    # ポートフォリオ全体を表示
+    #print(f"BTC/USD position quantity: {btc['quantity']} side: {btc['side']}")
     print(portfolio)
+
+    portfolio.clear_position_quantity()
+    portfolio.add_position_quantity(200, "SELL", 30000)
+    btc = portfolio.get_position_quantity()
+    print(portfolio)
+    #print(f"BTC/USD position quantity: {btc['quantity']} side: {btc['side']}")
+
+    portfolio.add_position_quantity(300, "BUY", 25000)
+    btc = portfolio.get_position_quantity()
+    print(portfolio)
+    #print(f"BTC/USD position quantity: {btc['quantity']} side: {btc['side']}")
+
+    
