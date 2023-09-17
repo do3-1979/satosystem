@@ -17,7 +17,7 @@ from config import Config  # Config クラスのインポート
 # Portfolio クラスの定義
 class Portfolio:
     def __init__(self):
-        self.positions = {"BTC/USD": {"quantity": 0, "side": None}, "ETH/USD": {"quantity": 0, "side": None}}  # ポートフォリオ内の各通貨の保有ポジション量
+        self.positions = {"BTC/USD": {"quantity": 0, "side": None, "position_price": 0 }, "ETH/USD": {"quantity": 0, "side": None, "position_price": 0}}  # ポートフォリオ内の各通貨の保有ポジション量
         self.market_type = Config.get_market()
 
     def get_position_quantity(self):
@@ -36,12 +36,33 @@ class Portfolio:
             return self.positions[self.market_type]["side"]
         return None
 
-    def update_position_quantity(self, quantity, side):
+    def get_position_price(self):
+        """
+        指定した通貨の保有ポジション量を取得
+        """
+        if self.market_type in self.positions:
+            return self.positions[self.market_type]["position_price"]
+        return None
+
+    def add_position_quantity(self, quantity, side, price):
         """
         通貨の保有ポジション量を更新
         """
+        # TODO sideのチェック
+        # TODO position_price を平均取得単価で計算しなおし
+        # 既存のquantity * position_price + 取得したquantity * position_price / 総quantity
+        # TODO 最後にquantity の更新
         self.positions[self.market_type]["quantity"] = quantity
         self.positions[self.market_type]["side"] = side
+        self.positions[self.market_type]["position_price"] = 0
+
+    def clear_position_quantity(self):
+        """
+        通貨の保有ポジション量を更新
+        """
+        self.positions[self.market_type]["quantity"] = 0
+        self.positions[self.market_type]["side"] = None
+        self.positions[self.market_type]["position_price"] = 0
 
     def get_position_quantity_with_symbol(self, symbol):
         """

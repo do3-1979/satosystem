@@ -43,6 +43,7 @@ class RiskManagement:
         self.stop_AF = Config.get_stop_AF()
         self.stop_AF_add = Config.get_stop_AF_add()
         self.stop_AF_max = Config.get_stop_AF_max()
+        self.surge_follow_price_ratio = Config.get_surge_follow_price_ratio()
         self.stop_ATR = 0
 
         # ストップ値
@@ -171,28 +172,27 @@ class RiskManagement:
 
         return stop
 
-    def __follow_price_surge(self, data, last_data, flag ):
+    def __follow_price_surge(self, price):
         # ストップ値は「ポジションの取得単価」に対する差額。ポジション取得単価より高い場合は負値。
         # 現在の終値との差額を求めてから新しいストップ値を求める
         prev_stop_offset = self.stop_offset
-        surge_follow_price_ratio = flag["param"]["stop_neighbor"]
-        latest_close_price = data["close_price"]
-        position_price = flag["position"]["price"]
+        surge_follow_price = self.surge_follow_price_ratio * price
+        position_price = self.portfolio.get_position_price()
 
         # 終値とストップ値の差額を出す
         if self.portfolio.get_position_side() == "BUY":
-            diff_price = latest_close_price - ( position_price - prev_stop_offset )
+            diff_price = price - ( position_price - prev_stop_offset )
             # 終値との差分が固定値を超えていたらストップ値が固定値以下になるようにする
-            if diff_price > stop_neighbor:
+            if diff_price > surge_follow_price:
                 # 新ストップ値はポジション取得単価と目標価格との差額
-                tmp_stop_offset = position_price - ( latest_close_price - stop_neighbor )
+                tmp_stop_offset = position_price - ( price - surge_follow_price )
 
         if self.portfolio.get_position_side() == "SELL":
-            diff_price = ( position_price + prev_stop_offset ) - latest_close_price
+            diff_price = ( position_price + prev_stop_offset ) - price
             # 終値との差分が固定値を超えていたらストップ値が固定値以下になるようにする
-            if diff_price > stop_neighbor:
+            if diff_price > surge_follow_price:
                 # 新ストップ値 = 目標値 ( = 現在の終値 + 固定値) とポジション取得単価の差額
-                tmp_stop_offset = ( latest_close_price + stop_neighbor ) - position_price
+                tmp_stop_offset = ( price + surge_follow_price ) - position_price
 
         return tmp_stop_offset
 
