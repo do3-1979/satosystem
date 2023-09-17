@@ -125,6 +125,16 @@ class Config:
             float: ストップアンドリバースファクター（AF）の最大値
         """
         return float(cls.config['RiskManagement']['stop_AF_max'])
+
+    @classmethod
+    def get_surge_follow_price_ratio(cls):
+        """
+        ストップ近傍のレートを取得します.
+
+        Returns:
+            float: ストップ近傍のレート
+        """
+        return float(cls.config['RiskManagement']['surge_follow_price_ratio'])
     
     @classmethod
     def get_market(cls):
@@ -325,6 +335,7 @@ class Config:
         config_str += f"Stop AF: {self.get_stop_AF()}\n"
         config_str += f"Stop AF Add: {self.get_stop_AF_add()}\n"
         config_str += f"Stop AF Max: {self.get_stop_AF_max()}\n"
+        config_str += f"surge follow price ratio: {self.get_surge_follow_price_ratio()}\n"
         config_str += f"Lot Limit Lower: {self.get_lot_limit_lower()}\n"
         config_str += f"Balance Tether Limit: {self.get_balance_tether_limit()}\n"
         config_str += f"Market: {self.get_market()}\n"
@@ -363,6 +374,7 @@ if __name__ == "__main__":
     stop_AF = Config.get_stop_AF()
     stop_AF_add = Config.get_stop_AF_add()
     stop_AF_max = Config.get_stop_AF_max()
+    surge_follow_price_ratio = Config.get_surge_follow_price_ratio()
     lot_limit_lower = Config.get_lot_limit_lower()
     balance_tether_limit = Config.get_balance_tether_limit()
     print(f'Risk Percentage: {risk_percentage}')
@@ -374,6 +386,7 @@ if __name__ == "__main__":
     print(f'Stop AF: {stop_AF}')
     print(f'Stop AF Add: {stop_AF_add}')
     print(f'Stop AF Max: {stop_AF_max}')
+    print(f'surge follow price ratio: {surge_follow_price_ratio}')
     print(f'Lot Limit Lower: {lot_limit_lower}')
     print(f'Balance Thther Limit: {balance_tether_limit}')
 
