@@ -61,8 +61,7 @@ class TradingStrategy:
                     decision = "ENTRY"
 
         # 保有状態を確認
-        market = Config.get_market()
-        portfolio = self.portfolio.get_position_quantity(market)
+        portfolio = self.portfolio.get_position_quantity()
         
         # ポジションがなかったら
         if portfolio["quantity"] == 0:
@@ -115,8 +114,7 @@ class TradingStrategy:
         position_side = None
 
         # 保有状態を確認
-        market = Config.get_market()
-        portfolio = self.portfolio.get_position_quantity(market)
+        portfolio = self.portfolio.get_position_quantity()
         
         # ポジションがあったら
         if portfolio["quantity"] != 0:
@@ -151,6 +149,9 @@ class TradingStrategy:
         self.evaluate_exit()
  
         return self.trade_decision
+    
+    def __str__(self):
+        return f"Trade Decision: Decision = {self.trade_decision['decision']}, Side = {self.trade_decision['side']}, Order Type = {self.trade_decision['order_type']}"
 
 if __name__ == "__main__":
     # TradingStrategyクラスの初期化
@@ -160,6 +161,5 @@ if __name__ == "__main__":
     strategy = TradingStrategy(price_data_management, risk_manager, portfolio)
 
     # 取引情報を決定
-    trade_decision = strategy.make_trade_decision()
-    print(trade_decision)
+    print(strategy)
 
