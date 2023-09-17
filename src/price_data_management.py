@@ -4,6 +4,8 @@ from logger import Logger
 from bybit_exchange import BybitExchange
 
 class PriceDataManagement:
+    # クラス変数として唯一のインスタンスを保持
+    _instance = None
     """
     価格データとトレードシグナルを管理するクラスです。
 
@@ -28,8 +30,13 @@ class PriceDataManagement:
         get_signals(self): トレードシグナルを取得します。
         update_price_data(self): 価格データとトレードシグナルを更新します。
     """
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(PriceDataManagement, cls).__new__(cls)
+            cls._instance.initialize()
+        return cls._instance
 
-    def __init__(self):
+    def initialize(self):
         self.exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
         self.logger = Logger()
         self.ohlcv_data = []
