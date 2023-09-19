@@ -149,7 +149,7 @@ class BybitExchange(Exchange):
             _type_: _description_
         """
         # 現在のローカル時刻を取得
-        current_local_time = datetime.now()
+        current_local_time = datetime.now() 
         current_local_epoch = int(current_local_time.timestamp())
         
         # 古い時刻を採用
@@ -167,12 +167,23 @@ class BybitExchange(Exchange):
         target_time = target_time.replace(minute=0, second=0)
         
         # 最も近い時刻を選択
-        nearest_time = min(target_near_times, key=lambda x: abs(x - target_time.hour))
-        
-        # 現在の年月日を取得
         year = target_time.year
         month = target_time.month
-        day = target_time.day
+        
+        for i in range(len(target_near_times)):
+            if target_time.hour == 23:
+                nearest_time = 23
+                day = target_time.day
+                break
+            elif target_time.hour == 0:
+                nearest_time = 23
+                day = target_time.day - 1
+                break
+            else:
+                if target_time.hour < target_near_times[i]:
+                    nearest_time = target_near_times[i-1]
+                    day = target_time.day
+                    break
         
         # 選択した時刻でepoch時間を作成
         epoch_time_str = datetime(year, month, day, nearest_time, 0, 0)
@@ -218,7 +229,6 @@ class BybitExchange(Exchange):
 
             if err_occuerd == True:
                 self.logger.log_error("価格取得エラー復帰")
-
             # データ成型
             for i in range(len(ohlcv)):
                 # 終端時間を超えないかぎり取得
@@ -336,7 +346,26 @@ if __name__ == "__main__":
     balance = exchange.get_account_balance_total()
     print(f"balance : {balance}")
 
+    print(f"{Config.get_market()} の最新価格情報")
+    price = exchange.fetch_ticker()
+    print(f"価格: {price}")
     print("----------")
+
+    print("最新価格データを取得")
+    print("----------")
+    start_price_time = time.time()
+    ohlcv_data = exchange.fetch_latest_ohlcv()
+    end_price_time = time.time()
+
+    entry = ohlcv_data[0]
+    print(f"時刻: {entry['close_time_dt']}")
+    print(f"開始価格: {entry['open_price']}")
+    print(f"最高価格: {entry['high_price']}")
+    print(f"最低価格: {entry['low_price']}")
+    print(f"終値: {entry['close_price']}")
+    print(f"出来高: {entry['Volume']}")
+    print("----------")
+
     print("価格データを取得")
     print("----------")
     start_price_time = time.time()
@@ -358,29 +387,10 @@ if __name__ == "__main__":
         print(f"出来高: {entry['Volume']}")
         print("----------")
 
-    print(f"{Config.get_market()} の最新価格情報")
-    price = exchange.fetch_ticker()
-    print(f"価格: {price}")
-    print("----------")
-
     print("口座残高情報取得にかかった時間: {:.2f}秒".format(end_balance_time - start_balance_time))
     print("価格データ取得にかかった時間: {:.2f}秒".format(end_price_time - start_price_time))
 
-    print("----------")
-    print("価格データを取得")
-    print("----------")
-    start_price_time = time.time()
-    ohlcv_data = exchange.fetch_latest_ohlcv()
-    end_price_time = time.time()
 
-    entry = ohlcv_data[0]
-    print(f"時刻: {entry['close_time_dt']}")
-    print(f"開始価格: {entry['open_price']}")
-    print(f"最高価格: {entry['high_price']}")
-    print(f"最低価格: {entry['low_price']}")
-    print(f"終値: {entry['close_price']}")
-    print(f"出来高: {entry['Volume']}")
-    print("----------")
 
     # 注文を発行 (例: BTC/USD マーケットで1BTC を買う)
     # order_response = exchange.execute_order('BTCUSD', 'buy', 1, None, 'market')
