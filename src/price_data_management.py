@@ -66,6 +66,12 @@ class PriceDataManagement:
         """
         return self.ticker
 
+    def get_latest_ohlcv(self):
+        """
+        最新の未確定のOHLCVデータを表示するメソッドです。
+        """
+        return self.ohlcv_data[-1]
+
     def get_latest_volume(self):
         """
         最新の出来高を取得するメソッドです。

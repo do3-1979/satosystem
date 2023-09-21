@@ -68,6 +68,12 @@ class RiskManagement:
 
     def get_stop_price(self):
         return self.stop_price
+    
+    def get_position_size(self):
+        return self.position_size
+        
+    def get_total_size(self):
+        return self.total_size
 
     # パラボリックSARを計算する関数
     def __calc_parabolic_sar(self, data):
