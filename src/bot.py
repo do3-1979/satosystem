@@ -13,6 +13,7 @@ Bot クラスは定期的に口座残高を取得し、取引戦略に渡して�
 """
 import os
 import time
+from datetime import datetime
 from logger import Logger
 from config import Config
 from price_data_management import PriceDataManagement
@@ -120,12 +121,30 @@ class Bot:
             # --------------------------------------------
             # ログに記録
             # --------------------------------------------
-            # TODO すべての制御情報をjsonファイルに出力
-            # ファイルはナンバリングして別ファイルに出力できるようにする
-            # jsonからexcelに出力してグラフを自動生成するutiilを開発する
+            # TODO jsonからexcelに出力してグラフを自動生成するutiilを開発する
+            trade_data = self.price_data_management.get_latest_ohlcv()
+            trade_data["chart_time"] = datetime.fromtimestamp(trade_data['close_time']).strftime('%Y/%m/%d %H:%M')
+            trade_data["stop_price"] = self.risk_management.get_stop_price()
+            trade_data["position_size"] = self.risk_management.get_position_size()
+            trade_data["total_size"] = self.risk_management.get_total_size()
+            trade_data["volatility"] = self.price_data_management.get_volatility()   
+            trade_data.update(trade_decision)
+            trade_data.update(self.price_data_management.get_signals())
+
+            # 取引データを記録
+            self.logger.log_trade_data(trade_data)
 
             # 一定の待ち時間を設けてループを繰り返す
             time.sleep(self.bot_operation_cycle)
+
+            # 1週間ごとにファイルを分けるかチェック
+            current_time = datetime.now()
+            #if current_time.strftime("%w") == "0":  # 0は日曜日を表す
+            if int(current_time.strftime("%S")) %  30 == 0:
+                # ログをローテート
+                self.logger.close_log_file()
+                self.logger.compress_logs()  # 圧縮
+                self.logger.open_log_file()
 
             #except Exception as e:
             #    print("エラー発生:", str(e))
