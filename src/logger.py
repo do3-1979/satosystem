@@ -13,8 +13,11 @@ import json
 import zipfile
 import pandas as pd
 from datetime import datetime
-import time
 import logging
+import openpyxl
+from openpyxl import Workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.chart import LineChart, Reference
 
 class Logger:
     _instance = None  # シングルトンインスタンスを格納するクラス変数
@@ -85,12 +88,14 @@ class Logger:
         current_time = datetime.now()
         log_filename = current_time.strftime("%Y%m%d%H%M%S.json")
         log_filepath = os.path.join(self.log_directory, log_filename)
-        self.current_log_file = open(log_filepath, "w")
+        self.current_log_file = open(log_filepath, "w", encoding='utf-8')
         self.current_log_file.write("[\n")
 
     def close_log_file(self):
         if self.current_log_file:
-            self.current_log_file.write("\n]")
+            # ファイルに , を削除して ] を出力
+            self.current_log_file.seek(self.current_log_file.tell() - 2)  # カーソルを後ろに移動
+            self.current_log_file.write("]\n")
             self.current_log_file.close()
             self.current_log_file = None
 
@@ -98,10 +103,6 @@ class Logger:
         if self.current_log_file:
             json.dump(trade_data, self.current_log_file, indent=2)
             self.current_log_file.write(",\n")
-
-    def rotate_logs(self):
-        self.close_log_file()
-        self.open_log_file()
 
     def compress_logs(self):
         current_time = datetime.now()
@@ -124,9 +125,9 @@ class Logger:
             else:
                 log_count += 1
 
-    def extract_and_export_logs(self,log_directory, num_logs, output_excel_file):
+    def extract_and_export_logs(self, log_directory, num_logs, output_excel_file):
         """
-        指定された数の圧縮ログファイルを読み込み、エクセルファイルにデータを出力します。
+        指定された数の圧縮ログファイルを読み込み、エクセルファイルにデータとグラフを出力します。
 
         Args:
             log_directory (str): 圧縮ログファイルが格納されているディレクトリ
@@ -157,7 +158,78 @@ class Logger:
         combined_data = pd.concat(data, ignore_index=True)
 
         # エクセルファイルに出力
-        combined_data.to_excel(output_excel_file, index=False)
+        output_excel_file_path = os.path.join(log_directory, output_excel_file)
+        workbook = Workbook()
+        writer = pd.ExcelWriter(output_excel_file_path, engine='openpyxl')
+        writer.book = workbook
+
+        # データをエクセルに書き込み
+        combined_data.to_excel(writer, sheet_name='Data', index=False)
+
+        # 必要なカラムを選択
+        """
+        selected_columns = [
+            "close_time_dt",
+            "open_price",
+            "high_price",
+            "low_price",
+            "close_price",
+            "Volume",
+            "chart_time",
+            "stop_price",
+            "position_size",
+            "total_size",
+            "volatility",
+            "decision",
+            "side",
+            "order_type"
+        ]
+        """
+
+        """
+        # カラムごとに折れ線グラフを生成し、別のシートに追加
+        selected_graph_columns = [
+            "open_price",
+            "high_price",
+            "low_price",
+            "close_price",
+            "Volume",
+            "volatility",
+            "position_size",
+            "total_size"
+        ]
+        """
+
+        column_name = "グラフ"
+        chart_sheet = workbook.create_sheet(title=f"Graph")
+        self.generate_line_chart(combined_data, column_name, chart_sheet)
+
+        # エクセルファイルを保存
+        writer.save()
+        writer.close()
+        
+    def generate_line_chart(self, data, column_name, chart_sheet):
+        """
+        データから指定されたカラムの折れ線グラフを生成し、指定されたシートに追加します。
+
+        Args:
+            data (DataFrame): グラフを生成するデータ
+            column_name (str): グラフを生成するカラムの名前
+            chart_sheet (Worksheet): グラフを追加するシート
+        """
+        chart = LineChart()
+        chart.title = column_name
+        chart.y_axis.title = column_name
+        chart.x_axis.title = "chart_time"
+
+        data_rows = list(dataframe_to_rows(data, index=False, header=True))
+        labels = Reference(chart_sheet, min_col=1, min_row=2, max_row=len(data_rows), max_col=1)
+        values = Reference(chart_sheet, min_col=2, min_row=1, max_row=len(data_rows), max_col=len(data_rows[0]))
+
+        chart.add_data(values, titles_from_data=True)
+        chart.set_categories(labels)
+
+        chart_sheet.add_chart(chart, f"D{len(data_rows) + 3}")
 
 if __name__ == "__main__":
     # Loggerクラスの初期化

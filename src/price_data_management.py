@@ -43,14 +43,13 @@ class PriceDataManagement:
         self.latest_ohlcv_data = []
         self.ticker = 0
         self.volume = 0
-        self.signals = {"donchian": {"signal": False, "side": None }, "pvo": {"signal": False, "side": None }}
+        self.signals = {'donchian': {'signal': False, 'side': None }, 'pvo': {'signal': False, 'side': None }}
         self.volatility = 0
         self.prev_close_time = 0
 
     def get_ohlcv_data(self):
         """
         OHLCVデータを取得するメソッドです。
-        このメソッドは実際のデータを取得するロジックを追加してください。
 
         Returns:
             list: OHLCVデータのリスト
@@ -70,7 +69,7 @@ class PriceDataManagement:
         """
         最新の未確定のOHLCVデータを表示するメソッドです。
         """
-        return self.ohlcv_data[-1]
+        return self.latest_ohlcv_data[-1]
 
     def get_latest_volume(self):
         """
@@ -99,8 +98,8 @@ class PriceDataManagement:
             int: ボラティリティ
         """
         volatility_term = Config.get_volatility_term()
-        high_sum = sum(i["high_price"] for i in ohlcv_data[-1 * volatility_term :])
-        low_sum = sum(i["low_price"] for i in ohlcv_data[-1 * volatility_term :])
+        high_sum = sum(i['high_price'] for i in ohlcv_data[-1 * volatility_term :])
+        low_sum = sum(i['low_price'] for i in ohlcv_data[-1 * volatility_term :])
         volatility = round((high_sum - low_sum) / volatility_term)
         return volatility
 
@@ -152,7 +151,7 @@ class PriceDataManagement:
         """
         # 最新値の更新
         self.latest_ohlcv_data = self.exchange.fetch_latest_ohlcv()
-        self.volume = self.latest_ohlcv_data[0]["Volume"]
+        self.volume = self.latest_ohlcv_data[0]['Volume']
         self.ticker = self.exchange.fetch_ticker()
 
         # 価格データの更新
@@ -170,22 +169,22 @@ class PriceDataManagement:
         elif self.prev_close_time < last_ohlcv_data['close_time']:
             # donchian update
             dc = self.__evaluate_donchian(self.ohlcv_data, self.ticker)
-            if dc == "BUY":
-                self.signals["donchian"]["signal"] = True
-                self.signals["donchian"]["side"] = "BUY"
-            elif dc == "SELL":
-                self.signals["donchian"]["signal"] = True
-                self.signals["donchian"]["side"] = "SELL"
+            if dc == 'BUY':
+                self.signals['donchian']['signal'] = True
+                self.signals['donchian']['side'] = 'BUY'
+            elif dc == 'SELL':
+                self.signals['donchian']['signal'] = True
+                self.signals['donchian']['side'] = 'SELL'
             else:
-                self.signals["donchian"]["signal"] = False
-                self.signals["donchian"]["side"] = "None"
+                self.signals['donchian']['signal'] = False
+                self.signals['donchian']['side'] = 'None'
             # PVO update
-            volume = last_ohlcv_data["Volume"]
-            self.signals["pvo"]["signal"] = self.__evaluate_pvo(self.ohlcv_data, volume)
+            volume = last_ohlcv_data['Volume']
+            self.signals['pvo']['signal'] = self.__evaluate_pvo(self.ohlcv_data, volume)
             # update volatility
             self.volatility = self.calcurate_volatility(tmp_ohlcv_data)
             # update last data
-            self.prev_close_time = last_ohlcv_data["close_time"]
+            self.prev_close_time = last_ohlcv_data['close_time']
             # 最新行を追加し、最古を削除する
             self.ohlcv_data.append( last_ohlcv_data )
             del self.ohlcv_data[0]
@@ -205,15 +204,15 @@ class PriceDataManagement:
         """
         buy_term = Config.get_donchian_buy_term()
         sell_term = Config.get_donchian_sell_term()
-        side = "None"
+        side = 'None'
 
-        highest = max(i["high_price"] for i in ohlcv_data[(-1 * buy_term) :])
+        highest = max(i['high_price'] for i in ohlcv_data[(-1 * buy_term) :])
         if price > highest:
-            side = "BUY"
+            side = 'BUY'
 
-        lowest = min(i["low_price"] for i in ohlcv_data[(-1 * sell_term) :])
+        lowest = min(i['low_price'] for i in ohlcv_data[(-1 * sell_term) :])
         if price < lowest:
-            side = "SELL"
+            side = 'SELL'
 
         return side
 
@@ -261,7 +260,7 @@ class PriceDataManagement:
 
         data_len = max(pvo_s_term, pvo_l_term)
         for i in ohlcv_data[(-1 * data_len) :]:
-            volume_data.append(i["Volume"])
+            volume_data.append(i['Volume'])
 
         volume_data.append(volume)
         short_ema = self.__calc_ema(pvo_s_term, volume_data)
