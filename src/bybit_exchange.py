@@ -96,9 +96,8 @@ class BybitExchange(Exchange):
         balance = self.exchange.fetchBalance()
 
         usd_balance = balance['BTC']['total']
-        eth_balance = balance['ETH']['total']
 
-        return usd_balance + eth_balance
+        return usd_balance
 
     def execute_order(self, side, quantity, price, order_type):
         """
@@ -332,14 +331,7 @@ if __name__ == "__main__":
     print("USD Used: ", usd_balance['used'])
     print("USD Free: ", usd_balance['free'])
     print("USD Total: ", usd_balance['total'])
-
-    # ETHのused、free、total情報を表示
-    eth_balance = balance['ETH']
-    print("----------")
-    print("ETH Used: ", eth_balance['used'])
-    print("ETH Free: ", eth_balance['free'])
-    print("ETH Total: ", eth_balance['total'])
-
+    
     print("----------")
     print("口座残高総合取得")
     print("----------")

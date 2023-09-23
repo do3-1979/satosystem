@@ -17,7 +17,7 @@ from config import Config  # Config クラスのインポート
 # Portfolio クラスの定義
 class Portfolio:
     def __init__(self):
-        self.positions = {"BTC/USD": {"quantity": 0, "side": None, "position_price": 0 }, "ETH/USD": {"quantity": 0, "side": None, "position_price": 0}}  # ポートフォリオ内の各通貨の保有ポジション量
+        self.positions = {"BTC/USD": {"quantity": 0, "side": None, "position_price": 0 }}  # ポートフォリオ内の各通貨の保有ポジション量
         self.market_type = Config.get_market()
 
     def get_position_quantity(self):
