@@ -17,8 +17,9 @@ from config import Config  # Config クラスのインポート
 # Portfolio クラスの定義
 class Portfolio:
     def __init__(self):
-        self.positions = {"BTC/USD": {"quantity": 0, "side": None, "position_price": 0 }}  # ポートフォリオ内の各通貨の保有ポジション量
+        self.positions = {'BTC/USD': {'quantity': 0, 'side': None, 'position_price': 0 }}  # ポートフォリオ内の各通貨の保有ポジション量
         self.market_type = Config.get_market()
+        self.profit_and_loss = 0
 
     def get_position_quantity(self):
         """
@@ -44,6 +45,12 @@ class Portfolio:
             return self.positions[self.market_type]["position_price"]
         return None
 
+    def get_profit_and_loss(self):
+        """
+        利益と損失を取得します。
+        """
+        return self.profit_and_loss
+
     def add_position_quantity(self, quantity, side, price):
         """
         通貨の保有ポジション量を更新
@@ -68,13 +75,38 @@ class Portfolio:
 
         return
 
-    def clear_position_quantity(self):
+    def clear_position_quantity(self, price):
         """
-        通貨の保有ポジション量を更新
+        通貨の保有ポジション量を更新し、利益または損失を計算します。
+
+        Args:
+            price (float): 売却時の価格
         """
+        # 購入時の価格
+        purchase_price = self.positions[self.market_type]["position_price"]
+
+        # 購入量
+        quantity = self.positions[self.market_type]["quantity"]
+
+        # 買いまたは売りの判定
+        side = self.get_position_side()
+        if side == "BUY":
+            # 買いの場合は purchase_price - price が利益
+            profit_or_loss = (purchase_price - price) * quantity
+        elif side == "SELL":
+            # 売りの場合は price - purchase_price が利益
+            profit_or_loss = (price - purchase_price) * quantity
+        else:
+            profit_or_loss = 0  # 未保有の場合は利益・損失なし
+
+        # 利益と損失の合算
+        self.profit_and_loss += profit_or_loss
+
+        # ポジション情報のクリア
         self.positions[self.market_type]["quantity"] = 0
         self.positions[self.market_type]["side"] = None
         self.positions[self.market_type]["position_price"] = 0
+        return
 
     def get_position_quantity_with_symbol(self, symbol):
         """
@@ -103,6 +135,7 @@ class Portfolio:
         portfolio_str = "Portfolio:\n"
         for symbol, detail in self.positions.items():
             portfolio_str += f"{symbol}: {detail}\n"
+        portfolio_str += f"profit_and_loss: {self.profit_and_loss}"
         return portfolio_str
 
 # ポートフォリオのサンプル
@@ -122,7 +155,8 @@ if __name__ == "__main__":
     #print(f"BTC/USD position quantity: {btc['quantity']} side: {btc['side']}")
     print(portfolio)
 
-    portfolio.clear_position_quantity()
+    portfolio.clear_position_quantity(40000)
+    print(portfolio)
     portfolio.add_position_quantity(200, "SELL", 30000)
     btc = portfolio.get_position_quantity()
     print(portfolio)

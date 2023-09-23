@@ -71,7 +71,8 @@ class Bot:
 
             # 取引所から口座残高を取得
             #balance = self.exchange.get_account_balance_total()
-            balance = 10000
+            # TODO テスト処理
+            balance = 300 + self.portfolio.get_profit_and_loss()
 
             # --------------------------------------------
             # 取引戦略に口座残高を渡してトレード判断を取得
@@ -114,9 +115,9 @@ class Bot:
                 self.risk_management.update_last_entry_price(price)
                 
                 if trade_decision["decision"] == "EXIT":
-                    self.portfolio.clear_position_quantity()
+                    self.portfolio.clear_position_quantity(price)
                 elif trade_decision["decision"] == "ENTRY" or trade_decision["decision"] == "ADD":
-                    self.add_position_quantity(quantity, trade_decision["side"], price)
+                    self.portfolio.add_position_quantity(quantity, trade_decision["side"], price)
 
             # --------------------------------------------
             # ログに記録
@@ -126,6 +127,7 @@ class Bot:
             trade_data['stop_price'] = self.risk_management.get_stop_price()
             trade_data['position_size'] = self.risk_management.get_position_size()
             trade_data['total_size'] = self.risk_management.get_total_size()
+            trade_data['profit_and_loss'] = self.portfolio.get_profit_and_loss()
             trade_data['volatility'] = self.price_data_management.get_volatility()   
             trade_data.update(trade_decision)
             trade_data.update(self.price_data_management.get_signals())
@@ -167,7 +169,8 @@ class Bot:
         else:
             price = 0
 
-        order_response = self.exchange.execute_order(side, quantity, price, order_type)
+        # TODO テスト処理
+        #order_response = self.exchange.execute_order(side, quantity, price, order_type)
         return order_response
 
 if __name__ == "__main__":
