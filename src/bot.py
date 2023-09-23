@@ -121,13 +121,12 @@ class Bot:
             # --------------------------------------------
             # ログに記録
             # --------------------------------------------
-            # TODO jsonからexcelに出力してグラフを自動生成するutiilを開発する
             trade_data = self.price_data_management.get_latest_ohlcv()
-            trade_data["chart_time"] = datetime.fromtimestamp(trade_data['close_time']).strftime('%Y/%m/%d %H:%M')
-            trade_data["stop_price"] = self.risk_management.get_stop_price()
-            trade_data["position_size"] = self.risk_management.get_position_size()
-            trade_data["total_size"] = self.risk_management.get_total_size()
-            trade_data["volatility"] = self.price_data_management.get_volatility()   
+            trade_data['chart_time'] = datetime.fromtimestamp(trade_data['close_time']).strftime('%Y/%m/%d %H:%M')
+            trade_data['stop_price'] = self.risk_management.get_stop_price()
+            trade_data['position_size'] = self.risk_management.get_position_size()
+            trade_data['total_size'] = self.risk_management.get_total_size()
+            trade_data['volatility'] = self.price_data_management.get_volatility()   
             trade_data.update(trade_decision)
             trade_data.update(self.price_data_management.get_signals())
 
@@ -137,10 +136,9 @@ class Bot:
             # 一定の待ち時間を設けてループを繰り返す
             time.sleep(self.bot_operation_cycle)
 
-            # 1週間ごとにファイルを分けるかチェック
+            # 2時間ごとにファイルを分けるかチェック
             current_time = datetime.now()
-            #if current_time.strftime("%w") == "0":  # 0は日曜日を表す
-            if int(current_time.strftime("%S")) %  30 == 0:
+            if int(current_time.strftime("%H")) % 2 == 0 and int(current_time.strftime("%M")) == 0:
                 # ログをローテート
                 self.logger.close_log_file()
                 self.logger.compress_logs()  # 圧縮

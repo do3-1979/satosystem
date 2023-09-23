@@ -34,7 +34,7 @@ class TradingStrategy:
 
     def __init__(self, price_data_management, risk_manager, portfolio):
         self.logger = Logger()
-        self.trade_decision = { "decision": None, "side": None, "order_type": "Market"}
+        self.trade_decision = { 'decision': None, 'side': None, 'order_type': 'Market'}
         self.price_data_management = price_data_management
         self.risk_manager = risk_manager
         self.portfolio = portfolio
