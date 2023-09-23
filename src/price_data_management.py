@@ -125,7 +125,7 @@ class PriceDataManagement:
             f"  高値: {round(latest_ohlcv_data['high_price'])}"
             f"  安値: {round(latest_ohlcv_data['low_price'])}"
             f"  終値: {round(latest_ohlcv_data['close_price'])}"
-            f"  出来高: {round(latest_ohlcv_data['Volume'])}"
+            f"  出来高: {latest_ohlcv_data['Volume']}"
         )
 
     def show_latest_signals(self):
