@@ -14,7 +14,7 @@ import pytz
 
 class Config:
     config = configparser.ConfigParser()
-    config.read('config2.ini',encoding="utf-8_sig")
+    config.read('config.ini',encoding="utf-8_sig")
 
     @classmethod
     def get_api_key(cls):
