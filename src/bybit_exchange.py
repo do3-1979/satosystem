@@ -128,6 +128,7 @@ class BybitExchange(Exchange):
         else:
             raise ValueError("Invalid order_type. Use 'limit' or 'market'.")
 
+        # TODO TEST テストでは常に成功
         response = self.exchange.create_order(
             symbol=order['symbol'],
             side=order['side'],
@@ -199,6 +200,12 @@ class BybitExchange(Exchange):
         """
         err_occuerd = False
         ohlcv_data = []
+
+        # TODO TEST 
+        # 1. 指定された期間のうち、初期計算に必要な期間だけ、ohlcvデータを取得する
+        # 2. 以降、呼び出されるごとに、1データ分追加する チャート時間が変わっていればいい
+        # fetch_latest_ohlcv は volumeの更新に使っているので、同じ最新値データが取れればいい
+        # fetch_tickerもドンチャンチャネルの更新なので、同じ最新値データがあればいい
 
         # 期間指定
         start_epoch = Config.get_start_epoch()

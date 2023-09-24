@@ -321,6 +321,41 @@ class Config:
             int: ボットの動作サイクル時間 (秒)
         """
         return int(cls.config['Setting']['bot_operation_cycle'])
+    
+    @classmethod
+    def get_test_initial_max_term(cls):
+        """
+        テストに必要な初期化期間を取得します
+
+        Returns:
+            int: 期間
+        """
+        v_term = int(cls.config['Strategy']['volatility_term'])
+        d_b_term = int(cls.config['Strategy']['donchian_buy_term'])
+        d_s_term = int(cls.config['Strategy']['donchian_sell_term'])
+        pv_s_term = int(cls.config['Strategy']['pvo_s_term'])
+        
+        max_term = max(v_term, d_b_term, d_s_term, pv_s_term)
+
+        return max_term
+
+    @classmethod
+    def get_log_file_name(cls):
+        """
+        """
+        return cls.config['Log']['log_file']
+    
+    @classmethod
+    def get_log_dir_name(cls):
+        """
+        """
+        return cls.config['Log']['log_directory']
+    
+    @classmethod
+    def get_back_test_mode(cls):
+        """
+        """
+        return cls.config['Backtest']['back_test']
 
     def __str__(self):
         """
@@ -417,12 +452,14 @@ if __name__ == "__main__":
     pvo_s_term = Config.get_pvo_s_term()
     pvo_l_term = Config.get_pvo_l_term()
     pvo_threshold = Config.get_pvo_threshold()
+    max_term = Config.get_test_initial_max_term()
     print(f'Volatility Term: {volatility_term}')
     print(f'Donchian Buy Term: {donchian_buy_term}')
     print(f'Donchian Sell Term: {donchian_sell_term}')
     print(f'PVO Short Term: {pvo_s_term}')
     print(f'PVO Long Term: {pvo_l_term}')
     print(f'PVO Threshold: {pvo_threshold}')
+    print(f'[Test] Max_term: {max_term}')
 
     # Setting セクションの情報を取得
     server_retry_wait = Config.get_server_retry_wait()
