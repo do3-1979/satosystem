@@ -54,6 +54,7 @@ class Bot:
         # TODO tryはエラーなくなるまで未実装
         while True:
         #    try:
+            log_zipped = False
             # --------------------------------------------
             # 最初に価格情報の更新
             # --------------------------------------------
@@ -123,7 +124,8 @@ class Bot:
             # ログに記録
             # --------------------------------------------
             trade_data = self.price_data_management.get_latest_ohlcv()
-            trade_data['chart_time'] = datetime.fromtimestamp(trade_data['close_time']).strftime('%Y/%m/%d %H:%M')
+            dt_now = datetime.now()
+            trade_data['real_time'] = dt_now.strftime('%Y/%m/%d %H:%M:%S')
             trade_data['stop_price'] = self.risk_management.get_stop_price()
             trade_data['position_size'] = self.risk_management.get_position_size()
             trade_data['total_size'] = self.risk_management.get_total_size()
@@ -140,11 +142,14 @@ class Bot:
 
             # 2時間ごとにファイルを分けるかチェック
             current_time = datetime.now()
-            if int(current_time.strftime("%H")) % 2 == 0 and int(current_time.strftime("%M")) == 0:
+            if log_zipped == False and int(current_time.strftime("%H")) % 2 == 0 and int(current_time.strftime("%M")) == 0:
                 # ログをローテート
                 self.logger.close_log_file()
                 self.logger.compress_logs()  # 圧縮
                 self.logger.open_log_file()
+                log_zipped = True
+            else:
+                log_zipped = False
 
             #except Exception as e:
             #    print("エラー発生:", str(e))

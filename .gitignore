@@ -23,3 +23,5 @@ test/__pycache__/
 aws_login.sh
 README_0816_サーバ移動用バックアップ.md
 ターミナル起動メモ
+src/.api_key
+src/logs/*.json
