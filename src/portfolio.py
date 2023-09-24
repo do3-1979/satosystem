@@ -92,10 +92,10 @@ class Portfolio:
         side = self.get_position_side()
         if side == "BUY":
             # 買いの場合は purchase_price - price が利益
-            profit_or_loss = (purchase_price - price) * quantity
+            profit_or_loss = (price - purchase_price) * quantity
         elif side == "SELL":
             # 売りの場合は price - purchase_price が利益
-            profit_or_loss = (price - purchase_price) * quantity
+            profit_or_loss = (purchase_price - price) * quantity
         else:
             profit_or_loss = 0  # 未保有の場合は利益・損失なし
 
@@ -135,7 +135,7 @@ class Portfolio:
         portfolio_str = "Portfolio:\n"
         for symbol, detail in self.positions.items():
             portfolio_str += f"{symbol}: {detail}\n"
-        portfolio_str += f"profit_and_loss: {self.profit_and_loss}"
+        portfolio_str += f"profit_and_loss: {round(self.profit_and_loss)}"
         return portfolio_str
 
 # ポートフォリオのサンプル
@@ -143,28 +143,24 @@ if __name__ == "__main__":
     # ポートフォリオクラスを初期化
     portfolio = Portfolio()
 
-    #portfolio.update_position_quantity_with_symbol("BTC/USD", 1000, "BUY")
-    
-    #btc = portfolio.get_position_quantity_with_symbol('BTC/USD')
-
-    #print(f"BTC/USD position quantity: {btc['quantity']} side: {btc['side']}")
-
-    portfolio.add_position_quantity(100, "BUY", 20000)
-    portfolio.add_position_quantity(200, "BUY", 30000)
+    portfolio.add_position_quantity(0.01, "BUY", 20000)
+    portfolio.add_position_quantity(0.01, "BUY", 20000)
     btc = portfolio.get_position_quantity()
-    #print(f"BTC/USD position quantity: {btc['quantity']} side: {btc['side']}")
     print(portfolio)
 
+    portfolio.clear_position_quantity(30000)
+    print(portfolio)
+    
+    portfolio.add_position_quantity(0.02, "SELL", 20000)
+    btc = portfolio.get_position_quantity()
+    print(portfolio)
     portfolio.clear_position_quantity(40000)
     print(portfolio)
-    portfolio.add_position_quantity(200, "SELL", 30000)
-    btc = portfolio.get_position_quantity()
-    print(portfolio)
-    #print(f"BTC/USD position quantity: {btc['quantity']} side: {btc['side']}")
 
-    portfolio.add_position_quantity(300, "BUY", 25000)
+    portfolio.add_position_quantity(0.04, "BUY", 20000)
     btc = portfolio.get_position_quantity()
     print(portfolio)
-    #print(f"BTC/USD position quantity: {btc['quantity']} side: {btc['side']}")
+    portfolio.clear_position_quantity(40000)
+    print(portfolio)
 
     

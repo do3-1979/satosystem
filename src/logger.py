@@ -13,11 +13,12 @@ import json
 import zipfile
 from datetime import datetime
 import logging
+from config import Config
 
 class Logger:
     _instance = None  # シングルトンインスタンスを格納するクラス変数
 
-    def __new__(cls, log_file='log.txt', log_directory="logs"):
+    def __new__(cls):
         """
         シングルトンインスタンスを生成または既存のインスタンスを返します。
 
@@ -29,20 +30,20 @@ class Logger:
         """
         if cls._instance is None:
             cls._instance = super(Logger, cls).__new__(cls)
-            cls._instance._initialize(log_file, log_directory)
+            cls._instance._initialize()
         return cls._instance
 
-    def _initialize(self, log_file, log_directory):
+    def _initialize(self):
         """
         Loggerクラスを初期化します。
 
         Args:
             log_file (str): ログを保存するファイル名
         """
-        self.log_file = log_file
+        self.log_file = Config.get_log_file_name()
         self.logger = logging.getLogger('bot_logger')
         self.logger.setLevel(logging.DEBUG)
-        self.log_directory = log_directory
+        self.log_directory = Config.get_log_dir_name()
         self.current_log_file = None
         self.open_log_file()
 
@@ -56,7 +57,7 @@ class Logger:
         self.logger.addHandler(console_handler)
 
         # ファイルハンドラの設定
-        file_handler = logging.FileHandler(log_file)
+        file_handler = logging.FileHandler(self.log_file)
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(formatter)
         self.logger.addHandler(file_handler)
