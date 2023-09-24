@@ -7,8 +7,8 @@
 #pngファイル
 *.png
 
-#zipファイル
-*.zip
+#xlsxファイル
+*.xlsx
 
 #任意のファイル・ディレクトリ
 backtest/
