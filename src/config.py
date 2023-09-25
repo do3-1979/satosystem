@@ -320,10 +320,7 @@ class Config:
         Returns:
             int: ボットの動作サイクル時間 (秒)
         """
-        cyctime = 0
-        
-        if cls.get_back_test_mode == 0:
-            cyctime = int(cls.config['Setting']['bot_operation_cycle'])
+        cyctime = int(cls.config['Setting']['bot_operation_cycle'])
         
         return cyctime
     
@@ -360,7 +357,7 @@ class Config:
     def get_back_test_mode(cls):
         """
         """
-        return cls.config['Backtest']['back_test']
+        return int(cls.config['Backtest']['back_test'])
 
     def __str__(self):
         """
