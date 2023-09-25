@@ -49,7 +49,7 @@ class Bot:
         config_instance = Config()
         back_test_mode = config_instance.get_back_test_mode()
         
-        if back_test_mode == True:
+        if back_test_mode == 1:
             self.logger.log("--- BOT START (BACK TEST MODE)-------------------------")
             self.price_data_management.initialise_back_test_ohlcv_data()
         else:
@@ -79,7 +79,7 @@ class Bot:
             self.risk_management.update_risk_status()
 
             # 取引所から口座残高を取得
-            if back_test_mode == True:
+            if back_test_mode == 1:
                 balance_tether = config_instance.get_account_balance() * price + self.portfolio.get_profit_and_loss()
             else:
                 balance = self.exchange.get_account_balance_total()
