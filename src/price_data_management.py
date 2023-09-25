@@ -1,4 +1,5 @@
 from datetime import datetime
+from datetime import timedelta
 from config import Config
 from logger import Logger
 from bybit_exchange import BybitExchange
@@ -47,7 +48,7 @@ class PriceDataManagement:
         self.volatility = 0
         self.prev_close_time = 0
         
-        if Config.get_back_test_mode() == True:
+        if Config.get_back_test_mode() == 1:
             self.back_test_ohlcv_data = []
             self.progress_time = 0
             
@@ -163,16 +164,17 @@ class PriceDataManagement:
         # 価格データの更新
         start_epoch = Config.get_start_epoch()
         # Back test 用には、指定時間＋解析に必要な期間のみ追加する
-        if Config.get_back_test_mode() == True:
+        if Config.get_back_test_mode() == 1:
             if self.progress_time == 0:
                 # 最初の終了処理は開始時間＋初期分析に必要な時間
                 # 必要期間を取得
                 initial_term = Config.get_test_initial_max_term()
                 # epoch時間に変換
                 diff_time = initial_term * Config.get_time_frame()
-                td = datetime.timedelta(minutes = diff_time)
+                td = timedelta(minutes=diff_time)
                 start_time = datetime.strptime(Config.get_start_time(), "%Y/%m/%d %H:%M")
                 end_time = start_time + td
+                print(f"end_time {end_time}")
                 end_epoch = int(end_time.timestamp())
                 self.progress_time = end_epoch
         # 本番用
@@ -183,19 +185,20 @@ class PriceDataManagement:
         last_ohlcv_data = tmp_ohlcv_data[-1]
 
         # 最新値の更新
-        if Config.get_back_test_mode() == True:
+        if Config.get_back_test_mode() == 1:
             # 指定した時間の次のデータを取得する　同時に次のデータ時間も取得する
             self.latest_ohlcv_data, next_data = self.get_back_test_ohlcv_data(self.progress_time)
+            print(f"latest_ohlcv_data {self.latest_ohlcv_data}")
             # 次のデータ時間を更新
             self.progress_time = next_data['close_time']
             # 最新の値は最新のclose時間とする
             # TODO 60秒のデータの組み合わせ
-            self.ticker = self.latest_ohlcv_data[0]['close_price']
+            self.ticker = self.latest_ohlcv_data['close_price']
+            self.volume = self.latest_ohlcv_data['Volume']
         else:
             self.latest_ohlcv_data = self.exchange.fetch_latest_ohlcv()
             self.ticker = self.exchange.fetch_ticker()
-
-        self.volume = self.latest_ohlcv_data[0]['Volume']
+            self.volume = self.latest_ohlcv_data[0]['Volume']
 
         # 初回の処理
         if self.prev_close_time == 0:

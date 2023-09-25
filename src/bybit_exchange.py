@@ -129,7 +129,7 @@ class BybitExchange(Exchange):
             raise ValueError("Invalid order_type. Use 'limit' or 'market'.")
 
         # テストでは常に成功
-        if Config.get_back_test_mode() == True:
+        if Config.get_back_test_mode() == 1:
             response = True
         else:
             response = self.exchange.create_order(

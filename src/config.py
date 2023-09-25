@@ -322,7 +322,7 @@ class Config:
         """
         cyctime = 0
         
-        if cls.get_back_test_mode == False:
+        if cls.get_back_test_mode == 0:
             cyctime = int(cls.config['Setting']['bot_operation_cycle'])
         
         return cyctime
@@ -392,7 +392,8 @@ class Config:
         config_str += f"PVO Long Term: {self.get_pvo_l_term()}\n"
         config_str += f"PVO Threshold: {self.get_pvo_threshold()}\n"
         config_str += f"Server Retry Wait: {self.get_server_retry_wait()}\n"
-        config_str += f"Bot Operation Cycle: {self.get_bot_operation_cycle()}"
+        config_str += f"Bot Operation Cycle: {self.get_bot_operation_cycle()}\n"
+        config_str += f"Back Test Mode: {self.get_back_test_mode()}"
 
         return config_str
 
