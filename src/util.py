@@ -29,13 +29,13 @@ class Util:
         # 新しいものから指定された数のログファイルを選択
         selected_log_files = sorted(log_files, reverse=True)[:num_logs]
 
-        print(selected_log_files)
-
         # データを格納するためのリスト
         data = []
+        proccess_num_logs = min(num_logs, len(selected_log_files))
 
         # 選択されたログファイルからデータを抽出
-        for log_file in selected_log_files:
+        for i, log_file in enumerate(reversed(selected_log_files)):  # 逆順に処理
+            print(f"Processing file {i + 1}/{proccess_num_logs}: {log_file}")  # 処理中のファイルを表示
             with zipfile.ZipFile(log_file, "r") as log_zip:
                 with log_zip.open(log_zip.namelist()[0]) as log_json:
                     log_data = pd.read_json(log_json)
@@ -94,6 +94,7 @@ class Util:
         # エクセルファイルを保存
         writer.save()
         writer.close()
+        print("Export completed!")
         
     def generate_line_chart(self, data, column_name, chart_sheet):
         """
