@@ -163,20 +163,19 @@ class Bot:
             self.logger.log_trade_data(trade_data)
 
             # 一定の待ち時間を設けてループを繰り返す
-            # TODO TEST テストではwaitは不要
-            time.sleep(self.bot_operation_cycle)
+            if back_test_mode == 0:
+                time.sleep(self.bot_operation_cycle)
 
-            # 2時間ごとにファイルを分けるかチェック
-            # TODO TEST テストで圧縮は不要
-            current_time = datetime.now()
-            if log_zipped == False and int(current_time.strftime("%H")) % 2 == 0 and int(current_time.strftime("%M")) == 0:
-                # ログをローテート
-                self.logger.close_log_file()
-                self.logger.compress_logs()  # 圧縮
-                self.logger.open_log_file()
-                log_zipped = True
-            else:
-                log_zipped = False
+                # 2時間ごとにファイルを分けるかチェック
+                current_time = datetime.now()
+                if log_zipped == False and int(current_time.strftime("%H")) % 2 == 0 and int(current_time.strftime("%M")) == 0:
+                    # ログをローテート
+                    self.logger.close_log_file()
+                    self.logger.compress_logs()  # 圧縮
+                    self.logger.open_log_file()
+                    log_zipped = True
+                else:
+                    log_zipped = False
 
             #except Exception as e:
             #    print("エラー発生:", str(e))
