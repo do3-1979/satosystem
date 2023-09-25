@@ -43,7 +43,7 @@ class PriceDataManagement:
         self.latest_ohlcv_data = []
         self.ticker = 0
         self.volume = 0
-        self.signals = {'donchian': {'signal': False, 'side': None }, 'pvo': {'signal': False, 'side': None }}
+        self.signals = {'donchian': {'signal': False, 'side': None, 'info': {'highest': 0, 'lowest': 0} }, 'pvo': {'signal': False, 'side': None, 'info':{'value': 0} }}
         self.volatility = 0
         self.prev_close_time = 0
 
@@ -134,7 +134,7 @@ class PriceDataManagement:
         """
         self.logger.log("トレードシグナル:")
         for signal_type, signal_info in self.signals.items():
-            self.logger.log(f"{signal_type}: Signal = {signal_info['signal']}, Side = {signal_info['side']}")
+            self.logger.log(f"{signal_type}: Signal = {signal_info['signal']}, Side = {signal_info['side']}, Info = {signal_info['info']}")
 
     def get_signals(self):
         """
@@ -168,7 +168,8 @@ class PriceDataManagement:
         # 価格更新時
         elif self.prev_close_time < last_ohlcv_data['close_time']:
             # donchian update
-            dc = self.__evaluate_donchian(self.ohlcv_data, self.ticker)
+            dc, high, low = self.__evaluate_donchian(self.ohlcv_data, self.ticker)
+            
             if dc == 'BUY':
                 self.signals['donchian']['signal'] = True
                 self.signals['donchian']['side'] = 'BUY'
@@ -178,9 +179,15 @@ class PriceDataManagement:
             else:
                 self.signals['donchian']['signal'] = False
                 self.signals['donchian']['side'] = 'None'
+
+            self.signals['donchian']['info']['highest'] = high
+            self.signals['donchian']['info']['lowest'] = low
+
             # PVO update
             volume = last_ohlcv_data['Volume']
-            self.signals['pvo']['signal'] = self.__evaluate_pvo(self.ohlcv_data, volume)
+            pvo, value = self.__evaluate_pvo(self.ohlcv_data, volume)
+            self.signals['pvo']['signal'] = pvo
+            self.signals['pvo']['info']['value'] = value
             # update volatility
             self.volatility = self.calcurate_volatility(tmp_ohlcv_data)
             # update last data
@@ -214,7 +221,7 @@ class PriceDataManagement:
         if price < lowest:
             side = 'SELL'
 
-        return side
+        return side, highest, lowest
 
     def __calc_ema(self, term, data):
         """
@@ -287,7 +294,7 @@ class PriceDataManagement:
         else:
             judge = True
 
-        return judge
+        return judge, pvo_value
 
 if __name__ == "__main__":
     # PriceDataManagement
@@ -308,3 +315,4 @@ if __name__ == "__main__":
 
     # 最新のトレードシグナルを表示
     price_data_management.show_latest_signals()
+

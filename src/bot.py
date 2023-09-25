@@ -74,7 +74,7 @@ class Bot:
             # 取引所から口座残高を取得
             #balance = self.exchange.get_account_balance_total()
             #balance_tether = self.exchange.get_account_balance_total() * price
-            # TODO テスト処理
+            # TODO テスト処理 
             balance_tether = 300 + self.portfolio.get_profit_and_loss() * price
 
             # --------------------------------------------
@@ -141,8 +141,15 @@ class Bot:
             trade_data['total_size'] = self.risk_management.get_total_size()
             trade_data['profit_and_loss'] = self.portfolio.get_profit_and_loss()
             trade_data['volatility'] = self.price_data_management.get_volatility()   
+            
+            # signal info
+            signals = self.price_data_management.get_signals()
+            trade_data['dc_h'] = signals['donchian']['info']['highest']
+            trade_data['dc_l'] = signals['donchian']['info']['lowest']
+            trade_data['pvo'] = signals['pvo']['info']['value']
+            
             trade_data.update(trade_decision)
-            trade_data.update(self.price_data_management.get_signals())
+            trade_data.update(signals)
 
             # 取引データを記録
             self.logger.log_trade_data(trade_data)
