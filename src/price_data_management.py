@@ -46,7 +46,11 @@ class PriceDataManagement:
         self.signals = {'donchian': {'signal': False, 'side': None, 'info': {'highest': 0, 'lowest': 0} }, 'pvo': {'signal': False, 'side': None, 'info':{'value': 0} }}
         self.volatility = 0
         self.prev_close_time = 0
-
+        
+        if Config.get_back_test_mode() == True:
+            self.back_test_ohlcv_data = []
+            self.progress_time = 0
+            
     def get_ohlcv_data(self):
         """
         OHLCVデータを取得するメソッドです。
@@ -149,18 +153,54 @@ class PriceDataManagement:
         """
         価格データとトレードシグナルを更新するメソッドです。
         """
-        # 最新値の更新
-        self.latest_ohlcv_data = self.exchange.fetch_latest_ohlcv()
-        self.volume = self.latest_ohlcv_data[0]['Volume']
-        self.ticker = self.exchange.fetch_ticker()
+        # TODO TEST 
+        # back test時は、サーバ処理を1回で終えられるように、まとめてデータを取得しておく
+        # 1. 指定された期間のうち、初期計算に必要な期間だけ、ohlcvデータを取得する
+        # 2. 以降、呼び出されるごとに、1データ分追加する チャート時間が変わっていればいい
+        # fetch_latest_ohlcv は volumeの更新に使っているので、同じ最新値データが取れればいい
+        # fetch_tickerもドンチャンチャネルの更新なので、同じ最新値データがあればいい
 
         # 価格データの更新
-        tmp_ohlcv_data = self.exchange.fetch_ohlcv()
+        start_epoch = Config.get_start_epoch()
+        # Back test 用には、指定時間＋解析に必要な期間のみ追加する
+        if Config.get_back_test_mode() == True:
+            if self.progress_time == 0:
+                # 最初の終了処理は開始時間＋初期分析に必要な時間
+                # 必要期間を取得
+                initial_term = Config.get_test_initial_max_term()
+                # epoch時間に変換
+                diff_time = initial_term * Config.get_time_frame()
+                td = datetime.timedelta(minutes = diff_time)
+                start_time = datetime.strptime(Config.get_start_time(), "%Y/%m/%d %H:%M")
+                end_time = start_time + td
+                end_epoch = int(end_time.timestamp())
+                self.progress_time = end_epoch
+        # 本番用
+        else:
+            end_epoch = Config.get_end_epoch()
+        
+        tmp_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch)
         last_ohlcv_data = tmp_ohlcv_data[-1]
+
+        # 最新値の更新
+        if Config.get_back_test_mode() == True:
+            # 指定した時間の次のデータを取得する　同時に次のデータ時間も取得する
+            self.latest_ohlcv_data, next_data = self.get_back_test_ohlcv_data(self.progress_time)
+            # 次のデータ時間を更新
+            self.progress_time = next_data['close_time']
+            # 最新の値は最新のclose時間とする
+            # TODO 60秒のデータの組み合わせ
+            self.ticker = self.latest_ohlcv_data[0]['close_price']
+        else:
+            self.latest_ohlcv_data = self.exchange.fetch_latest_ohlcv()
+            self.ticker = self.exchange.fetch_ticker()
+
+        self.volume = self.latest_ohlcv_data[0]['Volume']
 
         # 初回の処理
         if self.prev_close_time == 0:
             self.prev_close_time = last_ohlcv_data['close_time']
+            # 初回のみ初期化
             self.ohlcv_data = tmp_ohlcv_data
             self.volatility = self.calcurate_volatility(tmp_ohlcv_data)
             return
@@ -197,6 +237,40 @@ class PriceDataManagement:
             del self.ohlcv_data[0]
             
         return
+
+    def initialise_back_test_ohlcv_data(self):
+        """
+        バックテスト用取引データ初期化
+        """
+        # 指定された期間のバックテストデータを取得
+        start_epoch = Config.get_start_epoch()
+        end_epoch = Config.get_end_epoch()
+        self.back_test_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch)
+        return
+
+    def get_back_test_ohlcv_data(self, target_unix_time):
+        """
+        指定された時間のデータと、次のデータを返す
+        """
+        closest_data = None
+        next_data = None
+        time_difference = float('inf')  # 初期値を無限大に設定
+
+        ohlcv_data = self.back_test_ohlcv_data
+
+        for i, data in enumerate(ohlcv_data):
+            data_unix_time = data['close_time']
+            if data_unix_time >= target_unix_time:
+                # 目標UNIX時間を超えているデータの場合
+                current_difference = data_unix_time - target_unix_time
+                if current_difference < time_difference:
+                    # より近いデータを見つけた場合
+                    time_difference = current_difference
+                    closest_data = data
+                    if i < len(ohlcv_data) - 1:
+                        next_data = ohlcv_data[i + 1]  # 次のデータを取得
+
+        return closest_data, next_data
 
     def __evaluate_donchian(self, ohlcv_data, price):
         """
