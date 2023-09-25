@@ -302,9 +302,12 @@ if __name__ == "__main__":
     # 最新の口座を取得
     balance = exchange.get_account_balance()
     # BTCのused、free、total情報を表示
-    #usd_balance = balance['BTC']['free']
-    #balance_tether = balance * price 
-    balance_tether = 200
+    usd_balance = balance['BTC']['total']
+    balance_tether = usd_balance * price
+    
+    # 不足する場合の救済処置
+    if balance_tether < risk_manager.balance_tether_limit:
+        balance_tether = risk_manager.balance_tether_limit * 2
 
     # 取引情報を決定
     price_data_management.update_price_data()

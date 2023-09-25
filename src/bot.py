@@ -46,8 +46,15 @@ class Bot:
         """
         ボットのメインループを実行します。口座残高を取得し、取引戦略に基づいてトレードを実行します。
         """
-        self.logger.log("--- BOT START -----------------------------------------")
         config_instance = Config()
+        back_test_mode = config_instance.get_back_test_mode()
+        
+        if back_test_mode == True:
+            self.logger.log("--- BOT START (BACK TEST MODE)-------------------------")
+            self.price_data_management.initialise_back_test_ohlcv_data()
+        else:
+            self.logger.log("--- BOT START -----------------------------------------")
+
         self.logger.log(str(config_instance))
         self.logger.log("-------------------------------------------------------")
 
@@ -72,10 +79,11 @@ class Bot:
             self.risk_management.update_risk_status()
 
             # 取引所から口座残高を取得
-            #balance = self.exchange.get_account_balance_total()
-            #balance_tether = self.exchange.get_account_balance_total() * price
-            # TODO テスト処理 
-            balance_tether = 300 + self.portfolio.get_profit_and_loss() * price
+            if back_test_mode == True:
+                balance_tether = config_instance.get_account_balance() * price + self.portfolio.get_profit_and_loss()
+            else:
+                balance = self.exchange.get_account_balance_total()
+                balance_tether = balance * price
 
             # --------------------------------------------
             # 取引戦略に口座残高を渡してトレード判断を取得

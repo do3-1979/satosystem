@@ -93,7 +93,6 @@ class BybitExchange(Exchange):
         Returns:
             int: 口座上の使用可能な証拠金残高
         """
-        # TODO TEST テスト時は初期残高 + 損益とする
         balance = self.exchange.fetchBalance()
 
         usd_balance = balance['BTC']['total']
@@ -129,14 +128,17 @@ class BybitExchange(Exchange):
         else:
             raise ValueError("Invalid order_type. Use 'limit' or 'market'.")
 
-        # TODO TEST テストでは常に成功
-        response = self.exchange.create_order(
-            symbol=order['symbol'],
-            side=order['side'],
-            type=order['type'],
-            quantity=order['amount'],
-            price=order['price']
-        )
+        # テストでは常に成功
+        if Config.get_back_test_mode() == True:
+            response = True
+        else:
+            response = self.exchange.create_order(
+                symbol=order['symbol'],
+                side=order['side'],
+                type=order['type'],
+                quantity=order['amount'],
+                price=order['price']
+            )
 
         return response
 
@@ -192,7 +194,7 @@ class BybitExchange(Exchange):
         
         return epoch_time
 
-    def fetch_ohlcv(self):
+    def fetch_ohlcv(self, start_epoch, end_epoch):
         """
         取引情報を取得
 
@@ -201,16 +203,6 @@ class BybitExchange(Exchange):
         """
         err_occuerd = False
         ohlcv_data = []
-
-        # TODO TEST 
-        # 1. 指定された期間のうち、初期計算に必要な期間だけ、ohlcvデータを取得する
-        # 2. 以降、呼び出されるごとに、1データ分追加する チャート時間が変わっていればいい
-        # fetch_latest_ohlcv は volumeの更新に使っているので、同じ最新値データが取れればいい
-        # fetch_tickerもドンチャンチャネルの更新なので、同じ最新値データがあればいい
-
-        # 期間指定
-        start_epoch = Config.get_start_epoch()
-        end_epoch = Config.get_end_epoch()
 
         server_retry_wait = Config.get_server_retry_wait()
         
@@ -286,8 +278,6 @@ class BybitExchange(Exchange):
 
         if err_occuerd == True:
             self.logger.log_error("最新価格取得エラー復帰")
-
-        # 終端時間を超えないかぎり取得
         
         latest_ohlcv = ohlcv[-1]
         tmp_time = latest_ohlcv[0] / 1000 
@@ -369,7 +359,9 @@ if __name__ == "__main__":
     print("価格データを取得")
     print("----------")
     start_price_time = time.time()
-    ohlcv_data = exchange.fetch_ohlcv()
+    start_epoch = Config.get_start_epoch()
+    end_epoch = Config.get_end_epoch()
+    ohlcv_data = exchange.fetch_ohlcv(start_epoch,end_epoch)
     end_price_time = time.time()
     
     # 表示するエントリーのインデックスを指定

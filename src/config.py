@@ -320,7 +320,12 @@ class Config:
         Returns:
             int: ボットの動作サイクル時間 (秒)
         """
-        return int(cls.config['Setting']['bot_operation_cycle'])
+        cyctime = 0
+        
+        if cls.get_back_test_mode == False:
+            cyctime = int(cls.config['Setting']['bot_operation_cycle'])
+        
+        return cyctime
     
     @classmethod
     def get_test_initial_max_term(cls):
