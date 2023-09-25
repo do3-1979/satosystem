@@ -55,6 +55,7 @@ class Bot:
         while True:
         #    try:
             log_zipped = False
+            trade_executed = False
             # --------------------------------------------
             # 最初に価格情報の更新
             # --------------------------------------------
@@ -72,8 +73,9 @@ class Bot:
 
             # 取引所から口座残高を取得
             #balance = self.exchange.get_account_balance_total()
+            #balance_tether = self.exchange.get_account_balance_total() * price
             # TODO テスト処理
-            balance = 300 + self.portfolio.get_profit_and_loss()
+            balance_tether = 300 + self.portfolio.get_profit_and_loss() * price
 
             # --------------------------------------------
             # 取引戦略に口座残高を渡してトレード判断を取得
@@ -82,12 +84,12 @@ class Bot:
             # --------------------------------------------
             # 取引決定の場合
             # --------------------------------------------
-            if trade_decision["decision"] != None:
+            if trade_decision["decision"] != None and trade_executed == False:
                 # --------------------------------------------
                 # シグナル発生
                 self.price_data_management.show_latest_signals()
                 # 決定状態を表示
-                self.logger.log(strategy)
+                self.logger.log(f"シグナル発生: {strategy}")
                 
                 # 清算時は全ポジション
                 if trade_decision["decision"] == "EXIT":
@@ -95,9 +97,11 @@ class Bot:
                     position_size = self.portfolio.get_position_quantity(self.market_type)
                 # リスクからポジションサイズ決定
                 else: # TODO "ADD" の場合、連続追加発注を検討するべき
-                    position_size = self.risk_management.calculate_position_size(balance, price)
+                    position_size = self.risk_management.calculate_position_size(balance_tether, price)
                 # ベースに帰着
                 quantity = position_size
+
+                self.logger.log(f"購入量: {position_size} 市場価格：{position_size * price} [BTC/USD]")
 
                 # 注文クラス作成
                 order = Order(trade_decision["side"],
@@ -119,6 +123,12 @@ class Bot:
                     self.portfolio.clear_position_quantity(price)
                 elif trade_decision["decision"] == "ENTRY" or trade_decision["decision"] == "ADD":
                     self.portfolio.add_position_quantity(quantity, trade_decision["side"], price)
+                    
+                # イベント初期化
+                self.strategy.initialize_trade_decision()
+                trade_executed = True
+            else:
+                trade_executed = False
 
             # --------------------------------------------
             # ログに記録

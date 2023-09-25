@@ -93,6 +93,7 @@ class BybitExchange(Exchange):
         Returns:
             int: 口座上の使用可能な証拠金残高
         """
+        # TODO TEST テスト時は初期残高 + 損益とする
         balance = self.exchange.fetchBalance()
 
         usd_balance = balance['BTC']['total']

@@ -47,7 +47,7 @@ class Portfolio:
 
     def get_profit_and_loss(self):
         """
-        利益と損失を取得します。
+        利益と損失を取得します。単位は[BTC/USD]
         """
         return self.profit_and_loss
 
