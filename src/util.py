@@ -50,12 +50,9 @@ class Util:
         writer = pd.ExcelWriter(output_excel_file_path, engine='openpyxl')
         writer.book = workbook
 
-        # データをエクセルに書き込み
-        combined_data.to_excel(writer, sheet_name='Data', index=False)
-
-        # 必要なカラムを選択
-        """
+        # カラムの選択
         selected_columns = [
+            "real_time",
             "close_time_dt",
             "open_price",
             "high_price",
@@ -66,26 +63,39 @@ class Util:
             "stop_price",
             "position_size",
             "total_size",
+            "profit_and_loss",
             "volatility",
+            "pvo_val",
             "decision",
             "side",
-            "order_type"
+            "order_type",
+            "dc_h",
+            "dc_l"
         ]
-        """
 
-        """
-        # カラムごとに折れ線グラフを生成し、別のシートに追加
-        selected_graph_columns = [
+        # 選択したカラムでデータをフィルタリング
+        combined_data = combined_data[selected_columns]
+
+        # 選択したカラムの順番に並べ替え
+        combined_data = combined_data[[
+            "real_time",
+            "close_time_dt",
+            "Volume",
             "open_price",
             "high_price",
             "low_price",
-            "close_price",
-            "Volume",
+            "dc_h",
+            "dc_l",
             "volatility",
+            "decision",
+            "side",
+            "stop_price",
             "position_size",
-            "total_size"
-        ]
-        """
+            "profit_and_loss"
+        ]]
+
+        # データをエクセルに書き込み
+        combined_data.to_excel(writer, sheet_name='Data', index=False)
 
         column_name = "グラフ"
         chart_sheet = workbook.create_sheet(title=f"Graph")

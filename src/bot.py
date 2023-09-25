@@ -146,7 +146,7 @@ class Bot:
             signals = self.price_data_management.get_signals()
             trade_data['dc_h'] = signals['donchian']['info']['highest']
             trade_data['dc_l'] = signals['donchian']['info']['lowest']
-            trade_data['pvo'] = signals['pvo']['info']['value']
+            trade_data['pvo_val'] = signals['pvo']['info']['value']
             
             trade_data.update(trade_decision)
             trade_data.update(signals)

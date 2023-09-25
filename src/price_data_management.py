@@ -100,7 +100,7 @@ class PriceDataManagement:
         volatility_term = Config.get_volatility_term()
         high_sum = sum(i['high_price'] for i in ohlcv_data[-1 * volatility_term :])
         low_sum = sum(i['low_price'] for i in ohlcv_data[-1 * volatility_term :])
-        volatility = round((high_sum - low_sum) / volatility_term)
+        volatility = (high_sum - low_sum) / volatility_term
         return volatility
 
     def show_latest_ticker(self):
