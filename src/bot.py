@@ -160,7 +160,7 @@ class Bot:
             trade_data.update(signals)
 
             # portfolio
-            trade_data['positions'] = self.risk_management.get_position_quantity()
+            trade_data['positions'] = self.portfolio.get_position_quantity()
 
             # 取引データを記録
             self.logger.log_trade_data(trade_data)

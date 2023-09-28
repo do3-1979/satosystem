@@ -1,11 +1,12 @@
 #!/bin/bash
 
 # clear log
-rm logs/*.json
-rm logs/*.zip
+rm -f logs/*.json
+rm -f logs/*.zip
 
-rm log.txt
+rm -f log.txt
+rm -f err.log
 
 echo "### clear log done"
 
-python bot.py
+python3 bot.py 2>> err.log &
