@@ -44,7 +44,7 @@ class TradingStrategy:
         """
         trade_decision 辞書を初期化します。
         """
-        self.trade_decision = {'decision': None, 'side': None, 'order_type': 'Market'}
+        self.trade_decision = {'decision': 'NONE', 'side': 'NONE', 'order_type': 'Market'}
  
     def evaluate_entry(self):
         """
@@ -55,8 +55,8 @@ class TradingStrategy:
         2. ドンチャンチャネルブレイクが発生
         3. PVOが閾値範囲内
         """
-        side = None
-        decision = None
+        side = 'NONE'
+        decision = 'NONE'
         
         # 保有状態を確認
         portfolio = self.portfolio.get_position_quantity()
@@ -71,10 +71,10 @@ class TradingStrategy:
             if signals["pvo"]["signal"] == True:
                 # ドンチャンチャネルブレイク発生
                 if signals["donchian"]["signal"] == True:
-                    if signals["pvo"]["side"] == "BUY":
+                    if signals["donchian"]["side"] == "BUY":
                         side = "BUY"
                         decision = "ENTRY"
-                    elif signals["pvo"]["side"] == "SELL":
+                    elif signals["donchian"]["side"] == "SELL":
                         side = "SELL"
                         decision = "ENTRY"
 
@@ -91,9 +91,9 @@ class TradingStrategy:
         1. ポジションを保有している
         2. 追加レンジ幅が前回取得値を超過
         """
-        side = None
-        decision = None
-        position_side = None
+        side = 'NONE'
+        decision = 'NONE'
+        position_side = 'NONE'
 
         portfolio = self.portfolio.get_position_quantity()
         
@@ -101,7 +101,7 @@ class TradingStrategy:
         if portfolio["quantity"] != 0:        
             # 保有状態を確認 
             position_side = self.portfolio.get_position_side()
-            if position_side != None:
+            if position_side != 'NONE':
                 # 追加レンジ幅を取得
                 range = self.risk_manager.get_entry_range()
                 
@@ -127,9 +127,9 @@ class TradingStrategy:
         エグジット条件を評価し、ポジションをクローズするかどうかを決定します。
 
         """
-        side = None
-        decision = None
-        position_side = None
+        side = 'NONE'
+        decision = 'NONE'
+        position_side = 'NONE'
 
         # 保有状態を確認
         portfolio = self.portfolio.get_position_quantity()

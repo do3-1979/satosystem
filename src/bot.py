@@ -92,7 +92,7 @@ class Bot:
             # --------------------------------------------
             # 取引決定の場合
             # --------------------------------------------
-            if trade_decision["decision"] != None and trade_executed == False:
+            if trade_decision["decision"] != 'NONE' and trade_executed == False:
                 # --------------------------------------------
                 # シグナル発生
                 self.price_data_management.show_latest_signals()
@@ -158,6 +158,9 @@ class Bot:
             
             trade_data.update(trade_decision)
             trade_data.update(signals)
+
+            # portfolio
+            trade_data['positions'] = self.risk_management.get_position_quantity()
 
             # 取引データを記録
             self.logger.log_trade_data(trade_data)

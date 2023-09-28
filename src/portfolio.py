@@ -17,7 +17,7 @@ from config import Config  # Config クラスのインポート
 # Portfolio クラスの定義
 class Portfolio:
     def __init__(self):
-        self.positions = {'BTC/USD': {'quantity': 0, 'side': None, 'position_price': 0 }}  # ポートフォリオ内の各通貨の保有ポジション量
+        self.positions = {'BTC/USD': {'quantity': 0, 'side': 'NONE', 'position_price': 0 }}  # ポートフォリオ内の各通貨の保有ポジション量
         self.market_type = Config.get_market()
         self.profit_and_loss = 0
 
@@ -90,10 +90,10 @@ class Portfolio:
 
         # 買いまたは売りの判定
         side = self.get_position_side()
-        if side == "BUY":
+        if side == 'BUY':
             # 買いの場合は purchase_price - price が利益
             profit_or_loss = (price - purchase_price) * quantity
-        elif side == "SELL":
+        elif side == 'SELL':
             # 売りの場合は price - purchase_price が利益
             profit_or_loss = (purchase_price - price) * quantity
         else:
@@ -104,7 +104,7 @@ class Portfolio:
 
         # ポジション情報のクリア
         self.positions[self.market_type]["quantity"] = 0
-        self.positions[self.market_type]["side"] = None
+        self.positions[self.market_type]["side"] = 'NONE'
         self.positions[self.market_type]["position_price"] = 0
         return
 
