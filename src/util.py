@@ -59,7 +59,6 @@ class Util:
             "low_price",
             "close_price",
             "Volume",
-            "chart_time",
             "stop_price",
             "position_size",
             "total_size",
@@ -70,7 +69,9 @@ class Util:
             "side",
             "order_type",
             "dc_h",
-            "dc_l"
+            "dc_l",
+            "donchian",
+            "pvo"
         ]
 
         # 選択したカラムでデータをフィルタリング
@@ -81,9 +82,9 @@ class Util:
             "real_time",
             "close_time_dt",
             "Volume",
-            "open_price",
             "high_price",
             "low_price",
+            "close_price",
             "dc_h",
             "dc_l",
             "volatility",
@@ -91,7 +92,9 @@ class Util:
             "side",
             "stop_price",
             "position_size",
-            "profit_and_loss"
+            "profit_and_loss",
+            "donchian",
+            "pvo"
         ]]
 
         # データをエクセルに書き込み
@@ -136,7 +139,7 @@ if __name__ == "__main__":
     # 使用例
     #log_directory = "logs"  # ログファイルのディレクトリ
     log_directory = "../test/test_data"  # ログファイルのディレクトリ
-    num_logs_to_read = 10  # 読み込むログファイルの数
+    num_logs_to_read = 33  # 読み込むログファイルの数
     output_excel_file = "combined_logs.xlsx"  # 出力エクセルファイルの名前
 
     util.extract_and_export_logs(log_directory, num_logs_to_read, output_excel_file)
