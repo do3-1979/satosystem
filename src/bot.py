@@ -105,7 +105,7 @@ class Bot:
                     position_size = self.portfolio.get_position_quantity(self.market_type)
                 # リスクからポジションサイズ決定
                 else: # TODO "ADD" の場合、連続追加発注を検討するべき
-                    position_size = self.risk_management.calculate_position_size(balance_tether, price)
+                    position_size = self.risk_management.calculate_position_size(balance_tether)
                 # ベースに帰着
                 quantity = position_size
 
