@@ -44,7 +44,7 @@ class TradingStrategy:
         """
         trade_decision 辞書を初期化します。
         """
-        self.trade_decision = {'decision': 'NONE', 'side': 'NONE', 'order_type': 'Market'}
+        self.trade_decision = {'decision': 'NONE', 'side': 'NONE', 'order_type': 'market'}
  
     def evaluate_entry(self):
         """
@@ -144,6 +144,7 @@ class TradingStrategy:
             
             # 現在値とストップ値比較
             position_side = self.portfolio.get_position_side()
+
             if position_side == "BUY":
                 if price <= stop_price:
                     side = "SELL"

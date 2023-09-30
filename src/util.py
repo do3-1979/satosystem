@@ -23,7 +23,7 @@ class Util:
         log_files = []
         for root, _, files in os.walk(log_directory):
             for file in files:
-                if file.endswith(".zip"):
+                if file.endswith(".zip") or file.endswith(".json"):
                     log_files.append(os.path.join(root, file))
 
         # 新しいものから指定された数のログファイルを選択
@@ -36,8 +36,13 @@ class Util:
         # 選択されたログファイルからデータを抽出
         for i, log_file in enumerate(reversed(selected_log_files)):  # 逆順に処理
             print(f"Processing file {i + 1}/{proccess_num_logs}: {log_file}")  # 処理中のファイルを表示
-            with zipfile.ZipFile(log_file, "r") as log_zip:
-                with log_zip.open(log_zip.namelist()[0]) as log_json:
+            if log_file.endswith(".zip"):
+                with zipfile.ZipFile(log_file, "r") as log_zip:
+                    with log_zip.open(log_zip.namelist()[0]) as log_json:
+                        log_data = pd.read_json(log_json)
+                        data.append(log_data)
+            elif log_file.endswith(".json"):
+                with open(log_file, "r") as log_json:
                     log_data = pd.read_json(log_json)
                     data.append(log_data)
 
@@ -137,8 +142,8 @@ if __name__ == "__main__":
     util = Util()
 
     # 使用例
-    #log_directory = "logs"  # ログファイルのディレクトリ
-    log_directory = "../test/test_data"  # ログファイルのディレクトリ
+    log_directory = "logs"  # ログファイルのディレクトリ
+    #log_directory = "../test/test_data"  # ログファイルのディレクトリ
     num_logs_to_read = 33  # 読み込むログファイルの数
     output_excel_file = "combined_logs.xlsx"  # 出力エクセルファイルの名前
 

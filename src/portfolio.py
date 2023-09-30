@@ -64,6 +64,7 @@ class Portfolio:
             self.positions[self.market_type]["quantity"] = quantity
             self.positions[self.market_type]["side"] = side
             self.positions[self.market_type]["position_price"] = price
+            print(f"AAA quantity {quantity} side {side} price {price}")
         else:
             # 既存のポジションがある場合、平均取得単価を計算しなおす
             new_quantity = current_quantity + quantity
@@ -72,6 +73,7 @@ class Portfolio:
             self.positions[self.market_type]["quantity"] = new_quantity
             self.positions[self.market_type]["side"] = side
             self.positions[self.market_type]["position_price"] = new_position_price
+            print(f"BBB quantity {new_quantity} side {side} price {new_position_price}")
 
         return
 
@@ -101,6 +103,8 @@ class Portfolio:
 
         # 利益と損失の合算
         self.profit_and_loss += profit_or_loss
+
+        print(f"profit_and_loss { self.profit_and_loss} profit_or_loss {profit_or_loss} purchase_price {purchase_price}price {price} quantity {quantity}")
 
         # ポジション情報のクリア
         self.positions[self.market_type]["quantity"] = 0
