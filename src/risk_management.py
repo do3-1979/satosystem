@@ -169,6 +169,7 @@ class RiskManagement:
 
         # 現在の平均取得単価
         position_price = self.portfolio.get_position_price()
+        tmp_stop_offset = prev_stop_offset
 
         # BUYの時は現在値からpsarbullの差をstopとする。SELLはpserbear
         if self.portfolio.get_position_side() == "BUY" and psarbull != None:
@@ -187,6 +188,8 @@ class RiskManagement:
         prev_stop_offset = self.stop_offset
         surge_follow_price = self.surge_follow_price_ratio * price
         position_price = self.portfolio.get_position_price()
+
+        tmp_stop_offset = prev_stop_offset
 
         # 終値とストップ値の差額を出す
         if self.portfolio.get_position_side() == "BUY":
@@ -208,7 +211,11 @@ class RiskManagement:
     def __update_stop_price(self):
         # 現在のstop値取得
         prev_stop_offset = self.stop_offset
-          
+        # 0は未設定なので初期値を入れる
+        if prev_stop_offset == 0:
+            prev_stop_offset = self.price_data_management.get_volatility() * self.initial_stop_range
+            self.stop_offset = prev_stop_offset
+        
         # ポジションがある場合
         position = self.portfolio.get_position_quantity()
         quantity = position["quantity"]
@@ -221,7 +228,7 @@ class RiskManagement:
 
             # チャートに依存せず急騰時に追従する
             price = self.price_data_management.get_ticker()
-            price_surge_stop_offset = self.__follow_price_surge(ohlcv_data, price)
+            price_surge_stop_offset = self.__follow_price_surge(price)
 
             # 現在値からレンジ幅でストップ値を計算
             self.stop_offset = min(prev_stop_offset, psar_stop_offset, price_surge_stop_offset)
@@ -230,8 +237,14 @@ class RiskManagement:
                 self.stop_price = price - self.stop_offset
             if side == "SELL":
                 self.stop_price = price + self.stop_offset
-        
-        return
+            
+        else:
+            self.stop_price = 0
+            self.stop_offset = 0
+            self.position_size = 0 
+            self.total_size = 0
+            self.stop_ATR = 0
+            self.last_entry_price = 0 # 価格ベース
 
     def calculate_position_size(self, balance_tether):
         """

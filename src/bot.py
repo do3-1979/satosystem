@@ -67,6 +67,13 @@ class Bot:
             # 最初に価格情報の更新
             # --------------------------------------------
             self.price_data_management.update_price_data()
+            # バックテスト終端だったら抜ける
+            if back_test_mode == 1 and self.price_data_management.chk_test_term_end() == True:
+                self.logger.log("reacrh log end")
+                self.logger.log(self.portfolio.get_position_quantity())
+                self.logger.close_log_file()
+                self.logger.log("--- BOT END -------------------------------------------")
+                break
             
             # 取得情報を表示
             self.price_data_management.show_latest_ohlcv()
@@ -94,32 +101,32 @@ class Bot:
             # --------------------------------------------
             if trade_decision["decision"] != 'NONE' and trade_executed == False:
                 # --------------------------------------------
-                # シグナル発生
-                self.price_data_management.show_latest_signals()
                 # 決定状態を表示
                 self.logger.log(f"シグナル発生: {strategy}")
                 
                 # 清算時は全ポジション
                 if trade_decision["decision"] == "EXIT":
                     # 保有資産を取得
-                    position_size = self.portfolio.get_position_quantity(self.market_type)
+                    position_size = self.portfolio.get_position_quantity()
+                    quantity = position_size['quantity']
                 # リスクからポジションサイズ決定
                 else: # TODO "ADD" の場合、連続追加発注を検討するべき
                     position_size = self.risk_management.calculate_position_size(balance_tether)
+                    quantity = position_size
                 # ベースに帰着
-                quantity = position_size
-
-                self.logger.log(f"購入量: {position_size} 市場価格：{position_size * price} [BTC/USD]")
+                value = quantity * price
+                self.logger.log(f"購入量: {quantity} 市場価格：{value} [BTC/USD]")
 
                 # 注文クラス作成
-                order = Order(trade_decision["side"],
-                                quantity,
-                                price,
-                                trade_decision["order_type"])
+                order = Order(config_instance.get_market(),
+                              trade_decision["side"],
+                              quantity,
+                              price,
+                              trade_decision["order_type"])
 
-                self.logger.log("order:", order)
-                order_response = self.execute_order(order)
-                self.logger.log("注文実行:", order_response)
+                self.logger.log(order.to_dict())
+                order_response = self.execute_order(order.to_dict())
+                self.logger.log(f"注文実行:{order_response}")
                 # TODO エラー処理
 
                 # --------------------------------------------
@@ -164,7 +171,7 @@ class Bot:
 
             # 取引データを記録
             self.logger.log_trade_data(trade_data)
-
+            
             # 一定の待ち時間を設けてループを繰り返す
             if back_test_mode == 0:
                 time.sleep(self.bot_operation_cycle)
@@ -204,6 +211,7 @@ class Bot:
             price = 0
 
         # TODO テスト処理
+        order_response = 0
         #order_response = self.exchange.execute_order(side, quantity, price, order_type)
         return order_response
 

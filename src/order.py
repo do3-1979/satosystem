@@ -12,7 +12,7 @@ Args:
 """
 
 class Order:
-    def __init__(self, symbol, side, quantity, price=None, order_type='limit'):
+    def __init__(self, symbol, side, quantity, order_type, price=None):
         """
         Orderクラスを初期化します。
 
@@ -44,6 +44,8 @@ class Order:
         }
         if self.order_type == 'limit':
             order_dict['price'] = self.price
+        else:
+            order_dict['price'] = 0
         return order_dict
 
     def __str__(self):
