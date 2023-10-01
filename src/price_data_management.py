@@ -176,8 +176,11 @@ class PriceDataManagement:
         # 価格データの更新
         start_epoch = Config.get_start_epoch()
         end_epoch = 0
+        # --------------------------------------------
         # Back test 用には、指定時間＋解析に必要な期間のみ追加する
+        # --------------------------------------------
         if Config.get_back_test_mode() == 1:
+            # --------------------------------------------
             # 初期化時
             if self.progress_time == 0:
                 # 最初の終了処理は開始時間＋初期分析に必要な時間
@@ -191,24 +194,31 @@ class PriceDataManagement:
                 print(f"end_time {end_time}")
                 end_epoch = int(end_time.timestamp())
                 self.progress_time = end_epoch
+            # --------------------------------------------
             # 終端時
             elif self.progress_time == -1:
                 self.test_term_end = True
                 return
             else:
                 end_epoch = self.progress_time
+        # --------------------------------------------
         # 本番用
+        # --------------------------------------------
         else:
             end_epoch = Config.get_end_epoch()
         
         tmp_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch)
         last_ohlcv_data = tmp_ohlcv_data[-1]
 
+        # --------------------------------------------
         # 最新値の更新
+        # --------------------------------------------
+        # バックテスト時はバッファから1レコードずつ取得する
         if Config.get_back_test_mode() == 1:
             # 指定した時間の次のデータを取得する　同時に次のデータ時間も取得する
             next_ohlcv = []
             tmp_data, next_data  = self.get_back_test_ohlcv_data(self.progress_time)
+            self.latest_ohlcv_data = []
             self.latest_ohlcv_data.append(tmp_data)
             if next_data == None:
                 # 次のデータ時間を更新
@@ -220,9 +230,10 @@ class PriceDataManagement:
             # 最新の値は最新のclose時間とする
             # TODO 60秒のデータの組み合わせ
             self.ticker = self.latest_ohlcv_data[0]['close_price']
-            dt = self.latest_ohlcv_data[0]['close_time_dt']
-            print(f"self.ticker = {self.ticker} dt {dt}")
             self.volume = self.latest_ohlcv_data[0]['Volume']
+            
+        # --------------------------------------------
+        # 本番では都度サーバから取得する
         else:
             self.latest_ohlcv_data = self.exchange.fetch_latest_ohlcv()
             self.ticker = self.exchange.fetch_ticker()
@@ -236,7 +247,9 @@ class PriceDataManagement:
             self.volatility = self.calcurate_volatility(tmp_ohlcv_data)
             return
 
-        # 価格更新時
+        # --------------------------------------------
+        # データの更新があった場合
+        # --------------------------------------------
         elif self.prev_close_time < last_ohlcv_data['close_time']:
             # donchian update
             dc, high, low = self.__evaluate_donchian(self.ohlcv_data, self.ticker)
@@ -280,6 +293,7 @@ class PriceDataManagement:
         self.back_test_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch)
         print(self.back_test_ohlcv_data[-1]['close_time_dt'])
         return
+    
 
     def get_back_test_ohlcv_data(self, target_unix_time):
         """

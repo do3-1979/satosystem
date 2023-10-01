@@ -69,6 +69,9 @@ class Util:
             "total_size",
             "profit_and_loss",
             "volatility",
+            "stop_offset",
+            "stop_psar_stop_offset",
+            "stop_price_surge_stop_offset",
             "pvo_val",
             "decision",
             "side",
@@ -84,22 +87,25 @@ class Util:
 
         # 選択したカラムの順番に並べ替え
         combined_data = combined_data[[
-            "real_time",
             "close_time_dt",
-            "Volume",
+            "real_time",
             "high_price",
             "low_price",
             "close_price",
+            "stop_price",
             "dc_h",
             "dc_l",
+            "Volume",
             "volatility",
             "decision",
             "side",
-            "stop_price",
             "position_size",
             "profit_and_loss",
             "donchian",
-            "pvo"
+            "pvo",
+            "stop_offset",
+            "stop_psar_stop_offset",
+            "stop_price_surge_stop_offset",
         ]]
 
         # データをエクセルに書き込み

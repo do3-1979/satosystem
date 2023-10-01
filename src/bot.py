@@ -69,8 +69,9 @@ class Bot:
             self.price_data_management.update_price_data()
             # バックテスト終端だったら抜ける
             if back_test_mode == 1 and self.price_data_management.chk_test_term_end() == True:
-                self.logger.log("reacrh log end")
-                self.logger.log(self.portfolio.get_position_quantity())
+                self.logger.log("-------------------------------------------------------")
+                self.logger.log(f"最終ポートフォリオ: {self.portfolio.get_position_quantity()}")
+                self.logger.log(f"最終損益: {self.portfolio.get_profit_and_loss()} [BTC/USD]")
                 self.logger.close_log_file()
                 self.logger.log("--- BOT END -------------------------------------------")
                 break
@@ -126,7 +127,7 @@ class Bot:
 
                 self.logger.log(order.to_dict())
                 order_response = self.execute_order(order.to_dict())
-                self.logger.log(f"注文実行:{order_response}")
+                self.logger.log(f"注文実行: {order_response}")
                 # TODO エラー処理
 
                 # --------------------------------------------
@@ -138,7 +139,9 @@ class Bot:
                     self.portfolio.clear_position_quantity(price)
                 elif trade_decision["decision"] == "ENTRY" or trade_decision["decision"] == "ADD":
                     self.portfolio.add_position_quantity(quantity, trade_decision["side"], price)
-                    
+                self.logger.log(f"ポートフォリオ更新: {self.portfolio.get_position_quantity()}")
+                self.logger.log(f"損益: {self.portfolio.get_profit_and_loss()} [BTC/USD]")
+                
                 # イベント初期化
                 self.strategy.initialize_trade_decision()
                 trade_executed = True
@@ -155,7 +158,10 @@ class Bot:
             trade_data['position_size'] = self.risk_management.get_position_size()
             trade_data['total_size'] = self.risk_management.get_total_size()
             trade_data['profit_and_loss'] = self.portfolio.get_profit_and_loss()
-            trade_data['volatility'] = self.price_data_management.get_volatility()   
+            trade_data['volatility'] = self.price_data_management.get_volatility()
+            trade_data['stop_offset'] = self.risk_management.get_stop_offset()
+            trade_data['stop_psar_stop_offset'] = self.risk_management.get_psar_stop_offset()
+            trade_data['stop_price_surge_stop_offset'] = self.risk_management.get_price_surge_stop_offset()
             
             # signal info
             signals = self.price_data_management.get_signals()
