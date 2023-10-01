@@ -52,7 +52,6 @@ class RiskManagement:
         self.last_entry_price = 0 # 価格ベース
     
     def get_entry_range(self):
-        
         return self.entry_range * self.position_size
 
     def get_last_entry_price(self):
@@ -74,6 +73,15 @@ class RiskManagement:
         
     def get_total_size(self):
         return self.total_size
+
+    def get_stop_offset(self):
+        return self.stop_offset    
+    
+    def get_psar_stop_offset(self):
+        return self.psar_stop_offset
+    
+    def get_price_surge_stop_offset(self):
+        return self.price_surge_stop_offset
 
     # パラボリックSARを計算する関数
     def __calc_parabolic_sar(self, data):
@@ -231,14 +239,22 @@ class RiskManagement:
             price_surge_stop_offset = self.__follow_price_surge(price)
 
             # 現在値からレンジ幅でストップ値を計算
+            self.psar_stop_offset = psar_stop_offset
+            self.price_surge_stop_offset = price_surge_stop_offset
             self.stop_offset = min(prev_stop_offset, psar_stop_offset, price_surge_stop_offset)
             
             if side == "BUY":
-                self.stop_price = price - self.stop_offset
+                prev_stop_price = self.stop_price
+                tmp_stop_price = price - self.stop_offset
+                self.stop_price = max(prev_stop_price, tmp_stop_price)
             if side == "SELL":
-                self.stop_price = price + self.stop_offset
+                prev_stop_price = self.stop_price
+                tmp_stop_price = price + self.stop_offset
+                self.stop_price = min(prev_stop_price, tmp_stop_price)
             
         else:
+            self.psar_stop_offset = 0
+            self.price_surge_stop_offset = 0
             self.stop_price = 0
             self.stop_offset = 0
             self.position_size = 0 
