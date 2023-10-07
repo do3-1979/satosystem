@@ -277,7 +277,7 @@ class RiskManagement:
 
         # 口座残高が最低額を下回ったらエラーとする
         if balance_tether < self.balance_tether_limit:
-            self.logger.log_error(f"証拠金{balance_tether}が最低額{self.balance_tether_limit}を下回ったので発注できません")
+            self.logger.log_error(f"証拠金{balance_tether:.2f}が最低額{self.balance_tether_limit}を下回ったので発注できません")
             self.capital_exhausted = True
         else:
             # 初回のstop値を計算

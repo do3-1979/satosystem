@@ -429,6 +429,7 @@ class PriceDataManagement:
         Returns:
             float: PVOの値
         """
+        
         pvo_s_term = Config.get_pvo_s_term()
         pvo_l_term = Config.get_pvo_l_term()
         volume_data = []

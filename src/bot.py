@@ -42,6 +42,31 @@ class Bot:
         self.market_type = Config.get_market()
         self.bot_operation_cycle = Config.get_bot_operation_cycle()
 
+    def show_trade_data(self, trade_data):
+        self.logger.log(f"終値時間: {datetime.fromtimestamp(trade_data['close_time']).strftime('%Y/%m/%d %H:%M')}"
+            f"  高値: {trade_data['high_price']:05.1f}"
+            f"  安値: {trade_data['low_price']:05.1f}"
+            f"  終値: {trade_data['close_price']:05.1f}"
+            f"  購入価格: {trade_data['positions']['position_price']:05.2f}"
+            f"  STOP: {trade_data['stop_price']:05.1f}"
+            f"  ボラ: {trade_data['volatility']:05.2f}"
+            f"  出来高: {trade_data['Volume']:04.2f}"
+            f"  売買判断: {trade_data['decision']}"
+            f"  売買方向: {trade_data['side']}"
+            f"  購入量: {trade_data['position_size']:.4f}"
+            f"  資産: {trade_data['positions']['quantity']:.4f}"
+            f"  ポジ: {trade_data['positions']['side']}"
+            f"  損益: {trade_data['profit_and_loss']:.2f}"
+            #f"  総量: {trade_data['total_size']}"
+            #f"  DCH: {trade_data['dc_h']}"
+            #f"  DCL: {trade_data['dc_l']}"
+            #f"  PVO: {trade_data['pvo_val']}"
+            #f"  出来高: {trade_data['stop_offset']}"
+            #f"  出来高: {trade_data['stop_psar_stop_offset']}"
+            #f"  出来高: {trade_data['stop_price_surge_stop_offset']}"
+        )
+        return
+
     def run(self):
         """
         ボットのメインループを実行します。口座残高を取得し、取引戦略に基づいてトレードを実行します。
@@ -80,7 +105,7 @@ class Bot:
                 self.price_data_management.update_price_data()
             
             # 取得情報を表示
-            self.price_data_management.show_latest_ohlcv()
+            # self.price_data_management.show_latest_ohlcv()
             # 最新価格を取得
             price = self.price_data_management.get_ticker()
 
@@ -106,7 +131,7 @@ class Bot:
             if trade_decision["decision"] != 'NONE' and trade_executed == False:
                 # --------------------------------------------
                 # 決定状態を表示
-                self.logger.log(f"シグナル発生: {strategy}")
+                #self.logger.log(f"シグナル発生: {strategy}")
                 
                 # 清算時は全ポジション
                 if trade_decision["decision"] == "EXIT":
@@ -118,8 +143,8 @@ class Bot:
                     position_size = self.risk_management.calculate_position_size(balance_tether)
                     quantity = position_size
                 # ベースに帰着
-                value = quantity * price
-                self.logger.log(f"購入量: {quantity} 市場価格：{value} [BTC/USD]")
+                #value = quantity * price
+                #self.logger.log(f"購入量: {quantity} 市場価格：{value} [BTC/USD]")
 
                 # 注文クラス作成
                 order = Order(config_instance.get_market(),
@@ -128,9 +153,9 @@ class Bot:
                               price,
                               trade_decision["order_type"])
 
-                self.logger.log(order.to_dict())
+                #self.logger.log(order.to_dict())
                 order_response = self.execute_order(order.to_dict())
-                self.logger.log(f"注文実行: {order_response}")
+                #self.logger.log(f"注文実行: {order_response}")
                 # TODO エラー処理
 
                 # --------------------------------------------
@@ -142,8 +167,8 @@ class Bot:
                     self.portfolio.clear_position_quantity(price)
                 elif trade_decision["decision"] == "ENTRY" or trade_decision["decision"] == "ADD":
                     self.portfolio.add_position_quantity(quantity, trade_decision["side"], price)
-                self.logger.log(f"ポートフォリオ更新: {self.portfolio.get_position_quantity()}")
-                self.logger.log(f"損益: {self.portfolio.get_profit_and_loss()} [BTC/USD]")
+                #self.logger.log(f"ポートフォリオ更新: {self.portfolio.get_position_quantity()}")
+                #self.logger.log(f"損益: {self.portfolio.get_profit_and_loss()} [BTC/USD]")
                 
                 # イベント初期化
                 self.strategy.initialize_trade_decision()
@@ -178,6 +203,9 @@ class Bot:
             # portfolio
             trade_data['positions'] = self.portfolio.get_position_quantity()
 
+            # 取引データを表示
+            self.show_trade_data(trade_data)
+            
             # 取引データを記録
             self.logger.log_trade_data(trade_data)
             
