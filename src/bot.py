@@ -66,15 +66,18 @@ class Bot:
             # --------------------------------------------
             # 最初に価格情報の更新
             # --------------------------------------------
-            self.price_data_management.update_price_data()
-            # バックテスト終端だったら抜ける
-            if back_test_mode == 1 and self.price_data_management.chk_test_term_end() == True:
-                self.logger.log("-------------------------------------------------------")
-                self.logger.log(f"最終ポートフォリオ: {self.portfolio.get_position_quantity()}")
-                self.logger.log(f"最終損益: {self.portfolio.get_profit_and_loss()} [BTC/USD]")
-                self.logger.close_log_file()
-                self.logger.log("--- BOT END -------------------------------------------")
-                break
+            if back_test_mode == 1:
+                is_end = self.price_data_management.update_price_data_backtest()
+                # バックテスト終端だったら抜ける
+                if is_end == True:
+                    self.logger.log("-------------------------------------------------------")
+                    self.logger.log(f"最終ポートフォリオ: {self.portfolio.get_position_quantity()}")
+                    self.logger.log(f"最終損益: {self.portfolio.get_profit_and_loss()} [BTC/USD]")
+                    self.logger.close_log_file()
+                    self.logger.log("--- BOT END -------------------------------------------")
+                    break
+            else:
+                self.price_data_management.update_price_data()
             
             # 取得情報を表示
             self.price_data_management.show_latest_ohlcv()
