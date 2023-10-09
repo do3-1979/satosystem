@@ -57,29 +57,26 @@ class TradingStrategy:
         """
         side = 'NONE'
         decision = 'NONE'
-        
-        # 保有状態を確認
-        portfolio = self.portfolio.get_position_quantity()
 
-        # ポジションがなかったら
-        if portfolio["quantity"] == 0:
+        # シグナルをチェック
+        signals = self.price_data_management.get_signals()
 
-            # シグナルをチェック
-            signals = self.price_data_management.get_signals()
+        # PVO有効範囲チェック
+        if signals["pvo"]["signal"] == True:
+            # ドンチャンチャネルブレイク発生
+            if signals["donchian"]["signal"] == True:
+                if signals["donchian"]["side"] == "BUY":
+                    self.logger.log(f"[条件判定:ENTRY] BUYのエントリー条件成立しました")
+                    side = "BUY"
+                    decision = "ENTRY"
+                elif signals["donchian"]["side"] == "SELL":
+                    self.logger.log(f"[条件判定:ENTRY] SELLのエントリー条件成立しました")
+                    side = "SELL"
+                    decision = "ENTRY"
 
-            # PVO有効範囲チェック
-            if signals["pvo"]["signal"] == True:
-                # ドンチャンチャネルブレイク発生
-                if signals["donchian"]["signal"] == True:
-                    if signals["donchian"]["side"] == "BUY":
-                        side = "BUY"
-                        decision = "ENTRY"
-                    elif signals["donchian"]["side"] == "SELL":
-                        side = "SELL"
-                        decision = "ENTRY"
-
-            self.trade_decision["side"] = side
-            self.trade_decision["decision"] = decision
+        # エントリ条件がない場合はNONEで初期化する
+        self.trade_decision["side"] = side
+        self.trade_decision["decision"] = decision
             
         return
     
@@ -93,30 +90,29 @@ class TradingStrategy:
         """
         side = 'NONE'
         decision = 'NONE'
-        position_side = 'NONE'
-
-        portfolio = self.portfolio.get_position_quantity()
+  
+        # 保有状態を確認 
+        position_side = self.portfolio.get_position_side()
         
-        # ポジション保有を確認
-        if portfolio["quantity"] != 0:        
-            # 保有状態を確認 
-            position_side = self.portfolio.get_position_side()
-            if position_side != 'NONE':
-                # 追加レンジ幅を取得
-                range = self.risk_manager.get_entry_range()
-                
-                # 前回取得値を取得
-                last_entry_price = self.risk_manager.get_last_entry_price()
-                
-                # 価格がエントリー方向に基準レンジ分だけ進んだか判定する
-                # TODO rangeはprice x ボラ x 2の値。妥当？
-                if position_side == "BUY" and (price - last_entry_price) > range:
-                    side = "BUY"
-                    decision = "ADD"
-                elif position_side == "SELL" and (last_entry_price - price) > range:
-                    side = "SELL"
-                    decision = "ADD"
+        if position_side != 'NONE':
+            # 追加レンジ幅を取得
+            range = self.risk_manager.get_add_range()
+            # 前回取得値を取得
+            last_entry_price = self.risk_manager.get_last_entry_price()
             
+            # 価格がエントリー方向に基準レンジ分だけ進んだか判定する
+            # TODO rangeはprice x ボラ x 2の値。妥当？
+            if position_side == "BUY" and (price - last_entry_price) > range:
+                self.logger.log(f"[条件判定:ADD] 価格変動 {(price - last_entry_price):.2f} が変動幅 {range:.2f} を超過しました")
+                side = "BUY"
+                decision = "ADD"
+                self.trade_decision["side"] = side
+                self.trade_decision["decision"] = decision
+
+            elif position_side == "SELL" and (last_entry_price - price) > range:
+                self.logger.log(f"[条件判定:ADD] 価格変動 {(last_entry_price - price):.2f} が変動幅 {range:.2f} を超過しました")
+                side = "SELL"
+                decision = "ADD"
                 self.trade_decision["side"] = side
                 self.trade_decision["decision"] = decision
 
@@ -131,31 +127,31 @@ class TradingStrategy:
         decision = 'NONE'
         position_side = 'NONE'
 
-        # 保有状態を確認
-        portfolio = self.portfolio.get_position_quantity()
+        # ストップ値取得
+        stop_price = self.risk_manager.get_stop_price()
         
-        # ポジションがあったら
-        if portfolio["quantity"] != 0:
-            # ストップ値取得
-            stop_price = self.risk_manager.get_stop_price()
-            
-            # 現在値取得
-            price = self.price_data_management.get_ticker()
-            
-            # 現在値とストップ値比較
-            position_side = self.portfolio.get_position_side()
+        # 現在値取得
+        price = self.price_data_management.get_ticker()
+        
+        # 現在値とストップ値比較
+        position_side = self.portfolio.get_position_side()
 
-            if position_side == "BUY":
-                if price <= stop_price:
-                    side = "SELL"
-                    decision = "EXIT"
-            elif position_side == "SELL":
-                if price >= stop_price:
-                    side = "BUY"
-                    decision = "EXIT"
+        if position_side == "BUY":
+            if price <= stop_price:
+                self.logger.log(f"[条件判定:EXIT] 価格 {price:.2f} がストップ値 {stop_price:.2f} を割り込みました")
+                side = "SELL"
+                decision = "EXIT"
+                self.trade_decision["side"] = side
+                self.trade_decision["decision"] = decision
 
-            self.trade_decision["side"] = side
-            self.trade_decision["decision"] = decision
+        elif position_side == "SELL":
+            if price >= stop_price:
+                self.logger.log(f"[条件判定:EXIT] 価格 {price:.2f} がストップ値 {stop_price:.2f} を超過しました")
+                side = "BUY"
+                decision = "EXIT"
+                self.trade_decision["side"] = side
+                self.trade_decision["decision"] = decision
+
 
         return
 
@@ -164,11 +160,16 @@ class TradingStrategy:
         トレードの実行判断を行います。
 
         """
-        price = self.price_data_management.get_ticker()
+        portfolio = self.portfolio.get_position_quantity()
         
-        self.evaluate_entry()
-        self.evaluate_add(price)
-        self.evaluate_exit()
+        # エントリ・買い増し直後に離脱しないように
+        if portfolio["quantity"] == 0:        
+            self.evaluate_entry()
+        else:
+            price = self.price_data_management.get_ticker()
+            
+            self.evaluate_add(price)
+            self.evaluate_exit()
  
         return self.trade_decision
     

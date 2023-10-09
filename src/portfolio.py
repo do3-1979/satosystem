@@ -12,11 +12,13 @@ get_asset_quantity() メソッドで保有数量を取得し、update_asset_quan
 必要に応じて、このクラスを拡張してポートフォリオに関連する他の情報を追加できます。
 
 """
+from logger import Logger
 from config import Config  # Config クラスのインポート
 
 # Portfolio クラスの定義
 class Portfolio:
     def __init__(self):
+        self.logger = Logger()
         self.positions = {'BTC/USD': {'quantity': 0, 'side': 'NONE', 'position_price': 0 }}  # ポートフォリオ内の各通貨の保有ポジション量
         self.market_type = Config.get_market()
         self.profit_and_loss = 0
@@ -93,6 +95,7 @@ class Portfolio:
         if side == 'BUY':
             # 買いの場合は purchase_price - price が利益
             profit_or_loss = (price - purchase_price) * quantity
+
         elif side == 'SELL':
             # 売りの場合は price - purchase_price が利益
             profit_or_loss = (purchase_price - price) * quantity
@@ -101,6 +104,7 @@ class Portfolio:
 
         # 利益と損失の合算
         self.profit_and_loss += profit_or_loss
+        self.logger.log(f"損益: {(profit_or_loss):.2f} 累計: {(self.profit_and_loss):.2f} です")
 
         # ポジション情報のクリア
         self.positions[self.market_type]["quantity"] = 0

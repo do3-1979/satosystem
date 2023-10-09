@@ -36,6 +36,7 @@ class RiskManagement:
         self.leverage = Config.get_leverage()
         self.entry_times = Config.get_entry_times()
         self.entry_range = Config.get_entry_range()
+        self.add_range = 0
         self.position_size = 0 
         self.total_size = 0
         # ストップ制御
@@ -52,7 +53,10 @@ class RiskManagement:
         self.last_entry_price = 0 # 価格ベース
     
     def get_entry_range(self):
-        return self.entry_range * self.position_size
+        return self.entry_range
+
+    def get_add_range(self):
+        return self.add_range
 
     def get_last_entry_price(self):
         return self.last_entry_price
@@ -217,47 +221,70 @@ class RiskManagement:
         return tmp_stop_offset
 
     def __update_stop_price(self):
-        # 現在のstop値取得
-        prev_stop_offset = self.stop_offset
-        # 0は未設定なので初期値を入れる
-        if prev_stop_offset == 0:
-            prev_stop_offset = self.price_data_management.get_volatility() * self.initial_stop_range
-            self.stop_offset = prev_stop_offset
         
-        # ポジションがある場合
         position = self.portfolio.get_position_quantity()
         quantity = position["quantity"]
         side = position["side"]
+        price = self.price_data_management.get_ticker()
         
+        # 未初期化の場合は初期値を設定する
+        if self.stop_offset == 0:
+            self.stop_offset = self.price_data_management.get_volatility() * self.initial_stop_range
+
+        prev_stop_offset = self.stop_offset
+
+        if quantity != 0 and self.stop_price == 0:
+            if side == "BUY":
+                prev_stop_price = price - self.stop_offset
+            if side == "SELL":
+                prev_stop_price = price + self.stop_offset
+        else:
+            prev_stop_price = self.stop_price
+
+        # ポジションがある場合のみストップ値を更新
         if quantity != 0:
             # パラボリックSAR計算
             ohlcv_data = self.price_data_management.get_ohlcv_data()
             psar_stop_offset = self.__calc_stop_psar(ohlcv_data)
-
-            # チャートに依存せず急騰時に追従する
-            price = self.price_data_management.get_ticker()
-            price_surge_stop_offset = self.__follow_price_surge(price)
-
-            # 現在値からレンジ幅でストップ値を計算
             self.psar_stop_offset = psar_stop_offset
+
+            # 急騰時に利益が一定以上の場合は固定値で追従する
+            price_surge_stop_offset = self.__follow_price_surge(price)
             self.price_surge_stop_offset = price_surge_stop_offset
-            self.stop_offset = min(prev_stop_offset, psar_stop_offset, price_surge_stop_offset)
             
+            # 現在値からレンジ幅でストップ値を計算
+            # PSAR のガード
+            if psar_stop_offset > 0:
+                new_stop_offset = min(prev_stop_offset, psar_stop_offset)
+            else:
+                new_stop_offset = prev_stop_offset
+            
+            # 前回のoffsetから変化がなかったらストップ値は変更しない
             if side == "BUY":
-                prev_stop_price = self.stop_price
-                tmp_stop_price = price - self.stop_offset
-                self.stop_price = max(prev_stop_price, tmp_stop_price)
+                if prev_stop_offset > new_stop_offset:
+                    # ストップのオフセットが更新された場合のみ、ストップ値を再評価する
+                    self.stop_offset = new_stop_offset
+                    tmp_stop_price = price - self.stop_offset
+                    self.stop_price = max(tmp_stop_price, prev_stop_price)
+                else:
+                    self.stop_price = prev_stop_price
+                #self.logger.log(f"prev stop offset {prev_stop_offset} psar offset {psar_stop_offset} new_stop_offset {new_stop_offset} stop_price {self.stop_price} price {price} ")
             if side == "SELL":
-                prev_stop_price = self.stop_price
-                tmp_stop_price = price + self.stop_offset
-                self.stop_price = min(prev_stop_price, tmp_stop_price)
-            
+                if prev_stop_offset > new_stop_offset:
+                    # ストップ値が更新された場合のみ
+                    self.stop_offset = new_stop_offset
+                    tmp_stop_price = price + self.stop_offset
+                    self.stop_price = min(tmp_stop_price, prev_stop_price)
+                else:
+                    self.stop_price = prev_stop_price
+                #self.logger.log(f"prev stop offset {prev_stop_offset} psar offset {psar_stop_offset} new_stop_offset {new_stop_offset} stop_price {self.stop_price} price {price} ")
         else:
             self.psar_stop_offset = 0
             self.price_surge_stop_offset = 0
             self.stop_price = 0
             self.stop_offset = 0
             self.position_size = 0 
+            self.add_range = 0 
             self.total_size = 0
             self.stop_ATR = 0
             self.last_entry_price = 0 # 価格ベース
@@ -307,6 +334,8 @@ class RiskManagement:
                 # 証拠金 - 枚数に必要な証拠金数 / レバレッジ
                 balance = round( balance - flag["position"]["price"] * flag["position"]["lot"] / levarage )
             """
+            # 追加購入時の幅の計算
+            self.add_range = self.get_entry_range() * volatility
 
             # 証拠金から購入可能な上限を得る
             max_size = round( ( balance_tether * self.leverage  * 100 / price / 100 ) , 7 )
