@@ -44,19 +44,19 @@ class Bot:
 
     def show_trade_data(self, trade_data):
         self.logger.log(f"終値時間: {datetime.fromtimestamp(trade_data['close_time']).strftime('%Y/%m/%d %H:%M')}"
-            f"  高値: {trade_data['high_price']:05.1f}"
-            f"  安値: {trade_data['low_price']:05.1f}"
-            f"  終値: {trade_data['close_price']:05.1f}"
-            f"  購入価格: {trade_data['positions']['position_price']:05.2f}"
-            f"  STOP: {trade_data['stop_price']:05.1f}"
-            f"  ボラ: {trade_data['volatility']:05.2f}"
-            f"  出来高: {trade_data['Volume']:04.2f}"
+            f"  高値: {trade_data['high_price']:>6.1f}"
+            f"  安値: {trade_data['low_price']:>6.1f}"
+            f"  終値: {trade_data['close_price']:>6.1f}"
+            f"  購入価格: {trade_data['positions']['position_price']:>6.2f}"
+            f"  STOP: {trade_data['stop_price']:>6.1f}"
+            f"  ボラ: {trade_data['volatility']:>7.2f}"
+            f"  出来高: {trade_data['Volume']:>7.2f}"
             f"  売買判断: {trade_data['decision']}"
             f"  売買方向: {trade_data['side']}"
             f"  購入量: {trade_data['position_size']:.4f}"
             f"  資産: {trade_data['positions']['quantity']:.4f}"
             f"  ポジ: {trade_data['positions']['side']}"
-            f"  損益: {trade_data['profit_and_loss']:.2f}"
+            f"  損益: {trade_data['profit_and_loss']:>6.2f}"
             #f"  総量: {trade_data['total_size']}"
             #f"  DCH: {trade_data['dc_h']}"
             #f"  DCL: {trade_data['dc_l']}"
@@ -109,11 +109,6 @@ class Bot:
             # 最新価格を取得
             price = self.price_data_management.get_ticker()
 
-            # --------------------------------------------
-            # リスク制御を更新
-            # --------------------------------------------
-            self.risk_management.update_risk_status()
-
             # 取引所から口座残高を取得
             if back_test_mode == 1:
                 balance_tether = config_instance.get_account_balance() * price + self.portfolio.get_profit_and_loss()
@@ -161,20 +156,23 @@ class Bot:
                 # --------------------------------------------
                 # portfolio更新
                 # --------------------------------------------
-                self.risk_management.update_last_entry_price(price)
-                
                 if trade_decision["decision"] == "EXIT":
                     self.portfolio.clear_position_quantity(price)
                 elif trade_decision["decision"] == "ENTRY" or trade_decision["decision"] == "ADD":
                     self.portfolio.add_position_quantity(quantity, trade_decision["side"], price)
+                    # 前回のエントリ価格を更新
+                    self.risk_management.update_last_entry_price(price)
                 #self.logger.log(f"ポートフォリオ更新: {self.portfolio.get_position_quantity()}")
                 #self.logger.log(f"損益: {self.portfolio.get_profit_and_loss()} [BTC/USD]")
                 
-                # イベント初期化
-                self.strategy.initialize_trade_decision()
                 trade_executed = True
             else:
                 trade_executed = False
+
+            # --------------------------------------------
+            # リスク制御を更新
+            # --------------------------------------------
+            self.risk_management.update_risk_status()
 
             # --------------------------------------------
             # ログに記録
@@ -208,7 +206,10 @@ class Bot:
             
             # 取引データを記録
             self.logger.log_trade_data(trade_data)
-            
+        
+            # イベント初期化
+            self.strategy.initialize_trade_decision()
+        
             # 一定の待ち時間を設けてループを繰り返す
             if back_test_mode == 0:
                 time.sleep(self.bot_operation_cycle)
