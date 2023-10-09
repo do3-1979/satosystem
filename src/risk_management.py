@@ -225,6 +225,7 @@ class RiskManagement:
         position = self.portfolio.get_position_quantity()
         quantity = position["quantity"]
         side = position["side"]
+        position_price = position["position_price"]
         price = self.price_data_management.get_ticker()
         
         # 未初期化の場合は初期値を設定する
@@ -252,19 +253,15 @@ class RiskManagement:
             price_surge_stop_offset = self.__follow_price_surge(price)
             self.price_surge_stop_offset = price_surge_stop_offset
             
-            # 現在値からレンジ幅でストップ値を計算
-            # PSAR のガード
-            if psar_stop_offset > 0:
-                new_stop_offset = min(prev_stop_offset, psar_stop_offset)
-            else:
-                new_stop_offset = prev_stop_offset
+            # 現在値からレンジ幅でストップ値を計算(負数もありうる　現在)
+            new_stop_offset = min(prev_stop_offset, psar_stop_offset)
             
             # 前回のoffsetから変化がなかったらストップ値は変更しない
             if side == "BUY":
                 if prev_stop_offset > new_stop_offset:
                     # ストップのオフセットが更新された場合のみ、ストップ値を再評価する
                     self.stop_offset = new_stop_offset
-                    tmp_stop_price = price - self.stop_offset
+                    tmp_stop_price = position_price - self.stop_offset
                     self.stop_price = max(tmp_stop_price, prev_stop_price)
                 else:
                     self.stop_price = prev_stop_price
@@ -273,7 +270,7 @@ class RiskManagement:
                 if prev_stop_offset > new_stop_offset:
                     # ストップ値が更新された場合のみ
                     self.stop_offset = new_stop_offset
-                    tmp_stop_price = price + self.stop_offset
+                    tmp_stop_price = position_price + self.stop_offset
                     self.stop_price = min(tmp_stop_price, prev_stop_price)
                 else:
                     self.stop_price = prev_stop_price
