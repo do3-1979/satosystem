@@ -128,18 +128,21 @@ class Bot:
                 # 決定状態を表示
                 #self.logger.log(f"シグナル発生: {strategy}")
                 
+                # 初回の分割ポジション計算
+                if trade_decision["decision"] == "ENTRY":
+                    position_size = self.risk_management.calculate_position_size(balance_tether)
+                    quantity = position_size
+                # 追加時は初回の分割サイズを踏襲
+                elif trade_decision["decision"] == "ADD": # TODO "ADD" の場合、連続追加発注を検討するべき
+                    position_size = self.risk_management.get_position_size()
+                    quantity = position_size
                 # 清算時は全ポジション
-                if trade_decision["decision"] == "EXIT":
+                elif trade_decision["decision"] == "EXIT":
                     # 保有資産を取得
                     position_size = self.portfolio.get_position_quantity()
                     quantity = position_size['quantity']
-                # リスクからポジションサイズ決定
-                else: # TODO "ADD" の場合、連続追加発注を検討するべき
-                    position_size = self.risk_management.calculate_position_size(balance_tether)
-                    quantity = position_size
-                # ベースに帰着
-                #value = quantity * price
-                #self.logger.log(f"購入量: {quantity} 市場価格：{value} [BTC/USD]")
+                else:
+                    raise
 
                 # 注文クラス作成
                 order = Order(config_instance.get_market(),
