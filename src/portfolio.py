@@ -21,7 +21,8 @@ class Portfolio:
         self.logger = Logger()
         self.positions = {'BTC/USD': {'quantity': 0, 'side': 'NONE', 'position_price': 0 }}  # ポートフォリオ内の各通貨の保有ポジション量
         self.market_type = Config.get_market()
-        self.profit_and_loss = 0
+        self.profit = 0
+        self.loss = 0
 
     def get_position_quantity(self):
         """
@@ -51,7 +52,7 @@ class Portfolio:
         """
         利益と損失を取得します。単位は[BTC/USD]
         """
-        return self.profit_and_loss
+        return self.profit - self.loss
 
     def add_position_quantity(self, quantity, side, price):
         """
@@ -84,6 +85,9 @@ class Portfolio:
         Args:
             price (float): 売却時の価格
         """
+        profit = 0
+        loss = 0
+        
         # 購入時の価格
         purchase_price = self.positions[self.market_type]["position_price"]
 
@@ -94,17 +98,24 @@ class Portfolio:
         side = self.get_position_side()
         if side == 'BUY':
             # 買いの場合は purchase_price - price が利益
-            profit_or_loss = (price - purchase_price) * quantity
+            diff = (price - purchase_price) * quantity
 
         elif side == 'SELL':
             # 売りの場合は price - purchase_price が利益
-            profit_or_loss = (purchase_price - price) * quantity
+            diff = (purchase_price - price) * quantity
         else:
-            profit_or_loss = 0  # 未保有の場合は利益・損失なし
+            diff = 0  # 未保有の場合は利益・損失なし
+            
+        if diff >= 0:
+            profit = diff
+        else:
+            loss = diff * (-1)
 
         # 利益と損失の合算
-        self.profit_and_loss += profit_or_loss
-        self.logger.log(f"損益: {(profit_or_loss):.2f} 累計: {(self.profit_and_loss):.2f} です")
+        self.profit += profit
+        self.loss += loss
+        
+        self.logger.log(f"今回の損益:{(profit - loss):.2f} [{self.market_type}] 利益累計:{self.profit} [{self.market_type}] 損失累計:{self.loss} [{self.market_type}] 損益累計:{self.profit - self.loss} [{self.market_type}]です")
 
         # ポジション情報のクリア
         self.positions[self.market_type]["quantity"] = 0
@@ -139,7 +150,7 @@ class Portfolio:
         portfolio_str = "Portfolio:\n"
         for symbol, detail in self.positions.items():
             portfolio_str += f"{symbol}: {detail}\n"
-        portfolio_str += f"profit_and_loss: {round(self.profit_and_loss)}"
+        portfolio_str += f"profit_and_loss: {round(self.profit - self.loss)}"
         return portfolio_str
 
 # ポートフォリオのサンプル
