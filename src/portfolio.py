@@ -115,7 +115,7 @@ class Portfolio:
         self.profit += profit
         self.loss += loss
         
-        self.logger.log(f"今回の損益:{(profit - loss):.2f} [{self.market_type}] 利益累計:{self.profit} [{self.market_type}] 損失累計:{self.loss} [{self.market_type}] 損益累計:{self.profit - self.loss} [{self.market_type}]です")
+        self.logger.log(f"今回の損益:{(profit - loss):.2f} [{self.market_type}] 利益累計:{self.profit:.2f} [{self.market_type}] 損失累計:{self.loss:.2f} [{self.market_type}] 損益累計:{(self.profit - self.loss):.2f} [{self.market_type}]です")
 
         # ポジション情報のクリア
         self.positions[self.market_type]["quantity"] = 0
