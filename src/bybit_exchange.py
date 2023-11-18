@@ -37,6 +37,7 @@ Usage:
 import ccxt
 import time
 from datetime import datetime
+from datetime import timedelta
 from config import Config
 from logger import Logger
 from exchange import Exchange
@@ -152,7 +153,8 @@ class BybitExchange(Exchange):
             _type_: _description_
         """
         # 現在のローカル時刻を取得
-        current_local_time = datetime.now() 
+        #current_local_time = datetime(2023, 5, 1, 0, 1, 30, 2000)
+        current_local_time = datetime.now()
         current_local_epoch = int(current_local_time.timestamp())
         
         # 古い時刻を採用
@@ -180,7 +182,9 @@ class BybitExchange(Exchange):
                 break
             elif target_time.hour == 0:
                 nearest_time = 23
-                day = target_time.day - 1
+                day = (target_time - timedelta(days=1)).day
+                year = (target_time - timedelta(days=1)).year
+                month = (target_time - timedelta(days=1)).month
                 break
             else:
                 if target_time.hour < target_near_times[i]:
@@ -191,7 +195,7 @@ class BybitExchange(Exchange):
         # 選択した時刻でepoch時間を作成
         epoch_time_str = datetime(year, month, day, nearest_time, 0, 0)
         epoch_time = int(epoch_time_str.timestamp())
-        
+
         return epoch_time
 
     def fetch_ohlcv(self, start_epoch, end_epoch):
@@ -302,6 +306,7 @@ class BybitExchange(Exchange):
                     else:
                         break
                 get_time = tmp_time
+                # TODO 同じデータが取れてしまう場合に無限ループになる不具合がある
                 print(f"進捗：{progress}/{total_progress} start_epoch: {start_epoch} end_epoch: {end_epoch_fixed} progress_time: {get_time}")
 
             # 進捗表示
@@ -443,8 +448,6 @@ if __name__ == "__main__":
 
     print("口座残高情報取得にかかった時間: {:.2f}秒".format(end_balance_time - start_balance_time))
     print("価格データ取得にかかった時間: {:.2f}秒".format(end_price_time - start_price_time))
-
-
 
     # 注文を発行 (例: BTC/USD マーケットで1BTC を買う)
     # order_response = exchange.execute_order('BTCUSD', 'buy', 1, None, 'market')
