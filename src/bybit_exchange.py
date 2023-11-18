@@ -142,7 +142,7 @@ class BybitExchange(Exchange):
 
         return response
 
-    def __get_nearest_epoch_time(self, end_epoch):
+    def get_nearest_epoch_time(self, end_epoch):
         """_summary_
 
         Args:
@@ -207,7 +207,7 @@ class BybitExchange(Exchange):
         server_retry_wait = Config.get_server_retry_wait()
         
         # 終端時間の計算
-        end_epoch_fixed = self.__get_nearest_epoch_time(end_epoch)
+        end_epoch_fixed = self.get_nearest_epoch_time(end_epoch)
 
         get_time = start_epoch
         while get_time < end_epoch_fixed:
@@ -248,6 +248,68 @@ class BybitExchange(Exchange):
                 else:
                     break
             get_time = tmp_time
+
+        return ohlcv_data
+    
+    def fetch_ohlcv_by_minutes(self, start_epoch, end_epoch):
+        ohlcv_data = []
+        err_occurred = False
+        server_retry_wait = Config.get_server_retry_wait()
+        progress = 0
+        total_progress = int((end_epoch - start_epoch) / 60) + 1  # 1分足なので1分ごとに進捗
+
+        # 終端時間の計算
+        end_epoch_fixed = self.get_nearest_epoch_time(end_epoch)
+
+        get_time = start_epoch
+        while get_time < end_epoch_fixed:
+            # 価格取得
+            while True:
+                try:
+                    ohlcv = self.exchange.fetch_ohlcv(
+                        symbol=self.market,
+                        timeframe=1, # 1分固定
+                        since=int(get_time * 1000),  # bybitはミリ秒なので1000倍
+                    )
+                    break
+                except ccxt.BaseError as e:
+                    self.logger.log_error(f"価格取得エラー:{str(e)}")
+                    if err_occurred is False:
+                        err_occurred = True
+                    time.sleep(server_retry_wait)
+
+            if err_occurred is True:
+                self.logger.log_error("価格取得エラー復帰")
+
+            # データ成型
+            for i in range(len(ohlcv)):
+                tmp_time = ohlcv[i][0] / 1000
+                if tmp_time < end_epoch_fixed:
+                    if ohlcv[i][1] != 0 and \
+                            ohlcv[i][2] != 0 and \
+                            ohlcv[i][3] != 0 and \
+                            ohlcv[i][4] != 0 and \
+                            ohlcv[i][5] != 0:
+                        ohlcv_data.append({
+                            "close_time": tmp_time,
+                            "close_time_dt": datetime.fromtimestamp(tmp_time).strftime('%Y/%m/%d %H:%M'),
+                            "open_price": ohlcv[i][1],
+                            "high_price": ohlcv[i][2],
+                            "low_price": ohlcv[i][3],
+                            "close_price": ohlcv[i][4],
+                            "Volume": ohlcv[i][5]
+                        })
+                    else:
+                        break
+                get_time = tmp_time
+                print(f"進捗：{progress}/{total_progress} start_epoch: {start_epoch} end_epoch: {end_epoch_fixed} progress_time: {get_time}")
+
+            # 進捗表示
+            progress += 1
+            #print(f"進捗：{progress}/{total_progress} start_epoch: {start_epoch} end_epoch: {end_epoch_fixed} progress_time: {get_time}", end='\r')
+            #print(f"進捗：{progress}/{total_progress} start_epoch: {start_epoch} end_epoch: {end_epoch_fixed} progress_time: {get_time}")
+
+            #time.sleep(5)  # 5秒スリープ
 
         return ohlcv_data
 
