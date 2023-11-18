@@ -8,6 +8,8 @@ import openpyxl
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.chart import LineChart, Reference
+from bybit_exchange import BybitExchange
+from config import Config
 
 class Util:
     def extract_and_export_logs(self, log_directory, num_logs, output_excel_file):
@@ -79,7 +81,8 @@ class Util:
             "dc_h",
             "dc_l",
             "donchian",
-            "pvo"
+            "pvo",
+            "positions"
         ]
 
         # 選択したカラムでデータをフィルタリング
@@ -143,6 +146,26 @@ class Util:
 
         chart_sheet.add_chart(chart, f"D{len(data_rows) + 3}")
 
+    def fetch_ohlcv_and_save_to_json(self, exchange, output_directory="ohlcv_json_data", output_filename="ohlcv_data.json"):
+        start_epoch = Config.get_start_epoch()
+        end_epoch = Config.get_end_epoch()
+        #start_time = datetime.strptime(start_epoch, "%Y/%m/%d %H:%M")
+        #end_time = datetime.strptime(end_epoch, "%Y/%m/%d %H:%M")
+                
+        print(f"start_epoch: {start_epoch} end_epoch: {end_epoch} ")
+        ohlcv_data = exchange.fetch_ohlcv_by_minutes(start_epoch, end_epoch)
+
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+
+        output_filepath = os.path.join(output_directory, output_filename)
+
+        with open(output_filepath, 'w') as json_file:
+            json.dump(ohlcv_data, json_file)
+            
+
+        print(f"OHLCVデータをJSONファイルに保存しました: {output_filepath}")
+
 if __name__ == "__main__":
     # Loggerクラスの初期化
     util = Util()
@@ -150,7 +173,11 @@ if __name__ == "__main__":
     # 使用例
     log_directory = "logs"  # ログファイルのディレクトリ
     #log_directory = "../test/test_data"  # ログファイルのディレクトリ
-    num_logs_to_read = 33  # 読み込むログファイルの数
+    num_logs_to_read = 100  # 読み込むログファイルの数
     output_excel_file = "combined_logs.xlsx"  # 出力エクセルファイルの名前
 
-    util.extract_and_export_logs(log_directory, num_logs_to_read, output_excel_file)
+    #util.extract_and_export_logs(log_directory, num_logs_to_read, output_excel_file)
+
+    # 1分足の指定ログ取得
+    exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
+    util.fetch_ohlcv_and_save_to_json(exchange)

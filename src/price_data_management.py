@@ -50,6 +50,7 @@ class PriceDataManagement:
         
         if Config.get_back_test_mode() == 1:
             self.back_test_ohlcv_data = [] # バックテスト用のデータテーブルバッファ
+            self.back_test_ohlcv_data_by_minutes = [] # バックテスト用のデータテーブルバッファ
             self.progress_time = 0 # 処理中の時刻
             
     def get_ohlcv_data(self):
@@ -341,6 +342,7 @@ class PriceDataManagement:
         start_epoch = Config.get_start_epoch()
         end_epoch = Config.get_end_epoch()
         self.back_test_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch)
+        self.back_test_ohlcv_data_by_minutes = self.exchange.fetch_ohlcv_by_minutes(start_epoch, end_epoch)
         return
 
     def get_back_test_ohlcv_data(self, target_unix_time):

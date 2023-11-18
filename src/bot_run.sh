@@ -9,4 +9,4 @@ rm -f err.log
 
 echo "### clear log done"
 
-python3 bot.py 2>> err.log &
+python3 bot.py
