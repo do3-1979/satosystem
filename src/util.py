@@ -173,11 +173,11 @@ if __name__ == "__main__":
     # 使用例
     log_directory = "logs"  # ログファイルのディレクトリ
     #log_directory = "../test/test_data"  # ログファイルのディレクトリ
-    num_logs_to_read = 100  # 読み込むログファイルの数
+    num_logs_to_read = 1  # 読み込むログファイルの数
     output_excel_file = "combined_logs.xlsx"  # 出力エクセルファイルの名前
-
-    #util.extract_and_export_logs(log_directory, num_logs_to_read, output_excel_file)
+    
+    util.extract_and_export_logs(log_directory, num_logs_to_read, output_excel_file)
 
     # 1分足の指定ログ取得
-    exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
-    util.fetch_ohlcv_and_save_to_json(exchange)
+    # exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
+    # util.fetch_ohlcv_and_save_to_json(exchange)

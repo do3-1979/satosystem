@@ -235,13 +235,13 @@ class BybitExchange(Exchange):
             # データ成型
             for i in range(len(ohlcv)):
                 # 終端時間を超えないかぎり取得
+                # volumeは0もありうるので除外する
                 tmp_time = ohlcv[i][0] / 1000 
                 if tmp_time < end_epoch_fixed:
                     if ohlcv[i][1] != 0 and \
                     ohlcv[i][2] != 0 and \
                     ohlcv[i][3] != 0 and \
-                    ohlcv[i][4] != 0 and \
-                    ohlcv[i][5] != 0:
+                    ohlcv[i][4] != 0:
                         ohlcv_data.append({ "close_time" : tmp_time,
                         "close_time_dt" : datetime.fromtimestamp(tmp_time).strftime('%Y/%m/%d %H:%M'),
                         "open_price" : ohlcv[i][1],
@@ -252,6 +252,7 @@ class BybitExchange(Exchange):
                 else:
                     break
             get_time = tmp_time
+        # TODO 取得データ確認（抜け漏れ、ダブり）
 
         return ohlcv_data
     
@@ -260,10 +261,10 @@ class BybitExchange(Exchange):
         err_occurred = False
         server_retry_wait = Config.get_server_retry_wait()
         progress = 0
-        total_progress = int((end_epoch - start_epoch) / 60) + 1  # 1分足なので1分ごとに進捗
 
         # 終端時間の計算
         end_epoch_fixed = self.get_nearest_epoch_time(end_epoch)
+        total_progress = int((end_epoch_fixed - start_epoch) / 60) + 1  # 1分足なので1分ごとに進捗
 
         get_time = start_epoch
         while get_time < end_epoch_fixed:
@@ -276,6 +277,7 @@ class BybitExchange(Exchange):
                         since=int(get_time * 1000),  # bybitはミリ秒なので1000倍
                     )
                     break
+                
                 except ccxt.BaseError as e:
                     self.logger.log_error(f"価格取得エラー:{str(e)}")
                     if err_occurred is False:
@@ -289,11 +291,11 @@ class BybitExchange(Exchange):
             for i in range(len(ohlcv)):
                 tmp_time = ohlcv[i][0] / 1000
                 if tmp_time < end_epoch_fixed:
+                    # volumeは0もありうるので除外する
                     if ohlcv[i][1] != 0 and \
                             ohlcv[i][2] != 0 and \
                             ohlcv[i][3] != 0 and \
-                            ohlcv[i][4] != 0 and \
-                            ohlcv[i][5] != 0:
+                            ohlcv[i][4] != 0:
                         ohlcv_data.append({
                             "close_time": tmp_time,
                             "close_time_dt": datetime.fromtimestamp(tmp_time).strftime('%Y/%m/%d %H:%M'),
@@ -306,15 +308,18 @@ class BybitExchange(Exchange):
                     else:
                         break
                 get_time = tmp_time
-                # TODO 同じデータが取れてしまう場合に無限ループになる不具合がある
-                print(f"進捗：{progress}/{total_progress} start_epoch: {start_epoch} end_epoch: {end_epoch_fixed} progress_time: {get_time}")
+                # print(f"進捗：{progress}/{total_progress} start_epoch: {start_epoch} end_epoch: {end_epoch_fixed} progress_time: {get_time}")
 
             # 進捗表示
-            progress += 1
-            #print(f"進捗：{progress}/{total_progress} start_epoch: {start_epoch} end_epoch: {end_epoch_fixed} progress_time: {get_time}", end='\r')
-            #print(f"進捗：{progress}/{total_progress} start_epoch: {start_epoch} end_epoch: {end_epoch_fixed} progress_time: {get_time}")
+            progress = int((get_time - start_epoch) / 60)
+            start_date = datetime.fromtimestamp(start_epoch).strftime('%Y/%m/%d %H:%M:%S')
+            end_date = datetime.fromtimestamp(end_epoch_fixed).strftime('%Y/%m/%d %H:%M:%S')
+            get_date = datetime.fromtimestamp(get_time).strftime('%Y/%m/%d %H:%M:%S')
+            print(f"進捗：{progress}/{total_progress} 開始: {start_date} 終了：{end_date} 処理中: {get_date}", end='\r')
 
-            #time.sleep(5)  # 5秒スリープ
+        print("")
+
+        # TODO 取得データ確認（抜け漏れ、ダブり）
 
         return ohlcv_data
 
