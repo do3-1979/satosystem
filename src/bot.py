@@ -222,16 +222,20 @@ class Bot:
             if back_test_mode == 0:
                 time.sleep(self.bot_operation_cycle)
 
-                # 2時間ごとにファイルを分けるかチェック
+            # 2時間ごとにファイルを分けるかチェック
+            if back_test_mode == 0:
                 current_time = datetime.now()
-                if log_zipped == False and int(current_time.strftime("%H")) % 2 == 0 and int(current_time.strftime("%M")) == 0:
-                    # ログをローテート
-                    self.logger.close_log_file()
-                    self.logger.compress_logs()  # 圧縮
-                    self.logger.open_log_file()
-                    log_zipped = True
-                else:
-                    log_zipped = False
+            else:
+                current_time = datetime.fromtimestamp(self.price_data_management.get_latest_close_time())
+
+            if log_zipped == False and int(current_time.strftime("%H")) % 2 == 0 and int(current_time.strftime("%M")) == 0:
+                # ログをローテート
+                self.logger.close_log_file()
+                self.logger.compress_logs()  # 圧縮
+                self.logger.open_log_file()
+                log_zipped = True
+            else:
+                log_zipped = False
 
             #except Exception as e:
             #    print("エラー発生:", str(e))

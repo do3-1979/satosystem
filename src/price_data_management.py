@@ -73,6 +73,15 @@ class PriceDataManagement:
             int: tickerデータ
         """
         return self.ticker
+
+    def get_latest_close_time(self):
+        """
+        close_timeデータを取得するメソッドです。
+
+        Returns:
+            int: close_time
+        """
+        return self.close_time
     
     def get_latest_close_time_dt(self):
         """
@@ -81,7 +90,6 @@ class PriceDataManagement:
         Returns:
             int: close_time
         """
-
         return datetime.fromtimestamp(self.close_time).strftime('%Y/%m/%d %H:%M')
 
     def get_latest_ohlcv(self):
@@ -205,8 +213,6 @@ class PriceDataManagement:
         # バックテスト用に終端時間を次の時間にする
         else:
             end_epoch = self.progress_time
-            # edp = datetime.fromtimestamp(end_epoch).strftime('%Y/%m/%d %H:%M:%S')
-            # print(f"3:end epoch : {edp}")
 
         # --------------------------------------------
         # 初回の値取得
@@ -217,9 +223,7 @@ class PriceDataManagement:
             last_ohlcv_data = tmp_ohlcv_data[-1]
 
             self.prev_close_time = last_ohlcv_data['close_time']
-            # YMDDBG
-            # last_ohlcv_data_time = last_ohlcv_data['close_time_dt']
-            # print(f"2:last_ohlcv_data_time: {last_ohlcv_data_time}")
+
             # 初回のみ初期化
             self.ohlcv_data = tmp_ohlcv_data
             self.volatility = self.calcurate_volatility(tmp_ohlcv_data)
@@ -270,11 +274,6 @@ class PriceDataManagement:
         
         # バックテスト時はバッファから1レコードずつ取得する
         # 指定した時間の次のデータを取得する　同時に次のデータ時間も取得する
-        # TODO nextの時間は次の配列に頼らず自分で作るしかないのでは 
-        # end_epochを超えるまで次の配列を得る
-        # tmp_data  = self.get_back_test_ohlcv_data(self.progress_time)
-        #tmp_time = tmp_data['close_time']
-        #print(f"---ROGRESS data_time {tmp_time} self.progress_time {self.progress_time}")
         # TODO latestは未確定の最新地なのでtickerを使うべき
         # 1分足のhigh, lowと2h足のhigh, lowは違うが、、
 
