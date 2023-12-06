@@ -3,6 +3,7 @@ from datetime import timedelta
 from config import Config
 from logger import Logger
 from bybit_exchange import BybitExchange
+import pprint
 
 class PriceDataManagement:
     # クラス変数として唯一のインスタンスを保持
@@ -52,6 +53,8 @@ class PriceDataManagement:
             self.back_test_ohlcv_data = [] # バックテスト用のデータテーブルバッファ
             self.back_test_ohlcv_data_by_minutes = [] # バックテスト用のデータテーブルバッファ
             self.progress_time = 0 # 処理中の時刻
+            self.progress_diff = 0
+            self.close_time = 0
             
     def get_ohlcv_data(self):
         """
@@ -70,6 +73,16 @@ class PriceDataManagement:
             int: tickerデータ
         """
         return self.ticker
+    
+    def get_latest_close_time_dt(self):
+        """
+        close_timeデータを取得するメソッドです。
+
+        Returns:
+            int: close_time
+        """
+
+        return datetime.fromtimestamp(self.close_time).strftime('%Y/%m/%d %H:%M')
 
     def get_latest_ohlcv(self):
         """
@@ -156,25 +169,33 @@ class PriceDataManagement:
         """
         バックテスト用に価格データとトレードシグナルを更新するメソッドです。
         """
+        # 価格データ更新フラグ
+        is_update_ohlcv = False
 
         # 価格データの更新
         start_epoch = Config.get_start_epoch()
         end_epoch = 0
         # --------------------------------------------
-        # Back test 用には、指定時間＋解析に必要な期間のみ追加する
+        # Back test 用には、start時間から必要な期間を遡ってデータを取得する
         # --------------------------------------------
-        # 初期化時
         if self.progress_time == 0:
             #print("###START")
+            # 初回のend時間はstart時間に合わせる
+            end_epoch = Config.get_start_epoch()
+            self.progress_time = end_epoch
             # 初期分析に必要な時間を計算
             initial_term = Config.get_test_initial_max_term()
             diff_time = initial_term * Config.get_time_frame()
             td = timedelta(minutes=diff_time)
-            start_time = datetime.strptime(Config.get_start_time(), "%Y/%m/%d %H:%M")
-            end_time = start_time + td
+            # 指定のstart時間から遡った時間を取得
+            org_start_time = datetime.strptime(Config.get_start_time(), "%Y/%m/%d %H:%M")
+            start_time = org_start_time - td
+            # 秒を切り捨て
+            start_time = start_time.replace(second=0)
+            # print(f"1:start_time : {start_time}")
             # epoch時間に変換
-            end_epoch = int(end_time.timestamp())
-            self.progress_time = end_epoch
+            start_epoch = int(start_time.timestamp())
+
         # --------------------------------------------
         # バックテストの終端を検出してステータスを更新し処理を中断
         elif self.progress_time == -1:
@@ -183,63 +204,89 @@ class PriceDataManagement:
         # --------------------------------------------
         # バックテスト用に終端時間を次の時間にする
         else:
-            tmp_time = self.progress_time        
-            #print(f"###PROGRESS {tmp_time}")
             end_epoch = self.progress_time
+            # edp = datetime.fromtimestamp(end_epoch).strftime('%Y/%m/%d %H:%M:%S')
+            # print(f"3:end epoch : {edp}")
 
         # --------------------------------------------
         # 初回の値取得
         if self.prev_close_time == 0:
-            # 初期機関をサーバから取得 TODO 取得済テーブルから取得
+            # 初期機関をサーバから取得
+            # TODO 取得済テーブルから取得
             tmp_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch)
             last_ohlcv_data = tmp_ohlcv_data[-1]
 
             self.prev_close_time = last_ohlcv_data['close_time']
+            # YMDDBG
+            # last_ohlcv_data_time = last_ohlcv_data['close_time_dt']
+            # print(f"2:last_ohlcv_data_time: {last_ohlcv_data_time}")
             # 初回のみ初期化
             self.ohlcv_data = tmp_ohlcv_data
             self.volatility = self.calcurate_volatility(tmp_ohlcv_data)
             self.latest_ohlcv_data = []
             self.latest_ohlcv_data.append(self.ohlcv_data[-1])
+            # pprint.pprint(self.latest_ohlcv_data)
+
             return False
 
         # --------------------------------------------
         # 最新値の更新
         # --------------------------------------------
+        # 処理時間を1分ずつ進め、価格データ更新タイミングごとに過去データを取得する
+        pdiff = self.progress_diff
+        
+        # 秒を切り捨て
+        target_ptime = datetime.fromtimestamp(self.progress_time)
+        target_ptime = target_ptime.replace(second=0)
+        ptime = int(target_ptime.timestamp())
+
+        # progress timeを60秒進め、累積が2h経過したらフラグを立てる
+        pdiff += 60
+        ptime += 60
+        # ptm = datetime.fromtimestamp(ptime).strftime('%Y/%m/%d %H:%M:%S')
+        # print(f"progress_time_diff : {pdiff} progress_time : {ptm}")
+        # progress time が2時間更新か判断 progress timeが2h単位である前提
+        if pdiff % (Config.get_time_frame() * 60) == 0:
+            pdiff = 0
+            is_update_ohlcv = True
+
+        # 該当時刻の60秒データ取得
+        ohlcv_by_minutes = self.get_back_test_ohlcv_data_by_minutes(ptime)
+        #pprint.pprint(ohlcv_by_minutes)
+        
+        # 管理領域の処理時間情報を更新
+        self.progress_time = ptime
+        self.progress_diff = pdiff
+
+        self.ticker = ohlcv_by_minutes['close_price']
+        self.close_time = ohlcv_by_minutes['close_time']
+        # 管理領域の最新値を更新
+        last_ohlcv_data  = self.get_back_test_ohlcv_data(self.progress_time)
+        self.latest_ohlcv_data = []
+        self.latest_ohlcv_data.append(last_ohlcv_data)
+        # TODO 最新の未確認情報の作成が必要
+        # high_price, low_priceは過去と比較して高ければ残す
+        self.latest_ohlcv_data[0]['close_price'] = ohlcv_by_minutes['close_price']
+        
         # バックテスト時はバッファから1レコードずつ取得する
         # 指定した時間の次のデータを取得する　同時に次のデータ時間も取得する
         # TODO nextの時間は次の配列に頼らず自分で作るしかないのでは 
         # end_epochを超えるまで次の配列を得る
-        tmp_data  = self.get_back_test_ohlcv_data(self.progress_time)
+        # tmp_data  = self.get_back_test_ohlcv_data(self.progress_time)
         #tmp_time = tmp_data['close_time']
         #print(f"---ROGRESS data_time {tmp_time} self.progress_time {self.progress_time}")
-        self.latest_ohlcv_data = []
-        self.latest_ohlcv_data.append(tmp_data)
-
-        
-        # 最新の値は最新のclose時間とする
-        # TODO 60秒のデータの組み合わせ
-        self.ticker = self.latest_ohlcv_data[0]['close_price']
-        self.volume = self.latest_ohlcv_data[0]['Volume']
-        last_ohlcv_data = self.latest_ohlcv_data[0]
-
-        # 終端判断
-        last_time = last_ohlcv_data['close_time']
-        diff_time = Config.get_time_frame() * 60
-        # epoch時間に変換
-        next_epoch = last_time + diff_time
-        end_epoch = self.back_test_ohlcv_data[-1]['close_time']
-        #print(f"next_apoch {next_epoch} end_epoch {end_epoch}")
-        if next_epoch >= end_epoch:
-            # 次のデータ時間を更新
-            self.progress_time = -1
-        else:
-            # 次のデータ時間を更新
-            self.progress_time = next_epoch
+        # TODO latestは未確定の最新地なのでtickerを使うべき
+        # 1分足のhigh, lowと2h足のhigh, lowは違うが、、
 
         # --------------------------------------------
         # データの更新があった場合
         # --------------------------------------------
-        if self.prev_close_time < last_time:
+        if is_update_ohlcv == True:
+            # last_ohlcv_data  = self.get_back_test_ohlcv_data(self.progress_time)
+            self.volume = last_ohlcv_data['Volume']
+            last_time = last_ohlcv_data['close_time']
+            
+            # シグナル更新
             # donchian update
             dc, high, low = self.__evaluate_donchian(self.ohlcv_data, self.ticker)
             
@@ -263,12 +310,32 @@ class PriceDataManagement:
             self.signals['pvo']['info']['value'] = value
             # update volatility
             self.volatility = self.calcurate_volatility(self.ohlcv_data)
+
             # update last data
             self.prev_close_time = last_time
-            # 最新行を追加し、最古を削除する
+            # バックテストの場合は、2h経過時にデータ一覧を追加してからシグナル再計算する
             self.ohlcv_data.append( last_ohlcv_data )
-            del self.ohlcv_data[0]
-            
+            # 最新行を追加し、最古を削除する
+            del self.ohlcv_data[0]    
+
+            # シグナル更新フラグ初期化
+            is_update_ohlcv = False
+
+            # --------------------------------------------
+            # 終端判断
+            # --------------------------------------------
+            # diff_time = Config.get_time_frame() * 60
+            # epoch時間に変換
+
+            next_epoch = last_time + Config.get_time_frame() * 60
+            end_epoch = self.back_test_ohlcv_data[-1]['close_time']
+            #nep = datetime.fromtimestamp(next_epoch).strftime('%Y/%m/%d %H:%M:%S')
+            #eep = datetime.fromtimestamp(end_epoch).strftime('%Y/%m/%d %H:%M:%S')
+            #print(f"next_epoch : {nep} end_epoch : {eep}")
+            if next_epoch >= end_epoch:
+                # 次のデータ時間を更新
+                self.progress_time = -1
+
         return False
 
     def update_price_data(self):
@@ -281,7 +348,7 @@ class PriceDataManagement:
         end_epoch = Config.get_end_epoch()
         # 確定した最新値を取得
         tmp_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch)
-        last_ohlcv_data = tmp_ohlcv_data[-1]
+        last_ohlcv_data = tmp_ohlcv_data[-1]        
 
         # --------------------------------------------
         # 最新値の更新
@@ -340,9 +407,14 @@ class PriceDataManagement:
         """
         # 指定された期間のバックテストデータを取得
         start_epoch = Config.get_start_epoch()
-        end_epoch = Config.get_end_epoch()
+        # 終端分のデータも取得する
+        end_epoch = Config.get_end_epoch() + Config.get_time_frame() * 60
+        self.logger.log("時間足データ初期化 start")
         self.back_test_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch)
-        self.back_test_ohlcv_data_by_minutes = self.exchange.fetch_ohlcv_by_minutes(start_epoch, end_epoch)
+        self.logger.log("時間足データ初期化 done")
+        self.logger.log("ティッカーデータ初期化 start")
+        self.back_test_ohlcv_data_by_minutes = self.exchange.fetch_ohlcv_by_minutes(start_epoch, end_epoch + 60)
+        self.logger.log("ティッカーデータ初期化 done")
         return
 
     def get_back_test_ohlcv_data(self, target_unix_time):
@@ -353,24 +425,61 @@ class PriceDataManagement:
         time_difference = float('inf')  # 初期値を無限大に設定
 
         ohlcv_data = self.back_test_ohlcv_data
+        time_frame = Config.get_time_frame()
 
         for i, data in enumerate(ohlcv_data):
             data_unix_time = data['close_time']
-            if data_unix_time >= target_unix_time:
+            # 比較対象は未確定のデータなので１フレーム分先を取得する
+            if (data_unix_time + time_frame * 60) >= target_unix_time:
                 # 目標UNIX時間を超えているデータの場合
                 current_difference = data_unix_time - target_unix_time
                 if current_difference < time_difference:
                     # より近いデータを見つけた場合
                     time_difference = current_difference
                     closest_data = data
-                    tmp_time = closest_data['close_time']
-                    #print(f"closet_data time {tmp_time} target_unix_time {target_unix_time}")
+                    #tmp_time = closest_data['close_time']
+                    #cdt = datetime.fromtimestamp(tmp_time).strftime('%Y/%m/%d %H:%M:%S')
+                    #tut = datetime.fromtimestamp(target_unix_time).strftime('%Y/%m/%d %H:%M:%S')
+                    #print(f"### 120 closet_data time {cdt} target_unix_time {tut}")
+
+        return closest_data
+
+    def get_back_test_ohlcv_data_by_minutes(self, target_unix_time):
+        """
+        指定された1分単位の時間のデータと、次のデータを返す
+        """
+        closest_data = None
+        time_difference = float('inf')  # 初期値を無限大に設定
+
+        ohlcv_data = self.back_test_ohlcv_data_by_minutes
+
+        # 秒を切り捨て
+        target_time = datetime.fromtimestamp(target_unix_time)
+        target_time = target_time.replace(second=0)
+        target_unix_time_aligned = int(target_time.timestamp())
+
+        for i, data in enumerate(ohlcv_data):
+            data_unix_time = data['close_time']
+            
+            if data_unix_time >= target_unix_time_aligned:
+                # 目標UNIX時間を超えているデータの場合
+                current_difference = data_unix_time - target_unix_time_aligned
+                if current_difference < time_difference:
+                    # より近いデータを見つけた場合
+                    time_difference = current_difference
+                    closest_data = data
+                    # tmp_time = closest_data['close_time']
+                    # cdt = datetime.fromtimestamp(tmp_time).strftime('%Y/%m/%d %H:%M:%S')
+                    # tut = datetime.fromtimestamp(target_unix_time_aligned).strftime('%Y/%m/%d %H:%M:%S')
+                    # print(f"### 060 closet_data time {cdt} target_unix_time {tut}")
 
         return closest_data
 
     def __evaluate_donchian(self, ohlcv_data, price):
         """
         ドンチャンチャネルに基づくトレードシグナルを評価するメソッドです。
+        
+        
 
         Args:
             ohlcv_data (list): OHLCVデータのリスト

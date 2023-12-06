@@ -181,8 +181,13 @@ class Bot:
             # ログに記録
             # --------------------------------------------
             trade_data = self.price_data_management.get_latest_ohlcv()
-            dt_now = datetime.now()
-            trade_data['real_time'] = dt_now.strftime('%Y/%m/%d %H:%M:%S')
+            # バックテスト時はclose priceをシミュレータ値に更新
+            if back_test_mode == 1:
+                trade_data['real_time'] = self.price_data_management.get_latest_close_time_dt()
+                trade_data['close_price'] = price
+            else:
+                dt_now = datetime.now()
+                trade_data['real_time'] = dt_now.strftime('%Y/%m/%d %H:%M:%S')
             trade_data['stop_price'] = self.risk_management.get_stop_price()
             trade_data['position_size'] = self.risk_management.get_position_size()
             trade_data['total_size'] = self.risk_management.get_total_size()
