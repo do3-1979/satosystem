@@ -10,6 +10,7 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.chart import LineChart, Reference
 from bybit_exchange import BybitExchange
 from config import Config
+import pprint
 
 class Util:
     def extract_and_export_logs(self, log_directory, num_logs, output_excel_file):
@@ -67,9 +68,11 @@ class Util:
             "close_price",
             "Volume",
             "stop_price",
+            "position_price",
             "position_size",
             "total_size",
             "profit_and_loss",
+            "total_profit_and_loss",
             "volatility",
             "stop_offset",
             "stop_psar_stop_offset",
@@ -90,12 +93,13 @@ class Util:
 
         # 選択したカラムの順番に並べ替え
         combined_data = combined_data[[
-            "close_time_dt",
+            #"close_time_dt",
             "real_time",
             "high_price",
             "low_price",
             "close_price",
             "stop_price",
+            "position_price",
             "dc_h",
             "dc_l",
             "Volume",
@@ -104,6 +108,7 @@ class Util:
             "side",
             "position_size",
             "profit_and_loss",
+            "total_profit_and_loss",
             "donchian",
             "pvo",
             "stop_offset",
@@ -114,16 +119,19 @@ class Util:
         # データをエクセルに書き込み
         combined_data.to_excel(writer, sheet_name='Data', index=False)
 
-        column_name = "グラフ"
-        chart_sheet = workbook.create_sheet(title=f"Graph")
-        self.generate_line_chart(combined_data, column_name, chart_sheet)
+        column_name = "value"
+        chart_sheet = workbook.create_sheet(title="Chart")
+        profit_and_loss_sheet = workbook.create_sheet(title="PandL")
+        data_sheet = workbook['Data']
+        self.generate_line_chart(combined_data, column_name, chart_sheet, data_sheet)
+        self.generate_line_profit_and_loss(combined_data, column_name, profit_and_loss_sheet, data_sheet)
 
         # エクセルファイルを保存
         writer.save()
         writer.close()
         print("Export completed!")
         
-    def generate_line_chart(self, data, column_name, chart_sheet):
+    def generate_line_profit_and_loss(self, data, column_name, profit_and_loss_sheet, data_sheet):
         """
         データから指定されたカラムの折れ線グラフを生成し、指定されたシートに追加します。
 
@@ -133,18 +141,74 @@ class Util:
             chart_sheet (Worksheet): グラフを追加するシート
         """
         chart = LineChart()
-        chart.title = column_name
+        chart.title = "損益履歴"
+        # chart.style = 42
         chart.y_axis.title = column_name
-        chart.x_axis.title = "chart_time"
+        chart.x_axis.title = "real_time"  # x軸のタイトルを修正
 
         data_rows = list(dataframe_to_rows(data, index=False, header=True))
-        labels = Reference(chart_sheet, min_col=1, min_row=2, max_row=len(data_rows), max_col=1)
-        values = Reference(chart_sheet, min_col=2, min_row=1, max_row=len(data_rows), max_col=len(data_rows[0]))
+        real_time = Reference(data_sheet, min_col=1, min_row=2, max_row=len(data_rows)+1)
+        profit_and_loss = Reference(data_sheet, min_col=14, min_row=1, max_row=len(data_rows)+1)
+        total_profit_and_loss = Reference(data_sheet, min_col=15, min_row=1, max_row=len(data_rows)+1)
 
-        chart.add_data(values, titles_from_data=True)
-        chart.set_categories(labels)
+        chart.add_data(profit_and_loss, titles_from_data=True)
+        chart.add_data(total_profit_and_loss, titles_from_data=True)
 
-        chart_sheet.add_chart(chart, f"D{len(data_rows) + 3}")
+        chart.set_categories(real_time)
+
+        # グラフの大きさを設定
+        chart.width = 50  # 幅を15に変更
+        chart.height = 20  # 高さを10に変更
+
+        profit_and_loss_sheet.add_chart(chart, "A1")
+
+    def generate_line_chart(self, data, column_name, chart_sheet, data_sheet):
+        """
+        データから指定されたカラムの折れ線グラフを生成し、指定されたシートに追加します。
+
+        Args:
+            data (DataFrame): グラフを生成するデータ
+            column_name (str): グラフを生成するカラムの名前
+            chart_sheet (Worksheet): グラフを追加するシート
+        """
+        chart = LineChart()
+        chart.title = "取引履歴"
+        #chart.style = 1
+        chart.y_axis.title = column_name
+        chart.x_axis.title = "real_time"  # x軸のタイトルを修正
+
+        data_rows = list(dataframe_to_rows(data, index=False, header=True))
+        
+        real_time = Reference(data_sheet, min_col=1, min_row=2, max_row=len(data_rows)+1)
+        high_price = Reference(data_sheet, min_col=2, min_row=1, max_row=len(data_rows)+1)
+        low_price = Reference(data_sheet, min_col=3, min_row=1, max_row=len(data_rows)+1)
+        close_price = Reference(data_sheet, min_col=4, min_row=1, max_row=len(data_rows)+1)
+        stop_price = Reference(data_sheet, min_col=5, min_row=1, max_row=len(data_rows)+1)
+        position_price = Reference(data_sheet, min_col=6, min_row=1, max_row=len(data_rows)+1)
+        dc_h = Reference(data_sheet, min_col=7, min_row=1, max_row=len(data_rows)+1)
+        dc_l = Reference(data_sheet, min_col=8, min_row=1, max_row=len(data_rows)+1)
+
+        #chart.add_data(real_time, titles_from_data=True)
+        chart.add_data(high_price, titles_from_data=True)
+        chart.add_data(low_price, titles_from_data=True)
+        chart.add_data(close_price, titles_from_data=True)
+        chart.add_data(stop_price, titles_from_data=True)
+        chart.add_data(position_price, titles_from_data=True)
+        chart.add_data(dc_h, titles_from_data=True)
+        chart.add_data(dc_l, titles_from_data=True)
+        
+        chart.set_categories(real_time)
+
+        # グラフの大きさを設定
+        chart.width = 50  # 幅を15に変更
+        chart.height = 20  # 高さを10に変更
+
+        # Y軸の最大値と最小値を指定
+        chart.y_axis.majorUnit = 2500  # 主目盛りの刻み幅
+        chart.y_axis.minimumScale = 36500  # Y軸の最小値
+        chart.y_axis.maximumScale = 45000  # Y軸の最大値
+
+        chart_sheet.add_chart(chart, "A1")
 
     def fetch_ohlcv_and_save_to_json(self, exchange, output_directory="ohlcv_json_data", output_filename="ohlcv_data.json"):
         start_epoch = Config.get_start_epoch()
@@ -173,7 +237,7 @@ if __name__ == "__main__":
     # 使用例
     log_directory = "logs"  # ログファイルのディレクトリ
     #log_directory = "../test/test_data"  # ログファイルのディレクトリ
-    num_logs_to_read = 1  # 読み込むログファイルの数
+    num_logs_to_read = 50  # 読み込むログファイルの数
     output_excel_file = "combined_logs.xlsx"  # 出力エクセルファイルの名前
     
     util.extract_and_export_logs(log_directory, num_logs_to_read, output_excel_file)
