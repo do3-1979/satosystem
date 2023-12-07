@@ -55,6 +55,8 @@ class PriceDataManagement:
             self.progress_time = 0 # 処理中の時刻
             self.progress_diff = 0
             self.close_time = 0
+            self.prev_high_price = 0
+            self.prev_low_price = 0
             
     def get_ohlcv_data(self):
         """
@@ -264,24 +266,37 @@ class PriceDataManagement:
 
         self.ticker = ohlcv_by_minutes['close_price']
         self.close_time = ohlcv_by_minutes['close_time']
+
         # 管理領域の最新値を更新
-        last_ohlcv_data  = self.get_back_test_ohlcv_data(self.progress_time)
+        latest_ohlcv_data_tmp  = self.get_back_test_ohlcv_data(self.progress_time)
+        # 最新値はticker
+        latest_ohlcv_data_tmp['close_price'] = ohlcv_by_minutes['close_price']
+        """
+        # TODO 最高値、最安値を更新を1分足で行うとボラティリティが小さくなりポジションサイズが変わる不具合
+        if is_update_ohlcv == True:
+            # 初回はclose_priceで初期化
+            self.prev_high_price = ohlcv_by_minutes['high_price']
+            self.prev_low_price = ohlcv_by_minutes['low_price']
+            latest_ohlcv_data_tmp['high_price'] = ohlcv_by_minutes['high_price']
+            latest_ohlcv_data_tmp['low_price'] = ohlcv_by_minutes['low_price']
+        else:
+            # 上回ったら更新
+            # 最高値
+            latest_ohlcv_data_tmp['high_price'] = max(self.prev_high_price, ohlcv_by_minutes['high_price'])
+            self.prev_high_price = latest_ohlcv_data_tmp['high_price']
+            # 最安値
+            latest_ohlcv_data_tmp['low_price'] = min(self.prev_low_price, ohlcv_by_minutes['low_price'])
+            self.prev_low_price = latest_ohlcv_data_tmp['low_price']
+        """
         self.latest_ohlcv_data = []
-        self.latest_ohlcv_data.append(last_ohlcv_data)
-        # TODO 最新の未確認情報の作成が必要
-        # high_price, low_priceは過去と比較して高ければ残す
-        self.latest_ohlcv_data[0]['close_price'] = ohlcv_by_minutes['close_price']
+        self.latest_ohlcv_data.append(latest_ohlcv_data_tmp)
         
         # バックテスト時はバッファから1レコードずつ取得する
-        # 指定した時間の次のデータを取得する　同時に次のデータ時間も取得する
-        # TODO latestは未確定の最新地なのでtickerを使うべき
-        # 1分足のhigh, lowと2h足のhigh, lowは違うが、、
-
         # --------------------------------------------
         # データの更新があった場合
         # --------------------------------------------
         if is_update_ohlcv == True:
-            # last_ohlcv_data  = self.get_back_test_ohlcv_data(self.progress_time)
+            last_ohlcv_data  = self.get_back_test_ohlcv_data(self.progress_time)
             self.volume = last_ohlcv_data['Volume']
             last_time = last_ohlcv_data['close_time']
             
