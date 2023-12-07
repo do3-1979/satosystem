@@ -51,12 +51,13 @@ class Bot:
             f"  STOP: {trade_data['stop_price']:>6.1f}"
             f"  ボラ: {trade_data['volatility']:>7.2f}"
             f"  出来高: {trade_data['Volume']:>7.2f}"
-            f"  売買判断: {trade_data['decision']}"
-            f"  売買方向: {trade_data['side']}"
+            f"  SIGNAL: {trade_data['decision']}"
+            f" -> {trade_data['side']}"
             f"  購入量: {trade_data['position_size']:.4f}"
             f"  資産: {trade_data['positions']['quantity']:.4f}"
             f"  ポジ: {trade_data['positions']['side']}"
-            f"  損益: {trade_data['profit_and_loss']:>6.2f}"
+            f"  みなし損益: {trade_data['profit_and_loss']:>6.2f}"
+            f"  累計損益: {trade_data['total_profit_and_loss']:>6.2f}"
             #f"  総量: {trade_data['total_size']}"
             #f"  DCH: {trade_data['dc_h']}"
             #f"  DCL: {trade_data['dc_l']}"
@@ -189,9 +190,12 @@ class Bot:
                 dt_now = datetime.now()
                 trade_data['real_time'] = dt_now.strftime('%Y/%m/%d %H:%M:%S')
             trade_data['stop_price'] = self.risk_management.get_stop_price()
+            trade_data['position_price'] = self.portfolio.get_position_price()
             trade_data['position_size'] = self.risk_management.get_position_size()
             trade_data['total_size'] = self.risk_management.get_total_size()
-            trade_data['profit_and_loss'] = self.portfolio.get_profit_and_loss()
+            profit, loss = self.portfolio.calc_position_quantity(price)
+            trade_data['profit_and_loss'] = profit - loss
+            trade_data['total_profit_and_loss'] = self.portfolio.get_profit_and_loss()
             trade_data['volatility'] = self.price_data_management.get_volatility()
             trade_data['stop_offset'] = self.risk_management.get_stop_offset()
             trade_data['stop_psar_stop_offset'] = self.risk_management.get_psar_stop_offset()

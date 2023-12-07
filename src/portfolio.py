@@ -78,13 +78,8 @@ class Portfolio:
 
         return
 
-    def clear_position_quantity(self, price):
-        """
-        通貨の保有ポジション量を更新し、利益または損失を計算します。
-
-        Args:
-            price (float): 売却時の価格
-        """
+    # 価格に対する現在のポジションの利益計算
+    def calc_position_quantity(self, price):
         profit = 0
         loss = 0
         
@@ -111,7 +106,20 @@ class Portfolio:
         else:
             loss = diff * (-1)
 
+        return profit, loss
+
+    def clear_position_quantity(self, price):
+        """
+        通貨の保有ポジション量を更新し、利益または損失を計算します。
+
+        Args:
+            price (float): 売却時の価格
+        """
+        profit = 0
+        loss = 0
+
         # 利益と損失の合算
+        profit, loss = self.calc_position_quantity(price)
         self.profit += profit
         self.loss += loss
         
