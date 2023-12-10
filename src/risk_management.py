@@ -100,11 +100,11 @@ class RiskManagement:
 
         datalen = len(data)
 
-        for i in range(0,datalen):
+        for i in range(0, datalen):
             high.append(data[i]['high_price'])
             low.append(data[i]['low_price'])
             close.append(data[i]['close_price'])
-            psar = close
+            psar.append(0)  # psarリストに0を初期値として追加
 
         length = len(close)
 
@@ -117,7 +117,7 @@ class RiskManagement:
         lp = low[0]
 
         # 過去データからPSARを計算
-        for i in range(2,length):
+        for i in range(2, length):
             if bull:
                 psar[i] = psar[i - 1] + af * (hp - psar[i - 1])
             else:
@@ -157,13 +157,14 @@ class RiskManagement:
                         psar[i] = high[i - 1]
                     if high[i - 2] > psar[i]:
                         psar[i] = high[i - 2]
-            
+
             if bull:
                 psarbull[i] = psar[i]
             else:
                 psarbear[i] = psar[i]
 
-        return {"psar":psar, "psarbear":psarbear, "psarbull":psarbull}
+        return {"psar": psar, "psarbear": psarbear, "psarbull": psarbull}
+
 
     def __calc_stop_psar(self, data):
         """

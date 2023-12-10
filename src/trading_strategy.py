@@ -132,7 +132,7 @@ class TradingStrategy:
         
         # 現在値取得
         price = self.price_data_management.get_latest_ohlcv()
-        high_price = price['low_price']
+        high_price = price['high_price']
         low_price = price['low_price']
         
         # 現在値とストップ値比較
