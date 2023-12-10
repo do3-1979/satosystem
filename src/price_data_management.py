@@ -52,6 +52,7 @@ class PriceDataManagement:
         if Config.get_back_test_mode() == 1:
             self.back_test_ohlcv_data = [] # バックテスト用のデータテーブルバッファ
             self.back_test_ohlcv_data_by_minutes = [] # バックテスト用のデータテーブルバッファ
+            self.__bt_minutes_prev_index = 0
             self.progress_time = 0 # 処理中の時刻
             self.progress_diff = 0
             self.close_time = 0
@@ -290,7 +291,24 @@ class PriceDataManagement:
         """
         self.latest_ohlcv_data = []
         self.latest_ohlcv_data.append(latest_ohlcv_data_tmp)
+
+        # シグナルを随時更新に変更
+        # donchian update
+        dc, high, low = self.__evaluate_donchian(self.ohlcv_data, self.ticker)
         
+        if dc == 'BUY':
+            self.signals['donchian']['signal'] = True
+            self.signals['donchian']['side'] = 'BUY'
+        elif dc == 'SELL':
+            self.signals['donchian']['signal'] = True
+            self.signals['donchian']['side'] = 'SELL'
+        else:
+            self.signals['donchian']['signal'] = False
+            self.signals['donchian']['side'] = 'None'
+
+        self.signals['donchian']['info']['highest'] = high
+        self.signals['donchian']['info']['lowest'] = low
+
         # バックテスト時はバッファから1レコードずつ取得する
         # --------------------------------------------
         # データの更新があった場合
@@ -300,23 +318,6 @@ class PriceDataManagement:
             self.volume = last_ohlcv_data['Volume']
             last_time = last_ohlcv_data['close_time']
             
-            # シグナル更新
-            # donchian update
-            dc, high, low = self.__evaluate_donchian(self.ohlcv_data, self.ticker)
-            
-            if dc == 'BUY':
-                self.signals['donchian']['signal'] = True
-                self.signals['donchian']['side'] = 'BUY'
-            elif dc == 'SELL':
-                self.signals['donchian']['signal'] = True
-                self.signals['donchian']['side'] = 'SELL'
-            else:
-                self.signals['donchian']['signal'] = False
-                self.signals['donchian']['side'] = 'None'
-
-            self.signals['donchian']['info']['highest'] = high
-            self.signals['donchian']['info']['lowest'] = low
-
             # PVO update
             volume = last_ohlcv_data['Volume']
             pvo, value = self.__evaluate_pvo(self.ohlcv_data, volume)
@@ -471,8 +472,9 @@ class PriceDataManagement:
         target_time = datetime.fromtimestamp(target_unix_time)
         target_time = target_time.replace(second=0)
         target_unix_time_aligned = int(target_time.timestamp())
-
+            
         for i, data in enumerate(ohlcv_data):
+            # TODO 高速化のためindexをキャッシュ 
             data_unix_time = data['close_time']
             
             if data_unix_time >= target_unix_time_aligned:

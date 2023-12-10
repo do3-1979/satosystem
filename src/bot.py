@@ -134,7 +134,7 @@ class Bot:
                     position_size = self.risk_management.calculate_position_size(balance_tether)
                     quantity = position_size
                 # 追加時は初回の分割サイズを踏襲
-                elif trade_decision["decision"] == "ADD": # TODO "ADD" の場合、連続追加発注を検討するべき
+                elif trade_decision["decision"] == "ADD":
                     position_size = self.risk_management.get_position_size()
                     quantity = position_size
                 # 清算時は全ポジション
@@ -192,7 +192,9 @@ class Bot:
             trade_data['stop_price'] = self.risk_management.get_stop_price()
             trade_data['position_price'] = self.portfolio.get_position_price()
             trade_data['position_size'] = self.risk_management.get_position_size()
-            trade_data['total_size'] = self.risk_management.get_total_size()
+            position_size = self.portfolio.get_position_quantity()
+            quantity = position_size['quantity']
+            trade_data['position_quantity'] = quantity
             profit, loss = self.portfolio.calc_position_quantity(price)
             trade_data['profit_and_loss'] = profit - loss
             trade_data['total_profit_and_loss'] = self.portfolio.get_profit_and_loss()

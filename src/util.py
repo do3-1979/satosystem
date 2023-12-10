@@ -13,7 +13,7 @@ from config import Config
 import pprint
 
 class Util:
-    def extract_and_export_logs(self, log_directory, num_logs, output_excel_file):
+    def extract_and_export_logs(self, log_directory, num_logs, output_excel_file, start_time=None, end_time=None):
         """
         指定された数の圧縮ログファイルを読み込み、エクセルファイルにデータとグラフを出力します。
 
@@ -21,7 +21,13 @@ class Util:
             log_directory (str): 圧縮ログファイルが格納されているディレクトリ
             num_logs (int): 読み込むログファイルの数
             output_excel_file (str): 出力するエクセルファイルの名前
+            start_time (str): 開始時刻 (%Y/%m/%d %H:%M:%S 形式)
+            end_time (str): 終了時刻 (%Y/%m/%d %H:%M:%S 形式)
         """
+        if start_time and end_time:
+            start_time = datetime.strptime(start_time, "%Y/%m/%d %H:%M:%S")
+            end_time = datetime.strptime(end_time, "%Y/%m/%d %H:%M:%S")
+
         # 圧縮ログファイルのリストを作成
         log_files = []
         for root, _, files in os.walk(log_directory):
@@ -38,16 +44,21 @@ class Util:
 
         # 選択されたログファイルからデータを抽出
         for i, log_file in enumerate(reversed(selected_log_files)):  # 逆順に処理
-            print(f"Processing file {i + 1}/{proccess_num_logs}: {log_file}")  # 処理中のファイルを表示
+            print(f"Processing file {i + 1}/{proccess_num_logs}: {log_file}", end='\r')  # 処理中のファイルを表示
             if log_file.endswith(".zip"):
                 with zipfile.ZipFile(log_file, "r") as log_zip:
                     with log_zip.open(log_zip.namelist()[0]) as log_json:
                         log_data = pd.read_json(log_json)
-                        data.append(log_data)
+                        # データが期間内のものであれば追加
+                        if start_time <= log_data['close_time'].max() and end_time >= log_data['close_time'].min():
+                            data.append(log_data)
             elif log_file.endswith(".json"):
                 with open(log_file, "r") as log_json:
                     log_data = pd.read_json(log_json)
-                    data.append(log_data)
+                    # データが期間内のものであれば追加
+                    if start_time <= log_data['close_time'].max() and end_time >= log_data['close_time'].min():
+                        data.append(log_data)
+        print(f"Processing file {i + 1}/{proccess_num_logs}: {log_file} completed")  # 処理中のファイルを表示
 
         # データを連結
         combined_data = pd.concat(data, ignore_index=True)
@@ -70,7 +81,7 @@ class Util:
             "stop_price",
             "position_price",
             "position_size",
-            "total_size",
+            "position_quantity",
             "profit_and_loss",
             "total_profit_and_loss",
             "volatility",
@@ -107,6 +118,7 @@ class Util:
             "decision",
             "side",
             "position_size",
+            "position_quantity",
             "profit_and_loss",
             "total_profit_and_loss",
             "donchian",
@@ -116,6 +128,22 @@ class Util:
             "stop_price_surge_stop_offset",
         ]]
 
+        # position_priceが0の場合、最小値に置き換え
+        selected_columns = [
+            "high_price",
+            "low_price",
+            "close_price",
+            "dc_h",
+            "dc_l",
+        ]
+
+        # min() を用いて最小値を求める
+        min_position_price = combined_data[selected_columns].min().min()
+        min_stop_price = min_position_price
+        print(f"min_position_price = {min_position_price}")
+        combined_data['position_price'] = combined_data['position_price'].replace(0, min_position_price)
+        combined_data['stop_price'] = combined_data['stop_price'].replace(0, min_stop_price)
+
         # データをエクセルに書き込み
         combined_data.to_excel(writer, sheet_name='Data', index=False)
 
@@ -123,13 +151,18 @@ class Util:
         chart_sheet = workbook.create_sheet(title="Chart")
         profit_and_loss_sheet = workbook.create_sheet(title="PandL")
         data_sheet = workbook['Data']
+        print("Generating Chart sheet...", end='\r')
         self.generate_line_chart(combined_data, column_name, chart_sheet, data_sheet)
+        print("Generating Chart sheet...Done")
+        print("Generating Profit and Loss sheet...", end='\r')
         self.generate_line_profit_and_loss(combined_data, column_name, profit_and_loss_sheet, data_sheet)
+        print("Generating Profit and Loss sheet...Done")
 
         # エクセルファイルを保存
-        writer.save()
+        print("File exporting...", end='\r')
+        writer.save()    
         writer.close()
-        print("Export completed!")
+        print("File exporting...Completed!!")
         
     def generate_line_profit_and_loss(self, data, column_name, profit_and_loss_sheet, data_sheet):
         """
@@ -148,8 +181,8 @@ class Util:
 
         data_rows = list(dataframe_to_rows(data, index=False, header=True))
         real_time = Reference(data_sheet, min_col=1, min_row=2, max_row=len(data_rows)+1)
-        profit_and_loss = Reference(data_sheet, min_col=14, min_row=1, max_row=len(data_rows)+1)
-        total_profit_and_loss = Reference(data_sheet, min_col=15, min_row=1, max_row=len(data_rows)+1)
+        profit_and_loss = Reference(data_sheet, min_col=15, min_row=1, max_row=len(data_rows)+1)
+        total_profit_and_loss = Reference(data_sheet, min_col=16, min_row=1, max_row=len(data_rows)+1)
 
         chart.add_data(profit_and_loss, titles_from_data=True)
         chart.add_data(total_profit_and_loss, titles_from_data=True)
@@ -204,9 +237,22 @@ class Util:
         chart.height = 20  # 高さを10に変更
 
         # Y軸の最大値と最小値を指定
-        chart.y_axis.majorUnit = 2500  # 主目盛りの刻み幅
-        chart.y_axis.minimumScale = 36500  # Y軸の最小値
-        chart.y_axis.maximumScale = 45000  # Y軸の最大値
+        selected_columns = [
+            "high_price",
+            "low_price",
+            "close_price",
+            "dc_h",
+            "dc_l",
+        ]
+
+        # データ中の最小、最大を求める
+        y_scale_max = data[selected_columns].max().max()
+        y_scale_min = data[selected_columns].min().min()
+        
+        #chart.x_axis.scaling.min = x軸最小
+        #chart.x_axis.scaling.max = x軸最大
+        chart.y_axis.scaling.min = y_scale_min
+        chart.y_axis.scaling.max = y_scale_max
 
         chart_sheet.add_chart(chart, "A1")
 
@@ -237,10 +283,13 @@ if __name__ == "__main__":
     # 使用例
     log_directory = "logs"  # ログファイルのディレクトリ
     #log_directory = "../test/test_data"  # ログファイルのディレクトリ
-    num_logs_to_read = 50  # 読み込むログファイルの数
+    num_logs_to_read = 400  # 読み込むログファイルの数
     output_excel_file = "combined_logs.xlsx"  # 出力エクセルファイルの名前
     
-    util.extract_and_export_logs(log_directory, num_logs_to_read, output_excel_file)
+    start_time = "2023/10/22 23:00:00"  # 開始時刻 (例: "2023/01/01 00:00:00")
+    end_time = "2023/10/24 23:00:00"    # 終了時刻 (例: "2023/01/02 00:00:00")
+
+    util.extract_and_export_logs(log_directory, num_logs_to_read, output_excel_file, start_time, end_time)
 
     # 1分足の指定ログ取得
     # exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
