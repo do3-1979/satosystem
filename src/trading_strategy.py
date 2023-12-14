@@ -134,21 +134,26 @@ class TradingStrategy:
         price = self.price_data_management.get_latest_ohlcv()
         high_price = price['high_price']
         low_price = price['low_price']
+        close_price = price['close_price']
         
         # 現在値とストップ値比較
         position_side = self.portfolio.get_position_side()
 
         if position_side == "BUY":
-            if low_price <= stop_price:
-                self.logger.log(f"[条件判定:EXIT] 最安値 {low_price:.2f} がストップ値 {stop_price:.2f} を割り込みました")
+            if close_price <= stop_price:
+                self.logger.log(f"[条件判定:EXIT] 現在値 {close_price:.2f} がストップ値 {stop_price:.2f} を割り込みました")
+#            if low_price <= stop_price:
+#                self.logger.log(f"[条件判定:EXIT] 最安値 {low_price:.2f} がストップ値 {stop_price:.2f} を割り込みました")
                 side = "SELL"
                 decision = "EXIT"
                 self.trade_decision["side"] = side
                 self.trade_decision["decision"] = decision
 
         elif position_side == "SELL":
-            if high_price >= stop_price:
-                self.logger.log(f"[条件判定:EXIT] 最高値 {high_price:.2f} がストップ値 {stop_price:.2f} を超過しました")
+            if close_price >= stop_price:
+                self.logger.log(f"[条件判定:EXIT] 現在値 {close_price:.2f} がストップ値 {stop_price:.2f} を超過しました")
+#            if high_price >= stop_price:
+#                self.logger.log(f"[条件判定:EXIT] 最高値 {high_price:.2f} がストップ値 {stop_price:.2f} を超過しました")
                 side = "BUY"
                 decision = "EXIT"
                 self.trade_decision["side"] = side

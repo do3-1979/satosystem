@@ -84,7 +84,7 @@ class Bot:
         self.logger.log(str(config_instance))
         self.logger.log("-------------------------------------------------------")
 
-        # TODO tryはエラーなくなるまで未実装
+        # TODO tryはエラーなくなるまで未実装 → 各処理側で実装する
         while True:
         #    try:
             log_zipped = False
@@ -216,7 +216,8 @@ class Bot:
             trade_data['positions'] = self.portfolio.get_position_quantity()
 
             # 取引データを表示
-            self.show_trade_data(trade_data)
+            if back_test_mode == 0:
+                self.show_trade_data(trade_data)
             
             # 取引データを記録
             self.logger.log_trade_data(trade_data)

@@ -23,6 +23,8 @@ class Portfolio:
         self.market_type = Config.get_market()
         self.profit = 0
         self.loss = 0
+        self.add_num = 0
+        
 
     def get_position_quantity(self):
         """
@@ -67,6 +69,7 @@ class Portfolio:
             self.positions[self.market_type]["quantity"] = quantity
             self.positions[self.market_type]["side"] = side
             self.positions[self.market_type]["position_price"] = price
+            self.add_num = 1
         else:
             # 既存のポジションがある場合、平均取得単価を計算しなおす
             new_quantity = current_quantity + quantity
@@ -75,6 +78,8 @@ class Portfolio:
             self.positions[self.market_type]["quantity"] = new_quantity
             self.positions[self.market_type]["side"] = side
             self.positions[self.market_type]["position_price"] = new_position_price
+            
+            self.add_num += 1
 
         return
 
@@ -129,6 +134,9 @@ class Portfolio:
         self.positions[self.market_type]["quantity"] = 0
         self.positions[self.market_type]["side"] = 'NONE'
         self.positions[self.market_type]["position_price"] = 0
+        
+        self.add_num = 0
+        
         return
 
     def get_position_quantity_with_symbol(self, symbol):
@@ -161,6 +169,12 @@ class Portfolio:
         portfolio_str += f"profit_and_loss: {round(self.profit - self.loss)}"
         return portfolio_str
 
+    def get_addition_num(self):
+        """
+        追加購入回数を返す
+        """
+        return self.add_num
+
 # ポートフォリオのサンプル
 if __name__ == "__main__":
     # ポートフォリオクラスを初期化
@@ -170,20 +184,25 @@ if __name__ == "__main__":
     portfolio.add_position_quantity(0.01, "BUY", 20000)
     btc = portfolio.get_position_quantity()
     print(portfolio)
+    print(f"add num = {portfolio.get_addition_num()}")
 
     portfolio.clear_position_quantity(30000)
     print(portfolio)
+    print(f"add num = {portfolio.get_addition_num()}")
     
     portfolio.add_position_quantity(0.02, "SELL", 20000)
     btc = portfolio.get_position_quantity()
     print(portfolio)
+    print(f"add num = {portfolio.get_addition_num()}")
     portfolio.clear_position_quantity(40000)
     print(portfolio)
+    print(f"add num = {portfolio.get_addition_num()}")
 
     portfolio.add_position_quantity(0.04, "BUY", 20000)
     btc = portfolio.get_position_quantity()
     print(portfolio)
+    print(f"add num = {portfolio.get_addition_num()}")
     portfolio.clear_position_quantity(40000)
     print(portfolio)
-
+    print(f"add num = {portfolio.get_addition_num()}")
     
