@@ -84,7 +84,22 @@ class BybitExchange(Exchange):
         Returns:
             dict: 口座の残高情報
         """
-        balance = self.exchange.fetchBalance()
+        server_retry_wait = Config.get_server_retry_wait()
+        err_occuerd = False
+        
+        while True:
+            try:
+                balance = self.exchange.fetchBalance()
+                break
+            except ccxt.BaseError as e:
+                if err_occuerd == False:
+                    self.logger.log_error(f"口座の残高情報エラー:{str(e)}")
+                    err_occuerd = True
+                time.sleep(server_retry_wait)
+
+        if err_occuerd == True:
+            self.logger.log_error("口座の残高情報エラー復帰")
+
         return balance
     
     def get_account_balance_total(self):
@@ -94,7 +109,21 @@ class BybitExchange(Exchange):
         Returns:
             int: 口座上の使用可能な証拠金残高
         """
-        balance = self.exchange.fetchBalance()
+        server_retry_wait = Config.get_server_retry_wait()
+        err_occuerd = False
+        
+        while True:
+            try:
+                balance = self.exchange.fetchBalance()
+                break
+            except ccxt.BaseError as e:
+                if err_occuerd == False:
+                    self.logger.log_error(f"口座の使用可能な証拠金残高エラー:{str(e)}")
+                    err_occuerd = True
+                time.sleep(server_retry_wait)
+
+        if err_occuerd == True:
+            self.logger.log_error("口座の使用可能な証拠金残高エラー復帰")
 
         usd_balance = balance['BTC']['total']
 
@@ -113,19 +142,46 @@ class BybitExchange(Exchange):
         Returns:
             dict: 注文の実行結果
         """
+        server_retry_wait = Config.get_server_retry_wait()
+        err_occuerd = False
+        
         if order_type == 'limit':
-            order = self.exchange.create_limit_order(
-                symbol=self.market,
-                side=side,
-                amount=quantity,
-                price=price
-            )
+            while True:
+                try:
+                    order = self.exchange.create_limit_order(
+                        symbol=self.market,
+                        side=side,
+                        amount=quantity,
+                        price=price
+                    )
+                    break
+                except ccxt.BaseError as e:
+                    if err_occuerd == False:
+                        self.logger.log_error(f"指値注文エラー:{str(e)}")
+                        err_occuerd = True
+                    time.sleep(server_retry_wait)
+
+            if err_occuerd == True:
+                self.logger.log_error("指値注文エラー復帰")
+
         elif order_type == 'market':
-            order = self.exchange.create_market_order(
-                symbol=self.market,
-                side=side,
-                amount=quantity
-            )
+            while True:
+                try:
+                    order = self.exchange.create_market_order(
+                        symbol=self.market,
+                        side=side,
+                        amount=quantity
+                    )
+                    break
+                except ccxt.BaseError as e:
+                    if err_occuerd == False:
+                        self.logger.log_error(f"成行注文エラー:{str(e)}")
+                        err_occuerd = True
+                    time.sleep(server_retry_wait)
+
+            if err_occuerd == True:
+                self.logger.log_error("成行注文エラー復帰")
+
         else:
             raise ValueError("Invalid order_type. Use 'limit' or 'market'.")
 
@@ -225,8 +281,8 @@ class BybitExchange(Exchange):
                     )
                     break
                 except ccxt.BaseError as e:
-                    self.logger.log_error(f"価格取得エラー:{str(e)}")
                     if err_occuerd == False:
+                        self.logger.log_error(f"価格取得エラー:{str(e)}")
                         err_occuerd = True
                     time.sleep(server_retry_wait)
 
@@ -279,13 +335,13 @@ class BybitExchange(Exchange):
                     break
                 
                 except ccxt.BaseError as e:
-                    self.logger.log_error(f"価格取得エラー:{str(e)}")
                     if err_occurred is False:
+                        self.logger.log_error(f"1分価格取得エラー:{str(e)}")
                         err_occurred = True
                     time.sleep(server_retry_wait)
 
             if err_occurred is True:
-                self.logger.log_error("価格取得エラー復帰")
+                self.logger.log_error("1分価格取得エラー復帰")
 
             # データ成型
             for i in range(len(ohlcv)):
@@ -343,8 +399,8 @@ class BybitExchange(Exchange):
                 )
                 break
             except ccxt.BaseError as e:
-                self.logger.log_error(f"最新価格取得エラー:{str(e)}")
                 if err_occuerd == False:
+                    self.logger.log_error(f"最新価格取得エラー:{str(e)}")    
                     err_occuerd = True
                 time.sleep(server_retry_wait)
 
