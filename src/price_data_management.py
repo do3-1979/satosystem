@@ -42,9 +42,11 @@ class PriceDataManagement:
         self.exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
         self.logger = Logger()
         self.ohlcv_data = [] # 確定済のデータテーブル
+        self.ohlcv_data_detail = [] # 粒度の細かいohlcvデータ（パラボリック用）
         self.latest_ohlcv_data = [] # 未確定の最新値
         self.ticker = 0
         self.volume = 0
+        self.time_frame = Config.get_time_frame()
         self.signals = {'donchian': {'signal': False, 'side': None, 'info': {'highest': 0, 'lowest': 0} }, 'pvo': {'signal': False, 'side': None, 'info':{'value': 0} }}
         self.volatility = 0
         self.prev_close_time = 0
@@ -67,6 +69,15 @@ class PriceDataManagement:
             list: OHLCVデータのリスト
         """
         return self.ohlcv_data
+
+    def get_ohlcv_data_detail(self):
+        """
+        粒度の細かいOHLCVデータを取得するメソッドです。
+
+        Returns:
+            list: OHLCVデータのリスト
+        """
+        return self.ohlcv_data_detail
 
     def get_ticker(self):
         """
@@ -222,7 +233,7 @@ class PriceDataManagement:
         if self.prev_close_time == 0:
             # 初期機関をサーバから取得
             # TODO 取得済テーブルから取得
-            tmp_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch)
+            tmp_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch, self.time_frame)
             last_ohlcv_data = tmp_ohlcv_data[-1]
 
             self.prev_close_time = last_ohlcv_data['close_time']
@@ -362,14 +373,14 @@ class PriceDataManagement:
         start_epoch = Config.get_start_epoch()
         end_epoch = Config.get_end_epoch()
         # 確定した最新値を取得
-        tmp_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch)
+        tmp_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch, self.time_frame)
         last_ohlcv_data = tmp_ohlcv_data[-1]        
 
         # --------------------------------------------
         # 最新値の更新
         # --------------------------------------------
         # 最新値を取得
-        self.latest_ohlcv_data = self.exchange.fetch_latest_ohlcv()
+        self.latest_ohlcv_data = self.exchange.fetch_latest_ohlcv(self.time_frame)
         self.ticker = self.exchange.fetch_ticker()
         self.volume = self.latest_ohlcv_data[0]['Volume']
 
@@ -425,10 +436,10 @@ class PriceDataManagement:
         # 終端分のデータも取得する
         end_epoch = Config.get_end_epoch() + Config.get_time_frame() * 60
         self.logger.log("時間足データ初期化 start")
-        self.back_test_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch)
+        self.back_test_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch, self.time_frame)
         self.logger.log("時間足データ初期化 done")
         self.logger.log("ティッカーデータ初期化 start")
-        self.back_test_ohlcv_data_by_minutes = self.exchange.fetch_ohlcv_by_minutes(start_epoch, end_epoch + 60)
+        self.back_test_ohlcv_data_by_minutes = self.exchange.fetch_ohlcv(start_epoch, end_epoch + 60, 1)
         self.logger.log("ティッカーデータ初期化 done")
         return
 
