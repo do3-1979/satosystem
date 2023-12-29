@@ -25,8 +25,8 @@ class Util:
             end_time (str): 終了時刻 (%Y/%m/%d %H:%M:%S 形式)
         """
         if start_time and end_time:
-            start_time = datetime.strptime(start_time, "%Y/%m/%d %H:%M:%S")
-            end_time = datetime.strptime(end_time, "%Y/%m/%d %H:%M:%S")
+            start_time = datetime.strptime(start_time, "%Y/%m/%d %H:%M")
+            end_time = datetime.strptime(end_time, "%Y/%m/%d %H:%M")
 
         # 圧縮ログファイルのリストを作成
         log_files = []
@@ -190,8 +190,8 @@ class Util:
         chart.set_categories(real_time)
 
         # グラフの大きさを設定
-        chart.width = 50  # 幅を15に変更
-        chart.height = 20  # 高さを10に変更
+        chart.width = 50  
+        chart.height = 20  
 
         profit_and_loss_sheet.add_chart(chart, "A1")
 
@@ -263,7 +263,7 @@ class Util:
         #end_time = datetime.strptime(end_epoch, "%Y/%m/%d %H:%M")
                 
         print(f"start_epoch: {start_epoch} end_epoch: {end_epoch} ")
-        ohlcv_data = exchange.fetch_ohlcv_by_minutes(start_epoch, end_epoch)
+        ohlcv_data = exchange.fetch_ohlcv(start_epoch, end_epoch, 1)
 
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
@@ -286,8 +286,10 @@ if __name__ == "__main__":
     num_logs_to_read = 400  # 読み込むログファイルの数
     output_excel_file = "combined_logs.xlsx"  # 出力エクセルファイルの名前
     
-    start_time = "2023/10/22 23:00:00"  # 開始時刻 (例: "2023/01/01 00:00:00")
-    end_time = "2023/10/24 23:00:00"    # 終了時刻 (例: "2023/01/02 00:00:00")
+    start_time = "2023/12/20 1:00"  # 開始時刻 (例: "2023/01/01 00:00")
+    end_time = "2023/12/22 23:00"    # 終了時刻 (例: "2023/01/02 00:00")
+    #start_time = Config.get_start_time()
+    #end_time = Config.get_end_time()
 
     util.extract_and_export_logs(log_directory, num_logs_to_read, output_excel_file, start_time, end_time)
 

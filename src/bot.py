@@ -44,11 +44,11 @@ class Bot:
 
     def show_trade_data(self, trade_data):
         self.logger.log(f"終値時間: {datetime.fromtimestamp(trade_data['close_time']).strftime('%Y/%m/%d %H:%M')}"
-            f"  高値: {trade_data['high_price']:>6.1f}"
-            f"  安値: {trade_data['low_price']:>6.1f}"
-            f"  終値: {trade_data['close_price']:>6.1f}"
-            f"  購入価格: {trade_data['positions']['position_price']:>6.2f}"
-            f"  STOP: {trade_data['stop_price']:>6.1f}"
+            f"  高値: {trade_data['high_price']:>5.0f}"
+            f"  安値: {trade_data['low_price']:>5.0f}"
+            f"  終値: {trade_data['close_price']:>5.0f}"
+            f"  購入価格: {trade_data['positions']['position_price']:>5.0f}"
+            f"  STOP: {trade_data['stop_price']:>5.0f}"
             f"  ボラ: {trade_data['volatility']:>7.2f}"
             f"  出来高: {trade_data['Volume']:>7.2f}"
             f"  SIGNAL: {trade_data['decision']}"
@@ -56,8 +56,8 @@ class Bot:
             f"  購入量: {trade_data['position_size']:.4f}"
             f"  資産: {trade_data['positions']['quantity']:.4f}"
             f"  ポジ: {trade_data['positions']['side']}"
-            f"  みなし損益: {trade_data['profit_and_loss']:>6.2f}"
-            f"  累計損益: {trade_data['total_profit_and_loss']:>6.2f}"
+            f"  みなし損益: {trade_data['profit_and_loss']:>4.0f}"
+            f"  累計損益: {trade_data['total_profit_and_loss']:>4.0f}"
             #f"  総量: {trade_data['total_size']}"
             #f"  DCH: {trade_data['dc_h']}"
             #f"  DCL: {trade_data['dc_l']}"
@@ -98,7 +98,7 @@ class Bot:
                 if is_end == True:
                     self.logger.log("-------------------------------------------------------")
                     self.logger.log(f"最終ポートフォリオ: {self.portfolio.get_position_quantity()}")
-                    self.logger.log(f"最終損益: {self.portfolio.get_profit_and_loss()} [BTC/USD]")
+                    self.logger.log(f"最終損益: {self.portfolio.get_profit_and_loss():>4.0f} [BTC/USD]")
                     self.logger.close_log_file()
                     self.logger.log("--- BOT END -------------------------------------------")
                     break
@@ -216,8 +216,8 @@ class Bot:
             trade_data['positions'] = self.portfolio.get_position_quantity()
 
             # 取引データを表示
-            if back_test_mode == 0:
-                self.show_trade_data(trade_data)
+            # if back_test_mode == 0:
+            self.show_trade_data(trade_data)
             
             # 取引データを記録
             self.logger.log_trade_data(trade_data)

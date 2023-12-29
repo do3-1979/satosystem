@@ -163,6 +163,8 @@ class RiskManagement:
             else:
                 psarbear[i] = psar[i]
 
+        # TODO PSARの値が意図通りでない？
+        #print(f"psar: {psar[-1]} bear: {psarbear[-1]} bull: {psarbull[-1]}")
         return {"psar": psar, "psarbear": psarbear, "psarbull": psarbull}
 
 
@@ -184,9 +186,13 @@ class RiskManagement:
         position_price = self.portfolio.get_position_price()
         tmp_stop_offset = prev_stop_offset
 
+        #tmp_stop_offsetb = round(position_price - psarbull)
+        #tmp_stop_offsets = round(psarbear - position_price)
+        #print(f"prev_stop_offset: {prev_stop_offset} position_price: {position_price} psarbull {psarbull} psarbear {psarbear} BUY diff {tmp_stop_offsetb} SELL diff {0}")
         # BUYの時は現在値からpsarbullの差をstopとする。SELLはpserbear
         if self.portfolio.get_position_side() == "BUY" and psarbull != None:
             tmp_stop_offset = round(position_price - psarbull)
+
         if self.portfolio.get_position_side() == "SELL" and psarbear != None:
             tmp_stop_offset = round(psarbear - position_price)
         
@@ -221,6 +227,16 @@ class RiskManagement:
 
         return tmp_stop_offset
 
+    def __follow_price_range(self, price):
+        # 初回購入時に設定するストップ値は、直近の最高値・最安値を上回らないようにする
+        # 追加購入があった場合は、現在の取得単価 - 1レンジで追従させる
+
+        # T.B.D.
+        tmp_stop_offset = 0
+
+        return tmp_stop_offset
+
+
     def __update_stop_price(self):
         
         position = self.portfolio.get_position_quantity()
@@ -228,6 +244,7 @@ class RiskManagement:
         side = position["side"]
         position_price = position["position_price"]
         price = self.price_data_management.get_ticker()
+        #ohlcv = self.price_data_management.get_latest_ohlcv()
         
         # 未初期化の場合は初期値を設定する
         if self.stop_offset == 0:
@@ -259,6 +276,11 @@ class RiskManagement:
             
             # 前回のoffsetから変化がなかったらストップ値は変更しない
             if side == "BUY":
+                # TODO PSARだと平均取得単価が更新されても追従しないので元のstop値を割り込むリスクに対処できない　→　2時間より少ないPSARを計算する
+                # TODO → ピラミッドすると追従できないため。積んだら再計算するか、短い足で再計算するかのどちらかがよい
+                # TODO 短い足を取得し、常に計算させる
+                
+                # TODO 10/24 23～10/25 23時もおかしい
                 if prev_stop_offset > new_stop_offset:
                     # ストップのオフセットが更新された場合のみ、ストップ値を再評価する
                     self.stop_offset = new_stop_offset
@@ -266,7 +288,7 @@ class RiskManagement:
                     self.stop_price = max(tmp_stop_price, prev_stop_price)
                 else:
                     self.stop_price = prev_stop_price
-                #self.logger.log(f"prev stop offset {prev_stop_offset} psar offset {psar_stop_offset} new_stop_offset {new_stop_offset} stop_price {self.stop_price} price {price} ")
+                # self.logger.log(f"prev stop offset {prev_stop_offset} psar offset {psar_stop_offset} new_stop_offset {new_stop_offset} stop_price {self.stop_price} price {price} ")
             if side == "SELL":
                 if prev_stop_offset > new_stop_offset:
                     # ストップ値が更新された場合のみ
@@ -275,7 +297,7 @@ class RiskManagement:
                     self.stop_price = min(tmp_stop_price, prev_stop_price)
                 else:
                     self.stop_price = prev_stop_price
-                #self.logger.log(f"prev stop offset {prev_stop_offset} psar offset {psar_stop_offset} new_stop_offset {new_stop_offset} stop_price {self.stop_price} price {price} ")
+                # self.logger.log(f"prev stop offset {prev_stop_offset} psar offset {psar_stop_offset} new_stop_offset {new_stop_offset} stop_price {self.stop_price} price {price} ")
         else:
             self.psar_stop_offset = 0
             self.price_surge_stop_offset = 0

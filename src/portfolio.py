@@ -180,8 +180,9 @@ if __name__ == "__main__":
     # ポートフォリオクラスを初期化
     portfolio = Portfolio()
 
-    portfolio.add_position_quantity(0.01, "BUY", 20000)
-    portfolio.add_position_quantity(0.01, "BUY", 20000)
+    portfolio.add_position_quantity(0.01, "BUY", 15000)
+    portfolio.add_position_quantity(0.01, "BUY", 25000)
+    portfolio.add_position_quantity(0.02, "BUY", 10000)
     btc = portfolio.get_position_quantity()
     print(portfolio)
     print(f"add num = {portfolio.get_addition_num()}")
