@@ -373,37 +373,73 @@ class Config:
         """
         コンフィグ内容を可読性よく文字列として表現するメソッドです。
         """
-        config_str = f"\nRisk Percentage: {self.get_risk_percentage()}\n"
-        config_str += f"Account Balance: {self.get_account_balance()}\n"
-        config_str += f"Leverage: {self.get_leverage()}\n"
-        config_str += f"Entry Times: {self.get_entry_times()}\n"
-        config_str += f"Entry Range: {self.get_entry_range()}\n"
-        config_str += f"Stop Range: {self.get_stop_range()}\n"
-        config_str += f"Stop AF: {self.get_stop_AF()}\n"
-        config_str += f"Stop AF Add: {self.get_stop_AF_add()}\n"
-        config_str += f"Stop AF Max: {self.get_stop_AF_max()}\n"
-        config_str += f"surge follow price ratio: {self.get_surge_follow_price_ratio()}\n"
-        config_str += f"Lot Limit Lower: {self.get_lot_limit_lower()}\n"
-        config_str += f"Balance Tether Limit: {self.get_balance_tether_limit()}\n"
-        config_str += f"Psar Time Frame: {self.get_psar_time_frame()}\n"
-        config_str += f"Market: {self.get_market()}\n"
-        config_str += f"Market Unit: {self.get_market_unit_pair()}\n"
-        config_str += f"Time Frame: {self.get_time_frame()}\n"
-        config_str += f"Start Time: {self.get_start_time()}\n"
-        config_str += f"End Time: {self.get_end_time()}\n"
-        config_str += f"Start Time (epoch): {self.get_start_epoch()}\n"
-        config_str += f"End Time (epoch): {self.get_end_epoch()}\n"
-        config_str += f"Volatility Term: {self.get_volatility_term()}\n"
-        config_str += f"Donchian Buy Term: {self.get_donchian_buy_term()}\n"
-        config_str += f"Donchian Sell Term: {self.get_donchian_sell_term()}\n"
-        config_str += f"PVO Short Term: {self.get_pvo_s_term()}\n"
-        config_str += f"PVO Long Term: {self.get_pvo_l_term()}\n"
-        config_str += f"PVO Threshold: {self.get_pvo_threshold()}\n"
-        config_str += f"Server Retry Wait: {self.get_server_retry_wait()}\n"
-        config_str += f"Bot Operation Cycle: {self.get_bot_operation_cycle()}\n"
+        config_str = f"\nRisk Percentage: {self.get_risk_percentage()}\r\n"
+        config_str += f"Account Balance: {self.get_account_balance()}\r\n"
+        config_str += f"Leverage: {self.get_leverage()}\r\n"
+        config_str += f"Entry Times: {self.get_entry_times()}\r\n"
+        config_str += f"Entry Range: {self.get_entry_range()}\r\n"
+        config_str += f"Stop Range: {self.get_stop_range()}\r\n"
+        config_str += f"Stop AF: {self.get_stop_AF()}\r\n"
+        config_str += f"Stop AF Add: {self.get_stop_AF_add()}\r\n"
+        config_str += f"Stop AF Max: {self.get_stop_AF_max()}\r\n"
+        config_str += f"surge follow price ratio: {self.get_surge_follow_price_ratio()}\r\n"
+        config_str += f"Lot Limit Lower: {self.get_lot_limit_lower()}\r\n"
+        config_str += f"Balance Tether Limit: {self.get_balance_tether_limit()}\r\n"
+        config_str += f"Psar Time Frame: {self.get_psar_time_frame()}\r\n"
+        config_str += f"Market: {self.get_market()}\r\n"
+        config_str += f"Market Unit: {self.get_market_unit_pair()}\r\n"
+        config_str += f"Time Frame: {self.get_time_frame()}\r\n"
+        config_str += f"Start Time: {self.get_start_time()}\r\n"
+        config_str += f"End Time: {self.get_end_time()}\r\n"
+        config_str += f"Start Time (epoch): {self.get_start_epoch()}\r\n"
+        config_str += f"End Time (epoch): {self.get_end_epoch()}\r\n"
+        config_str += f"Volatility Term: {self.get_volatility_term()}\r\n"
+        config_str += f"Donchian Buy Term: {self.get_donchian_buy_term()}\r\n"
+        config_str += f"Donchian Sell Term: {self.get_donchian_sell_term()}\r\n"
+        config_str += f"PVO Short Term: {self.get_pvo_s_term()}\r\n"
+        config_str += f"PVO Long Term: {self.get_pvo_l_term()}\r\n"
+        config_str += f"PVO Threshold: {self.get_pvo_threshold()}\r\n"
+        config_str += f"Server Retry Wait: {self.get_server_retry_wait()}\r\n"
+        config_str += f"Bot Operation Cycle: {self.get_bot_operation_cycle()}\r\n"
         config_str += f"Back Test Mode: {self.get_back_test_mode()}"
 
         return config_str
+
+    def to_dict(self):
+        """
+        Convert Config parameters to a dictionary.
+        """
+        return {
+            "Risk Percentage": self.get_risk_percentage(),
+            "Account Balance": self.get_account_balance(),
+            "Leverage": self.get_leverage(),
+            "Entry Times": self.get_entry_times(),
+            "Entry Range": self.get_entry_range(),
+            "Stop Range": self.get_stop_range(),
+            "Stop AF": self.get_stop_AF(),
+            "Stop AF Add": self.get_stop_AF_add(),
+            "Stop AF Max": self.get_stop_AF_max(),
+            "surge follow price ratio": self.get_surge_follow_price_ratio(),
+            "Lot Limit Lower": self.get_lot_limit_lower(),
+            "Balance Tether Limit": self.get_balance_tether_limit(),
+            "Psar Time Frame": self.get_psar_time_frame(),
+            "Market": self.get_market(),
+            "Market Unit": self.get_market_unit_pair(),
+            "Time Frame": self.get_time_frame(),
+            "Start Time": self.get_start_time(),
+            "End Time": self.get_end_time(),
+            "Start Time (epoch)": self.get_start_epoch(),
+            "End Time (epoch)": self.get_end_epoch(),
+            "Volatility Term": self.get_volatility_term(),
+            "Donchian Buy Term": self.get_donchian_buy_term(),
+            "Donchian Sell Term": self.get_donchian_sell_term(),
+            "PVO Short Term": self.get_pvo_s_term(),
+            "PVO Long Term": self.get_pvo_l_term(),
+            "PVO Threshold": self.get_pvo_threshold(),
+            "Server Retry Wait": self.get_server_retry_wait(),
+            "Bot Operation Cycle": self.get_bot_operation_cycle(),
+            "Back Test Mode": self.get_back_test_mode()
+        }
 
 if __name__ == "__main__":
     # APIキーとAPIシークレットを取得

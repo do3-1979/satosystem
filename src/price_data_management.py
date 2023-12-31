@@ -251,7 +251,7 @@ class PriceDataManagement:
             self.latest_ohlcv_data.append(latest_ohlcv_data[-1])
             # pprint.pprint(self.latest_ohlcv_data)
 
-            # 15分足をサーバから取得
+            # PSAR用データをサーバから取得
             tmp_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch, self.psar_time_frame)
             self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data, self.psar_time_frame)
 
