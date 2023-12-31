@@ -135,7 +135,17 @@ class Config:
             float: ストップ近傍のレート
         """
         return float(cls.config['RiskManagement']['surge_follow_price_ratio'])
-    
+
+    @classmethod
+    def get_psar_time_frame(cls):
+        """
+        PSAR用の時間軸を取得します.
+
+        Returns:
+            int: 時間軸[分]
+        """
+        return int(cls.config['RiskManagement']['psar_time_frame'])
+
     @classmethod
     def get_market(cls):
         """
@@ -375,6 +385,7 @@ class Config:
         config_str += f"surge follow price ratio: {self.get_surge_follow_price_ratio()}\n"
         config_str += f"Lot Limit Lower: {self.get_lot_limit_lower()}\n"
         config_str += f"Balance Tether Limit: {self.get_balance_tether_limit()}\n"
+        config_str += f"Psar Time Frame: {self.get_psar_time_frame()}\n"
         config_str += f"Market: {self.get_market()}\n"
         config_str += f"Market Unit: {self.get_market_unit_pair()}\n"
         config_str += f"Time Frame: {self.get_time_frame()}\n"
@@ -415,6 +426,7 @@ if __name__ == "__main__":
     surge_follow_price_ratio = Config.get_surge_follow_price_ratio()
     lot_limit_lower = Config.get_lot_limit_lower()
     balance_tether_limit = Config.get_balance_tether_limit()
+    psar_time_frame = Config.get_psar_time_frame()
     print(f'Risk Percentage: {risk_percentage}')
     print(f'Account Balance: {account_balance}')
     print(f'Leverage: {leverage}')
@@ -427,6 +439,7 @@ if __name__ == "__main__":
     print(f'surge follow price ratio: {surge_follow_price_ratio}')
     print(f'Lot Limit Lower: {lot_limit_lower}')
     print(f'Balance Thther Limit: {balance_tether_limit}')
+    print(f'Psar Time Frame: {psar_time_frame}')
 
     # Market セクションの情報を取得
     market = Config.get_market()

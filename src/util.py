@@ -286,10 +286,10 @@ if __name__ == "__main__":
     num_logs_to_read = 400  # 読み込むログファイルの数
     output_excel_file = "combined_logs.xlsx"  # 出力エクセルファイルの名前
     
-    start_time = "2023/12/20 1:00"  # 開始時刻 (例: "2023/01/01 00:00")
-    end_time = "2023/12/22 23:00"    # 終了時刻 (例: "2023/01/02 00:00")
-    #start_time = Config.get_start_time()
-    #end_time = Config.get_end_time()
+    #start_time = "2023/12/20 1:00"  # 開始時刻 (例: "2023/01/01 00:00")
+    #end_time = "2023/12/8 23:00"    # 終了時刻 (例: "2023/01/02 00:00")
+    start_time = Config.get_start_time()
+    end_time = Config.get_end_time()
 
     util.extract_and_export_logs(log_directory, num_logs_to_read, output_excel_file, start_time, end_time)
 
