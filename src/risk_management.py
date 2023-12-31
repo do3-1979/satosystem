@@ -238,7 +238,10 @@ class RiskManagement:
 
 
     def __update_stop_price(self):
-        
+
+        main_time_frame = Config.get_time_frame()
+        psar_time_frame = Config.get_psar_time_frame()
+
         position = self.portfolio.get_position_quantity()
         quantity = position["quantity"]
         side = position["side"]
@@ -263,7 +266,8 @@ class RiskManagement:
         # ポジションがある場合のみストップ値を更新
         if quantity != 0:
             # パラボリックSAR計算
-            ohlcv_data = self.price_data_management.get_ohlcv_data()
+            # ohlcv_data = self.price_data_management.get_ohlcv_data(main_time_frame)
+            ohlcv_data = self.price_data_management.get_ohlcv_data(psar_time_frame)
             psar_stop_offset = self.__calc_stop_psar(ohlcv_data)
             self.psar_stop_offset = psar_stop_offset
 

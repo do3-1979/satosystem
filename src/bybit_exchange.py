@@ -422,6 +422,7 @@ if __name__ == "__main__":
     ohlcv_data = exchange.fetch_latest_ohlcv(120)
     end_price_time = time.time()
     entry = ohlcv_data[0]
+    print(f"生データ: {ohlcv_data}")
     print(f"時刻: {entry['close_time_dt']}")
     print(f"開始価格: {entry['open_price']}")
     print(f"最高価格: {entry['high_price']}")
