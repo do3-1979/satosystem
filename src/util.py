@@ -144,9 +144,15 @@ class Util:
         combined_data['position_price'] = combined_data['position_price'].replace(0, min_position_price)
         combined_data['stop_price'] = combined_data['stop_price'].replace(0, min_stop_price)
 
-        # データをエクセルに書き込み
+        # パラメータをエクセルに出力
+        config_dict = Config().to_dict()
+        config_df = pd.DataFrame(list(config_dict.items()), columns=['Parameter', 'Value'])
+        config_df.to_excel(writer, sheet_name='Param', index=False)
+
+        # データをエクセルに出力
         combined_data.to_excel(writer, sheet_name='Data', index=False)
 
+        # グラフをエクセルに出力
         column_name = "value"
         chart_sheet = workbook.create_sheet(title="Chart")
         profit_and_loss_sheet = workbook.create_sheet(title="PandL")
@@ -157,6 +163,11 @@ class Util:
         print("Generating Profit and Loss sheet...", end='\r')
         self.generate_line_profit_and_loss(combined_data, column_name, profit_and_loss_sheet, data_sheet)
         print("Generating Profit and Loss sheet...Done")
+
+        # 既存の "Sheet" シートを削除
+        if "Sheet" in writer.book.sheetnames:
+            std_sheet = writer.book["Sheet"]
+            writer.book.remove(std_sheet)
 
         # エクセルファイルを保存
         print("File exporting...", end='\r')
