@@ -43,7 +43,7 @@ class Bot:
         self.bot_operation_cycle = Config.get_bot_operation_cycle()
 
     def show_trade_data(self, trade_data):
-        self.logger.log(f"終値時間: {datetime.fromtimestamp(trade_data['close_time']).strftime('%Y/%m/%d %H:%M')}"
+        self.logger.log(f"時刻: {trade_data['real_time']}"
             f"  高値: {trade_data['high_price']:>5.0f}"
             f"  安値: {trade_data['low_price']:>5.0f}"
             f"  終値: {trade_data['close_price']:>5.0f}"
