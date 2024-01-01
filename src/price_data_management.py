@@ -399,6 +399,7 @@ class PriceDataManagement:
         """
 
         # 価格データの更新
+        # TODO 本番では開始・終端時間はコンフィグ取得ではなく自動計算　終端は今　開始は必要期間をさかのぼって取得
         start_epoch = Config.get_start_epoch()
         end_epoch = Config.get_end_epoch()
         
@@ -406,7 +407,7 @@ class PriceDataManagement:
         # データの更新(15分) ※常に最新で入れ替える
         # --------------------------------------------
         tmp_ohlcv_data_2 = self.exchange.fetch_latest_ohlcv(self.psar_time_frame)
-        self.set_ohlcv_data_by_time_frame(self.psar_time_frame, tmp_ohlcv_data_2)
+        self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data_2,self.psar_time_frame)
 
         # --------------------------------------------
         # データの更新(120分)
@@ -424,7 +425,7 @@ class PriceDataManagement:
         if self.prev_close_time == 0:            
             self.prev_close_time = last_ohlcv_data['close_time']
             # 初回のみ初期化
-            self.set_ohlcv_data_by_time_frame(self.time_frame, tmp_ohlcv_data_1)
+            self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data_1, self.time_frame)
             self.volatility = self.calcurate_volatility(tmp_ohlcv_data_1)
             return
 
@@ -459,9 +460,9 @@ class PriceDataManagement:
             self.prev_close_time = last_ohlcv_data['close_time']
             # 最新行を追加し、最古を削除する
             # バックテストの場合は、2h経過時にデータ一覧を追加してからシグナル再計算する
-            self.append_ohlcv_data_by_time_frame( last_ohlcv_data, self.time_frame )
+            self.append_ohlcv_data_by_time_frame(last_ohlcv_data, self.time_frame)
             # 最新行を追加し、最古を削除する
-            self.del_ohlcv_data_by_time_frame( self.time_frame )   
+            self.del_ohlcv_data_by_time_frame(self.time_frame)   
 
         return
 
@@ -522,7 +523,8 @@ class PriceDataManagement:
         """
         for data_dict in self.ohlcv_data:
             if data_dict["time_frame"] == target_time_frame:
-                data_dict["data"] = ohlcv_data
+                data_dict["data"] = ohlcv_data.copy()
+        
         return None
 
     def get_ohlcv_data_by_time_frame(self, target_time_frame):
