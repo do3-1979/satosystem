@@ -116,6 +116,8 @@ class Bot:
             else:
                 balance = self.exchange.get_account_balance_total()
                 balance_tether = balance * price
+                # TODO シミュレーション用　口座0円のため
+                balance_tether = config_instance.get_account_balance() * price + self.portfolio.get_profit_and_loss()
 
             # --------------------------------------------
             # 取引戦略に口座残高を渡してトレード判断を取得
