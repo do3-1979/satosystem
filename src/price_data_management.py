@@ -316,8 +316,7 @@ class PriceDataManagement:
         self.latest_ohlcv_data = []
         self.latest_ohlcv_data.append(latest_ohlcv_data_tmp)
 
-        # シグナルを随時更新に変更
-        # donchian update
+        # donchianシグナル演算
         ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
         dc, high, low = self.__evaluate_donchian(ohlcv_data, self.ticker)
         
@@ -429,24 +428,25 @@ class PriceDataManagement:
             self.volatility = self.calcurate_volatility(tmp_ohlcv_data_1)
             return
 
-        # データの更新時
-        elif self.prev_close_time < last_ohlcv_data['close_time']:
-            # donchian update
-            ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
-            dc, high, low = self.__evaluate_donchian(ohlcv_data, self.ticker)
-            
-            if dc == 'BUY':
-                self.signals['donchian']['signal'] = True
-                self.signals['donchian']['side'] = 'BUY'
-            elif dc == 'SELL':
-                self.signals['donchian']['signal'] = True
-                self.signals['donchian']['side'] = 'SELL'
-            else:
-                self.signals['donchian']['signal'] = False
-                self.signals['donchian']['side'] = 'None'
+        # donchianシグナル演算は常時実施
+        ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
+        dc, high, low = self.__evaluate_donchian(ohlcv_data, self.ticker)
+        
+        if dc == 'BUY':
+            self.signals['donchian']['signal'] = True
+            self.signals['donchian']['side'] = 'BUY'
+        elif dc == 'SELL':
+            self.signals['donchian']['signal'] = True
+            self.signals['donchian']['side'] = 'SELL'
+        else:
+            self.signals['donchian']['signal'] = False
+            self.signals['donchian']['side'] = 'None'
 
-            self.signals['donchian']['info']['highest'] = high
-            self.signals['donchian']['info']['lowest'] = low
+        self.signals['donchian']['info']['highest'] = high
+        self.signals['donchian']['info']['lowest'] = low
+
+        # データの更新時
+        if self.prev_close_time < last_ohlcv_data['close_time']:
 
             # PVO update
             volume = last_ohlcv_data['Volume']
