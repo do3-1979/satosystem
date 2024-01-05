@@ -95,7 +95,8 @@ def generate_configs(base_config, output_directory):
     entry_times_list = np.arange(entry_times_start, entry_times_end + entry_times_step, entry_times_step)
     entry_range_list = np.arange(entry_range_start, entry_range_end + entry_range_step, entry_range_step)
     stop_range_list = np.arange(stop_range_start, stop_range_end + stop_range_step, stop_range_step)
-    stop_AF_list = np.arange(stop_AF_start, stop_AF_end + stop_AF_step, stop_AF_step)
+    #stop_AF_list = np.arange(stop_AF_start, stop_AF_end + stop_AF_step, stop_AF_step)
+    stop_AF_list = np.arange(0.01, 0.10 + 0.01, 0.01)
     stop_AF_add_list = np.arange(stop_AF_add_start, stop_AF_add_end + stop_AF_add_step, stop_AF_add_step)
     stop_AF_max_list = np.arange(stop_AF_max_start, stop_AF_max_end + stop_AF_max_step, stop_AF_max_step)
     surge_follow_price_ratio_list = np.arange(surge_follow_price_ratio_start, surge_follow_price_ratio_end + surge_follow_price_ratio_step, surge_follow_price_ratio_step)
@@ -112,7 +113,6 @@ def generate_configs(base_config, output_directory):
     bot_operation_cycle_list = np.arange(bot_operation_cycle_start, bot_operation_cycle_end + bot_operation_cycle_step, bot_operation_cycle_step)
 
     # RiskManagement セクション
-    #total_configs = (risk_percentage_end - risk_percentage_start) // risk_percentage_step + 1
     total_configs = len(risk_percentage_list)
     total_configs *= len(account_balance_list)
     total_configs *= len(leverage_list)
@@ -211,6 +211,11 @@ def generate_configs(base_config, output_directory):
         # Settingセクション
         config_copy['Setting']['server_retry_wait'] = server_retry_wait       
         config_copy['Setting']['bot_operation_cycle'] = bot_operation_cycle       
+        # logセクション
+        log_file_name = f"log_{output_count + 1:07d}.txt"
+        log_dir_name = f"logs_{output_count + 1:07d}"
+        config_copy['Log']['log_file'] = log_file_name
+        config_copy['Log']['log_directory'] = log_dir_name
 
         output_file_name = f"config_{output_count + 1:07d}.ini"
         output_path = os.path.join(output_directory, output_file_name)
@@ -247,7 +252,7 @@ if __name__ == "__main__":
                            'psar_time_frame': 30},
         'Market': {'market': 'BTC/USD',
                    'time_frame': 120},
-        'Period': {'start_time': '2023/12/25 1:00',
+        'Period': {'start_time': '2024/1/3 23:00',
                    'end_time': None},
         'Strategy': {'volatility_term': 6,
                      'donchian_buy_term': 22,
@@ -261,7 +266,7 @@ if __name__ == "__main__":
                     'bot_operation_cycle': 60},
         'Log': {'log_file': 'log.txt',
                 'log_directory': 'logs'},
-        'Backtest': {'back_test': 0},
+        'Backtest': {'back_test': 1},
         'OtherSettings': {}
     }
 

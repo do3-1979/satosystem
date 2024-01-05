@@ -44,6 +44,11 @@ class Logger:
         self.logger = logging.getLogger('bot_logger')
         self.logger.setLevel(logging.DEBUG)
         self.log_directory = Config.get_log_dir_name()
+
+        # ディレクトリが存在しない場合は作成
+        if not os.path.exists(self.log_directory):
+            os.makedirs(self.log_directory)
+
         self.current_log_file = None
         self.open_log_file()
 
@@ -158,4 +163,3 @@ if __name__ == "__main__":
     logger.close_log_file()
     
     logger.compress_logs()
-
