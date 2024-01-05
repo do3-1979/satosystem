@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import datetime
 import logging
 import openpyxl
-from openpyxl import Workbook
+from openpyxl import load_workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.chart import LineChart, Reference
 from bybit_exchange import BybitExchange
@@ -64,10 +64,10 @@ class Util:
         combined_data = pd.concat(data, ignore_index=True)
 
         # エクセルファイルに出力
-        output_excel_file_path = os.path.join(log_directory, output_excel_file)
-        workbook = Workbook()
-        writer = pd.ExcelWriter(output_excel_file_path, engine='openpyxl')
-        writer.book = workbook
+        #output_excel_file_path = os.path.join(log_directory, output_excel_file)
+        #workbook = Workbook()
+        #writer = pd.ExcelWriter(output_excel_file_path, engine='openpyxl')
+        #writer.book = workbook
 
         # カラムの選択
         selected_columns = [
@@ -144,15 +144,17 @@ class Util:
         combined_data['position_price'] = combined_data['position_price'].replace(0, min_position_price)
         combined_data['stop_price'] = combined_data['stop_price'].replace(0, min_stop_price)
 
-        # パラメータをエクセルに出力
         config_dict = Config().to_dict()
         config_df = pd.DataFrame(list(config_dict.items()), columns=['Parameter', 'Value'])
-        config_df.to_excel(writer, sheet_name='Param', index=False)
-
-        # データをエクセルに出力
-        combined_data.to_excel(writer, sheet_name='Data', index=False)
+        output_excel_file_path = os.path.join(log_directory, output_excel_file)
+        with pd.ExcelWriter(output_excel_file_path, engine='openpyxl') as writer:
+            # パラメータをエクセルに出力
+            config_df.to_excel(writer, index=False, sheet_name='Param', engine='openpyxl')
+            # データをエクセルに出力
+            combined_data.to_excel(writer, index=False, sheet_name='Data', engine='openpyxl')
 
         # グラフをエクセルに出力
+        workbook = load_workbook(output_excel_file_path)
         column_name = "value"
         chart_sheet = workbook.create_sheet(title="Chart")
         profit_and_loss_sheet = workbook.create_sheet(title="PandL")
@@ -163,16 +165,14 @@ class Util:
         print("Generating Profit and Loss sheet...", end='\r')
         self.generate_line_profit_and_loss(combined_data, column_name, profit_and_loss_sheet, data_sheet)
         print("Generating Profit and Loss sheet...Done")
-
         # 既存の "Sheet" シートを削除
-        if "Sheet" in writer.book.sheetnames:
-            std_sheet = writer.book["Sheet"]
-            writer.book.remove(std_sheet)
+        #if "Sheet" in writer.book.sheetnames:
+        #    std_sheet = writer.book["Sheet"]
+        #    writer.book.remove(std_sheet)
 
         # エクセルファイルを保存
         print("File exporting...", end='\r')
-        writer.save()    
-        writer.close()
+        workbook.save(output_excel_file_path)
         print("File exporting...Completed!!")
         
     def generate_line_profit_and_loss(self, data, column_name, profit_and_loss_sheet, data_sheet):
@@ -298,9 +298,9 @@ if __name__ == "__main__":
     output_excel_file = "combined_logs.xlsx"  # 出力エクセルファイルの名前
     
     #start_time = "2023/12/20 1:00"  # 開始時刻 (例: "2023/01/01 00:00")
-    #end_time = "2023/12/8 23:00"    # 終了時刻 (例: "2023/01/02 00:00")
+    end_time = "2024/1/3 7:00"    # 終了時刻 (例: "2023/01/02 00:00")
     start_time = Config.get_start_time()
-    end_time = Config.get_end_time()
+    #end_time = Config.get_end_time()
 
     util.extract_and_export_logs(log_directory, num_logs_to_read, output_excel_file, start_time, end_time)
 
