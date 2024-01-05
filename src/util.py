@@ -149,17 +149,23 @@ class Util:
         output_excel_file_path = os.path.join(log_directory, output_excel_file)
         with pd.ExcelWriter(output_excel_file_path, engine='openpyxl') as writer:
             # パラメータをエクセルに出力
+            print("Generating Param sheet...", end='\r')
             config_df.to_excel(writer, index=False, sheet_name='Param', engine='openpyxl')
+            print("Generating Param sheet...Done") 
+            print("Generating Data sheet...", end='\r')
             # データをエクセルに出力
             combined_data.to_excel(writer, index=False, sheet_name='Data', engine='openpyxl')
+            print("Generating Data sheet...Done") 
 
         # グラフをエクセルに出力
+        print("Load file...", end='\r')
         workbook = load_workbook(output_excel_file_path)
+        print("Load file...Done") 
         column_name = "value"
+        print("Generating Chart sheet...", end='\r')
         chart_sheet = workbook.create_sheet(title="Chart")
         profit_and_loss_sheet = workbook.create_sheet(title="PandL")
         data_sheet = workbook['Data']
-        print("Generating Chart sheet...", end='\r')
         self.generate_line_chart(combined_data, column_name, chart_sheet, data_sheet)
         print("Generating Chart sheet...Done")
         print("Generating Profit and Loss sheet...", end='\r')
