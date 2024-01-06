@@ -1,5 +1,24 @@
 #!/bin/bash
 
+# 引数の確認
+if [ "$#" -eq 1 ] && [ "$1" == "clear" ]; then
+    # clearが指定された場合、ディレクトリとファイルの削除のみ行う
+    echo "ディレクトリとファイルを削除して終了します。"
+    # logs_* ディレクトリと中のファイルの削除
+    for log_dir in logs_*; do
+        if [ -d "$log_dir" ]; then
+            rm -rf "$log_dir"
+        fi
+    done
+    # ログファイルの削除
+    for log_file in log_*.txt; do
+        if [ -f "$log_file" ]; then
+            rm "$log_file"
+        fi
+    done
+    exit 0
+fi
+
 # 開始時間の取得
 start_time=$(date +%s)
 
@@ -11,7 +30,7 @@ for log_dir in logs_*; do
 done
 
 # ログファイルの削除
-for log_file in logs_*.txt; do
+for log_file in log_*.txt; do
     if [ -f "$log_file" ]; then
         rm "$log_file"
     fi
@@ -32,7 +51,7 @@ for config_file in output_configs/config_*.ini; do
     elapsed_minutes=$((elapsed_time % 3600 / 60))
     elapsed_seconds=$((elapsed_time % 60))
     
-    echo "処理中: $filename - $(echo "$filename" | sed 's/[^0-9]//g') 完了 (経過時間: ${elapsed_hours}h ${elapsed_minutes}m ${elapsed_seconds}s)"
+    echo "処理中: $filename - $(echo "$filename" | sed 's/[^0-9]//g')% 完了 (経過時間: ${elapsed_hours}h ${elapsed_minutes}m ${elapsed_seconds}s)"
 
     # config ファイルを config.ini にコピー
     cp "$config_file" config.ini
@@ -40,8 +59,8 @@ for config_file in output_configs/config_*.ini; do
     # APIキーとシークレットを置換
     ./replace_api_key.sh
 
-    # ステップ 3: bot.py を実行
-    python bot.py
+    # ステップ 3: bot.py を実行し、標準出力を破棄
+    python bot.py > /dev/null
 
     # ステップ 4: 元の config.ini に戻す
     mv config_bak.ini config.ini
