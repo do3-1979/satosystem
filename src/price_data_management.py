@@ -4,6 +4,8 @@ from config import Config
 from logger import Logger
 from bybit_exchange import BybitExchange
 import pprint
+import json
+import os
 
 class PriceDataManagement:
     # クラス変数として唯一のインスタンスを保持
@@ -472,15 +474,38 @@ class PriceDataManagement:
         """
         # 指定された期間のバックテストデータを取得
         start_epoch = Config.get_start_epoch()
+        # 初期分析に必要な時間を計算
+        initial_term = Config.get_test_initial_max_term()
+        diff_time = initial_term * self.time_frame
+        td = timedelta(minutes=diff_time)
+        # 指定のstart時間から遡った時間を取得
+        org_start_time = datetime.strptime(Config.get_start_time(), "%Y/%m/%d %H:%M")
+        start_time = org_start_time - td
+        # 秒を切り捨て
+        start_time = start_time.replace(second=0)
+        # epoch時間に変換
+        start_epoch = int(start_time.timestamp())
 
         # 時間足データ初期化
         for data_dict in self.back_test_ohlcv_data:
             time_frame = data_dict["time_frame"]
-            # 終端時間はtime_frameに従って再計算
             end_epoch = Config.get_end_epoch() + time_frame * 60
             self.logger.log(f"時間足データ {time_frame} 分 初期化")
-            data_dict["data"] = self.exchange.fetch_ohlcv(start_epoch, end_epoch, time_frame)
 
+            # ローカルにohlcvデータがあるか確認
+            file_name = f"ohlcv_data_{start_epoch}_{end_epoch}_{time_frame}.json"
+            if os.path.exists(file_name):
+                self.logger.log(f"既存ファイル {file_name} を流用")
+                with open(file_name, "r") as file:
+                    data_dict["data"] = json.load(file)
+            else:
+                # サーバからデータを取得
+                data_dict["data"] = self.exchange.fetch_ohlcv(start_epoch, end_epoch, time_frame)
+                # ローカルにデータを保存
+                self.logger.log(f"新規にファイル {file_name} を保存")
+                with open(file_name, "w") as file:
+                    json.dump(data_dict["data"], file)
+    
         self.logger.log("時間足データ初期化 done")
         
         """

@@ -23,8 +23,12 @@ class Portfolio:
         self.market_type = Config.get_market()
         self.profit = 0
         self.loss = 0
+        self.funds = 0
+        self.funds_max = 0
         self.add_num = 0
-        
+        self.drawdown = 0
+        #records["Drawdown"] = records.Funds.cummax().subtract(records.Funds)
+	    #records["DrawdownRate"] = round(records.Drawdown / records.Funds.cummax() * 100,1)
 
     def get_position_quantity(self):
         """
@@ -55,6 +59,32 @@ class Portfolio:
         利益と損失を取得します。単位は[BTC/USD]
         """
         return self.profit - self.loss
+
+    def get_profit_factor(self):
+        """
+        プロフィットファクターを取得します。
+        """
+        if self.loss > 0:
+            profit_factor = round( (self.profit / self.loss) ,3)
+        else:
+            profit_factor = 0
+        return profit_factor
+
+    def get_drawdown(self):
+        """
+        ドローダウンを取得します。
+        """
+        return self.drawdown
+    
+    def get_drawdown_rate(self):
+        """
+        ドローダウン率を取得します。
+        """
+        if self.funds > 0:
+            drawdown_rate = round( self.drawdown * 100 / self.funds_max, 1)
+        else:
+            drawdown_rate = 0 
+        return drawdown_rate
 
     def add_position_quantity(self, quantity, side, price):
         """
@@ -125,8 +155,21 @@ class Portfolio:
 
         # 利益と損失の合算
         profit, loss = self.calc_position_quantity(price)
+        
+        # ドローダウンを計算
+        prev_funds_max = self.funds_max
+        # 現在の損益合計
+        tmp_funds_max = self.funds_max + profit - loss
+        # 資産の最大の更新
+        self.funds_max = max(prev_funds_max, tmp_funds_max)
+        
         self.profit += profit
         self.loss += loss
+        
+        # 現在の資産
+        self.funds = self.profit - self.loss
+        # ドローダウン：資産の最大値 - 現在の資産(最も利益が高かった状態から減らしてしまった量)
+        self.drawdown = self.funds_max - self.funds
         
         self.logger.log(f"今回の損益:{(profit - loss):.2f} [{self.market_type}] 利益累計:{self.profit:.2f} [{self.market_type}] 損失累計:{self.loss:.2f} [{self.market_type}] 損益累計:{(self.profit - self.loss):.2f} [{self.market_type}]です")
 
