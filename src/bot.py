@@ -99,6 +99,10 @@ class Bot:
                     self.logger.log("-------------------------------------------------------")
                     self.logger.log(f"最終ポートフォリオ: {self.portfolio.get_position_quantity()}")
                     self.logger.log(f"最終損益: {self.portfolio.get_profit_and_loss():>4.0f} [BTC/USD]")
+                    self.logger.log(f"プロフィットファクター: {self.portfolio.get_profit_factor():>4.2f}")
+                    self.logger.log(f"最大ドローダウン: {self.portfolio.get_drawdown():>4.2f} [BTC/USD]")
+                    self.logger.log(f"最大ドローダウン率: {self.portfolio.get_drawdown_rate():>4.2f} [%]")
+                    
                     self.logger.close_log_file()
                     self.logger.log("--- BOT END -------------------------------------------")
                     break
