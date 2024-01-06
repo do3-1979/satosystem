@@ -125,6 +125,7 @@ class BybitExchange(Exchange):
         if err_occuerd == True:
             self.logger.log_error("口座の使用可能な証拠金残高エラー復帰")
 
+        # TODO balance が'BTC'でkeyerrorを起こした 24/1/5 その対策
         usd_balance = balance['BTC']['total']
 
         return usd_balance
