@@ -11,6 +11,7 @@ from openpyxl.chart import LineChart, Reference
 from bybit_exchange import BybitExchange
 from config import Config
 import pprint
+import re
 
 class Util:
     def extract_and_export_logs(self, log_directory, num_logs, output_excel_file, start_time=None, end_time=None):
@@ -249,6 +250,10 @@ class Util:
         
         chart.set_categories(real_time)
 
+        # TODO 生成したログファイルからデータ集約
+        # TODO データのjsonファイル生成
+        # TODO 各ログディレクトリからjsonファイルを集約 
+
         # グラフの大きさを設定
         chart.width = 50  # 幅を15に変更
         chart.height = 20  # 高さを10に変更
@@ -293,22 +298,136 @@ class Util:
 
         print(f"OHLCVデータをJSONファイルに保存しました: {output_filepath}")
 
+    def extract_parameters_and_results(self, log_directory, output_excel_file):
+        # ログファイルの検索
+        log_files = []
+        for root, _, files in os.walk(log_directory):
+            for file in files:
+                if file.startswith("log_") and file.endswith(".txt"):
+                    log_files.append(os.path.join(root, file))
+
+        # ファイル名でソート
+        log_files.sort()
+
+        # 抽出するキーワード
+        keywords = [
+            "Entry Times:",
+            "Entry Range:",
+            "Stop Range:",
+            "Stop AF:",
+            "Stop AF Add:",
+            "Stop AF Max:",
+            "surge follow price ratio:",
+            "Lot Limit Lower:",
+            "Balance Tether Limit:",
+            "Psar Time Frame:",
+            "Volatility Term:",
+            "Donchian Buy Term:",
+            "Donchian Sell Term:",
+            "PVO Short Term:",
+            "PVO Long Term:",
+            "PVO Threshold:",
+            "最終損益:",
+            "プロフィットファクター:",
+            "最大ドローダウン:",
+            "最大ドローダウン率:"
+        ]
+
+        """
+            "Market:",
+            "Market Unit:",
+            "Start Time (epoch):",
+            "End Time (epoch):",
+            "Risk Percentage:",
+            "Account Balance:",
+            "Leverage:",
+            "Server Retry Wait:",
+            "Bot Operation Cycle:",
+            "Back Test Mode:",
+        """
+        # エクセルファイルにデータを書き込む
+        with pd.ExcelWriter(output_excel_file, engine='openpyxl') as writer:
+            data = {}
+            for i, log_file in enumerate(log_files):
+                # ファイル名からパス部分を取り除く
+                file_name = os.path.basename(log_file)
+                # ファイル名の列を追加
+                keyword = "File Name"
+                if keyword not in data:
+                    data[keyword] = []
+                data[keyword].append(file_name)
+
+                print(f"Processing file {i+1}/{len(log_files)}: {file_name}", end='\r')
+                with open(log_file, "r") as input_f:
+                    for line in input_f:
+                        for keyword in keywords:
+                            if keyword in line:
+                                # キーワード行だけを抽出
+                                output_line = line.split(" - INFO - ", 1)[-1]
+                                keyword, value = output_line.split(':', 1)
+                                keyword = keyword.strip()  # 先頭と末尾の空白を削除
+                                value = value.strip().split(' [')[0]      # 先頭と末尾の空白を削除し、[BTC/USD] や [%] を削除
+                                if keyword not in data:
+                                    data[keyword] = []
+                                #print(f"file_name {file_name} keyword {keyword} value {value}")
+                                data[keyword].append(value)
+
+                        if "最終ポートフォリオ" in line:
+                            # 正規表現を使用してquantity、side、position_priceの値を抽出
+                            match = re.search(r"'quantity':\s*([0-9.]+),\s*'side':\s*'(\w+)',\s*'position_price':\s*([0-9.]+)", line)
+                            if match:
+                                quantity = match.group(1)
+                                side = match.group(2)
+                                position_price = match.group(3)
+                                if "quantity" not in data:
+                                    data["quantity"] = []
+                                if "side" not in data:
+                                    data["side"] = []
+                                if "position_price" not in data:
+                                    data["position_price"] = []
+                                data["quantity"].append(quantity)
+                                data["side"].append(side)
+                                data["position_price"].append(position_price)
+
+            # 最長のリストの長さに合わせて、他のリストに空の文字列を追加する
+            max_length = max(len(lst) for lst in data.values())
+            for key in data:
+                data[key] += [''] * (max_length - len(data[key]))
+
+            # データをエクセルに書き込む
+            df = pd.DataFrame(data)
+            df.to_excel(writer, index=False, sheet_name="Log Data")
+
+            print("\nExporting to Excel completed!")
+
 if __name__ == "__main__":
     # Loggerクラスの初期化
     util = Util()
 
-    # 使用例
-    log_directory = "logs"  # ログファイルのディレクトリ
+    #log_directory = "logs"  # ログファイルのディレクトリ
+    log_directory = "logs_0000041"  # ログファイルのディレクトリ
     #log_directory = "../test/test_data"  # ログファイルのディレクトリ
+
     num_logs_to_read = 400  # 読み込むログファイルの数
     output_excel_file = "combined_logs.xlsx"  # 出力エクセルファイルの名前
     
+    #----------------
+    # グラフ化機能使用
+    
     #start_time = "2023/12/20 1:00"  # 開始時刻 (例: "2023/01/01 00:00")
-    end_time = "2024/1/3 7:00"    # 終了時刻 (例: "2023/01/02 00:00")
+    #end_time = "2024/1/3 7:00"    # 終了時刻 (例: "2023/01/02 00:00")
     start_time = Config.get_start_time()
-    #end_time = Config.get_end_time()
+    end_time = Config.get_end_time()
 
     util.extract_and_export_logs(log_directory, num_logs_to_read, output_excel_file, start_time, end_time)
+
+    #---------------------
+    # バックテスト集約使用例
+    log_directory = "."  # ログファイルのディレクトリ
+    output_bt_excel_file = "backtest_logs.xlsx"  # 出力エクセルファイルの名前
+
+    # パラメータと計算結果を抽出してエクセルファイルに出力
+    #util.extract_parameters_and_results(log_directory, output_bt_excel_file)
 
     # 1分足の指定ログ取得
     # exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())

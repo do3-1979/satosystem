@@ -94,6 +94,7 @@ class Bot:
             # --------------------------------------------
             if back_test_mode == 1:
                 is_end = self.price_data_management.update_price_data_backtest()
+                # TODO 結果の別ファイル出力とバックテストでの結果集計
                 # バックテスト終端だったら抜ける
                 if is_end == True:
                     self.logger.log("-------------------------------------------------------")
@@ -285,7 +286,7 @@ if __name__ == "__main__":
     # 取引所クラスを初期化
     exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
 
-    # 資産管理クラスを初期化（唯一であること TODO シングルトン化）
+    # 資産管理クラスを初期化
     portfolio = Portfolio()
     
     # 価格情報クラスを初期化

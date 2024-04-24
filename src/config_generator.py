@@ -95,13 +95,17 @@ def generate_configs(base_config, output_directory):
     entry_times_list = np.arange(entry_times_start, entry_times_end + entry_times_step, entry_times_step)
     entry_range_list = np.arange(entry_range_start, entry_range_end + entry_range_step, entry_range_step)
     stop_range_list = np.arange(stop_range_start, stop_range_end + stop_range_step, stop_range_step)
-    #stop_AF_list = np.arange(stop_AF_start, stop_AF_end + stop_AF_step, stop_AF_step)
-    stop_AF_list = np.arange(0.01, 0.10 + 0.01, 0.01)
+    stop_AF_list = np.arange(stop_AF_start, stop_AF_end + stop_AF_step, stop_AF_step)
+    #stop_AF_list = np.arange(0.01, 0.10 + 0.01, 0.01)
     stop_AF_add_list = np.arange(stop_AF_add_start, stop_AF_add_end + stop_AF_add_step, stop_AF_add_step)
+    #stop_AF_add_list = np.arange(0.01, 0.05 + 0.01, 0.01)    
     stop_AF_max_list = np.arange(stop_AF_max_start, stop_AF_max_end + stop_AF_max_step, stop_AF_max_step)
+    #stop_AF_max_list = np.arange(0.20, 1.00 + 0.05, 0.05)
     surge_follow_price_ratio_list = np.arange(surge_follow_price_ratio_start, surge_follow_price_ratio_end + surge_follow_price_ratio_step, surge_follow_price_ratio_step)
-    psar_time_frame_list = np.arange(psar_time_frame_start, psar_time_frame_end + psar_time_frame_step, psar_time_frame_step)
-    volatility_term_list = np.arange(volatility_term_start, volatility_term_end + volatility_term_step, volatility_term_step)
+    #psar_time_frame_list = np.arange(psar_time_frame_start, psar_time_frame_end + psar_time_frame_step, psar_time_frame_step)
+    psar_time_frame_list = {30, 60, 120}
+    #volatility_term_list = np.arange(volatility_term_start, volatility_term_end + volatility_term_step, volatility_term_step)
+    volatility_term_list = np.arange(10, 200, 10)
     donchian_buy_term_list = np.arange(donchian_buy_term_start, donchian_buy_term_end + donchian_buy_term_step, donchian_buy_term_step)
     donchian_sell_term_list = np.arange(donchian_sell_term_start, donchian_sell_term_end + donchian_sell_term_step, donchian_sell_term_step)
     pvo_s_term_list = np.arange(pvo_s_term_start, pvo_s_term_end + pvo_s_term_step, pvo_s_term_step)
@@ -252,8 +256,8 @@ if __name__ == "__main__":
                            'psar_time_frame': 30},
         'Market': {'market': 'BTC/USD',
                    'time_frame': 120},
-        'Period': {'start_time': '2024/1/3 23:00',
-                   'end_time': None},
+        'Period': {'start_time': '2024/1/1 0:00',
+                   'end_time': '2024/1/31 23:00'},
         'Strategy': {'volatility_term': 6,
                      'donchian_buy_term': 22,
                      'donchian_sell_term': 29,
