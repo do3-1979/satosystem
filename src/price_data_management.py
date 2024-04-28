@@ -493,7 +493,7 @@ class PriceDataManagement:
             self.logger.log(f"時間足データ {time_frame} 分 初期化")
 
             # ローカルにohlcvデータがあるか確認
-            file_name = f"ohlcv_data_{start_epoch}_{end_epoch}_{time_frame}.json"
+            file_name = f"ohlcv_data/ohlcv_data_{start_epoch}_{end_epoch}_{time_frame}.json"
             if os.path.exists(file_name):
                 self.logger.log(f"既存ファイル {file_name} を流用")
                 with open(file_name, "r") as file:
@@ -503,23 +503,12 @@ class PriceDataManagement:
                 data_dict["data"] = self.exchange.fetch_ohlcv(start_epoch, end_epoch, time_frame)
                 # ローカルにデータを保存
                 self.logger.log(f"新規にファイル {file_name} を保存")
+                os.makedirs("ohlcv_data", exist_ok=True)
                 with open(file_name, "w") as file:
                     json.dump(data_dict["data"], file)
-    
+
         self.logger.log("時間足データ初期化 done")
-        
-        """
-        ohlcv_data = self.get_back_test_ohlcv_data_by_time_frame(120)
-        print(f"0: first{ohlcv_data[0]}")
-        print(f"0: end{ohlcv_data[-1]}")
-        ohlcv_data = self.get_back_test_ohlcv_data_by_time_frame(15)
-        print(f"1: first{ohlcv_data[0]}")
-        print(f"1: end{ohlcv_data[-1]}")
-        ohlcv_data = self.get_back_test_ohlcv_data_by_time_frame(1)
-        print(f"2: first{ohlcv_data[0]}")
-        print(f"2: end{ohlcv_data[-1]}")
-        """
-                
+
         return
 
     def del_ohlcv_data_by_time_frame(self, target_time_frame):
