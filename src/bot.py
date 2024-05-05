@@ -117,12 +117,12 @@ class Bot:
 
             # 取引所から口座残高を取得
             if back_test_mode == 1:
-                balance_tether = config_instance.get_account_balance() * price + self.portfolio.get_profit_and_loss()
+                balance_tether = config_instance.get_account_balance() + self.portfolio.get_profit_and_loss()
             else:
                 balance = self.exchange.get_account_balance_total()
-                balance_tether = balance * price
+                balance_tether = balance
                 # TODO シミュレーション用　口座0円のため
-                balance_tether = config_instance.get_account_balance() * price + self.portfolio.get_profit_and_loss()
+                balance_tether = config_instance.get_account_balance() + self.portfolio.get_profit_and_loss()
 
             # --------------------------------------------
             # 取引戦略に口座残高を渡してトレード判断を取得

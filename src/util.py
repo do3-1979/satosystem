@@ -404,8 +404,8 @@ if __name__ == "__main__":
     # Loggerクラスの初期化
     util = Util()
 
-    #log_directory = "logs"  # ログファイルのディレクトリ
-    log_directory = "logs_0000041"  # ログファイルのディレクトリ
+    log_directory = "logs"  # ログファイルのディレクトリ
+    #log_directory = "logs_0000020"  # ログファイルのディレクトリ
     #log_directory = "../test/test_data"  # ログファイルのディレクトリ
 
     num_logs_to_read = 400  # 読み込むログファイルの数

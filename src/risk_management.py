@@ -384,8 +384,8 @@ if __name__ == "__main__":
     # 最新の口座を取得
     balance = exchange.get_account_balance()
     # BTCのused、free、total情報を表示
-    usd_balance = balance['BTC']['total']
-    balance_tether = usd_balance * price
+    usd_balance = balance['USDT']['total']
+    balance_tether = usd_balance
     
     # 不足する場合の救済処置
     if balance_tether < risk_manager.balance_tether_limit:
@@ -396,4 +396,4 @@ if __name__ == "__main__":
 
     # ポジションサイズを計算
     position_size = risk_manager.calculate_position_size(balance_tether)
-    print(f'Position Size[BTC]: {position_size} Position size[USD/BTC]: {price*position_size}')
+    print(f'Position Size[USDT]: {position_size}')

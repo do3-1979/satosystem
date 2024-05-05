@@ -126,7 +126,7 @@ class BybitExchange(Exchange):
             self.logger.log_error("口座の使用可能な証拠金残高エラー復帰")
 
         # TODO balance が'BTC'でkeyerrorを起こした 24/1/5 その対策
-        usd_balance = balance['BTC']['total']
+        usd_balance = balance['USDT']['total']
 
         return usd_balance
 
@@ -398,8 +398,9 @@ if __name__ == "__main__":
     start_balance_time = time.time()
     balance = exchange.get_account_balance()
     end_balance_time = time.time()
-    # BTCのused、free、total情報を表示
-    usd_balance = balance['BTC']
+    # 統合口座のused、free、total情報を表示
+    print(f"balance : {balance}")
+    usd_balance = balance['USDT']
     print("USD Used: ", usd_balance['used'])
     print("USD Free: ", usd_balance['free'])
     print("USD Total: ", usd_balance['total'])
@@ -413,8 +414,6 @@ if __name__ == "__main__":
     print(f"{Config.get_market()} の最新価格情報")
     price = exchange.fetch_ticker()
     print(f"価格: {price}")
-    balance_tether = round(price * balance)
-    print(f"資産[BTC/USD]: {balance_tether}")
     print("----------")
 
     print("最新価格データ 2h を取得")
