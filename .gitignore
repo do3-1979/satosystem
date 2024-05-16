@@ -25,3 +25,6 @@ README_0816_サーバ移動用バックアップ.md
 ターミナル起動メモ
 src/.api_key
 src/logs/*.json
+src/logs/*.zip
+src/ohlcv_data
+src/output_configs
