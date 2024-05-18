@@ -87,6 +87,9 @@ class Util:
             "total_profit_and_loss",
             "volatility",
             "stop_offset",
+            "psar",
+            "psarbull",
+            "psarbear",
             "stop_psar_stop_offset",
             "stop_price_surge_stop_offset",
             "pvo_val",
@@ -124,6 +127,9 @@ class Util:
             "total_profit_and_loss",
             "donchian",
             "pvo",
+            "psar",
+            "psarbull",
+            "psarbear",
             "stop_offset",
             "stop_psar_stop_offset",
             "stop_price_surge_stop_offset",
@@ -238,6 +244,7 @@ class Util:
         position_price = Reference(data_sheet, min_col=6, min_row=1, max_row=len(data_rows)+1)
         dc_h = Reference(data_sheet, min_col=7, min_row=1, max_row=len(data_rows)+1)
         dc_l = Reference(data_sheet, min_col=8, min_row=1, max_row=len(data_rows)+1)
+        psar = Reference(data_sheet, min_col=19, min_row=1, max_row=len(data_rows)+1)
 
         #chart.add_data(real_time, titles_from_data=True)
         chart.add_data(high_price, titles_from_data=True)
@@ -247,6 +254,7 @@ class Util:
         chart.add_data(position_price, titles_from_data=True)
         chart.add_data(dc_h, titles_from_data=True)
         chart.add_data(dc_l, titles_from_data=True)
+        chart.add_data(psar, titles_from_data=True)
         
         chart.set_categories(real_time)
 
@@ -265,6 +273,7 @@ class Util:
             "close_price",
             "dc_h",
             "dc_l",
+            "psar",
         ]
 
         # データ中の最小、最大を求める

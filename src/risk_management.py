@@ -44,8 +44,15 @@ class RiskManagement:
         self.stop_AF = Config.get_stop_AF()
         self.stop_AF_add = Config.get_stop_AF_add()
         self.stop_AF_max = Config.get_stop_AF_max()
+        self.stop_AF_add = Config.get_stop_AF_add()
+        self.stop_AF_max = Config.get_stop_AF_max()
         self.surge_follow_price_ratio = Config.get_surge_follow_price_ratio()
         self.stop_ATR = 0
+
+        # PSAR
+        self.psar = []
+        self.psarbull = []
+        self.psarbear = []
 
         # ストップ値
         self.stop_offset = 0 # 価格ベース
@@ -80,7 +87,16 @@ class RiskManagement:
 
     def get_stop_offset(self):
         return self.stop_offset    
+
+    def get_psar(self):
+        return self.psar[-1]
     
+    def get_psarbull(self):
+        return self.psarbull[-1]
+    
+    def get_psarbear(self):
+        return self.psarbear[-1]
+
     def get_psar_stop_offset(self):
         return self.psar_stop_offset
     
@@ -96,17 +112,26 @@ class RiskManagement:
         high = []
         low = []
         close = []
-        psar = []
-
         datalen = len(data)
 
-        for i in range(0, datalen):
+        for i in range(datalen):
             high.append(data[i]['high_price'])
             low.append(data[i]['low_price'])
             close.append(data[i]['close_price'])
-            psar.append(0)  # psarリストに0を初期値として追加
 
         length = len(close)
+        psar = [None] * length
+
+        # 初回のpsarの初期設定
+        if not self.psar:
+            psar[0] = close[0]
+            psar[1] = close[0]
+        else:
+            for i in range(min(length, len(self.psar))):
+                psar[i] = self.psar[i]
+
+        length = len(close)
+        #print(f"length {length}")
 
         psarbull = [None] * length
         psarbear = [None] * length
@@ -116,12 +141,15 @@ class RiskManagement:
         hp = high[0]
         lp = low[0]
 
+        #print(f"psar[0] {psar[0]} af {af} ep {ep} hp {hp} lp {lp}")
+
         # 過去データからPSARを計算
         for i in range(2, length):
             if bull:
                 psar[i] = psar[i - 1] + af * (hp - psar[i - 1])
             else:
                 psar[i] = psar[i - 1] + af * (lp - psar[i - 1])
+            #print(f"psar[{i}] {psar[i]}")
 
             reverse = False
 
@@ -132,6 +160,9 @@ class RiskManagement:
                     psar[i] = hp
                     lp = low[i]
                     af = iaf
+
+                    #print(f"reverse bull psar[{i}] {psar[i]}")
+
             else:
                 if high[i] > psar[i]:
                     bull = True
@@ -139,6 +170,8 @@ class RiskManagement:
                     psar[i] = lp
                     hp = high[i]
                     af = iaf
+
+                    #print(f"reverse bear psar[{i}] {psar[i]}")
 
             if not reverse:
                 if bull:
@@ -149,6 +182,9 @@ class RiskManagement:
                         psar[i] = low[i - 1]
                     if low[i - 2] < psar[i]:
                         psar[i] = low[i - 2]
+                        
+                    #print(f"not reverse bull psar[{i}] {psar[i]}")
+                        
                 else:
                     if low[i] < lp:
                         lp = low[i]
@@ -158,17 +194,21 @@ class RiskManagement:
                     if high[i - 2] > psar[i]:
                         psar[i] = high[i - 2]
 
+                    #print(f"not reverse bear psar[{i}] {psar[i]}")
+
             if bull:
                 psarbull[i] = psar[i]
             else:
                 psarbear[i] = psar[i]
 
-        # TODO PSARの値が意図通りでない？
-        #print(f"psar: {psar[-1]} bear: {psarbear[-1]} bull: {psarbull[-1]}")
-        return {"psar": psar, "psarbear": psarbear, "psarbull": psarbull}
+        # PSAR更新
+        self.psar = psar
+        self.psarbull = psarbull
+        self.psarbear = psarbear
 
+        return
 
-    def __calc_stop_psar(self, data):
+    def __calc_stop_psar(self):
         """
         ストップ値をパラボリックASRにする関数
         
@@ -178,9 +218,8 @@ class RiskManagement:
         # 現在のストップレンジ
         prev_stop_offset = self.stop_offset
 
-        sar_result = self.__calc_parabolic_sar( data )
-        psarbull = sar_result["psarbull"][-1]
-        psarbear = sar_result["psarbear"][-1]
+        psarbull = self.get_psarbull()
+        psarbear = self.get_psarbear()
 
         # 現在の平均取得単価
         position_price = self.portfolio.get_position_price()
@@ -195,7 +234,9 @@ class RiskManagement:
 
         if self.portfolio.get_position_side() == "SELL" and psarbear != None:
             tmp_stop_offset = round(psarbear - position_price)
-        
+
+        self.psar_stop_offset = tmp_stop_offset
+
         # 現在のstopより大きければ維持
         stop = min( prev_stop_offset, tmp_stop_offset )
 
@@ -250,6 +291,7 @@ class RiskManagement:
         #ohlcv = self.price_data_management.get_latest_ohlcv()
         
         # 未初期化の場合は初期値を設定する
+        # TODO 初期ストップ値の再考慮　ボラティリティで決めていいのか
         if self.stop_offset == 0:
             self.stop_offset = self.price_data_management.get_volatility() * self.initial_stop_range
 
@@ -263,13 +305,14 @@ class RiskManagement:
         else:
             prev_stop_price = self.stop_price
 
+        # パラボリックSAR計算
+        psar_ohlcv_data = self.price_data_management.get_ohlcv_data(psar_time_frame)
+        self.__calc_parabolic_sar(psar_ohlcv_data)
+
         # ポジションがある場合のみストップ値を更新
         if quantity != 0:
-            # パラボリックSAR計算
-            # ohlcv_data = self.price_data_management.get_ohlcv_data(main_time_frame)
-            ohlcv_data = self.price_data_management.get_ohlcv_data(psar_time_frame)
-            psar_stop_offset = self.__calc_stop_psar(ohlcv_data)
-            self.psar_stop_offset = psar_stop_offset
+            # パラボリックSARストップ値計算
+            psar_stop_offset = self.__calc_stop_psar()
 
             # 急騰時に利益が一定以上の場合は固定値で追従する
             price_surge_stop_offset = self.__follow_price_surge(price)
@@ -277,31 +320,21 @@ class RiskManagement:
             
             # 現在値からレンジ幅でストップ値を計算(負数もありうる　現在)
             new_stop_offset = min(prev_stop_offset, psar_stop_offset)
-            
+            # ストップのオフセットが更新された場合のみ、ストップ値を再評価する
+            if prev_stop_offset > new_stop_offset:
+                self.stop_offset = new_stop_offset
+
             # 前回のoffsetから変化がなかったらストップ値は変更しない
             if side == "BUY":
-                # TODO PSARだと平均取得単価が更新されても追従しないので元のstop値を割り込むリスクに対処できない　→　2時間より少ないPSARを計算する
-                # TODO → ピラミッドすると追従できないため。積んだら再計算するか、短い足で再計算するかのどちらかがよい
-                # TODO 短い足を取得し、常に計算させる
-                
-                # TODO 10/24 23～10/25 23時もおかしい
-                if prev_stop_offset > new_stop_offset:
-                    # ストップのオフセットが更新された場合のみ、ストップ値を再評価する
-                    self.stop_offset = new_stop_offset
-                    tmp_stop_price = position_price - self.stop_offset
-                    self.stop_price = max(tmp_stop_price, prev_stop_price)
-                else:
-                    self.stop_price = prev_stop_price
-                # self.logger.log(f"prev stop offset {prev_stop_offset} psar offset {psar_stop_offset} new_stop_offset {new_stop_offset} stop_price {self.stop_price} price {price} ")
+                # ストップ値再計算
+                tmp_stop_price = position_price - self.stop_offset
+                self.stop_price = max(tmp_stop_price, prev_stop_price)
+                #self.logger.log(f"prev stop offset {prev_stop_offset} psar offset {psar_stop_offset} new_stop_offset {new_stop_offset} tmp_stop_price {tmp_stop_price} prev_stop_price {prev_stop_price} stop_price {self.stop_price} price {price} ")
             if side == "SELL":
-                if prev_stop_offset > new_stop_offset:
-                    # ストップ値が更新された場合のみ
-                    self.stop_offset = new_stop_offset
-                    tmp_stop_price = position_price + self.stop_offset
-                    self.stop_price = min(tmp_stop_price, prev_stop_price)
-                else:
-                    self.stop_price = prev_stop_price
-                # self.logger.log(f"prev stop offset {prev_stop_offset} psar offset {psar_stop_offset} new_stop_offset {new_stop_offset} stop_price {self.stop_price} price {price} ")
+                # ストップ値再計算
+                tmp_stop_price = position_price + self.stop_offset
+                self.stop_price = min(tmp_stop_price, prev_stop_price)
+                #self.logger.log(f"prev stop offset {prev_stop_offset} psar offset {psar_stop_offset} new_stop_offset {new_stop_offset} tmp_stop_price {tmp_stop_price} prev_stop_price {prev_stop_price} stop_price {self.stop_price} price {price} ")
         else:
             self.psar_stop_offset = 0
             self.price_surge_stop_offset = 0

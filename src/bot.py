@@ -58,6 +58,7 @@ class Bot:
             f"  ポジ: {trade_data['positions']['side']}"
             f"  みなし損益: {trade_data['profit_and_loss']:>4.0f}"
             f"  累計損益: {trade_data['total_profit_and_loss']:>4.0f}"
+            #f"  PSAR: {trade_data['psar']:>5.0f}"
             #f"  総量: {trade_data['total_size']}"
             #f"  DCH: {trade_data['dc_h']}"
             #f"  DCL: {trade_data['dc_l']}"
@@ -215,7 +216,10 @@ class Bot:
             trade_data['dc_h'] = signals['donchian']['info']['highest']
             trade_data['dc_l'] = signals['donchian']['info']['lowest']
             trade_data['pvo_val'] = signals['pvo']['info']['value']
-            
+            trade_data['psar'] = self.risk_management.get_psar()
+            trade_data['psarbull'] = self.risk_management.get_psarbull()
+            trade_data['psarbear'] = self.risk_management.get_psarbear()
+
             trade_data.update(trade_decision)
             trade_data.update(signals)
 
