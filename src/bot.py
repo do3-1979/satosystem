@@ -31,6 +31,7 @@ from trading_strategy import TradingStrategy
 from risk_management import RiskManagement
 from portfolio import Portfolio
 from order import Order
+from event import EventBus, EventType
 from metrics import compute_metrics
 
 class Bot:
@@ -48,6 +49,8 @@ class Bot:
         self.price_data_management = price_data_management
         self.portfolio = portfolio
         self.logger = Logger()
+        # 軽量イベントバス（外部への副作用なし）
+        self.events = EventBus()
 
         self.market_type = Config.get_market()
         self.bot_operation_cycle = Config.get_bot_operation_cycle()
@@ -108,6 +111,11 @@ class Bot:
                 # --------------------------------------------
                 if back_test_mode == 1:
                     is_end = self.price_data_management.update_price_data_backtest()
+                    # イベント: ティック
+                    self.events.emit(EventType.TICK, {
+                        'time': self.price_data_management.get_latest_close_time(),
+                        'price': self.price_data_management.get_ticker()
+                    })
                     # TODO 結果の別ファイル出力とバックテストでの結果集計
                     # バックテスト終端だったら抜ける
                     if is_end == True:
@@ -162,6 +170,14 @@ class Bot:
                 except Exception as e:
                     self.logger.log_error(f"取引戦略実行エラー: {e}")
                     trade_decision = {"decision": "NONE"}
+                else:
+                    # シグナル系イベント
+                    if trade_decision.get("decision") == "ENTRY":
+                        self.events.emit(EventType.ENTRY_SIGNAL, trade_decision)
+                    elif trade_decision.get("decision") == "ADD":
+                        self.events.emit(EventType.ADD_SIGNAL, trade_decision)
+                    elif trade_decision.get("decision") == "EXIT":
+                        self.events.emit(EventType.EXIT_SIGNAL, trade_decision)
                 # --------------------------------------------
                 # 取引決定の場合
                 # --------------------------------------------
@@ -195,8 +211,10 @@ class Bot:
 
                     #self.logger.log(order.to_dict())
                     try:
+                        self.events.emit(EventType.ORDER_SUBMITTED, order.to_dict())
                         order_response = self.execute_order(order.to_dict())
                         #self.logger.log(f"注文実行: {order_response}")
+                        self.events.emit(EventType.ORDER_EXECUTED, order.to_dict())
                     except Exception as e:
                         self.logger.log_error(f"注文実行エラー: {e}")
                         continue  # 注文失敗時はポートフォリオ更新をスキップ
@@ -213,6 +231,8 @@ class Bot:
                         self.portfolio.add_position_quantity(quantity, trade_decision["side"], price)
                         # 前回のエントリ価格を更新
                         self.risk_management.update_last_entry_price(price)
+                    # ポートフォリオ更新イベント
+                    self.events.emit(EventType.PORTFOLIO_UPDATED, self.portfolio.get_position_quantity())
                     #self.logger.log(f"ポートフォリオ更新: {self.portfolio.get_position_quantity()}")
                     #self.logger.log(f"損益: {self.portfolio.get_profit_and_loss()} [BTC/USD]")
                     
@@ -227,6 +247,11 @@ class Bot:
                     self.risk_management.update_risk_status()
                 except Exception as e:
                     self.logger.log_error(f"リスク管理更新エラー: {e}")
+                else:
+                    self.events.emit(EventType.RISK_UPDATED, {
+                        'stop': self.risk_management.get_stop_price(),
+                        'psar': self.risk_management.get_psar(),
+                    })
 
                 # --------------------------------------------
                 # ログに記録
@@ -305,6 +330,7 @@ class Bot:
 
             except Exception as e:
                 self.logger.log_error(f"メインループエラー: {e}")
+                self.events.emit(EventType.LOOP_ERROR, {'error': str(e)})
                 if back_test_mode == 0:
                     time.sleep(self.bot_operation_cycle)
 

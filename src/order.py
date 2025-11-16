@@ -5,26 +5,29 @@ Orderクラス:
 
 Args:
     symbol (str): 通貨ペア (例: 'BTC/USD')
-    side (str): 注文の方向 ('buy'または'sell')
+    side (str|Side): 注文の方向（内部表記 'BUY'/'SELL'/'NONE'）
     quantity (float): 注文数量
-    price (float, optional): 注文価格 (limit注文の場合にのみ指定). Defaults to None.
-    order_type (str, optional): 注文タイプ ('limit'または'market'). Defaults to 'limit'.
+    price (float|None): 注文価格（limit注文で使用、market時は無視）
+    order_type (str): 注文タイプ ('limit' または 'market')
 """
 
+from side import normalize_side
+
+
 class Order:
-    def __init__(self, symbol, side, quantity, order_type, price=None):
+    def __init__(self, symbol, side, quantity, price=None, order_type='limit'):
         """
         Orderクラスを初期化します。
 
         Args:
             symbol (str): 通貨ペア (例: 'BTC/USD')
-            side (str): 注文の方向 ('buy'または'sell')
+            side (str|Side): 注文の方向 ('BUY' または 'SELL')
             quantity (float): 注文数量
             price (float, optional): 注文価格 (limit注文の場合にのみ指定). Defaults to None.
             order_type (str, optional): 注文タイプ ('limit'または'market'). Defaults to 'limit'.
         """
         self.symbol = symbol
-        self.side = side
+        self.side = normalize_side(side)
         self.quantity = quantity
         self.price = price
         self.order_type = order_type
