@@ -150,17 +150,18 @@ class Bot:
                     try:
                         import json, os, time as _t
                         metrics = compute_metrics(self.pnl_history, self.trade_results)
-                        log_dir = Config.get_log_dir_name()
+                        report_dir = Config.get_report_dir_name()
                         ts = _t.strftime('%Y%m%d%H%M%S')
-                        summary_path = os.path.join(log_dir, f"backtest_summary_{ts}.json")
+                        os.makedirs(report_dir, exist_ok=True)
+                        summary_path = os.path.join(report_dir, f"backtest_summary_{ts}.json")
                         with open(summary_path, 'w', encoding='utf-8') as f:
                             json.dump(metrics, f, ensure_ascii=False, indent=2)
                         perf_summary = self.perf.summary()
-                        perf_path = os.path.join(log_dir, f"performance_summary_{ts}.json")
+                        perf_path = os.path.join(report_dir, f"performance_summary_{ts}.json")
                         with open(perf_path, 'w', encoding='utf-8') as pf:
                             json.dump(perf_summary, pf, ensure_ascii=False, indent=2)
                         if self.pnl_history and self.close_times:
-                            pnl_csv, pnl_json = generate_pnl_timeseries(self.pnl_history, self.close_times, log_dir, prefix="pnl_timeseries")
+                            pnl_csv, pnl_json = generate_pnl_timeseries(self.pnl_history, self.close_times, report_dir, prefix="pnl_timeseries")
                             self.logger.log(f"PnL時系列出力 (CSV): {pnl_csv}")
                             self.logger.log(f"PnL時系列出力 (JSON): {pnl_json}")
                     except Exception as e:
@@ -211,22 +212,23 @@ class Bot:
                         # JSON出力
                         try:
                             import json, os, time as _t
-                            log_dir = Config.get_log_dir_name()
+                            report_dir = Config.get_report_dir_name()
                             ts = _t.strftime('%Y%m%d%H%M%S')
+                            os.makedirs(report_dir, exist_ok=True)
                             # メトリクス
-                            summary_path = os.path.join(log_dir, f"backtest_summary_{ts}.json")
+                            summary_path = os.path.join(report_dir, f"backtest_summary_{ts}.json")
                             with open(summary_path, 'w', encoding='utf-8') as f:
                                 json.dump(metrics, f, ensure_ascii=False, indent=2)
                             self.logger.log(f"バックテストサマリ出力: {summary_path} / パフォーマンス計測件数: {self.perf.iterations}")
                             # パフォーマンスサマリ
                             perf_summary = self.perf.summary()
-                            perf_path = os.path.join(log_dir, f"performance_summary_{ts}.json")
+                            perf_path = os.path.join(report_dir, f"performance_summary_{ts}.json")
                             with open(perf_path, 'w', encoding='utf-8') as pf:
                                 json.dump(perf_summary, pf, ensure_ascii=False, indent=2)
                             self.logger.log(f"パフォーマンスサマリ出力: {perf_path}")
                             # PnL時系列出力
                             if self.pnl_history and self.close_times:
-                                pnl_csv, pnl_json = generate_pnl_timeseries(self.pnl_history, self.close_times, log_dir, prefix="pnl_timeseries")
+                                pnl_csv, pnl_json = generate_pnl_timeseries(self.pnl_history, self.close_times, report_dir, prefix="pnl_timeseries")
                                 self.logger.log(f"PnL時系列出力 (CSV): {pnl_csv}")
                                 self.logger.log(f"PnL時系列出力 (JSON): {pnl_json}")
                                 # レポート自動生成 (Markdown)
@@ -234,7 +236,7 @@ class Bot:
                                     report_md = generate_markdown_report(
                                         metrics=metrics,
                                         perf_summary=perf_summary,
-                                        output_dir=log_dir,
+                                        output_dir=report_dir,
                                         ts=ts,
                                         pnl_csv_path=pnl_csv,
                                         pnl_json_path=pnl_json,
