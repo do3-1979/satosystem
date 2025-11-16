@@ -35,6 +35,7 @@ from order import Order
 from event import EventBus, EventType
 from metrics import compute_metrics
 from pnl_reporter import generate_pnl_timeseries
+from report_generator import generate_markdown_report
 
 class PerformanceTracker:
     def __init__(self):
@@ -228,6 +229,20 @@ class Bot:
                                 pnl_csv, pnl_json = generate_pnl_timeseries(self.pnl_history, self.close_times, log_dir, prefix="pnl_timeseries")
                                 self.logger.log(f"PnL時系列出力 (CSV): {pnl_csv}")
                                 self.logger.log(f"PnL時系列出力 (JSON): {pnl_json}")
+                                # レポート自動生成 (Markdown)
+                                try:
+                                    report_md = generate_markdown_report(
+                                        metrics=metrics,
+                                        perf_summary=perf_summary,
+                                        output_dir=log_dir,
+                                        ts=ts,
+                                        pnl_csv_path=pnl_csv,
+                                        pnl_json_path=pnl_json,
+                                        extra_notes=None,
+                                    )
+                                    self.logger.log(f"レポート出力 (Markdown): {report_md}")
+                                except Exception as re:
+                                    self.logger.log_error(f"レポート出力失敗: {re}")
                         except Exception as e:
                             self.logger.log_error(f"バックテストメトリクス/パフォーマンス/PnL出力失敗: {e}")
                         
