@@ -200,13 +200,13 @@ class Bot:
                         
                         self.logger.log("-------------------------------------------------------")
                         self.logger.log(f"最終ポートフォリオ: {self.portfolio.get_position_quantity()}")
-                        self.logger.log(f"最終損益: {self.portfolio.get_profit_and_loss():>4.0f} [BTC/USD]")
-                        self.logger.log(f"プロフィットファクター: {self.portfolio.get_profit_factor():>4.2f}")
-                        self.logger.log(f"最大ドローダウン: {self.portfolio.get_drawdown():>4.2f} [BTC/USD]")
-                        self.logger.log(f"最大ドローダウン率: {self.portfolio.get_drawdown_rate():>4.2f} [%]")
-
-                        # 追加メトリクス計算
+                        
+                        # メトリクス計算 (統一的なドローダウン計算を使用)
                         metrics = compute_metrics(self.pnl_history, self.trade_results)
+                        self.logger.log(f"最終損益: {metrics['total_pnl']:>4.0f} [BTC/USD]")
+                        self.logger.log(f"プロフィットファクター: {metrics['profit_factor']:>4.2f}")
+                        self.logger.log(f"最大ドローダウン: {metrics['max_drawdown']:>4.2f} [BTC/USD]")
+                        self.logger.log(f"最大ドローダウン率: {metrics['max_drawdown_rate']:>4.2f} [%]")
                         self.logger.log(f"Sharpe: {metrics['sharpe']:.3f}")
                         self.logger.log(f"WinRate: {metrics['win_rate']:.2f}% Trades: {metrics['trades']}")
                         # JSON出力
