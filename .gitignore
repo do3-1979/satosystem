@@ -29,3 +29,9 @@ src/logs/*.json
 src/logs/*.zip
 src/ohlcv_data
 src/output_configs
+
+# OHLCV SQLiteキャッシュ (明示)
+# ディレクトリごと除外しているが、個別ファイルも明記しておく
+src/ohlcv_data/ohlcv_cache.db
+src/ohlcv_data/ohlcv_cache.db-wal
+src/ohlcv_data/ohlcv_cache.db-shm

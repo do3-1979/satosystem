@@ -79,6 +79,31 @@ python src/bot.py --config src/config.ini --strategy satostrategy
 ```
 メトリクス算出ロジックは `src/metrics.py`。`pnl_history` シリーズから標準的手法で計算。
 
+## データキャッシュとタイムフレーム運用
+本システムは戦略判定に 2時間足 (120分) を用い、補助/内部更新に 1分足を利用します。両者は同一 SQLite キャッシュテーブル `candles` 内で `timeframe` (分) により区別され、主キー `(symbol, timeframe, close_time)` により衝突しません。
+
+### キャッシュ仕様
+- DBパス: `src/ohlcv_data/ohlcv_cache.db` (WAL 有効)
+- 保存列: `open_price, high_price, low_price, close_price, volume`
+- 取得処理: バックテスト初期化時 `initialise_back_test_ohlcv_data` が必要期間を算出し
+  1. 旧 JSON キャッシュ(互換)があれば取り込み → DBへ upsert
+  2. `has_sufficient_cache()` で本数判定し不足時のみ API `fetch_ohlcv` で取得
+  3. DBから要求期間を復元しメモリロード
+
+### 再取得抑止ロジック
+`has_sufficient_cache(symbol, timeframe, start, end)` は期待本数 `((end-start)//(timeframe*60))` から許容差 2 本を引いた閾値以上であれば再取得をスキップ。これにより既存期間全体が揃っている場合 Bybit API コールは発生しません。
+
+### 留意点
+- 本数のみで充足判定しており途中ギャップは未検出 (必要ならギャップ検出ロジック導入可能)。
+- 2時間足は現状 1分足から再集計せず直接 API 取得（将来: 1分足ロールアップ最適化）。
+- キャッシュ DB と WAL/SHM は `.gitignore` で除外し再現性は API + 初期化ロジックで担保。
+
+### 将来改善候補
+- ギャップ検出+差分取得による API 呼び出し最小化。
+- 1分足のみ永続化し 2時間足はオンデマンド集計 (I/O 削減・一貫性向上)。
+- キャッシュ整合性検査 (min/max 境界 & 連続性) レポート出力。
+
+
 ## 簡易アーキ図
 ```
       +----------------+

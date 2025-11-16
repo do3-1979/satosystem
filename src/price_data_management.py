@@ -6,6 +6,7 @@ from bybit_exchange import BybitExchange
 import pprint
 import json
 import os
+from ohlcv_cache import OHLCVCache
 
 class PriceDataManagement:
     # クラス変数として唯一のインスタンスを保持
@@ -472,6 +473,7 @@ class PriceDataManagement:
         """
         バックテスト用取引データ初期化
         """
+        cache = OHLCVCache()
         # 指定された期間のバックテストデータを取得
         start_epoch = Config.get_start_epoch()
         # 初期分析に必要な時間を計算
@@ -486,26 +488,51 @@ class PriceDataManagement:
         # epoch時間に変換
         start_epoch = int(start_time.timestamp())
 
-        # 時間足データ初期化
+        # 時間足データ初期化（キャッシュを優先。既存JSONがあれば取り込み）
         for data_dict in self.back_test_ohlcv_data:
             time_frame = data_dict["time_frame"]
             end_epoch = Config.get_end_epoch() + time_frame * 60
             self.logger.log(f"時間足データ {time_frame} 分 初期化")
 
-            # ローカルにohlcvデータがあるか確認
-            file_name = f"ohlcv_data/ohlcv_data_{start_epoch}_{end_epoch}_{time_frame}.json"
-            if os.path.exists(file_name):
-                self.logger.log(f"既存ファイル {file_name} を流用")
-                with open(file_name, "r") as file:
-                    data_dict["data"] = json.load(file)
-            else:
-                # サーバからデータを取得
-                data_dict["data"] = self.exchange.fetch_ohlcv(start_epoch, end_epoch, time_frame)
-                # ローカルにデータを保存
-                self.logger.log(f"新規にファイル {file_name} を保存")
+            symbol = Config.get_market()
+
+            # 互換: 旧JSONキャッシュを優先取り込み（2箇所パスを探索）
+            legacy_files = [
+                f"ohlcv_data/ohlcv_data_{start_epoch}_{end_epoch}_{time_frame}.json",
+                f"logs/ohlcv_data/ohlcv_data_{start_epoch}_{end_epoch}_{time_frame}.json",
+            ]
+            legacy_loaded = False
+            for lf in legacy_files:
+                if os.path.exists(lf):
+                    try:
+                        self.logger.log(f"既存ファイル {lf} を取り込み -> DB 反映")
+                        with open(lf, "r") as f:
+                            legacy_data = json.load(f)
+                        # DB に流し込む（不足分のみ Upsert）
+                        cache.upsert_candles(symbol, time_frame, legacy_data)
+                        legacy_loaded = True
+                        break
+                    except Exception as e:
+                        self.logger.log_error(f"旧キャッシュ取り込み失敗: {lf} err={e}")
+
+            # DB に十分なデータがあればそのまま使用。なければサーバから不足分取得
+            if not cache.has_sufficient_cache(symbol, time_frame, start_epoch, end_epoch):
+                self.logger.log("キャッシュ不足 -> サーバから取得しDBに格納")
+                fetched = self.exchange.fetch_ohlcv(start_epoch, end_epoch, time_frame)
+                cache.upsert_candles(symbol, time_frame, fetched)
+
+            # DB から最終的な範囲データを復元
+            data = cache.get_range(symbol, time_frame, start_epoch, end_epoch)
+            data_dict["data"] = data
+
+            # 互換: 旧ファイル名でもJSONを残しておく（後方互換・解析用途）
+            try:
                 os.makedirs("ohlcv_data", exist_ok=True)
-                with open(file_name, "w") as file:
-                    json.dump(data_dict["data"], file)
+                compat_file = f"ohlcv_data/ohlcv_data_{start_epoch}_{end_epoch}_{time_frame}.json"
+                with open(compat_file, "w") as wf:
+                    json.dump(data, wf)
+            except Exception as e:
+                self.logger.log_error(f"互換JSON保存失敗: {e}")
 
         self.logger.log("時間足データ初期化 done")
 

@@ -29,6 +29,22 @@
 - シングルトン利用箇所 (Logger, PriceDataManagement) の状態共有に伴う副作用へ注意する。
 - 売買方向表記の不統一 (外部API: 'buy'/'sell', 内部: 'BUY'/'SELL') は設計上の整流候補。
 
+### データキャッシュとVCS除外方針 (C6)
+- キャッシュDB: `src/ohlcv_data/ohlcv_cache.db`（SQLite, OHLCVローソク足）
+  - 互換ファイル: `src/ohlcv_data/ohlcv_cache.db-wal`, `src/ohlcv_data/ohlcv_cache.db-shm`
+- 生成場所: `src/ohlcv_data/` 配下（自動生成）。
+- バージョン管理: いずれもVCS除外（`.gitignore`で `src/ohlcv_data` ディレクトリごと除外＋DB/WAL/SHMを明示）
+- 目的: 過去取得分の再利用とAPI/IO削減（欠損範囲のみ追加取得しマージ）。
+- 参照: 価格初期化は `price_data_management.initialise_back_test_ohlcv_data` が `OHLCVCache` を使用。
+- 注意: 解析共有時はDBをコミットせず、必要なら再生成すること（バックテスト実行で自動作成）。
+
+#### タイムフレーム区別
+- 同一テーブル `candles` 上で `timeframe` (分) 列により 1分足(1) / 2時間足(120) を分離。
+- 主キー `(symbol, timeframe, close_time)` により衝突なく共存。
+- 現状 2時間足は API 直接取得。将来最適化: 1分足から集約再構築し API 呼び出し削減。
+- 既存期間が所定本数揃っている場合 `has_sufficient_cache` 判定で再取得スキップ (許容差 2 本)。
+- 欠損ギャップ未検出: 本数一致でも内部欠損があり得る。完全性向上時はギャップ検出導入予定。
+
 ## 次回以降の利用手順 (テンプレ)
 ```
 1. analysis/ を確認
@@ -259,6 +275,12 @@ cd /home/satoshi/work/satosystem/src && ./bot_run.sh
 - 期間: 2025/10/26 0:00 ~ 2025/11/4 0:00（同期間でリラン）
   - 結果: 取引5、最終損益 -51、PF 0.26、Sharpe -1.205、エラーなし（前回と一致）
   - 生成ファイル: `logs/backtest_summary_20251116154050.json`
+
+**実行状況 (C6 キャッシュDBパス調整・検証):**
+
+- 変更: キャッシュDBの既定パスを `src/logs/` から `src/ohlcv_data/ohlcv_cache.db` に変更。
+- 結果: 同期間バックテストで挙動差分なし（パリティ維持）。DBは `src/ohlcv_data/` に生成確認。
+- VCS: `.gitignore` に `src/ohlcv_data/` および `ohlcv_cache.db`/`-wal`/`-shm` を明示的に除外。
 
 ---
 
