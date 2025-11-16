@@ -3,6 +3,7 @@ from datetime import timedelta
 from config import Config
 from logger import Logger
 from bybit_exchange import BybitExchange
+from indicator_service import IndicatorService
 import pprint
 import json
 import os
@@ -35,15 +36,23 @@ class PriceDataManagement:
         get_signals(self): トレードシグナルを取得します。
         update_price_data(self): 価格データとトレードシグナルを更新します。
     """
-    def __new__(cls):
+    def __new__(cls, indicator_service=None):
         if cls._instance is None:
             cls._instance = super(PriceDataManagement, cls).__new__(cls)
-            cls._instance.initialize()
+            cls._instance._initialized = False
+            cls._instance.initialize(indicator_service=indicator_service)
+            cls._instance._initialized = True
+        else:
+            # 既存インスタンスの場合、indicator_serviceが渡されていれば更新
+            if indicator_service is not None:
+                cls._instance.indicator_service = indicator_service
         return cls._instance
 
-    def initialize(self):
+    def initialize(self, indicator_service=None):
         self.exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
         self.logger = Logger()
+        # IndicatorServiceを外部から受け取るか、新規作成
+        self.indicator_service = indicator_service if indicator_service is not None else IndicatorService()
         
         main_time_frame = Config.get_time_frame()
         psar_time_frame = Config.get_psar_time_frame()
@@ -145,11 +154,7 @@ class PriceDataManagement:
         Returns:
             int: ボラティリティ
         """
-        volatility_term = Config.get_volatility_term()
-        high_sum = sum(i['high_price'] for i in ohlcv_data[-1 * volatility_term :])
-        low_sum = sum(i['low_price'] for i in ohlcv_data[-1 * volatility_term :])
-        volatility = (high_sum - low_sum) / volatility_term
-        return volatility
+        return self.indicator_service.calculate_volatility(ohlcv_data)
 
     def show_latest_ticker(self):
         """
@@ -650,26 +655,12 @@ class PriceDataManagement:
         Returns:
             str: トレードシグナル ('BUY', 'SELL', 'None')
         """
-        buy_term = Config.get_donchian_buy_term()
-        sell_term = Config.get_donchian_sell_term()
-        side = 'None'
-
-        #print(f"ohlcv_data first: {ohlcv_data[0]}")
-        #print(f"ohlcv_data last : {ohlcv_data[-1]}")
-
-        highest = max(i['high_price'] for i in ohlcv_data[(-1 * buy_term) :])
-        if price > highest:
-            side = 'BUY'
-
-        lowest = min(i['low_price'] for i in ohlcv_data[(-1 * sell_term) :])
-        if price < lowest:
-            side = 'SELL'
-
-        return side, highest, lowest
+        return self.indicator_service.calculate_donchian(ohlcv_data, price)
 
     def __calc_ema(self, term, data):
         """
         Exponential Moving Average（指数平滑移動平均）を計算するメソッドです。
+        DEPRECATED: Use indicator_service.calculate_ema() instead.
 
         Args:
             term (int): 移動平均の期間
@@ -678,25 +669,12 @@ class PriceDataManagement:
         Returns:
             float: EMAの値
         """
-        i = 0
-        chk_1 = 0
-        chk_1_sum = 0
-        et_1 = 0
-        result = []
-        for p in data:
-            i = len(result)
-            if i <= (term - 1):
-                chk_1_sum = sum(result)
-                chk_1 = (float(chk_1_sum) + float(p)) / (i + 1)
-                result += [chk_1]
-            else:
-                et_1 = result[-1]
-                result += [float(et_1 + 2 / (term + 1) * (float(p) - et_1))]
-        return result[-1]
+        return self.indicator_service.calculate_ema(term, data)
 
     def __calcurate_pvo(self, ohlcv_data, volume):
         """
         Price Volume Oscillator（PVO）を計算するメソッドです。
+        DEPRECATED: Use indicator_service.calculate_pvo() instead.
 
         Args:
             ohlcv_data (list): OHLCVデータのリスト
@@ -705,21 +683,7 @@ class PriceDataManagement:
         Returns:
             float: PVOの値
         """
-        
-        pvo_s_term = Config.get_pvo_s_term()
-        pvo_l_term = Config.get_pvo_l_term()
-        volume_data = []
-
-        data_len = max(pvo_s_term, pvo_l_term)
-        for i in ohlcv_data[(-1 * data_len) :]:
-            volume_data.append(i['Volume'])
-
-        volume_data.append(volume)
-        short_ema = self.__calc_ema(pvo_s_term, volume_data)
-        long_ema = self.__calc_ema(pvo_l_term, volume_data)
-        pvo_value = ((short_ema - long_ema) * 100 / long_ema)
-
-        return pvo_value
+        return self.indicator_service.calculate_pvo(ohlcv_data, volume)
 
     def __evaluate_pvo(self, ohlcv_data, volume):
         """
@@ -732,13 +696,8 @@ class PriceDataManagement:
         Returns:
             bool: トレードシグナル (True, False)
         """
-        pvo_threshold = Config.get_pvo_threshold()
-        pvo_value = self.__calcurate_pvo(ohlcv_data, volume)
-        if pvo_value <= pvo_threshold:
-            judge = False
-        else:
-            judge = True
-
+        pvo_value = self.indicator_service.calculate_pvo(ohlcv_data, volume)
+        judge = self.indicator_service.evaluate_pvo(pvo_value)
         return judge, pvo_value
 
 if __name__ == "__main__":

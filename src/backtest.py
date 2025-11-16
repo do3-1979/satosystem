@@ -11,6 +11,7 @@ from risk_management import RiskManagement
 from portfolio import Portfolio
 from order import Order
 from bot import Bot  # Assuming the Bot class is in a separate file named bot.py
+from indicator_service import IndicatorService
 
 def find_config_files(directory):
     """
@@ -46,10 +47,14 @@ def main():
         exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
         # 資産管理クラスを初期化（唯一であること TODO シングルトン化）
         portfolio = Portfolio()
+        
+        # IndicatorServiceを初期化（PriceDataManagementとRiskManagementで共有）
+        indicator_service = IndicatorService()
+        
         # 価格情報クラスを初期化
-        price_data_management = PriceDataManagement()
+        price_data_management = PriceDataManagement(indicator_service=indicator_service)
         # リスク戦略クラスを初期化
-        risk_management = RiskManagement(price_data_management, portfolio)
+        risk_management = RiskManagement(price_data_management, portfolio, indicator_service=indicator_service)
         # 取引戦略クラスを初期化
         strategy = TradingStrategy(price_data_management, risk_management, portfolio)
         # ボットのインスタンスを作成

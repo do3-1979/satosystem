@@ -14,15 +14,44 @@ from logger import Logger
 from price_data_management import PriceDataManagement
 from bybit_exchange import BybitExchange
 from portfolio import Portfolio
+from indicator_service import IndicatorService
 import numpy as np
 
 class RiskManagement:
-    def __init__(self, price_data_management, portfolio):
+    def __init__(self, price_data_management, portfolio, indicator_service=None):
         """
         リスク管理クラスを初期化します。
 
+        Args:
+            price_data_management: PriceDataManagement instance
+            portfolio: Portfolio instance
+            indicator_service: IndicatorService instance (shared with PriceDataManagement)
         """
         self.logger = Logger()
+        
+        # ADX parameters (initialize before IndicatorService)
+        self.adx_term = 14
+        self.adx_continue_num = 3
+        self.adx_bull_threshold = 25
+        self.adx_bear_threshold = 20
+        
+        # Use shared IndicatorService or create new one with ADX parameters
+        if indicator_service is not None:
+            self.indicator_service = indicator_service
+            # Update ADX parameters in shared instance
+            self.indicator_service.adx_term = self.adx_term
+            self.indicator_service.adx_continue_num = self.adx_continue_num
+            self.indicator_service.adx_bull_threshold = self.adx_bull_threshold
+            self.indicator_service.adx_bear_threshold = self.adx_bear_threshold
+        else:
+            # Initialize IndicatorService with ADX parameters
+            self.indicator_service = IndicatorService(
+                adx_term=self.adx_term,
+                adx_continue_num=self.adx_continue_num,
+                adx_bull_threshold=self.adx_bull_threshold,
+                adx_bear_threshold=self.adx_bear_threshold
+            )
+        
         self.price_data_management = price_data_management
         self.portfolio = portfolio
         self.risk_percentage = Config.get_risk_percentage()
@@ -49,19 +78,15 @@ class RiskManagement:
         self.surge_follow_price_ratio = Config.get_surge_follow_price_ratio()
         self.stop_ATR = 0
 
-        # PSAR
+        # PSAR (state will be synced from indicator_service)
         self.psar = []
         self.psarbull = []
         self.psarbear = []
 
-        # ADX
+        # ADX (state will be synced from indicator_service)
         self.adx = []
         self.adx_bull = False
         self.adx_bear = False
-        self.adx_term = 14
-        self.adx_continue_num = 3
-        self.adx_bull_threshold = 25
-        self.adx_bear_threshold = 20
 
         # ストップ値
         self.stop_offset = 0 # 価格ベース
@@ -131,175 +156,25 @@ class RiskManagement:
 
     # パラボリックSARを計算する関数
     def __calc_parabolic_sar(self, data):
-        iaf = self.stop_AF_add
-        maxaf = self.stop_AF_max
-
-        # データ成型
-        high = []
-        low = []
-        close = []
-        datalen = len(data)
-
-        for i in range(datalen):
-            high.append(data[i]['high_price'])
-            low.append(data[i]['low_price'])
-            close.append(data[i]['close_price'])
-
-        length = len(close)
-        if length < 3:
-            # データ不足の場合は計算をスキップ
-            return
+        """IndicatorServiceに委譲してPSAR計算を実行"""
+        self.indicator_service.calculate_parabolic_sar(data)
         
-        psar = [None] * length
-
-        # 初回のpsarの初期設定
-        if not self.psar:
-            psar[0] = close[0]
-            psar[1] = close[0]
-        else:
-            for i in range(min(length, len(self.psar))):
-                psar[i] = self.psar[i]
-
-        length = len(close)
-        #print(f"length {length}")
-
-        psarbull = [None] * length
-        psarbear = [None] * length
-        bull = True
-        af = iaf
-        ep = low[0]
-        hp = high[0]
-        lp = low[0]
-
-        #print(f"psar[0] {psar[0]} af {af} ep {ep} hp {hp} lp {lp}")
-
-        # 過去データからPSARを計算
-        for i in range(2, length):
-            if bull:
-                psar[i] = psar[i - 1] + af * (hp - psar[i - 1])
-            else:
-                psar[i] = psar[i - 1] + af * (lp - psar[i - 1])
-            #print(f"psar[{i}] {psar[i]}")
-
-            reverse = False
-
-            if bull:
-                if low[i] < psar[i]:
-                    bull = False
-                    reverse = True
-                    psar[i] = hp
-                    lp = low[i]
-                    af = iaf
-
-                    #print(f"reverse bull psar[{i}] {psar[i]}")
-
-            else:
-                if high[i] > psar[i]:
-                    bull = True
-                    reverse = True
-                    psar[i] = lp
-                    hp = high[i]
-                    af = iaf
-
-                    #print(f"reverse bear psar[{i}] {psar[i]}")
-
-            if not reverse:
-                if bull:
-                    if high[i] > hp:
-                        hp = high[i]
-                        af = min(af + iaf, maxaf)
-                    if low[i - 1] < psar[i]:
-                        psar[i] = low[i - 1]
-                    if low[i - 2] < psar[i]:
-                        psar[i] = low[i - 2]
-                        
-                    #print(f"not reverse bull psar[{i}] {psar[i]}")
-                        
-                else:
-                    if low[i] < lp:
-                        lp = low[i]
-                        af = min(af + iaf, maxaf)
-                    if high[i - 1] > psar[i]:
-                        psar[i] = high[i - 1]
-                    if high[i - 2] > psar[i]:
-                        psar[i] = high[i - 2]
-
-                    #print(f"not reverse bear psar[{i}] {psar[i]}")
-
-            if bull:
-                psarbull[i] = psar[i]
-            else:
-                psarbear[i] = psar[i]
-
-        # PSAR更新
-        self.psar = psar
-        self.psarbull = psarbull
-        self.psarbear = psarbear
-
+        # indicator_serviceから計算結果を取得
+        self.psar = self.indicator_service.psar
+        self.psarbull = self.indicator_service.psarbull
+        self.psarbear = self.indicator_service.psarbear
+        
         return
 
     def __calc_adx(self, data):
+        """IndicatorServiceに委譲してADX計算を実行"""
         adx_period = self.adx_term
-        continue_num = self.adx_continue_num
-        bull_threshold = self.adx_bull_threshold
-        bear_threshold = self.adx_bear_threshold
+        self.indicator_service.calculate_adx(data, adx_period)
         
-        high = [item['high_price'] for item in data]
-        low = [item['low_price'] for item in data]
-        close = [item['close_price'] for item in data]
-        length = len(close)
-
-        plus_dm = np.zeros(length)
-        minus_dm = np.zeros(length)
-        tr = np.zeros(length)
-
-        for i in range(1, length):
-            high_diff = high[i] - high[i - 1]
-            low_diff = low[i - 1] - low[i]
-
-            plus_dm[i] = high_diff if high_diff > low_diff and high_diff > 0 else 0
-            minus_dm[i] = low_diff if low_diff > high_diff and low_diff > 0 else 0
-
-            tr[i] = max(high[i] - low[i], abs(high[i] - close[i - 1]), abs(low[i] - close[i - 1]))
-
-        tr_smooth = np.zeros(length)
-        plus_dm_smooth = np.zeros(length)
-        minus_dm_smooth = np.zeros(length)
-
-        if length < adx_period * 2:
-            # データ不足の場合はデフォルト値を設定
-            self.adx = [0] * length
-            self.adx_bull = False
-            self.adx_bear = False
-            return
-        
-        tr_smooth[adx_period - 1] = sum(tr[1:adx_period])
-        plus_dm_smooth[adx_period - 1] = sum(plus_dm[1:adx_period])
-        minus_dm_smooth[adx_period - 1] = sum(minus_dm[1:adx_period])
-
-        for i in range(adx_period, length):
-            tr_smooth[i] = tr_smooth[i - 1] - (tr_smooth[i - 1] / adx_period) + tr[i]
-            plus_dm_smooth[i] = plus_dm_smooth[i - 1] - (plus_dm_smooth[i - 1] / adx_period) + plus_dm[i]
-            minus_dm_smooth[i] = minus_dm_smooth[i - 1] - (minus_dm_smooth[i - 1] / adx_period) + minus_dm[i]
-
-        # ゼロ除算を防ぐ
-        with np.errstate(divide='ignore', invalid='ignore'):
-            plus_di = np.where(tr_smooth != 0, 100 * (plus_dm_smooth / tr_smooth), 0)
-            minus_di = np.where(tr_smooth != 0, 100 * (minus_dm_smooth / tr_smooth), 0)
-            dx = np.where((plus_di + minus_di) != 0, 
-                         100 * np.abs((plus_di - minus_di) / (plus_di + minus_di)), 
-                         0)
-
-        adx = np.zeros(length)
-        adx[adx_period - 1] = sum(dx[adx_period - 1:2 * adx_period - 1]) / adx_period
-
-        for i in range(adx_period, length):
-            adx[i] = ((adx[i - 1] * (adx_period - 1)) + dx[i]) / adx_period
-
-        self.adx = adx.tolist()
-
-        self.adx_bull = all(adx[i] > bull_threshold for i in range(-continue_num, 0))
-        self.adx_bear = all(adx[i] < bear_threshold for i in range(-continue_num, 0))
+        # indicator_serviceから計算結果を取得
+        self.adx = self.indicator_service.adx
+        self.adx_bull = self.indicator_service.adx_bull
+        self.adx_bear = self.indicator_service.adx_bear
         
         return
 
