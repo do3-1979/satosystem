@@ -33,6 +33,7 @@ rm -f err.log
 # 4: python bot.py の実行
 if [ "$#" -eq 1 ] && [ "$1" == "bg" ]; then
     python bot.py &> err.log &
+    echo "Bot started in background (PID: $!). Keys will remain active."
 else
     python bot.py
 
@@ -47,5 +48,7 @@ else
 
     echo "実行時間: ${total_hours}h ${total_minutes}m ${total_seconds}s"
 
+    # 実行終了後にプレースホルダーへ復元
+    ./replace_api_key.sh restore
 fi
 
