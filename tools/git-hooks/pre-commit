@@ -1,0 +1,25 @@
+#!/bin/bash
+# Prevent committing sensitive files
+set -e
+
+# Allow committing src/config.ini only if placeholders are used
+if git diff --cached --name-only | grep -q '^src/config.ini$'; then
+  content=$(git show :src/config.ini || true)
+  if ! echo "$content" | grep -q '^api_key *= *YOUR_API_KEY'; then
+    echo 'ERROR: src/config.ini api_key must be placeholder YOUR_API_KEY.' >&2
+    exit 1
+  fi
+  if ! echo "$content" | grep -q '^api_secret *= *YOUR_API_SECRET'; then
+    echo 'ERROR: src/config.ini api_secret must be placeholder YOUR_API_SECRET.' >&2
+    exit 1
+  fi
+fi
+
+# Block src/.api_key
+if git diff --cached --name-only | grep -q '^src/.api_key$'; then
+  echo 'ERROR: src/.api_key must not be committed.' >&2
+  echo 'Fix: git restore --staged src/.api_key' >&2
+  exit 1
+fi
+
+exit 0
