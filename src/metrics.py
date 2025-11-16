@@ -38,25 +38,37 @@ def _sharpe(returns: List[float]) -> float:
     return mean_ret / std_dev * math.sqrt(len(returns))
 
 
-def _max_drawdown(pnl_history: List[float]) -> float:
-    peak = -1e18
+def _max_drawdown(pnl_history: List[float]) -> tuple:
+    """
+    Compute maximum drawdown and maximum drawdown rate.
+    Returns: (max_drawdown_value, max_drawdown_rate_percent)
+    """
+    if not pnl_history:
+        return 0.0, 0.0
+    
+    peak = pnl_history[0]
     max_dd = 0.0
+    peak_at_max_dd = peak
+    
     for v in pnl_history:
         if v > peak:
             peak = v
         dd = peak - v
         if dd > max_dd:
             max_dd = dd
-    return max_dd
+            peak_at_max_dd = peak
+    
+    # Drawdown rate based on the peak where max DD occurred
+    max_dd_rate = (max_dd / peak_at_max_dd * 100) if peak_at_max_dd > 0 else 0.0
+    
+    return max_dd, max_dd_rate
 
 
 def compute_metrics(pnl_history: List[float], trade_results: List[bool]) -> Dict[str, float]:
     total_pnl = pnl_history[-1] if pnl_history else 0.0
     returns = _incremental_returns(pnl_history)
     sharpe = _sharpe(returns)
-    max_dd = _max_drawdown(pnl_history) if pnl_history else 0.0
-    peak = max(pnl_history) if pnl_history else 0.0
-    max_dd_rate = (max_dd / peak * 100) if peak > 0 else 0.0
+    max_dd, max_dd_rate = _max_drawdown(pnl_history) if pnl_history else (0.0, 0.0)
 
     trades = len(trade_results)
     wins = sum(1 for r in trade_results if r)
