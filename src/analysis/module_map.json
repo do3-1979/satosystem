@@ -1,15 +1,27 @@
 {
-  "generated_at": "2025-11-16T00:00:00Z",
+  "generated_at": "2025-11-17T00:33:00Z",
   "modules": {
+    "indicator_service.py": {
+      "classes": {
+        "IndicatorService": {
+          "methods": ["__init__", "calculate_donchian", "calculate_pvo", "calculate_ema", "calculate_volatility", "calculate_parabolic_sar", "calculate_adx", "evaluate_pvo"],
+          "depends_on": ["numpy", "config.Config"],
+          "responsibility": "指標計算の集約・状態管理 (Donchian/PVO/PSAR/ADX/Volatility)",
+          "state": ["psar", "psarbull", "psarbear", "adx", "adx_bull", "adx_bear"]
+        }
+      },
+      "issues": []
+    },
     "bot.py": {
       "classes": {
         "Bot": {
           "methods": ["__init__", "show_trade_data", "run", "execute_order"],
-          "depends_on": ["logger.Logger", "config.Config", "price_data_management.PriceDataManagement", "bybit_exchange.BybitExchange", "trading_strategy.TradingStrategy", "risk_management.RiskManagement", "portfolio.Portfolio", "order.Order"],
-          "responsibility": "メインループ/戦略判定/発注/ログ/バックテストフロー"
+          "depends_on": ["logger.Logger", "config.Config", "price_data_management.PriceDataManagement", "bybit_exchange.BybitExchange", "trading_strategy.TradingStrategy", "risk_management.RiskManagement", "portfolio.Portfolio", "order.Order", "indicator_service.IndicatorService"],
+          "responsibility": "メインループ/戦略判定/発注/ログ/バックテストフロー",
+          "refactored": "2025-11-17: IndicatorService共有化対応"
         }
       },
-      "issues": ["例外処理未実装(try TODO)", "execute_order 内で symbol 未使用", "バックテスト時 balance_tether 擬似値を再上書き"]
+      "issues": ["execute_order 内で symbol 未使用", "バックテスト時 balance_tether 擬似値を再上書き"]
     },
     "trading_strategy.py": {
       "classes": {
@@ -35,7 +47,7 @@
       "issues": ["注文応答 response で create_order 再呼出/冗長", "market/symbol 変換重複", "fetch_ohlcv ループ内エラー処理単純"]
     },
     "risk_management.py": {
-      "classes": {"RiskManagement": {"methods": ["__init__", "get_entry_range", "get_add_range", "get_last_entry_price", "update_last_entry_price", "update_risk_status", "get_stop_price", "get_position_size", "get_total_size", "get_stop_offset", "get_psar", "get_psarbull", "get_psarbear", "get_adx", "get_adx_bull", "get_adx_bear", "get_psar_stop_offset", "get_price_surge_stop_offset", "calculate_position_size"], "private_methods": ["__calc_parabolic_sar", "__calc_adx", "__calc_stop_psar", "__follow_price_surge", "__follow_price_range", "__update_stop_price"], "depends_on": ["config.Config", "logger.Logger", "price_data_management.PriceDataManagement", "portfolio.Portfolio", "numpy"], "responsibility": "ポジションサイズ/STOP更新/指標(PSAR/ADX)算出"}},
+      "classes": {"RiskManagement": {"methods": ["__init__", "get_entry_range", "get_add_range", "get_last_entry_price", "update_last_entry_price", "update_risk_status", "get_stop_price", "get_position_size", "get_total_size", "get_stop_offset", "get_psar", "get_psarbull", "get_psarbear", "get_adx", "get_adx_bull", "get_adx_bear", "get_psar_stop_offset", "get_price_surge_stop_offset", "calculate_position_size"], "private_methods": ["__calc_parabolic_sar", "__calc_adx", "__calc_stop_psar", "__follow_price_surge", "__follow_price_range", "__update_stop_price"], "depends_on": ["config.Config", "logger.Logger", "price_data_management.PriceDataManagement", "portfolio.Portfolio", "indicator_service.IndicatorService", "numpy"], "responsibility": "ポジションサイズ/STOP更新 (PSAR/ADX計算はIndicatorServiceへ委譲)", "refactored": "2025-11-17: PSAR/ADX計算をIndicatorServiceへ委譲、コード215行削減"}},
       "issues": ["stop_AF 系変数重複再代入", "__follow_price_range 未使用/未完成", "BUY/SELL と buy/sell 混在", "calculate_position_size: volatility 依存で極端なサイズ変動の可能性"]
     },
     "portfolio.py": {
@@ -47,8 +59,8 @@
       "issues": ["Bot からの生成引数順 (symbol, side, quantity, price, order_type) とクラス定義 (symbol, side, quantity, order_type, price) 不整合"]
     },
     "price_data_management.py": {
-      "classes": {"PriceDataManagement": {"patterns": ["シングルトン"], "methods": ["initialize", "get_ohlcv_data", "get_ticker", "get_latest_close_time", "get_latest_close_time_dt", "get_latest_ohlcv", "get_latest_volume", "get_volatility", "calcurate_volatility", "show_latest_ticker", "show_latest_volume", "show_latest_ohlcv", "show_latest_signals", "get_signals", "update_price_data_backtest", "update_price_data", "initialise_back_test_ohlcv_data", "del_ohlcv_data_by_time_frame", "append_ohlcv_data_by_time_frame", "set_ohlcv_data_by_time_frame", "get_ohlcv_data_by_time_frame", "get_back_test_ohlcv_data_by_time_frame", "get_back_test_ohlcv_data"], "private_methods": ["__evaluate_donchian", "__calc_ema", "__calcurate_pvo", "__evaluate_pvo"], "depends_on": ["bybit_exchange.BybitExchange", "config.Config", "logger.Logger"], "responsibility": "価格/指標/PVO/Donchian/バックテスト進行管理"}},
-      "issues": ["volatility 計算単純 (高値合計-安値合計)/n", "バックテスト用ロジック複雑化/単一クラス肥大", "シグナル判定で最新未確定足使用の一貫性要確認"]
+      "classes": {"PriceDataManagement": {"patterns": ["シングルトン"], "methods": ["initialize", "get_ohlcv_data", "get_ticker", "get_latest_close_time", "get_latest_close_time_dt", "get_latest_ohlcv", "get_latest_volume", "get_volatility", "calcurate_volatility", "show_latest_ticker", "show_latest_volume", "show_latest_ohlcv", "show_latest_signals", "get_signals", "update_price_data_backtest", "update_price_data", "initialise_back_test_ohlcv_data", "del_ohlcv_data_by_time_frame", "append_ohlcv_data_by_time_frame", "set_ohlcv_data_by_time_frame", "get_ohlcv_data_by_time_frame", "get_back_test_ohlcv_data_by_time_frame", "get_back_test_ohlcv_data"], "private_methods": ["__evaluate_donchian", "__calc_ema", "__calcurate_pvo", "__evaluate_pvo"], "depends_on": ["bybit_exchange.BybitExchange", "config.Config", "logger.Logger", "indicator_service.IndicatorService"], "responsibility": "価格/シグナル/バックテスト進行管理 (指標計算はIndicatorServiceへ委譲)", "refactored": "2025-11-17: Donchian/PVO/Volatility計算をIndicatorServiceへ委譲、シングルトンパターン修正、コード81行削減"}},
+      "issues": ["バックテスト用ロジック複雑化/単一クラス肥大", "シグナル判定で最新未確定足使用の一貫性要確認"]
     },
     "util.py": {
       "classes": {"Util": {"methods": ["extract_and_export_logs", "generate_line_profit_and_loss", "generate_line_chart", "fetch_ohlcv_and_save_to_json", "extract_parameters_and_results"], "depends_on": ["pandas", "openpyxl", "config.Config", "bybit_exchange.BybitExchange"], "responsibility": "ログ/結果集計・可視化補助"}},
@@ -67,7 +79,7 @@
       "issues": ["イベント配信基盤未接続"]
     },
     "backtest.py": {
-      "script": {"responsibility": "複数 config_* を順次実行するバッチ","depends_on": ["bot.Bot", "price_data_management.PriceDataManagement", "trading_strategy.TradingStrategy", "risk_management.RiskManagement", "portfolio.Portfolio"], "flow": ["config.ini バックアップ", "output_configs 読み込み", "置換+Bot起動", "進捗表示", "restore"]},
+      "script": {"responsibility": "複数 config_* を順次実行するバッチ","depends_on": ["bot.Bot", "price_data_management.PriceDataManagement", "trading_strategy.TradingStrategy", "risk_management.RiskManagement", "portfolio.Portfolio", "indicator_service.IndicatorService"], "flow": ["config.ini バックアップ", "output_configs 読み込み", "置換+Bot起動", "進捗表示", "restore"], "refactored": "2025-11-17: IndicatorService共有化対応"},
       "issues": ["replace_api_key.sh 外部依存", "失敗時 rollback 処理なし"]
     }
   },
@@ -86,10 +98,13 @@
   "improvement_candidates": [
     "Order.__init__ の引数順統一 (呼び出し側修正 or *kwargs 対応)",
     "side 表記統一 + 変換ヘルパ (内部 ENUM)",
-    "例外処理追加 (Bot.run, Exchange 呼び出し部)",
     "PriceDataManagement のバックテスト/リアル分離 (StrategyDataSource インターフェース化)",
     "Config 値キャッシュ (初期読み込み→辞書化)",
-    "指標計算 (ADX/PSAR) を RiskManagement から分離し IndicatorService へ",
-    "volatility の計算手法改良 (True Range 系採用)"
+    "volatility の計算手法改良 (True Range 系採用)",
+    "C6 Phase 2: Donchian差分キャッシュ、ログ最適化"
+  ],
+  "completed_improvements": [
+    "例外処理追加 (Bot.run, Exchange 呼び出し部) - 2025-11-16",
+    "指標計算 (ADX/PSAR/Donchian/PVO/Volatility) を IndicatorService へ分離・集約 - 2025-11-17"
   ]
 }

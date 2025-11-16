@@ -1,5 +1,5 @@
 # プロジェクト包括分析 (初期版)
-最終更新: 2025-11-16
+最終更新: 2025-11-17
 
 ## 概要
 本リポジトリは Bybit を対象とした暗号資産トレードボット。以下の機能ブロックで構成:
@@ -124,3 +124,47 @@
 3. 差分同期手順を週次CI化 (JSON hash比較 + 差分検出レポート)。
 
 状態: M1 "実装済(初回同期)" に遷移可能。追加 Enum 実装時に C2 と合わせてクローズ予定。
+
+## M2 差分同期 (2025-11-17 増分)
+参照: IndicatorService統合完了 (commit 208e4d7)
+
+### 実装完了
+- **indicator_service.py (新規作成, 379行)**
+  - Donchian/PVO/PSAR/ADX/Volatility計算を統合
+  - 状態管理 (PSAR/ADX) の一元化
+  - クラス: `IndicatorService`
+  - メソッド: `calculate_donchian`, `calculate_pvo`, `calculate_ema`, `calculate_volatility`, `calculate_parabolic_sar`, `calculate_adx`, `evaluate_pvo`
+
+- **bot.py**: IndicatorService共有化対応
+  - PriceDataManagementとRiskManagementへ同一インスタンス渡し
+
+- **price_data_management.py**: リファクタリング完了
+  - シングルトンパターン修正 (indicator_service注入対応)
+  - Donchian/PVO/Volatility計算をIndicatorServiceへ委譲
+  - コード削減: 81行削減
+
+- **risk_management.py**: リファクタリング完了
+  - PSAR/ADX計算をIndicatorServiceへ委譲
+  - indicator_serviceから状態同期
+  - コード削減: 215行削減
+
+- **backtest.py**: IndicatorService共有化対応済み
+
+### パリティ検証結果
+- PnL: -13.67 (ベースライン一致)
+- Trades: 2 (ベースライン一致)
+- Samples: 7201 (ベースライン一致)
+- 実行時間: 24.12s → 24.16s (+0.2%, 誤差範囲内)
+
+### アーキテクチャ改善
+- 指標計算ロジックの集約により重複コード削減 (296行削減)
+- PriceDataManagementとRiskManagement間の状態共有問題を解決
+- 単一責任原則に沿った設計改善
+
+### 次アクション (M2終了条件)
+1. module_map.json の更新 (IndicatorService追加、依存関係更新)
+2. C6 Phase 2 実装計画 (Donchian差分キャッシュ、ログ最適化)
+
+状態: M2 "実装完了" (2025-11-17 00:32)
+
+```
