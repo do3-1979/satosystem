@@ -14,7 +14,7 @@ from logger import Logger
 from price_data_management import PriceDataManagement
 from bybit_exchange import BybitExchange
 from portfolio import Portfolio
-import time
+import numpy as np
 
 class RiskManagement:
     def __init__(self, price_data_management, portfolio):
@@ -53,6 +53,15 @@ class RiskManagement:
         self.psar = []
         self.psarbull = []
         self.psarbear = []
+
+        # ADX
+        self.adx = []
+        self.adx_bull = False
+        self.adx_bear = False
+        self.adx_term = 14
+        self.adx_continue_num = 3
+        self.adx_bull_threshold = 25
+        self.adx_bear_threshold = 20
 
         # ストップ値
         self.stop_offset = 0 # 価格ベース
@@ -96,6 +105,15 @@ class RiskManagement:
     
     def get_psarbear(self):
         return self.psarbear[-1]
+
+    def get_adx(self):
+        return self.adx[-1]
+    
+    def get_adx_bull(self):
+        return self.adx_bull
+    
+    def get_adx_bear(self):
+        return self.adx_bear
 
     def get_psar_stop_offset(self):
         return self.psar_stop_offset
@@ -208,6 +226,60 @@ class RiskManagement:
 
         return
 
+    def __calc_adx(self, data):
+        adx_period = self.adx_term
+        continue_num = self.adx_continue_num
+        bull_threshold = self.adx_bull_threshold
+        bear_threshold = self.adx_bear_threshold
+        
+        high = [item['high_price'] for item in data]
+        low = [item['low_price'] for item in data]
+        close = [item['close_price'] for item in data]
+        length = len(close)
+
+        plus_dm = np.zeros(length)
+        minus_dm = np.zeros(length)
+        tr = np.zeros(length)
+
+        for i in range(1, length):
+            high_diff = high[i] - high[i - 1]
+            low_diff = low[i - 1] - low[i]
+
+            plus_dm[i] = high_diff if high_diff > low_diff and high_diff > 0 else 0
+            minus_dm[i] = low_diff if low_diff > high_diff and low_diff > 0 else 0
+
+            tr[i] = max(high[i] - low[i], abs(high[i] - close[i - 1]), abs(low[i] - close[i - 1]))
+
+        tr_smooth = np.zeros(length)
+        plus_dm_smooth = np.zeros(length)
+        minus_dm_smooth = np.zeros(length)
+
+        tr_smooth[adx_period - 1] = sum(tr[1:adx_period])
+        plus_dm_smooth[adx_period - 1] = sum(plus_dm[1:adx_period])
+        minus_dm_smooth[adx_period - 1] = sum(minus_dm[1:adx_period])
+
+        for i in range(adx_period, length):
+            tr_smooth[i] = tr_smooth[i - 1] - (tr_smooth[i - 1] / adx_period) + tr[i]
+            plus_dm_smooth[i] = plus_dm_smooth[i - 1] - (plus_dm_smooth[i - 1] / adx_period) + plus_dm[i]
+            minus_dm_smooth[i] = minus_dm_smooth[i - 1] - (minus_dm_smooth[i - 1] / adx_period) + minus_dm[i]
+
+        plus_di = 100 * (plus_dm_smooth / tr_smooth)
+        minus_di = 100 * (minus_dm_smooth / tr_smooth)
+        dx = 100 * np.abs((plus_di - minus_di) / (plus_di + minus_di))
+
+        adx = np.zeros(length)
+        adx[adx_period - 1] = sum(dx[adx_period - 1:2 * adx_period - 1]) / adx_period
+
+        for i in range(adx_period, length):
+            adx[i] = ((adx[i - 1] * (adx_period - 1)) + dx[i]) / adx_period
+
+        self.adx = adx.tolist()
+
+        self.adx_bull = all(adx[i] > bull_threshold for i in range(-continue_num, 0))
+        self.adx_bear = all(adx[i] < bear_threshold for i in range(-continue_num, 0))
+        
+        return
+
     def __calc_stop_psar(self):
         """
         ストップ値をパラボリックASRにする関数
@@ -308,6 +380,10 @@ class RiskManagement:
         # パラボリックSAR計算
         psar_ohlcv_data = self.price_data_management.get_ohlcv_data(psar_time_frame)
         self.__calc_parabolic_sar(psar_ohlcv_data)
+
+        # ADX計算
+        adx_ohlcv_data = self.price_data_management.get_ohlcv_data(main_time_frame)
+        self.__calc_adx(adx_ohlcv_data)
 
         # ポジションがある場合のみストップ値を更新
         if quantity != 0:

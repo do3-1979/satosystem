@@ -90,6 +90,9 @@ class Util:
             "psar",
             "psarbull",
             "psarbear",
+            "adx",
+            "adx_bull",
+            "adx_bear",
             "stop_psar_stop_offset",
             "stop_price_surge_stop_offset",
             "pvo_val",
@@ -130,6 +133,9 @@ class Util:
             "psar",
             "psarbull",
             "psarbear",
+            "adx",
+            "adx_bull",
+            "adx_bear",
             "stop_offset",
             "stop_psar_stop_offset",
             "stop_price_surge_stop_offset",
@@ -423,17 +429,17 @@ if __name__ == "__main__":
     #----------------
     # グラフ化機能使用
     
-    #start_time = "2023/12/20 1:00"  # 開始時刻 (例: "2023/01/01 00:00")
-    #end_time = "2024/1/3 7:00"    # 終了時刻 (例: "2023/01/02 00:00")
-    start_time = Config.get_start_time()
-    end_time = Config.get_end_time()
+    start_time = "2025/5/1 1:00"  # 開始時刻 (例: "2023/01/01 00:00")
+    end_time = "2025/5/24 18:00"    # 終了時刻 (例: "2023/01/02 00:00")
+    #start_time = Config.get_start_time()
+    #end_time = Config.get_end_time()
 
     util.extract_and_export_logs(log_directory, num_logs_to_read, output_excel_file, start_time, end_time)
 
     #---------------------
     # バックテスト集約使用例
-    log_directory = "."  # ログファイルのディレクトリ
-    output_bt_excel_file = "backtest_logs.xlsx"  # 出力エクセルファイルの名前
+    #log_directory = "."  # ログファイルのディレクトリ
+    #output_bt_excel_file = "backtest_logs.xlsx"  # 出力エクセルファイルの名前
 
     # パラメータと計算結果を抽出してエクセルファイルに出力
     #util.extract_parameters_and_results(log_directory, output_bt_excel_file)

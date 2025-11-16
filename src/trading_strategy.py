@@ -136,7 +136,9 @@ class TradingStrategy:
         low_price = price['low_price']
         close_price = price['close_price']
         
+        #-------------------------------------------------------
         # 現在値とストップ値比較
+        #-------------------------------------------------------
         position_side = self.portfolio.get_position_side()
 
         if position_side == "BUY":
@@ -158,6 +160,10 @@ class TradingStrategy:
                 decision = "EXIT"
                 self.trade_decision["side"] = side
                 self.trade_decision["decision"] = decision
+
+        #-------------------------------------------------------
+        # ADXと利益からの判定
+        #-------------------------------------------------------
 
         return
 
