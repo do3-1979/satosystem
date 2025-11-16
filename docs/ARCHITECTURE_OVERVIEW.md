@@ -6,6 +6,7 @@
 | Config | Centralized parameter access from config.ini | All modules read cached values |
 | BybitExchange | ccxt wrapper for market/balance/order/OHLCV | PriceDataManagement, Bot (orders) |
 | PriceDataManagement | Fetches & buffers OHLCV, derives signals (Donchian, PVO) & volatility; backtest time progression | TradingStrategy, RiskManagement |
+| OHLCVCache | SQLite persistence for multi-timeframe OHLCV (1m / 120m) with upsert & sufficiency check | PriceDataManagement (initial backtest load) |
 | TradingStrategy | Decides ENTRY / ADD / EXIT based on signals & portfolio state | Bot (decision consumer), Portfolio |
 | RiskManagement | Position sizing, STOP trailing (PSAR, surge), ADX state | Bot, Portfolio, PriceDataManagement |
 | Portfolio | Tracks positions, average price, cumulative PnL & drawdown | Bot, RiskManagement |
@@ -60,6 +61,52 @@
           +--+--+
           |Metrics| summary JSON
           +------+ 
+
+## Timeframe & Cache Architecture (C6)
+The system consumes two granularities:
+- 2h timeframe (120m) for strategy & risk decisions.
+- 1m timeframe for fine-grained progression and latest ticker/volume.
+
+Both are stored in a single SQLite table `candles` keyed by `(symbol, timeframe, close_time)`:
+```
+CREATE TABLE candles (
+   symbol TEXT,
+   timeframe INTEGER,      -- minutes (1, 15, 120 ...)
+   close_time INTEGER,     -- epoch seconds (end of candle)
+   open_price REAL,
+   high_price REAL,
+   low_price REAL,
+   close_price REAL,
+   volume REAL,
+   PRIMARY KEY(symbol, timeframe, close_time)
+)
+```
+
+### Initial Backtest Loading
+`PriceDataManagement.initialise_back_test_ohlcv_data()` sequence:
+1. Compute extended start (start - initial_term * timeframe).
+2. For each timeframe (1, 15?, 120) attempt legacy JSON load (current + old path) -> upsert into DB.
+3. Call `has_sufficient_cache(symbol, timeframe, start, end)`; if False, fetch full range from API and upsert.
+4. Pull unified range via `get_range(...)` into memory arrays.
+5. Emit compatibility JSON for tools that still expect file-based OHLCV.
+
+### Re-Fetch Suppression
+`has_sufficient_cache` compares actual row count with expected (allowing a tolerance of 2 candles). If sufficient, no API call. This preserves rate limits by avoiding repeat downloads of identical historical windows.
+
+### Current Limitations
+- Sufficiency is count-based; internal gaps (missing contiguous candles) are not detected.
+- 2h candles are fetched directly rather than rolled up from 1m data (opportunity to remove duplication).
+- Full-range fetch on insufficiency (could be narrowed to only missing segments).
+
+### Future Enhancements
+- Gap detection: identify discontinuities (`delta(close_time) > timeframe*60`) and fetch only missing spans.
+- Roll-up engine: derive higher timeframes from 1m base series for consistency & less external dependency.
+- Integrity audit: periodic report (boundary coverage, gap count, latest update timestamp).
+- Adaptive tolerance: dynamic permissible missing count based on timeframe length & strategy warm-up needs.
+
+### VCS & Reproducibility
+Cache DB (`src/ohlcv_data/ohlcv_cache.db` + WAL/SHM) is ignored—backtests regenerate needed ranges. Legacy JSON files remain for compatibility and may be pruned once all consumers migrate to DB queries.
+
 ```
 
 ## Backtest Progression
