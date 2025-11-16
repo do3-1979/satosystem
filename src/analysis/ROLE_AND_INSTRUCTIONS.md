@@ -138,6 +138,45 @@
     - 変更: `src/event.py` に `EventType` と `EventBus` (subscribe/unsubscribe/emit) を追加。`src/bot.py` 主要イベント (TICK/SIGNAL/ORDER/PORTFOLIO/RISK/ERROR) で `emit` 実装。
     - 影響: 既存フローは同期処理で非破壊。購読者未登録時はオーバーヘッド極小。拡張ポイント提供。
 
+### C6 パフォーマンス最適化 Backlog (2025-11-16 追加 / 状態: 提案→保留)
+
+現状: `src/bot.py` に PerformanceTracker を導入し以下フェーズ時間を取得済み。
+  - price_update ~82% / logging ~15% / risk_update ~3% / その他 <1%
+目的: ボトルネック (price_update + logging ≈96%) を非破壊・段階的に削減し、戦略ロジックのパリティ（取引数/タイミング/指標値）を維持する。
+
+本番影響 (現実装): 1ループあたり `perf_counter()` 呼び出し ~6回 + dict加算数回。推定オーバーヘッド <0.5% でライブ運用への影響は極小。
+無効化方針: 今後 `config.ini` に `enable_performance_tracking=false` を追加し計測を条件化 (未実装)。
+
+改善タスク一覧 (順序は推奨実行順 / すべて状態: 提案 / 保留):
+1. Donchianチャネル前計算キャッシュ (deque + 差分更新で最小 O(1) 化)
+2. ボラティリティ (ATR/類似) の増分更新 (前足差分のみ再計算)
+3. リスク更新条件化 (価格 or ポジションサイズ変化時のみ再計算)
+4. ログ削減 (毎分詳細→イベント時/閾値超過時のみ)
+5. ログ I/O バッファリング (まとめ書き / flush 間隔制御)
+6. 長期インジ (2h足) 再計算 gating (新しい2h足確定時のみ)
+7. NumPy/array化 (price系列を Python list→ndarray 化しスライス高速化)
+8. 2時間足再構築 (1分足集約でAPI呼び出し削減しキャッシュ活用度向上)
+9. キャッシュギャップ検出導入 (欠損ブロックのみ再取得で初期化時間短縮)
+10. パフォーマンストラッキング enable/disable フラグ導入 (ライブ軽量化オプション)
+
+検証要件 (各タスク共通):
+  - バックテスト同期間リランで取引タイミング・件数・PnL・PF・Sharpe が前後一致 (誤差許容: 指標浮動小数丸め以内)
+  - 計測前後で `price_update` + `logging` 合計時間が削減されること (初期目標: -30% / 二次目標: -50%)
+  - エラー/例外の新規発生なし
+
+ロールアウトフェーズ提案:
+  - Phase A (安全): 1,4,5,10
+  - Phase B (中リスク): 2,3,6,9
+  - Phase C (構造変更含む): 7,8
+
+備考: これらタスクは実装前に Issue 化しカテゴリ `C6` ラベル付与。優先度は "price_update 時間寄与率" と "パリティ影響リスク" の二軸で評価。
+
+### パフォーマンストラッキング仕様メモ (2025-11-16)
+フィールド: `iterations`, `phase_totals`, `phase_averages`, `phase_percentages`, `grand_total_sec`。
+出力: `logs/performance_summary_<timestamp>.json` (バックテスト終了時のみ)。
+ライブ時: 出力頻度過多回避のため将来は interval / manual trigger を検討。
+拡張予定: CSV/Prometheusエクスポート、ヒストグラム(分位点)記録、メモリ使用量計測併設。
+
 ## 差分同期プロセス (M1 詳細)
 1. `analysis/` 内成果物と `src/` コード構造を週次/変更イベント時に比較。
 2. 新規/変更クラス検出時: `module_map.json` 部分更新 (全再生成回避)。
