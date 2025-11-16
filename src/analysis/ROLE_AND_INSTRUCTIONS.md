@@ -98,7 +98,7 @@
   * 検証: 同期間バックテスト (2025/10/26–11/4) 実行、取引5・PF 0.26・Sharpe -1.205・PnL -51 と従前結果と整合、例外なし
  - **C4/C6/C7/C9: 提案→調査中**
   * 優先度: (1) C6/C7 (性能/レポート) → (2) C4 (設定キャッシュ) → (3) C9 (ログ/分析パイプライン)
- - **統合作業:** `nextarch` にコミット/プッシュ済（`daa8fb3`）。PRは未作成（依頼により中止）。
+ - **統合作業:** `nextarch` にコミット/プッシュ済（`daa8fb3`, 追加コミット `8e6e543`）。PRは未作成（依頼により中止）。
 
 ## IMPROVEMENTS (2025-11-16)
 
@@ -168,7 +168,7 @@
   2. **戦略リスク管理強化** (DD率 69% は過度→ポジションサイズ/ストップロジック見直し)
   3. **期末未決済ポジション処理** (バックテスト終了時の強制決済or mark-to-market)
 
-中期: C2 side 表記統一 (buy/sell → BUY/SELL Enum化) / C1 Order 引数順整合。  
+中期: C2/C1 は実装済（nextarch, 8e6e543）。EventBus の購読活用を追加検討。  
 中期: IndicatorService 分離 (PSAR/ADX/Donchian/PVO) / DataSource 抽象 (Backtest vs Live)。  
 長期: 複数戦略ポートフォリオ & 動的リスク配分, ログ schema versioning。
 
@@ -184,9 +184,9 @@
 
 ### フェーズ 2: コード品質 (命名・設計)
 **優先度: 高** — コードベース保守性向上
-- [ ] C2 (命名): side を Enum(BUY, SELL) へ統一
-- [ ] C1 (契約): Order コンストラクタ引数順・デフォルト値整合
-- [ ] C5 (イベント): Event 発火ポイント整備 (取引後/エラー時など)
+- [x] C2 (命名): side を Enum(BUY, SELL) へ統一（branch `nextarch`, commit `8e6e543`）
+- [x] C1 (契約): Order コンストラクタ引数順・デフォルト値整合（branch `nextarch`, commit `8e6e543`）
+- [x] C5 (イベント): Event 発火ポイント整備 (取引後/エラー時など)（branch `nextarch`, commit `8e6e543`）
 
 ### フェーズ 3: パフォーマンス (指標・分析)
 **優先度: 中** — 実運用への準備
