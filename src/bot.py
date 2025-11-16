@@ -34,6 +34,7 @@ from portfolio import Portfolio
 from order import Order
 from event import EventBus, EventType
 from metrics import compute_metrics
+from pnl_reporter import generate_pnl_timeseries
 
 class PerformanceTracker:
     def __init__(self):
@@ -86,6 +87,7 @@ class Bot:
         self.bot_operation_cycle = Config.get_bot_operation_cycle()
         # バックテスト用損益履歴
         self.pnl_history = []
+        self.close_times = []  # close_time 履歴
         # 約定履歴カウント (勝率計算用)
         self.trade_results = []  # list of bool win( True ) / loss( False )
         # パフォーマンス計測用トラッカー
@@ -180,8 +182,13 @@ class Bot:
                             with open(perf_path, 'w', encoding='utf-8') as pf:
                                 json.dump(perf_summary, pf, ensure_ascii=False, indent=2)
                             self.logger.log(f"パフォーマンスサマリ出力: {perf_path}")
+                            # PnL時系列出力
+                            if self.pnl_history and self.close_times:
+                                pnl_csv, pnl_json = generate_pnl_timeseries(self.pnl_history, self.close_times, log_dir, prefix="pnl_timeseries")
+                                self.logger.log(f"PnL時系列出力 (CSV): {pnl_csv}")
+                                self.logger.log(f"PnL時系列出力 (JSON): {pnl_json}")
                         except Exception as e:
-                            self.logger.log_error(f"バックテストメトリクス/パフォーマンス出力失敗: {e}")
+                            self.logger.log_error(f"バックテストメトリクス/パフォーマンス/PnL出力失敗: {e}")
                         
                         self.logger.close_log_file()
                         self.logger.log("--- BOT END -------------------------------------------")
@@ -327,6 +334,7 @@ class Bot:
                 # 損益履歴へ追加 (バックテストのみ)
                 if back_test_mode == 1:
                     self.pnl_history.append(trade_data['total_profit_and_loss'])
+                    self.close_times.append(trade_data['real_time'])
                 trade_data['volatility'] = self.price_data_management.get_volatility()
                 trade_data['stop_offset'] = self.risk_management.get_stop_offset()
                 trade_data['stop_psar_stop_offset'] = self.risk_management.get_psar_stop_offset()
