@@ -30,6 +30,10 @@ src/logs/*.zip
 src/ohlcv_data
 src/output_configs
 
+# レポート出力先（コミット対象外）
+report/
+src/report/
+
 # OHLCV SQLiteキャッシュ (明示)
 # ディレクトリごと除外しているが、個別ファイルも明記しておく
 src/ohlcv_data/ohlcv_cache.db

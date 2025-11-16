@@ -388,6 +388,14 @@ class Config:
         return cls.config['Log']['log_directory']
     
     @classmethod
+    def get_report_dir_name(cls):
+        """レポートの出力ディレクトリ名（未設定時は 'report'）。"""
+        try:
+            return cls.config['Log'].get('report_directory', 'report')
+        except Exception:
+            return 'report'
+    
+    @classmethod
     def get_back_test_mode(cls):
         """
         """
