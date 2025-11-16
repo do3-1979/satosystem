@@ -76,6 +76,11 @@ class BybitExchange(Exchange):
             'secret': api_secret,
             'enableRateLimit': True,
         })
+        # HTTP タイムアウトを設定（ミリ秒）
+        try:
+            self.exchange.timeout = Config.get_api_request_timeout_seconds() * 1000
+        except Exception:
+            pass
 
     def get_account_balance(self):
         """
@@ -87,6 +92,8 @@ class BybitExchange(Exchange):
         server_retry_wait = Config.get_server_retry_wait()
         err_occuerd = False
         
+        start_ts = time.time()
+        max_retry = Config.get_api_max_retry_seconds()
         while True:
             try:
                 balance = self.exchange.fetchBalance()
@@ -95,6 +102,8 @@ class BybitExchange(Exchange):
                 if err_occuerd == False:
                     self.logger.log_error(f"口座の残高情報エラー:{str(e)}")
                     err_occuerd = True
+                if time.time() - start_ts >= max_retry:
+                    raise TimeoutError("get_account_balance timeout")
                 time.sleep(server_retry_wait)
 
         if err_occuerd == True:
@@ -112,6 +121,8 @@ class BybitExchange(Exchange):
         server_retry_wait = Config.get_server_retry_wait()
         err_occuerd = False
         
+        start_ts = time.time()
+        max_retry = Config.get_api_max_retry_seconds()
         while True:
             try:
                 balance = self.exchange.fetchBalance()
@@ -120,6 +131,8 @@ class BybitExchange(Exchange):
                 if err_occuerd == False:
                     self.logger.log_error(f"口座の使用可能な証拠金残高エラー:{str(e)}")
                     err_occuerd = True
+                if time.time() - start_ts >= max_retry:
+                    raise TimeoutError("get_account_balance_total timeout")
                 time.sleep(server_retry_wait)
 
         if err_occuerd == True:
@@ -147,6 +160,8 @@ class BybitExchange(Exchange):
         err_occuerd = False
         
         if order_type == 'limit':
+            start_ts = time.time()
+            max_retry = Config.get_api_max_retry_seconds()
             while True:
                 try:
                     order = self.exchange.create_limit_order(
@@ -160,12 +175,16 @@ class BybitExchange(Exchange):
                     if err_occuerd == False:
                         self.logger.log_error(f"指値注文エラー:{str(e)}")
                         err_occuerd = True
+                    if time.time() - start_ts >= max_retry:
+                        raise TimeoutError("create_limit_order timeout")
                     time.sleep(server_retry_wait)
 
             if err_occuerd == True:
                 self.logger.log_error("指値注文エラー復帰")
 
         elif order_type == 'market':
+            start_ts = time.time()
+            max_retry = Config.get_api_max_retry_seconds()
             while True:
                 try:
                     order = self.exchange.create_market_order(
@@ -178,6 +197,8 @@ class BybitExchange(Exchange):
                     if err_occuerd == False:
                         self.logger.log_error(f"成行注文エラー:{str(e)}")
                         err_occuerd = True
+                    if time.time() - start_ts >= max_retry:
+                        raise TimeoutError("create_market_order timeout")
                     time.sleep(server_retry_wait)
 
             if err_occuerd == True:
@@ -275,6 +296,8 @@ class BybitExchange(Exchange):
         get_time = start_epoch
         while get_time < end_epoch_fixed:
             # 価格取得
+            start_ts = time.time()
+            max_retry = Config.get_api_max_retry_seconds()
             while True:
                 try:
                     ohlcv = self.exchange.fetch_ohlcv(
@@ -287,6 +310,8 @@ class BybitExchange(Exchange):
                     if err_occuerd == False:
                         self.logger.log_error(f"価格取得エラー:{str(e)}")
                         err_occuerd = True
+                    if time.time() - start_ts >= max_retry:
+                        raise TimeoutError("fetch_ohlcv timeout")
                     time.sleep(server_retry_wait)
 
             if err_occuerd == True:
@@ -337,6 +362,8 @@ class BybitExchange(Exchange):
 
         server_retry_wait = Config.get_server_retry_wait()
 
+        start_ts = time.time()
+        max_retry = Config.get_api_max_retry_seconds()
         while True:
             try:
                 ohlcv = self.exchange.fetch_ohlcv(
@@ -348,6 +375,8 @@ class BybitExchange(Exchange):
                 if err_occuerd == False:
                     self.logger.log_error(f"最新価格取得エラー:{str(e)}")    
                     err_occuerd = True
+                if time.time() - start_ts >= max_retry:
+                    raise TimeoutError("fetch_latest_ohlcv timeout")
                 time.sleep(server_retry_wait)
 
         if err_occuerd == True:

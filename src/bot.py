@@ -136,10 +136,38 @@ class Bot:
         self.logger.log(str(config_instance))
         self.logger.log("-------------------------------------------------------")
 
+        run_start = perf_counter()
+        run_timeout = Config.get_run_timeout_seconds()
         while True:
             try:
                 log_zipped = False
                 trade_executed = False
+                # タイムアウト監視（全体）
+                if (perf_counter() - run_start) >= run_timeout:
+                    self.logger.log_error(f"実行タイムアウト到達: {run_timeout} 秒。処理を終了します。")
+                    # タイムアウト時も可能ならメトリクスを出力
+                    try:
+                        import json, os, time as _t
+                        metrics = compute_metrics(self.pnl_history, self.trade_results)
+                        log_dir = Config.get_log_dir_name()
+                        ts = _t.strftime('%Y%m%d%H%M%S')
+                        summary_path = os.path.join(log_dir, f"backtest_summary_{ts}.json")
+                        with open(summary_path, 'w', encoding='utf-8') as f:
+                            json.dump(metrics, f, ensure_ascii=False, indent=2)
+                        perf_summary = self.perf.summary()
+                        perf_path = os.path.join(log_dir, f"performance_summary_{ts}.json")
+                        with open(perf_path, 'w', encoding='utf-8') as pf:
+                            json.dump(perf_summary, pf, ensure_ascii=False, indent=2)
+                        if self.pnl_history and self.close_times:
+                            pnl_csv, pnl_json = generate_pnl_timeseries(self.pnl_history, self.close_times, log_dir, prefix="pnl_timeseries")
+                            self.logger.log(f"PnL時系列出力 (CSV): {pnl_csv}")
+                            self.logger.log(f"PnL時系列出力 (JSON): {pnl_json}")
+                    except Exception as e:
+                        self.logger.log_error(f"タイムアウト時の出力でエラー: {e}")
+                    finally:
+                        self.logger.close_log_file()
+                        self.logger.log("--- BOT END (TIMEOUT) ----------------------------------")
+                        break
                 # --------------------------------------------
                 # 最初に価格情報の更新
                 # --------------------------------------------
@@ -155,6 +183,19 @@ class Bot:
                     # TODO 結果の別ファイル出力とバックテストでの結果集計
                     # バックテスト終端だったら抜ける
                     if is_end == True:
+                        # === 未決済ポジション強制決済処理 ===
+                        # バックテスト終了時に未決済ポジションがあれば、現在値で決済
+                        open_position = self.portfolio.get_position_quantity()
+                        if open_position['quantity'] > 0 and open_position['side'] != 'NONE':
+                            ohlcv = self.price_data_management.get_latest_ohlcv()
+                            final_price = ohlcv['close_price'] if ohlcv else open_position['position_price']
+                            self.logger.log(f"[EOB処理] 未決済ポジション検出: {open_position['quantity']:.4f} {open_position['side']} @ {open_position['position_price']:.0f}")
+                            self.logger.log(f"[EOB処理] 最終足価格で強制決済: {final_price:.0f}")
+                            self.portfolio.clear_position_quantity(final_price)
+                            # EOB決済をPnL履歴へ追記
+                            self.pnl_history.append(self.portfolio.get_profit_and_loss())
+                            self.close_times.append(self.price_data_management.get_latest_close_time_dt())
+                        
                         self.logger.log("-------------------------------------------------------")
                         self.logger.log(f"最終ポートフォリオ: {self.portfolio.get_position_quantity()}")
                         self.logger.log(f"最終損益: {self.portfolio.get_profit_and_loss():>4.0f} [BTC/USD]")

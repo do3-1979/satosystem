@@ -333,6 +333,30 @@ class Config:
         cyctime = int(cls.config['Setting']['bot_operation_cycle'])
         
         return cyctime
+
+    @classmethod
+    def get_run_timeout_seconds(cls) -> int:
+        """全体実行のタイムアウト（秒）。未設定時は 300 を既定にする。"""
+        try:
+            return int(cls.config['Setting'].get('run_timeout_seconds', 300))
+        except Exception:
+            return 300
+
+    @classmethod
+    def get_api_request_timeout_seconds(cls) -> int:
+        """API リクエストのHTTPタイムアウト秒数。未設定時は 20 を既定にする。"""
+        try:
+            return int(cls.config['Setting'].get('api_request_timeout_seconds', 20))
+        except Exception:
+            return 20
+
+    @classmethod
+    def get_api_max_retry_seconds(cls) -> int:
+        """API エラー時の最大再試行秒数。未設定時は 120 を既定にする。"""
+        try:
+            return int(cls.config['Setting'].get('api_max_retry_seconds', 120))
+        except Exception:
+            return 120
     
     @classmethod
     def get_test_initial_max_term(cls):
