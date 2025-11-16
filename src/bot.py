@@ -99,204 +99,214 @@ class Bot:
         self.logger.log(str(config_instance))
         self.logger.log("-------------------------------------------------------")
 
-        # TODO tryはエラーなくなるまで未実装 → 各処理側で実装する
         while True:
-        #    try:
-            log_zipped = False
-            trade_executed = False
-            # --------------------------------------------
-            # 最初に価格情報の更新
-            # --------------------------------------------
-            if back_test_mode == 1:
-                is_end = self.price_data_management.update_price_data_backtest()
-                # TODO 結果の別ファイル出力とバックテストでの結果集計
-                # バックテスト終端だったら抜ける
-                if is_end == True:
-                    self.logger.log("-------------------------------------------------------")
-                    self.logger.log(f"最終ポートフォリオ: {self.portfolio.get_position_quantity()}")
-                    self.logger.log(f"最終損益: {self.portfolio.get_profit_and_loss():>4.0f} [BTC/USD]")
-                    self.logger.log(f"プロフィットファクター: {self.portfolio.get_profit_factor():>4.2f}")
-                    self.logger.log(f"最大ドローダウン: {self.portfolio.get_drawdown():>4.2f} [BTC/USD]")
-                    self.logger.log(f"最大ドローダウン率: {self.portfolio.get_drawdown_rate():>4.2f} [%]")
-
-                    # 追加メトリクス計算
-                    metrics = compute_metrics(self.pnl_history, self.trade_results)
-                    self.logger.log(f"Sharpe: {metrics['sharpe']:.3f}")
-                    self.logger.log(f"WinRate: {metrics['win_rate']:.2f}% Trades: {metrics['trades']}")
-                    # JSON出力
-                    try:
-                        import json, os, time as _t
-                        log_dir = Config.get_log_dir_name()
-                        ts = _t.strftime('%Y%m%d%H%M%S')
-                        summary_path = os.path.join(log_dir, f"backtest_summary_{ts}.json")
-                        with open(summary_path, 'w', encoding='utf-8') as f:
-                            json.dump(metrics, f, ensure_ascii=False, indent=2)
-                        self.logger.log(f"バックテストサマリ出力: {summary_path}")
-                    except Exception as e:
-                        self.logger.log_error(f"バックテストメトリクス出力失敗: {e}")
-                    
-                    self.logger.close_log_file()
-                    self.logger.log("--- BOT END -------------------------------------------")
-                    break
-            else:
-                self.price_data_management.update_price_data()
-            
-            # 取得情報を表示
-            # self.price_data_management.show_latest_ohlcv()
-            # 最新価格を取得
-            price = self.price_data_management.get_ticker()
-
-            # 取引所から口座残高を取得
-            if back_test_mode == 1:
-                balance_tether = config_instance.get_account_balance() + self.portfolio.get_profit_and_loss()
-            else:
-                balance = self.exchange.get_account_balance_total()
-                balance_tether = balance
-                # TODO シミュレーション用　口座0円のため
-                balance_tether = config_instance.get_account_balance() + self.portfolio.get_profit_and_loss()
-
-            # --------------------------------------------
-            # 取引戦略に口座残高を渡してトレード判断を取得
-            # --------------------------------------------
-            trade_decision = self.strategy.make_trade_decision()
-            # --------------------------------------------
-            # 取引決定の場合
-            # --------------------------------------------
-            if trade_decision["decision"] != 'NONE' and trade_executed == False:
-                # --------------------------------------------
-                # 決定状態を表示
-                #self.logger.log(f"シグナル発生: {strategy}")
-                
-                # 初回の分割ポジション計算
-                if trade_decision["decision"] == "ENTRY":
-                    position_size = self.risk_management.calculate_position_size(balance_tether)
-                    quantity = position_size
-                # 追加時は初回の分割サイズを踏襲
-                elif trade_decision["decision"] == "ADD":
-                    position_size = self.risk_management.get_position_size()
-                    quantity = position_size
-                # 清算時は全ポジション
-                elif trade_decision["decision"] == "EXIT":
-                    # 保有資産を取得
-                    position_size = self.portfolio.get_position_quantity()
-                    quantity = position_size['quantity']
-                else:
-                    raise
-
-                # 注文クラス作成
-                order = Order(config_instance.get_market(),
-                              trade_decision["side"],
-                              quantity,
-                              price,
-                              trade_decision["order_type"])
-
-                #self.logger.log(order.to_dict())
-                order_response = self.execute_order(order.to_dict())
-                #self.logger.log(f"注文実行: {order_response}")
-                # TODO エラー処理
-
-                # --------------------------------------------
-                # portfolio更新
-                # --------------------------------------------
-                if trade_decision["decision"] == "EXIT":
-                    self.portfolio.clear_position_quantity(price)
-                    # EXITで確定した損益を勝敗判定 (正なら勝ち)
-                    pnl = self.portfolio.get_profit_and_loss()
-                    self.trade_results.append(pnl >= 0)
-                elif trade_decision["decision"] == "ENTRY" or trade_decision["decision"] == "ADD":
-                    self.portfolio.add_position_quantity(quantity, trade_decision["side"], price)
-                    # 前回のエントリ価格を更新
-                    self.risk_management.update_last_entry_price(price)
-                #self.logger.log(f"ポートフォリオ更新: {self.portfolio.get_position_quantity()}")
-                #self.logger.log(f"損益: {self.portfolio.get_profit_and_loss()} [BTC/USD]")
-                
-                trade_executed = True
-            else:
-                trade_executed = False
-
-            # --------------------------------------------
-            # リスク制御を更新
-            # --------------------------------------------
-            self.risk_management.update_risk_status()
-
-            # --------------------------------------------
-            # ログに記録
-            # --------------------------------------------
-            trade_data = self.price_data_management.get_latest_ohlcv()
-            # バックテスト時はclose priceをシミュレータ値に更新
-            if back_test_mode == 1:
-                trade_data['real_time'] = self.price_data_management.get_latest_close_time_dt()
-                trade_data['close_price'] = price
-            else:
-                dt_now = datetime.now()
-                trade_data['real_time'] = dt_now.strftime('%Y/%m/%d %H:%M:%S')
-            trade_data['stop_price'] = self.risk_management.get_stop_price()
-            trade_data['position_price'] = self.portfolio.get_position_price()
-            trade_data['position_size'] = self.risk_management.get_position_size()
-            position_size = self.portfolio.get_position_quantity()
-            quantity = position_size['quantity']
-            trade_data['position_quantity'] = quantity
-            profit, loss = self.portfolio.calc_position_quantity(price)
-            trade_data['profit_and_loss'] = profit - loss
-            trade_data['total_profit_and_loss'] = self.portfolio.get_profit_and_loss()
-            # 損益履歴へ追加 (バックテストのみ)
-            if back_test_mode == 1:
-                self.pnl_history.append(trade_data['total_profit_and_loss'])
-            trade_data['volatility'] = self.price_data_management.get_volatility()
-            trade_data['stop_offset'] = self.risk_management.get_stop_offset()
-            trade_data['stop_psar_stop_offset'] = self.risk_management.get_psar_stop_offset()
-            trade_data['stop_price_surge_stop_offset'] = self.risk_management.get_price_surge_stop_offset()
-            
-            # signal info
-            signals = self.price_data_management.get_signals()
-            trade_data['dc_h'] = signals['donchian']['info']['highest']
-            trade_data['dc_l'] = signals['donchian']['info']['lowest']
-            trade_data['pvo_val'] = signals['pvo']['info']['value']
-            trade_data['psar'] = self.risk_management.get_psar()
-            trade_data['psarbull'] = self.risk_management.get_psarbull()
-            trade_data['psarbear'] = self.risk_management.get_psarbear()
-            trade_data['adx'] = self.risk_management.get_adx()
-            trade_data['adx_bull'] = self.risk_management.get_adx_bull()
-            trade_data['adx_bear'] = self.risk_management.get_adx_bear()
-
-            trade_data.update(trade_decision)
-            trade_data.update(signals)
-
-            # portfolio
-            trade_data['positions'] = self.portfolio.get_position_quantity()
-
-            # 取引データを表示
-            # if back_test_mode == 0:
-            self.show_trade_data(trade_data)
-            
-            # 取引データを記録
-            self.logger.log_trade_data(trade_data)
-        
-            # イベント初期化
-            self.strategy.initialize_trade_decision()
-        
-            # 一定の待ち時間を設けてループを繰り返す
-            if back_test_mode == 0:
-                time.sleep(self.bot_operation_cycle)
-
-            # 2時間ごとにファイルを分けるかチェック
-            if back_test_mode == 0:
-                current_time = datetime.now()
-            else:
-                current_time = datetime.fromtimestamp(self.price_data_management.get_latest_close_time())
-
-            if log_zipped == False and int(current_time.strftime("%H")) % 2 == 0 and int(current_time.strftime("%M")) == 0:
-                # ログをローテート
-                self.logger.close_log_file()
-                self.logger.compress_logs()  # 圧縮
-                self.logger.open_log_file()
-                log_zipped = True
-            else:
+            try:
                 log_zipped = False
+                trade_executed = False
+                # --------------------------------------------
+                # 最初に価格情報の更新
+                # --------------------------------------------
+                if back_test_mode == 1:
+                    is_end = self.price_data_management.update_price_data_backtest()
+                    # TODO 結果の別ファイル出力とバックテストでの結果集計
+                    # バックテスト終端だったら抜ける
+                    if is_end == True:
+                        self.logger.log("-------------------------------------------------------")
+                        self.logger.log(f"最終ポートフォリオ: {self.portfolio.get_position_quantity()}")
+                        self.logger.log(f"最終損益: {self.portfolio.get_profit_and_loss():>4.0f} [BTC/USD]")
+                        self.logger.log(f"プロフィットファクター: {self.portfolio.get_profit_factor():>4.2f}")
+                        self.logger.log(f"最大ドローダウン: {self.portfolio.get_drawdown():>4.2f} [BTC/USD]")
+                        self.logger.log(f"最大ドローダウン率: {self.portfolio.get_drawdown_rate():>4.2f} [%]")
 
-            #except Exception as e:
-            #    print("エラー発生:", str(e))
-            #   time.sleep(self.bot_operation_cycle)
+                        # 追加メトリクス計算
+                        metrics = compute_metrics(self.pnl_history, self.trade_results)
+                        self.logger.log(f"Sharpe: {metrics['sharpe']:.3f}")
+                        self.logger.log(f"WinRate: {metrics['win_rate']:.2f}% Trades: {metrics['trades']}")
+                        # JSON出力
+                        try:
+                            import json, os, time as _t
+                            log_dir = Config.get_log_dir_name()
+                            ts = _t.strftime('%Y%m%d%H%M%S')
+                            summary_path = os.path.join(log_dir, f"backtest_summary_{ts}.json")
+                            with open(summary_path, 'w', encoding='utf-8') as f:
+                                json.dump(metrics, f, ensure_ascii=False, indent=2)
+                            self.logger.log(f"バックテストサマリ出力: {summary_path}")
+                        except Exception as e:
+                            self.logger.log_error(f"バックテストメトリクス出力失敗: {e}")
+                        
+                        self.logger.close_log_file()
+                        self.logger.log("--- BOT END -------------------------------------------")
+                        break
+                else:
+                    self.price_data_management.update_price_data()
+                
+                # 取得情報を表示
+                # self.price_data_management.show_latest_ohlcv()
+                # 最新価格を取得
+                price = self.price_data_management.get_ticker()
+
+                # 取引所から口座残高を取得
+                if back_test_mode == 1:
+                    balance_tether = config_instance.get_account_balance() + self.portfolio.get_profit_and_loss()
+                else:
+                    balance = self.exchange.get_account_balance_total()
+                    balance_tether = balance
+                    # TODO シミュレーション用　口座0円のため
+                    balance_tether = config_instance.get_account_balance() + self.portfolio.get_profit_and_loss()
+
+                # --------------------------------------------
+                # 取引戦略に口座残高を渡してトレード判断を取得
+                # --------------------------------------------
+                try:
+                    trade_decision = self.strategy.make_trade_decision()
+                except Exception as e:
+                    self.logger.log_error(f"取引戦略実行エラー: {e}")
+                    trade_decision = {"decision": "NONE"}
+                # --------------------------------------------
+                # 取引決定の場合
+                # --------------------------------------------
+                if trade_decision["decision"] != 'NONE' and trade_executed == False:
+                    # --------------------------------------------
+                    # 決定状態を表示
+                    #self.logger.log(f"シグナル発生: {strategy}")
+                    
+                    # 初回の分割ポジション計算
+                    if trade_decision["decision"] == "ENTRY":
+                        position_size = self.risk_management.calculate_position_size(balance_tether)
+                        quantity = position_size
+                    # 追加時は初回の分割サイズを踏襲
+                    elif trade_decision["decision"] == "ADD":
+                        position_size = self.risk_management.get_position_size()
+                        quantity = position_size
+                    # 清算時は全ポジション
+                    elif trade_decision["decision"] == "EXIT":
+                        # 保有資産を取得
+                        position_size = self.portfolio.get_position_quantity()
+                        quantity = position_size['quantity']
+                    else:
+                        raise
+
+                    # 注文クラス作成
+                    order = Order(config_instance.get_market(),
+                                  trade_decision["side"],
+                                  quantity,
+                                  price,
+                                  trade_decision["order_type"])
+
+                    #self.logger.log(order.to_dict())
+                    try:
+                        order_response = self.execute_order(order.to_dict())
+                        #self.logger.log(f"注文実行: {order_response}")
+                    except Exception as e:
+                        self.logger.log_error(f"注文実行エラー: {e}")
+                        continue  # 注文失敗時はポートフォリオ更新をスキップ
+
+                    # --------------------------------------------
+                    # portfolio更新
+                    # --------------------------------------------
+                    if trade_decision["decision"] == "EXIT":
+                        self.portfolio.clear_position_quantity(price)
+                        # EXITで確定した損益を勝敗判定 (正なら勝ち)
+                        pnl = self.portfolio.get_profit_and_loss()
+                        self.trade_results.append(pnl >= 0)
+                    elif trade_decision["decision"] == "ENTRY" or trade_decision["decision"] == "ADD":
+                        self.portfolio.add_position_quantity(quantity, trade_decision["side"], price)
+                        # 前回のエントリ価格を更新
+                        self.risk_management.update_last_entry_price(price)
+                    #self.logger.log(f"ポートフォリオ更新: {self.portfolio.get_position_quantity()}")
+                    #self.logger.log(f"損益: {self.portfolio.get_profit_and_loss()} [BTC/USD]")
+                    
+                    trade_executed = True
+                else:
+                    trade_executed = False
+
+                # --------------------------------------------
+                # リスク制御を更新
+                # --------------------------------------------
+                try:
+                    self.risk_management.update_risk_status()
+                except Exception as e:
+                    self.logger.log_error(f"リスク管理更新エラー: {e}")
+
+                # --------------------------------------------
+                # ログに記録
+                # --------------------------------------------
+                trade_data = self.price_data_management.get_latest_ohlcv()
+                # バックテスト時はclose priceをシミュレータ値に更新
+                if back_test_mode == 1:
+                    trade_data['real_time'] = self.price_data_management.get_latest_close_time_dt()
+                    trade_data['close_price'] = price
+                else:
+                    dt_now = datetime.now()
+                    trade_data['real_time'] = dt_now.strftime('%Y/%m/%d %H:%M:%S')
+                trade_data['stop_price'] = self.risk_management.get_stop_price()
+                trade_data['position_price'] = self.portfolio.get_position_price()
+                trade_data['position_size'] = self.risk_management.get_position_size()
+                position_size = self.portfolio.get_position_quantity()
+                quantity = position_size['quantity']
+                trade_data['position_quantity'] = quantity
+                profit, loss = self.portfolio.calc_position_quantity(price)
+                trade_data['profit_and_loss'] = profit - loss
+                trade_data['total_profit_and_loss'] = self.portfolio.get_profit_and_loss()
+                # 損益履歴へ追加 (バックテストのみ)
+                if back_test_mode == 1:
+                    self.pnl_history.append(trade_data['total_profit_and_loss'])
+                trade_data['volatility'] = self.price_data_management.get_volatility()
+                trade_data['stop_offset'] = self.risk_management.get_stop_offset()
+                trade_data['stop_psar_stop_offset'] = self.risk_management.get_psar_stop_offset()
+                trade_data['stop_price_surge_stop_offset'] = self.risk_management.get_price_surge_stop_offset()
+                
+                # signal info
+                signals = self.price_data_management.get_signals()
+                trade_data['dc_h'] = signals['donchian']['info']['highest']
+                trade_data['dc_l'] = signals['donchian']['info']['lowest']
+                trade_data['pvo_val'] = signals['pvo']['info']['value']
+                trade_data['psar'] = self.risk_management.get_psar()
+                trade_data['psarbull'] = self.risk_management.get_psarbull()
+                trade_data['psarbear'] = self.risk_management.get_psarbear()
+                trade_data['adx'] = self.risk_management.get_adx()
+                trade_data['adx_bull'] = self.risk_management.get_adx_bull()
+                trade_data['adx_bear'] = self.risk_management.get_adx_bear()
+
+                trade_data.update(trade_decision)
+                trade_data.update(signals)
+
+                # portfolio
+                trade_data['positions'] = self.portfolio.get_position_quantity()
+
+                # 取引データを表示
+                # if back_test_mode == 0:
+                self.show_trade_data(trade_data)
+                
+                # 取引データを記録
+                self.logger.log_trade_data(trade_data)
+            
+                # イベント初期化
+                self.strategy.initialize_trade_decision()
+            
+                # 一定の待ち時間を設けてループを繰り返す
+                if back_test_mode == 0:
+                    time.sleep(self.bot_operation_cycle)
+
+                # 2時間ごとにファイルを分けるかチェック
+                if back_test_mode == 0:
+                    current_time = datetime.now()
+                else:
+                    current_time = datetime.fromtimestamp(self.price_data_management.get_latest_close_time())
+
+                if log_zipped == False and int(current_time.strftime("%H")) % 2 == 0 and int(current_time.strftime("%M")) == 0:
+                    # ログをローテート
+                    self.logger.close_log_file()
+                    self.logger.compress_logs()  # 圧縮
+                    self.logger.open_log_file()
+                    log_zipped = True
+                else:
+                    log_zipped = False
+
+            except Exception as e:
+                self.logger.log_error(f"メインループエラー: {e}")
+                if back_test_mode == 0:
+                    time.sleep(self.bot_operation_cycle)
 
     def execute_order(self, order):
         """

@@ -98,15 +98,23 @@ class RiskManagement:
         return self.stop_offset    
 
     def get_psar(self):
+        if not self.psar or len(self.psar) == 0:
+            return None
         return self.psar[-1]
     
     def get_psarbull(self):
+        if not self.psarbull or len(self.psarbull) == 0:
+            return None
         return self.psarbull[-1]
     
     def get_psarbear(self):
+        if not self.psarbear or len(self.psarbear) == 0:
+            return None
         return self.psarbear[-1]
 
     def get_adx(self):
+        if not self.adx or len(self.adx) == 0:
+            return 0
         return self.adx[-1]
     
     def get_adx_bull(self):
@@ -138,6 +146,10 @@ class RiskManagement:
             close.append(data[i]['close_price'])
 
         length = len(close)
+        if length < 3:
+            # データ不足の場合は計算をスキップ
+            return
+        
         psar = [None] * length
 
         # 初回のpsarの初期設定
@@ -254,6 +266,13 @@ class RiskManagement:
         plus_dm_smooth = np.zeros(length)
         minus_dm_smooth = np.zeros(length)
 
+        if length < adx_period * 2:
+            # データ不足の場合はデフォルト値を設定
+            self.adx = [0] * length
+            self.adx_bull = False
+            self.adx_bear = False
+            return
+        
         tr_smooth[adx_period - 1] = sum(tr[1:adx_period])
         plus_dm_smooth[adx_period - 1] = sum(plus_dm[1:adx_period])
         minus_dm_smooth[adx_period - 1] = sum(minus_dm[1:adx_period])
@@ -263,9 +282,13 @@ class RiskManagement:
             plus_dm_smooth[i] = plus_dm_smooth[i - 1] - (plus_dm_smooth[i - 1] / adx_period) + plus_dm[i]
             minus_dm_smooth[i] = minus_dm_smooth[i - 1] - (minus_dm_smooth[i - 1] / adx_period) + minus_dm[i]
 
-        plus_di = 100 * (plus_dm_smooth / tr_smooth)
-        minus_di = 100 * (minus_dm_smooth / tr_smooth)
-        dx = 100 * np.abs((plus_di - minus_di) / (plus_di + minus_di))
+        # ゼロ除算を防ぐ
+        with np.errstate(divide='ignore', invalid='ignore'):
+            plus_di = np.where(tr_smooth != 0, 100 * (plus_dm_smooth / tr_smooth), 0)
+            minus_di = np.where(tr_smooth != 0, 100 * (minus_dm_smooth / tr_smooth), 0)
+            dx = np.where((plus_di + minus_di) != 0, 
+                         100 * np.abs((plus_di - minus_di) / (plus_di + minus_di)), 
+                         0)
 
         adx = np.zeros(length)
         adx[adx_period - 1] = sum(dx[adx_period - 1:2 * adx_period - 1]) / adx_period
@@ -292,6 +315,10 @@ class RiskManagement:
 
         psarbull = self.get_psarbull()
         psarbear = self.get_psarbear()
+
+        # PSAR未計算の場合は前回の値を維持
+        if psarbull is None and psarbear is None:
+            return prev_stop_offset
 
         # 現在の平均取得単価
         position_price = self.portfolio.get_position_price()
@@ -445,6 +472,11 @@ class RiskManagement:
             volatility = self.price_data_management.get_volatility()
             price = self.price_data_management.get_ticker()
             stop_range = self.initial_stop_range * volatility
+
+            # ゼロ除算を防ぐ
+            if stop_range == 0 or price == 0:
+                self.logger.log_error(f"計算エラー: stop_range={stop_range}, price={price}")
+                return 0
 
             # 総購入数は、総資産 x 失っていい割合 / ボラティリティで動きうる幅で決定
             total_size = round( ( balance_tether * 100 * self.risk_percentage / stop_range / 100 ), 7 )
