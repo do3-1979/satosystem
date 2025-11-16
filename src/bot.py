@@ -101,7 +101,7 @@ class Bot:
 
         # TODO tryはエラーなくなるまで未実装 → 各処理側で実装する
         while True:
-            try:
+        #    try:
             log_zipped = False
             trade_executed = False
             # --------------------------------------------
@@ -158,43 +158,37 @@ class Bot:
             # --------------------------------------------
             # 取引戦略に口座残高を渡してトレード判断を取得
             # --------------------------------------------
-            # 戦略判断の取得とバリデーション
             trade_decision = self.strategy.make_trade_decision()
-            if not isinstance(trade_decision, dict):
-                raise ValueError("strategy.make_trade_decision() が辞書を返しませんでした")
-            decision = trade_decision.get("decision", "NONE")
-            side = trade_decision.get("side", None)
-            order_type = trade_decision.get("order_type", "market")
             # --------------------------------------------
             # 取引決定の場合
             # --------------------------------------------
-            if decision != 'NONE' and trade_executed == False:
+            if trade_decision["decision"] != 'NONE' and trade_executed == False:
                 # --------------------------------------------
                 # 決定状態を表示
                 #self.logger.log(f"シグナル発生: {strategy}")
                 
                 # 初回の分割ポジション計算
-                if decision == "ENTRY":
+                if trade_decision["decision"] == "ENTRY":
                     position_size = self.risk_management.calculate_position_size(balance_tether)
                     quantity = position_size
                 # 追加時は初回の分割サイズを踏襲
-                elif decision == "ADD":
+                elif trade_decision["decision"] == "ADD":
                     position_size = self.risk_management.get_position_size()
                     quantity = position_size
                 # 清算時は全ポジション
-                elif decision == "EXIT":
+                elif trade_decision["decision"] == "EXIT":
                     # 保有資産を取得
                     position_size = self.portfolio.get_position_quantity()
                     quantity = position_size['quantity']
                 else:
-                    raise ValueError(f"未知のdecision: {decision}")
+                    raise
 
                 # 注文クラス作成
                 order = Order(config_instance.get_market(),
-                              side,
+                              trade_decision["side"],
                               quantity,
                               price,
-                              order_type)
+                              trade_decision["order_type"])
 
                 #self.logger.log(order.to_dict())
                 order_response = self.execute_order(order.to_dict())
@@ -204,12 +198,12 @@ class Bot:
                 # --------------------------------------------
                 # portfolio更新
                 # --------------------------------------------
-                if decision == "EXIT":
+                if trade_decision["decision"] == "EXIT":
                     self.portfolio.clear_position_quantity(price)
                     # EXITで確定した損益を勝敗判定 (正なら勝ち)
                     pnl = self.portfolio.get_profit_and_loss()
                     self.trade_results.append(pnl >= 0)
-                elif decision == "ENTRY" or decision == "ADD":
+                elif trade_decision["decision"] == "ENTRY" or trade_decision["decision"] == "ADD":
                     self.portfolio.add_position_quantity(quantity, trade_decision["side"], price)
                     # 前回のエントリ価格を更新
                     self.risk_management.update_last_entry_price(price)
@@ -300,27 +294,9 @@ class Bot:
             else:
                 log_zipped = False
 
-            except Exception as e:
-                self.logger.log_error(f"メインループ処理でエラー: {e}")
-                if back_test_mode == 1:
-                    # バックテストでは致命的エラーとして終了
-                    try:
-                        import json, os, time as _t
-                        log_dir = Config.get_log_dir_name()
-                        ts = _t.strftime('%Y%m%d%H%M%S')
-                        summary_path = os.path.join(log_dir, f"backtest_error_{ts}.json")
-                        with open(summary_path, 'w', encoding='utf-8') as f:
-                            json.dump({
-                                "error": str(e),
-                                "pnl_history_len": len(self.pnl_history),
-                                "trades": len(self.trade_results)
-                            }, f, ensure_ascii=False, indent=2)
-                        self.logger.log(f"エラーサマリ出力: {summary_path}")
-                    except Exception as _e:
-                        self.logger.log_error(f"エラーサマリ出力失敗: {_e}")
-                    break
-                else:
-                    time.sleep(self.bot_operation_cycle)
+            #except Exception as e:
+            #    print("エラー発生:", str(e))
+            #   time.sleep(self.bot_operation_cycle)
 
     def execute_order(self, order):
         """
