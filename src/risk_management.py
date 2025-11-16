@@ -48,6 +48,9 @@ class RiskManagement:
         self.stop_AF_max = Config.get_stop_AF_max()
         self.surge_follow_price_ratio = Config.get_surge_follow_price_ratio()
         self.stop_ATR = 0
+        # 参照前に初期化しておく（None安全）
+        self.psar_stop_offset = 0
+        self.price_surge_stop_offset = 0
 
         # PSAR
         self.psar = []
@@ -98,15 +101,23 @@ class RiskManagement:
         return self.stop_offset    
 
     def get_psar(self):
+        if not self.psar:
+            return None
         return self.psar[-1]
     
     def get_psarbull(self):
+        if not self.psarbull:
+            return None
         return self.psarbull[-1]
     
     def get_psarbear(self):
+        if not self.psarbear:
+            return None
         return self.psarbear[-1]
 
     def get_adx(self):
+        if not self.adx:
+            return 0.0
         return self.adx[-1]
     
     def get_adx_bull(self):
@@ -362,10 +373,14 @@ class RiskManagement:
         price = self.price_data_management.get_ticker()
         #ohlcv = self.price_data_management.get_latest_ohlcv()
         
-        # 未初期化の場合は初期値を設定する
-        # TODO 初期ストップ値の再考慮　ボラティリティで決めていいのか
+        # 未初期化の場合は初期値を設定する（ゼロ回避の下限を適用）
         if self.stop_offset == 0:
-            self.stop_offset = self.price_data_management.get_volatility() * self.initial_stop_range
+            vol = self.price_data_management.get_volatility()
+            if vol is None or vol <= 0:
+                vol = 1.0
+            init_offset = vol * max(self.initial_stop_range, 1)
+            # ティック下限
+            self.stop_offset = max(round(init_offset), 1)
 
         prev_stop_offset = self.stop_offset
 
@@ -379,11 +394,13 @@ class RiskManagement:
 
         # パラボリックSAR計算
         psar_ohlcv_data = self.price_data_management.get_ohlcv_data(psar_time_frame)
-        self.__calc_parabolic_sar(psar_ohlcv_data)
+        if psar_ohlcv_data and len(psar_ohlcv_data) >= 3:
+            self.__calc_parabolic_sar(psar_ohlcv_data)
 
         # ADX計算
         adx_ohlcv_data = self.price_data_management.get_ohlcv_data(main_time_frame)
-        self.__calc_adx(adx_ohlcv_data)
+        if adx_ohlcv_data and len(adx_ohlcv_data) >= max(14, self.adx_term + 2):
+            self.__calc_adx(adx_ohlcv_data)
 
         # ポジションがある場合のみストップ値を更新
         if quantity != 0:
@@ -444,7 +461,15 @@ class RiskManagement:
             # ボラティリティの幅からストップ幅を計算
             volatility = self.price_data_management.get_volatility()
             price = self.price_data_management.get_ticker()
-            stop_range = self.initial_stop_range * volatility
+            # 安全対策: 価格・ボラのゼロ/負値回避
+            if price is None or price <= 0:
+                self.logger.log_error("価格が無効のためポジションサイズを0に設定します")
+                self.position_size = 0
+                self.total_size = 0
+                return 0
+            if volatility is None or volatility <= 0:
+                volatility = 1.0
+            stop_range = max(self.initial_stop_range * volatility, 1.0)
 
             # 総購入数は、総資産 x 失っていい割合 / ボラティリティで動きうる幅で決定
             total_size = round( ( balance_tether * 100 * self.risk_percentage / stop_range / 100 ), 7 )
@@ -474,6 +499,10 @@ class RiskManagement:
             max_size = round( ( balance_tether * self.leverage  * 100 / price / 100 ) , 7 )
             # 分割サイズを購入可能上限未満にする
             position_size = min(max_size, tmp_size)
+            # 最小ロット制限（小さすぎる注文は見送り）
+            if position_size < self.lot_limit_lower:
+                self.logger.log(f"計算ロット{position_size}が最小ロット{self.lot_limit_lower}未満のため、発注スキップ")
+                position_size = 0
             # クラスに記憶
             self.position_size = position_size
             # 購入可能上限に分割数をかけたものが総購入サイズ
