@@ -5,6 +5,7 @@ to improve maintainability, testability, and enable future performance optimizat
 """
 from config import Config
 import numpy as np
+import collections
 
 
 class IndicatorService:
@@ -34,6 +35,14 @@ class IndicatorService:
         self.adx_continue_num = adx_continue_num
         self.adx_bull_threshold = adx_bull_threshold
         self.adx_bear_threshold = adx_bear_threshold
+        # Donchian incremental cache (monotonic deques)
+        self._donchian_cache = {
+            'last_len': 0,
+            'buy_deque': collections.deque(),  # stores (index, high_price) in decreasing order
+            'sell_deque': collections.deque(), # stores (index, low_price) in increasing order
+            'buy_term': None,
+            'sell_term': None
+        }
 
     # ========================================
     # Donchian Channel
@@ -55,15 +64,44 @@ class IndicatorService:
         if sell_term is None:
             sell_term = Config.get_donchian_sell_term()
 
+        # For small window sizes the original simple slicing is faster.
+        if buy_term < 50 and sell_term < 50:
+            side = 'None'
+            highest = max(i['high_price'] for i in ohlcv_data[(-1 * buy_term):])
+            if price > highest:
+                side = 'BUY'
+            lowest = min(i['low_price'] for i in ohlcv_data[(-1 * sell_term):])
+            if price < lowest:
+                side = 'SELL'
+            return side, highest, lowest
+
         side = 'None'
-        highest = max(i['high_price'] for i in ohlcv_data[(-1 * buy_term):])
-        if price > highest:
-            side = 'BUY'
-
-        lowest = min(i['low_price'] for i in ohlcv_data[(-1 * sell_term):])
-        if price < lowest:
-            side = 'SELL'
-
+        data_len = len(ohlcv_data)
+        cache = self._donchian_cache
+        if (cache['buy_term'] != buy_term or cache['sell_term'] != sell_term or cache['last_len'] > data_len):
+            cache['buy_deque'].clear(); cache['sell_deque'].clear(); cache['last_len'] = 0; cache['buy_term'] = buy_term; cache['sell_term'] = sell_term
+        start_index = cache['last_len']
+        if start_index < data_len:
+            buy_deque = cache['buy_deque']; sell_deque = cache['sell_deque']
+            for idx in range(start_index, data_len):
+                bar = ohlcv_data[idx]; high = bar['high_price']; low = bar['low_price']
+                while buy_deque and buy_deque[-1][1] <= high: buy_deque.pop()
+                buy_deque.append((idx, high))
+                while buy_deque and idx - buy_deque[0][0] >= buy_term: buy_deque.popleft()
+                while sell_deque and sell_deque[-1][1] >= low: sell_deque.pop()
+                sell_deque.append((idx, low))
+                while sell_deque and idx - sell_deque[0][0] >= sell_term: sell_deque.popleft()
+            cache['last_len'] = data_len
+        if data_len < buy_term:
+            highest = max(i['high_price'] for i in ohlcv_data)
+        else:
+            highest = cache['buy_deque'][0][1] if cache['buy_deque'] else max(i['high_price'] for i in ohlcv_data[-buy_term:])
+        if data_len < sell_term:
+            lowest = min(i['low_price'] for i in ohlcv_data)
+        else:
+            lowest = cache['sell_deque'][0][1] if cache['sell_deque'] else min(i['low_price'] for i in ohlcv_data[-sell_term:])
+        if price > highest: side = 'BUY'
+        elif price < lowest: side = 'SELL'
         return side, highest, lowest
 
     # ========================================
