@@ -38,6 +38,7 @@ from indicator_service import IndicatorService
 from pnl_reporter import generate_pnl_timeseries
 from report_generator import generate_markdown_report
 from visualizer import Visualizer
+from util import Util
 
 class PerformanceTracker:
     def __init__(self):
@@ -268,7 +269,41 @@ class Bot:
                         except Exception as e:
                             self.logger.log_error(f"バックテストメトリクス/パフォーマンス/PnL出力失敗: {e}")
                         
+                        # ログファイルをクローズ（ZIP圧縮含む）
                         self.logger.close_log_file()
+                        
+                        # Excel集計を自動生成（ログクローズ後に実行）
+                        try:
+                            util_instance = Util()
+                            excel_path = os.path.join("logs", f"combined_logs_{ts}.xlsx")
+                            util_instance.extract_and_export_logs(
+                                log_directory="logs",
+                                num_logs=999,
+                                output_excel_file=excel_path,
+                                start_time=Config.get_start_time(),
+                                end_time=Config.get_end_time()
+                            )
+                            self.logger.log(f"Excel集計出力: {excel_path}")
+                        except Exception as ue:
+                            import traceback
+                            self.logger.log_error(f"Excel出力失敗: {ue}")
+                            self.logger.log_error(f"詳細: {traceback.format_exc()}")
+                        
+                        try:
+                            # トレードCSVも自動出力
+                            util_instance = Util()
+                            trades_csv = os.path.join("logs", f"trades_export_{ts}.csv")
+                            util_instance.export_trades_csv_from_logs(
+                                log_directory="logs",
+                                output_csv_file=trades_csv,
+                                start_time=Config.get_start_time(),
+                                end_time=Config.get_end_time()
+                            )
+                            self.logger.log(f"トレードCSV出力: {trades_csv}")
+                        except Exception as ue:
+                            import traceback
+                            self.logger.log_error(f"CSV出力失敗: {ue}")
+                            self.logger.log_error(f"詳細: {traceback.format_exc()}")
                         self.logger.log("--- BOT END -------------------------------------------")
                         break
                 else:
@@ -469,9 +504,8 @@ class Bot:
                     current_time = datetime.fromtimestamp(self.price_data_management.get_latest_close_time())
 
                 if log_zipped == False and int(current_time.strftime("%H")) % 2 == 0 and int(current_time.strftime("%M")) == 0:
-                    # ログをローテート
+                    # ログをローテート（ZIP圧縮は close_log_file() 内で自動実行）
                     self.logger.close_log_file()
-                    self.logger.compress_logs()  # 圧縮
                     self.logger.open_log_file()
                     log_zipped = True
                 else:

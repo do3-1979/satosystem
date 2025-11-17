@@ -384,8 +384,25 @@ class Config:
     @classmethod
     def get_log_dir_name(cls):
         """
+        ログディレクトリ名を取得します.
+
+        Returns:
+            str: ログディレクトリ名
         """
         return cls.config['Log']['log_directory']
+    
+    @classmethod
+    def get_logging_interval(cls):
+        """
+        ログ出力間隔（イテレーション数）を取得します.
+
+        Returns:
+            int: ログ出力間隔（デフォルト: 1 = 毎回ログ出力）
+        """
+        try:
+            return int(cls.config['Log']['logging_interval'])
+        except (KeyError, ValueError):
+            return 1  # デフォルト: 毎回ログ出力
     
     @classmethod
     def get_report_dir_name(cls):

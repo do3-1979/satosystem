@@ -34,8 +34,13 @@ class Util:
         log_files = []
         for root, _, files in os.walk(log_directory):
             for file in files:
-                if file.endswith(".zip") or file.endswith(".json"):
+                if file.endswith(".zip"):
                     log_files.append(os.path.join(root, file))
+                elif file.endswith(".json"):
+                    # JSONファイルは対応するZIPが存在しない場合のみ含める
+                    zip_path = os.path.join(root, file.replace('.json', '.zip'))
+                    if not os.path.exists(zip_path):
+                        log_files.append(os.path.join(root, file))
 
         if not log_files:
             print(f"No log files in {log_directory}")
@@ -47,6 +52,8 @@ class Util:
             try:
                 if path.endswith('.zip'):
                     with zipfile.ZipFile(path, 'r') as zf:
+                        if not zf.namelist():  # 空のZIPをスキップ
+                            continue
                         name = zf.namelist()[0]
                         with zf.open(name) as f:
                             df = pd.read_json(f)
@@ -104,8 +111,13 @@ class Util:
         log_files = []
         for root, _, files in os.walk(log_directory):
             for file in files:
-                if file.endswith(".zip") or file.endswith(".json"):
+                if file.endswith(".zip"):
                     log_files.append(os.path.join(root, file))
+                elif file.endswith(".json"):
+                    # JSONファイルは対応するZIPが存在しない場合のみ含める
+                    zip_path = os.path.join(root, file.replace('.json', '.zip'))
+                    if not os.path.exists(zip_path):
+                        log_files.append(os.path.join(root, file))
 
         # 新しいものから指定された数のログファイルを選択
         selected_log_files = sorted(log_files, reverse=True)[:num_logs]
@@ -117,19 +129,24 @@ class Util:
         # 選択されたログファイルからデータを抽出
         for i, log_file in enumerate(reversed(selected_log_files)):  # 逆順に処理
             print(f"Processing file {i + 1}/{proccess_num_logs}: {log_file}", end='\r')  # 処理中のファイルを表示
-            if log_file.endswith(".zip"):
-                with zipfile.ZipFile(log_file, "r") as log_zip:
-                    with log_zip.open(log_zip.namelist()[0]) as log_json:
+            try:
+                if log_file.endswith(".zip"):
+                    with zipfile.ZipFile(log_file, "r") as log_zip:
+                        if not log_zip.namelist():  # 空のZIPをスキップ
+                            continue
+                        with log_zip.open(log_zip.namelist()[0]) as log_json:
+                            log_data = pd.read_json(log_json)
+                            # データが期間内のものであれば追加
+                            if start_time <= log_data['close_time'].max() and end_time >= log_data['close_time'].min():
+                                data.append(log_data)
+                elif log_file.endswith(".json"):
+                    with open(log_file, "r") as log_json:
                         log_data = pd.read_json(log_json)
                         # データが期間内のものであれば追加
                         if start_time <= log_data['close_time'].max() and end_time >= log_data['close_time'].min():
                             data.append(log_data)
-            elif log_file.endswith(".json"):
-                with open(log_file, "r") as log_json:
-                    log_data = pd.read_json(log_json)
-                    # データが期間内のものであれば追加
-                    if start_time <= log_data['close_time'].max() and end_time >= log_data['close_time'].min():
-                        data.append(log_data)
+            except Exception as e:
+                print(f"\nSkip {log_file}: {e}")
         print(f"Processing file {i + 1}/{proccess_num_logs}: {log_file} completed")  # 処理中のファイルを表示
 
         # データを連結（間引きログでも連結可能）
@@ -233,7 +250,11 @@ class Util:
 
         config_dict = Config().to_dict()
         config_df = pd.DataFrame(list(config_dict.items()), columns=['Parameter', 'Value'])
-        output_excel_file_path = os.path.join(log_directory, output_excel_file)
+        # output_excel_fileが相対パスの場合のみlog_directoryを付与
+        if os.path.isabs(output_excel_file) or os.path.dirname(output_excel_file):
+            output_excel_file_path = output_excel_file
+        else:
+            output_excel_file_path = os.path.join(log_directory, output_excel_file)
         with pd.ExcelWriter(output_excel_file_path, engine='openpyxl') as writer:
             # パラメータをエクセルに出力
             print("Generating Param sheet...", end='\r')

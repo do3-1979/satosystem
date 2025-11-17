@@ -65,7 +65,20 @@ python src/bot.py --config src/config.ini --strategy satostrategy
 6. スモールライブ検証→本番昇格。
 
 ## バックテスト出力 & メトリクス
-バックテスト終了時に `logs/backtest_summary_<timestamp>.json` を生成し以下を記録:
+バックテスト終了時に以下の出力を自動生成します:
+
+### レポートファイル (report/)
+- `backtest_report_<timestamp>.md`: 実行サマリー (テキスト形式)
+- `backtest_summary_<timestamp>.json`: メトリクス詳細 (JSON)
+- `pnl_timeseries_<timestamp>.csv/json`: 全取引の PnL 時系列データ
+- `backtest_visualization_<timestamp>.html`: インタラクティブなチャート可視化
+
+### ログファイル (logs/)
+- `<timestamp>.zip`: バックテスト実行ログ (JSON形式、自動圧縮)
+- `combined_logs_<timestamp>.xlsx`: 集計Excel (5シート: Param/Data/Chart/PandL/PnL_Timeseries)
+- `trades_export_<timestamp>.csv`: 全取引履歴 (ENTRY/ADD/EXIT 分類付き)
+
+### 主要メトリクス
 ```json
 {
   "total_pnl": 123.45,
@@ -77,6 +90,12 @@ python src/bot.py --config src/config.ini --strategy satostrategy
   "trades": 26
 }
 ```
+
+### 自動化機能 (Phase 1 & 3)
+- **ZIP自動圧縮**: バックテスト終了時にログファイルを自動圧縮 (logger.py)
+- **Excel自動集計**: 複数ログを1つのExcelファイルに統合 (util.py)
+- **CSV自動エクスポート**: 取引履歴を分析用CSVフォーマットで出力
+
 メトリクス算出ロジックは `src/metrics.py`。`pnl_history` シリーズから標準的手法で計算。
 
 ## データキャッシュとタイムフレーム運用
@@ -92,6 +111,11 @@ python src/bot.py --config src/config.ini --strategy satostrategy
 
 ### 再取得抑止ロジック
 `has_sufficient_cache(symbol, timeframe, start, end)` は期待本数 `((end-start)//(timeframe*60))` から許容差 2 本を引いた閾値以上であれば再取得をスキップ。これにより既存期間全体が揃っている場合 Bybit API コールは発生しません。
+
+### データ保持ポリシー
+- **2025年以降のデータのみ保持**: 古いデータ (2024年以前) は定期的に削除し、最新データのみをキャッシュに保持
+- バックテスト用 OHLCV データは `src/ohlcv_data/` 以下に JSON 形式で保存 (2025年1月以降)
+- キャッシュ容量削減により高速アクセスと管理性を向上
 
 ### 留意点
 - 本数のみで充足判定しており途中ギャップは未検出 (必要ならギャップ検出ロジック導入可能)。
