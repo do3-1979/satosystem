@@ -140,12 +140,14 @@ class Bot:
 
         run_start = perf_counter()
         run_timeout = Config.get_run_timeout_seconds()
+        # バックテスト時は全体タイムアウトを適用しない（完走を優先）
+        timeout_enabled = (run_timeout > 0) and (back_test_mode == 0)
         while True:
             try:
                 log_zipped = False
                 trade_executed = False
                 # タイムアウト監視（全体）
-                if (perf_counter() - run_start) >= run_timeout:
+                if timeout_enabled and (perf_counter() - run_start) >= run_timeout:
                     self.logger.log_error(f"実行タイムアウト到達: {run_timeout} 秒。処理を終了します。")
                     # タイムアウト時も可能ならメトリクスを出力
                     try:

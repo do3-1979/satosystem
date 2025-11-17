@@ -39,3 +39,19 @@ src/report/
 src/ohlcv_data/ohlcv_cache.db
 src/ohlcv_data/ohlcv_cache.db-wal
 src/ohlcv_data/ohlcv_cache.db-shm
+
+# ===== Secrets / Backup Configs (exclude) =====
+# Backups that may contain real API keys should never be tracked
+config_bak.ini
+config_baseline_*.ini
+*config_backup*.ini
+*config_bak*.ini
+
+# ZIP backups in parent directory (untracked)
+../backup_*.zip
+../satosystem_*.zip
+
+# Local logs outside src (if generated)
+logs/
+logs_*/
+
