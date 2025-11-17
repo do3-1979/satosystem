@@ -5,12 +5,13 @@
       "classes": {
         "IndicatorService": {
           "methods": ["__init__", "calculate_donchian", "calculate_pvo", "calculate_ema", "calculate_volatility", "calculate_parabolic_sar", "calculate_adx", "evaluate_pvo"],
-          "depends_on": ["numpy", "config.Config"],
-          "responsibility": "指標計算の集約・状態管理 (Donchian/PVO/PSAR/ADX/Volatility)",
-          "state": ["psar", "psarbull", "psarbear", "adx", "adx_bull", "adx_bear"]
+          "depends_on": ["numpy", "config.Config", "collections"],
+          "responsibility": "指標計算の集約・状態管理 (Donchian/PVO/PSAR/ADX/Volatility) + Donchian差分キャッシュ",
+          "state": ["psar", "psarbull", "psarbear", "adx", "adx_bull", "adx_bear", "_donchian_cache"],
+          "refactored": "2025-11-17: Donchian monotonic deque キャッシュ追加 (commit 8091f97)"
         }
       },
-      "issues": []
+      "issues": ["小期間(<50)ではキャッシュが非優位: フォールバック維持", "キャッシュ初期化条件(期間変更/データ縮小)確認追加必要"]
     },
     "bot.py": {
       "classes": {
@@ -101,10 +102,11 @@
     "PriceDataManagement のバックテスト/リアル分離 (StrategyDataSource インターフェース化)",
     "Config 値キャッシュ (初期読み込み→辞書化)",
     "volatility の計算手法改良 (True Range 系採用)",
-    "C6 Phase 2: Donchian差分キャッシュ、ログ最適化"
+    "C6 Phase 2: ログ最適化 (interval/buffering)"
   ],
   "completed_improvements": [
     "例外処理追加 (Bot.run, Exchange 呼び出し部) - 2025-11-16",
-    "指標計算 (ADX/PSAR/Donchian/PVO/Volatility) を IndicatorService へ分離・集約 - 2025-11-17"
+    "指標計算 (ADX/PSAR/Donchian/PVO/Volatility) を IndicatorService へ分離・集約 - 2025-11-17",
+    "Donchian 差分キャッシュ (monotonic deque) 実装 - 2025-11-17"
   ]
 }
