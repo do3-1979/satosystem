@@ -179,28 +179,67 @@ class IndicatorService:
         return pvo_value > threshold
 
     # ========================================
-    # Volatility
+    # Volatility (ATR-based)
     # ========================================
+    def calculate_atr(self, ohlcv_data, term=None):
+        """Calculate Average True Range (ATR).
+        
+        True Range is the maximum of:
+        - Current High - Current Low
+        - abs(Current High - Previous Close)
+        - abs(Current Low - Previous Close)
+        
+        ATR is the moving average of True Range over the specified period.
+
+        Args:
+            ohlcv_data (list): List of OHLCV dicts with 'high_price', 'low_price', 'close_price'
+            term (int, optional): ATR period. Defaults to config volatility_term.
+
+        Returns:
+            float: ATR value
+        """
+        if term is None:
+            term = Config.get_volatility_term()
+
+        if not ohlcv_data or len(ohlcv_data) < 2:
+            return 0.0
+
+        # Calculate True Range for each bar
+        true_ranges = []
+        for i in range(1, len(ohlcv_data)):
+            high = ohlcv_data[i]['high_price']
+            low = ohlcv_data[i]['low_price']
+            prev_close = ohlcv_data[i-1]['close_price']
+            
+            tr = max(
+                high - low,
+                abs(high - prev_close),
+                abs(low - prev_close)
+            )
+            true_ranges.append(tr)
+        
+        if len(true_ranges) < term:
+            # Not enough data, return simple average of available TRs
+            return sum(true_ranges) / len(true_ranges) if true_ranges else 0.0
+        
+        # Calculate ATR as average of last 'term' True Ranges
+        atr = sum(true_ranges[-term:]) / term
+        return atr
+
     def calculate_volatility(self, ohlcv_data, term=None):
-        """Calculate volatility (average high-low range).
+        """Calculate volatility using ATR method.
+        
+        This method now delegates to calculate_atr for improved accuracy.
+        Kept for backward compatibility.
 
         Args:
             ohlcv_data (list): List of OHLCV dicts
             term (int, optional): Volatility period. Defaults to config.
 
         Returns:
-            float: Volatility value
+            float: Volatility value (ATR)
         """
-        if term is None:
-            term = Config.get_volatility_term()
-
-        if not ohlcv_data or len(ohlcv_data) < term:
-            return 0.0
-
-        high_sum = sum(i['high_price'] for i in ohlcv_data[-1 * term:])
-        low_sum = sum(i['low_price'] for i in ohlcv_data[-1 * term:])
-        volatility = (high_sum - low_sum) / term
-        return volatility
+        return self.calculate_atr(ohlcv_data, term)
 
     # ========================================
     # Parabolic SAR

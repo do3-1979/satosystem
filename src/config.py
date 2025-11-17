@@ -15,6 +15,85 @@ import pytz
 class Config:
     config = configparser.ConfigParser()
     config.read('config.ini',encoding="utf-8_sig")
+    
+    # Configuration cache (initialized on first access)
+    _cache = None
+    
+    @classmethod
+    def _initialize_cache(cls):
+        """Initialize configuration cache for performance optimization."""
+        if cls._cache is not None:
+            return
+        
+        cls._cache = {
+            # API
+            'api_key': cls.config['API']['api_key'],
+            'api_secret': cls.config['API']['api_secret'],
+            # RiskManagement
+            'risk_percentage': float(cls.config['RiskManagement']['risk_percentage']),
+            'account_balance': float(cls.config['RiskManagement']['account_balance']),
+            'leverage': int(cls.config['RiskManagement']['leverage']),
+            'entry_times': int(cls.config['RiskManagement']['entry_times']),
+            'entry_range': int(cls.config['RiskManagement']['entry_range']),
+            'stop_range': int(cls.config['RiskManagement']['stop_range']),
+            'stop_AF': float(cls.config['RiskManagement']['stop_AF']),
+            'stop_AF_add': float(cls.config['RiskManagement']['stop_AF_add']),
+            'stop_AF_max': float(cls.config['RiskManagement']['stop_AF_max']),
+            'surge_follow_price_ratio': float(cls.config['RiskManagement']['surge_follow_price_ratio']),
+            'psar_time_frame': int(cls.config['RiskManagement']['psar_time_frame']),
+            # Market
+            'market': str(cls.config['Market']['market']),
+            'time_frame': int(cls.config['Market']['time_frame']),
+            # Period
+            'start_time': cls.config['Period']['start_time'],
+            'end_time': cls.config['Period']['end_time'],
+            # Strategy
+            'volatility_term': int(cls.config['Strategy']['volatility_term']),
+            'donchian_buy_term': int(cls.config['Strategy']['donchian_buy_term']),
+            'donchian_sell_term': int(cls.config['Strategy']['donchian_sell_term']),
+            'pvo_s_term': int(cls.config['Strategy']['pvo_s_term']),
+            'pvo_l_term': int(cls.config['Strategy']['pvo_l_term']),
+            'pvo_threshold': int(cls.config['Strategy']['pvo_threshold']),
+            # Portfolio
+            'lot_limit_lower': float(cls.config['Potfolio']['lot_limit_lower']),
+            'balance_tether_limit': float(cls.config['Potfolio']['balance_tether_limit']),
+            # Setting
+            'server_retry_wait': int(cls.config['Setting']['server_retry_wait']),
+            'bot_operation_cycle': int(cls.config['Setting']['bot_operation_cycle']),
+            'run_timeout_seconds': int(cls.config['Setting'].get('run_timeout_seconds', 300)),
+            'api_request_timeout_seconds': int(cls.config['Setting'].get('api_request_timeout_seconds', 20)),
+            'api_max_retry_seconds': int(cls.config['Setting'].get('api_max_retry_seconds', 120)),
+            # Log
+            'log_file': cls.config['Log']['log_file'],
+            'log_directory': cls.config['Log']['log_directory'],
+            'logging_interval': int(cls.config['Log'].get('logging_interval', 1)),
+            'report_directory': cls.config['Log'].get('report_directory', 'report'),
+            # Backtest
+            'back_test': int(cls.config['Backtest']['back_test']),
+        }
+        
+        # Derived values
+        cls._cache['market_unit_pair'] = cls._cache['market'][:3]
+        
+        # Epoch times
+        start_time_str = cls._cache['start_time']
+        start_time = datetime.strptime(start_time_str, "%Y/%m/%d %H:%M")
+        cls._cache['start_epoch'] = int(start_time.timestamp())
+        
+        end_time_str = cls._cache['end_time']
+        if end_time_str == "None" or end_time_str == "":
+            cls._cache['end_epoch'] = 9999999999
+        else:
+            end_time = datetime.strptime(end_time_str, "%Y/%m/%d %H:%M")
+            cls._cache['end_epoch'] = int(end_time.timestamp())
+        
+        # Max term
+        cls._cache['test_initial_max_term'] = max(
+            cls._cache['volatility_term'],
+            cls._cache['donchian_buy_term'],
+            cls._cache['donchian_sell_term'],
+            cls._cache['pvo_s_term']
+        )
 
     @classmethod
     def get_api_key(cls):
@@ -24,7 +103,8 @@ class Config:
         Returns:
             str: APIキー
         """
-        return cls.config['API']['api_key']
+        cls._initialize_cache()
+        return cls._cache['api_key']
 
     @classmethod
     def get_api_secret(cls):
@@ -34,7 +114,8 @@ class Config:
         Returns:
             str: APIシークレット
         """
-        return cls.config['API']['api_secret']
+        cls._initialize_cache()
+        return cls._cache['api_secret']
 
     @classmethod
     def get_risk_percentage(cls):
@@ -44,7 +125,8 @@ class Config:
         Returns:
             float: リスク割合
         """
-        return float(cls.config['RiskManagement']['risk_percentage'])
+        cls._initialize_cache()
+        return cls._cache['risk_percentage']
     
     @classmethod
     def get_account_balance(cls):
@@ -54,7 +136,8 @@ class Config:
         Returns:
             float: アカウント残高
         """
-        return float(cls.config['RiskManagement']['account_balance'])
+        cls._initialize_cache()
+        return cls._cache['account_balance']
     
     @classmethod
     def get_leverage(cls):
@@ -64,7 +147,8 @@ class Config:
         Returns:
             int: レバレッジ
         """
-        return int(cls.config['RiskManagement']['leverage'])
+        cls._initialize_cache()
+        return cls._cache['leverage']
 
     @classmethod
     def get_entry_times(cls):
@@ -74,7 +158,8 @@ class Config:
         Returns:
             int: エントリー回数
         """
-        return int(cls.config['RiskManagement']['entry_times'])
+        cls._initialize_cache()
+        return cls._cache['entry_times']
 
     @classmethod
     def get_entry_range(cls):
@@ -84,7 +169,8 @@ class Config:
         Returns:
             int: エントリー範囲
         """
-        return int(cls.config['RiskManagement']['entry_range'])
+        cls._initialize_cache()
+        return cls._cache['entry_range']
 
     @classmethod
     def get_stop_range(cls):
@@ -94,7 +180,8 @@ class Config:
         Returns:
             int: ストップ範囲
         """
-        return int(cls.config['RiskManagement']['stop_range'])
+        cls._initialize_cache()
+        return cls._cache['stop_range']
 
     @classmethod
     def get_stop_AF(cls):
@@ -104,7 +191,8 @@ class Config:
         Returns:
             float: ストップアンドリバースファクター（AF）
         """
-        return float(cls.config['RiskManagement']['stop_AF'])
+        cls._initialize_cache()
+        return cls._cache['stop_AF']
 
     @classmethod
     def get_stop_AF_add(cls):
@@ -114,7 +202,8 @@ class Config:
         Returns:
             float: ストップアンドリバースファクター（AF）の追加値
         """
-        return float(cls.config['RiskManagement']['stop_AF_add'])
+        cls._initialize_cache()
+        return cls._cache['stop_AF_add']
 
     @classmethod
     def get_stop_AF_max(cls):
@@ -124,7 +213,8 @@ class Config:
         Returns:
             float: ストップアンドリバースファクター（AF）の最大値
         """
-        return float(cls.config['RiskManagement']['stop_AF_max'])
+        cls._initialize_cache()
+        return cls._cache['stop_AF_max']
 
     @classmethod
     def get_surge_follow_price_ratio(cls):
@@ -134,7 +224,8 @@ class Config:
         Returns:
             float: ストップ近傍のレート
         """
-        return float(cls.config['RiskManagement']['surge_follow_price_ratio'])
+        cls._initialize_cache()
+        return cls._cache['surge_follow_price_ratio']
 
     @classmethod
     def get_psar_time_frame(cls):
@@ -144,7 +235,8 @@ class Config:
         Returns:
             int: 時間軸[分]
         """
-        return int(cls.config['RiskManagement']['psar_time_frame'])
+        cls._initialize_cache()
+        return cls._cache['psar_time_frame']
 
     @classmethod
     def get_market(cls):
@@ -154,7 +246,8 @@ class Config:
         Returns:
             str: マーケット情報
         """
-        return str(cls.config['Market']['market'])
+        cls._initialize_cache()
+        return cls._cache['market']
 
     @classmethod
     def get_market_unit_pair(cls):
@@ -164,9 +257,8 @@ class Config:
         Returns:
             str: マーケット情報から取得したユニットペア
         """
-        market_info = cls.config['Market']['market']
-        unit_pair = market_info[:3]  # マーケット情報から先頭の3文字を取得
-        return unit_pair
+        cls._initialize_cache()
+        return cls._cache['market_unit_pair']
 
     @classmethod
     def get_time_frame(cls):
@@ -176,7 +268,8 @@ class Config:
         Returns:
             int: 時間軸[分]
         """
-        return int(cls.config['Market']['time_frame'])
+        cls._initialize_cache()
+        return cls._cache['time_frame']
 
     @classmethod
     def get_start_time(cls):
@@ -186,7 +279,8 @@ class Config:
         Returns:
             str: 開始時刻 (フォーマット: "YYYY/M/D H:mm")
         """
-        return cls.config['Period']['start_time']
+        cls._initialize_cache()
+        return cls._cache['start_time']
 
     @classmethod
     def get_end_time(cls):
@@ -196,7 +290,8 @@ class Config:
         Returns:
             str: 終了時刻 (フォーマット: "YYYY/M/D H:mm")
         """
-        return cls.config['Period']['end_time']
+        cls._initialize_cache()
+        return cls._cache['end_time']
 
     @classmethod
     def get_start_epoch(cls):
@@ -206,11 +301,8 @@ class Config:
         Returns:
             datetime: 開始時刻 (epoch)
         """
-        start_time_str = cls.config['Period']['start_time']
-        start_time = datetime.strptime(start_time_str, "%Y/%m/%d %H:%M")
-        #start_time = pytz.timezone('epoch').localize(start_time)
-        start_unix = int(start_time.timestamp())
-        return start_unix
+        cls._initialize_cache()
+        return cls._cache['start_epoch']
 
     @classmethod
     def get_end_epoch(cls):
@@ -220,17 +312,8 @@ class Config:
         Returns:
             datetime: 終了時刻 (epoch)
         """
-        end_unix = 9999999999
-        end_time_str = cls.config['Period']['end_time']
-
-        if (end_time_str == "None") or (end_time_str == ""):
-            pass
-        else:
-            end_time = datetime.strptime(end_time_str, "%Y/%m/%d %H:%M")
-            #end_time = pytz.timezone('epoch').localize(end_time)
-            end_unix = int(end_time.timestamp())
-
-        return end_unix
+        cls._initialize_cache()
+        return cls._cache['end_epoch']
     
     @classmethod
     def get_volatility_term(cls):
@@ -240,7 +323,8 @@ class Config:
         Returns:
             int: ボラティリティ期間
         """
-        return int(cls.config['Strategy']['volatility_term'])
+        cls._initialize_cache()
+        return cls._cache['volatility_term']
 
     @classmethod
     def get_donchian_buy_term(cls):
@@ -250,7 +334,8 @@ class Config:
         Returns:
             int: ドンチャン買い期間
         """
-        return int(cls.config['Strategy']['donchian_buy_term'])
+        cls._initialize_cache()
+        return cls._cache['donchian_buy_term']
 
     @classmethod
     def get_donchian_sell_term(cls):
@@ -260,7 +345,8 @@ class Config:
         Returns:
             int: ドンチャン売り期間
         """
-        return int(cls.config['Strategy']['donchian_sell_term'])
+        cls._initialize_cache()
+        return cls._cache['donchian_sell_term']
 
     @classmethod
     def get_pvo_s_term(cls):
@@ -270,7 +356,8 @@ class Config:
         Returns:
             int: PVO短期間
         """
-        return int(cls.config['Strategy']['pvo_s_term'])
+        cls._initialize_cache()
+        return cls._cache['pvo_s_term']
 
     @classmethod
     def get_pvo_l_term(cls):
@@ -280,17 +367,19 @@ class Config:
         Returns:
             int: PVO長期間
         """
-        return int(cls.config['Strategy']['pvo_l_term'])
+        cls._initialize_cache()
+        return cls._cache['pvo_l_term']
 
     @classmethod
     def get_pvo_threshold(cls):
         """
-        PVO閾値を取得します.
+        PVO閉値を取得します.
 
         Returns:
-            int: PVO閾値
+            int: PVO閉値
         """
-        return int(cls.config['Strategy']['pvo_threshold'])
+        cls._initialize_cache()
+        return cls._cache['pvo_threshold']
 
     @classmethod
     def get_lot_limit_lower(cls):
@@ -300,7 +389,8 @@ class Config:
         Returns:
             float: 最小ロット数計算倍率
         """
-        return float(cls.config['Potfolio']['lot_limit_lower'])
+        cls._initialize_cache()
+        return cls._cache['lot_limit_lower']
 
     @classmethod
     def get_balance_tether_limit(cls):
@@ -310,7 +400,8 @@ class Config:
         Returns:
             float: 最小証拠金
         """
-        return float(cls.config['Potfolio']['balance_tether_limit'])
+        cls._initialize_cache()
+        return cls._cache['balance_tether_limit']
 
     @classmethod
     def get_server_retry_wait(cls):
@@ -320,7 +411,8 @@ class Config:
         Returns:
             int: リトライ待機時間 (秒)
         """
-        return int(cls.config['Setting']['server_retry_wait'])
+        cls._initialize_cache()
+        return cls._cache['server_retry_wait']
 
     @classmethod
     def get_bot_operation_cycle(cls):
@@ -330,33 +422,26 @@ class Config:
         Returns:
             int: ボットの動作サイクル時間 (秒)
         """
-        cyctime = int(cls.config['Setting']['bot_operation_cycle'])
-        
-        return cyctime
+        cls._initialize_cache()
+        return cls._cache['bot_operation_cycle']
 
     @classmethod
     def get_run_timeout_seconds(cls) -> int:
         """全体実行のタイムアウト（秒）。未設定時は 300 を既定にする。"""
-        try:
-            return int(cls.config['Setting'].get('run_timeout_seconds', 300))
-        except Exception:
-            return 300
+        cls._initialize_cache()
+        return cls._cache['run_timeout_seconds']
 
     @classmethod
     def get_api_request_timeout_seconds(cls) -> int:
         """API リクエストのHTTPタイムアウト秒数。未設定時は 20 を既定にする。"""
-        try:
-            return int(cls.config['Setting'].get('api_request_timeout_seconds', 20))
-        except Exception:
-            return 20
+        cls._initialize_cache()
+        return cls._cache['api_request_timeout_seconds']
 
     @classmethod
     def get_api_max_retry_seconds(cls) -> int:
         """API エラー時の最大再試行秒数。未設定時は 120 を既定にする。"""
-        try:
-            return int(cls.config['Setting'].get('api_max_retry_seconds', 120))
-        except Exception:
-            return 120
+        cls._initialize_cache()
+        return cls._cache['api_max_retry_seconds']
     
     @classmethod
     def get_test_initial_max_term(cls):
@@ -366,20 +451,15 @@ class Config:
         Returns:
             int: 期間
         """
-        v_term = int(cls.config['Strategy']['volatility_term'])
-        d_b_term = int(cls.config['Strategy']['donchian_buy_term'])
-        d_s_term = int(cls.config['Strategy']['donchian_sell_term'])
-        pv_s_term = int(cls.config['Strategy']['pvo_s_term'])
-        
-        max_term = max(v_term, d_b_term, d_s_term, pv_s_term)
-
-        return max_term
+        cls._initialize_cache()
+        return cls._cache['test_initial_max_term']
 
     @classmethod
     def get_log_file_name(cls):
         """
         """
-        return cls.config['Log']['log_file']
+        cls._initialize_cache()
+        return cls._cache['log_file']
     
     @classmethod
     def get_log_dir_name(cls):
@@ -389,7 +469,8 @@ class Config:
         Returns:
             str: ログディレクトリ名
         """
-        return cls.config['Log']['log_directory']
+        cls._initialize_cache()
+        return cls._cache['log_directory']
     
     @classmethod
     def get_logging_interval(cls):
@@ -399,24 +480,21 @@ class Config:
         Returns:
             int: ログ出力間隔（デフォルト: 1 = 毎回ログ出力）
         """
-        try:
-            return int(cls.config['Log']['logging_interval'])
-        except (KeyError, ValueError):
-            return 1  # デフォルト: 毎回ログ出力
+        cls._initialize_cache()
+        return cls._cache['logging_interval']
     
     @classmethod
     def get_report_dir_name(cls):
         """レポートの出力ディレクトリ名（未設定時は 'report'）。"""
-        try:
-            return cls.config['Log'].get('report_directory', 'report')
-        except Exception:
-            return 'report'
+        cls._initialize_cache()
+        return cls._cache['report_directory']
     
     @classmethod
     def get_back_test_mode(cls):
         """
         """
-        return int(cls.config['Backtest']['back_test'])
+        cls._initialize_cache()
+        return cls._cache['back_test']
 
     def __str__(self):
         """
