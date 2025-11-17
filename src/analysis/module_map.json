@@ -19,10 +19,10 @@
           "methods": ["__init__", "show_trade_data", "run", "execute_order"],
           "depends_on": ["logger.Logger", "config.Config", "price_data_management.PriceDataManagement", "bybit_exchange.BybitExchange", "trading_strategy.TradingStrategy", "risk_management.RiskManagement", "portfolio.Portfolio", "order.Order", "indicator_service.IndicatorService"],
           "responsibility": "メインループ/戦略判定/発注/ログ/バックテストフロー",
-          "refactored": "2025-11-17: IndicatorService共有化対応"
+          "refactored": "2025-11-17: IndicatorService共有化対応 / ログインターバル制御 (_log_counter, _logging_interval)"
         }
       },
-      "issues": ["execute_order 内で symbol 未使用", "バックテスト時 balance_tether 擬似値を再上書き"]
+      "issues": ["execute_order 内で symbol 未使用", "バックテスト時 balance_tether 擬似値を再上書き", "ログスキップ時のデバッグ容易性 (interval=1で回避)"]
     },
     "trading_strategy.py": {
       "classes": {
@@ -72,7 +72,7 @@
       "issues": ["同一プロセス内複数ハンドラ多重追加の可能性", "JSONファイル末尾加工(seek)脆弱"]
     },
     "config.py": {
-      "classes": {"Config": {"methods": ["get_api_key", "get_api_secret", "get_risk_percentage", "get_account_balance", "get_leverage", "get_entry_times", "get_entry_range", "get_stop_range", "get_stop_AF", "get_stop_AF_add", "get_stop_AF_max", "get_surge_follow_price_ratio", "get_psar_time_frame", "get_market", "get_market_unit_pair", "get_time_frame", "get_start_time", "get_end_time", "get_start_epoch", "get_end_epoch", "get_volatility_term", "get_donchian_buy_term", "get_donchian_sell_term", "get_pvo_s_term", "get_pvo_l_term", "get_pvo_threshold", "get_lot_limit_lower", "get_balance_tether_limit", "get_server_retry_wait", "get_bot_operation_cycle", "get_test_initial_max_term", "get_log_file_name", "get_log_dir_name", "get_back_test_mode", "__str__", "to_dict"], "responsibility": "設定読み出し/複数箇所参照"}},
+      "classes": {"Config": {"methods": ["get_api_key", "get_api_secret", "get_risk_percentage", "get_account_balance", "get_leverage", "get_entry_times", "get_entry_range", "get_stop_range", "get_stop_AF", "get_stop_AF_add", "get_stop_AF_max", "get_surge_follow_price_ratio", "get_psar_time_frame", "get_market", "get_market_unit_pair", "get_time_frame", "get_start_time", "get_end_time", "get_start_epoch", "get_end_epoch", "get_volatility_term", "get_donchian_buy_term", "get_donchian_sell_term", "get_pvo_s_term", "get_pvo_l_term", "get_pvo_threshold", "get_lot_limit_lower", "get_balance_tether_limit", "get_server_retry_wait", "get_bot_operation_cycle", "get_test_initial_max_term", "get_log_file_name", "get_log_dir_name", "get_logging_interval", "get_back_test_mode", "__str__", "to_dict"], "responsibility": "設定読み出し/複数箇所参照"}},
       "issues": ["都度 configparser 読み込みではなくキャッシュ最適化余地", "Backtest/Live の差異を設定階層で明確化未"]
     },
     "event.py": {
@@ -102,11 +102,12 @@
     "PriceDataManagement のバックテスト/リアル分離 (StrategyDataSource インターフェース化)",
     "Config 値キャッシュ (初期読み込み→辞書化)",
     "volatility の計算手法改良 (True Range 系採用)",
-    "C6 Phase 2: ログ最適化 (interval/buffering)"
+    "C6 Phase 2: 軽量プロファイラ切替 (詳細→軽量)"
   ],
   "completed_improvements": [
     "例外処理追加 (Bot.run, Exchange 呼び出し部) - 2025-11-16",
     "指標計算 (ADX/PSAR/Donchian/PVO/Volatility) を IndicatorService へ分離・集約 - 2025-11-17",
-    "Donchian 差分キャッシュ (monotonic deque) 実装 - 2025-11-17"
+    "Donchian 差分キャッシュ (monotonic deque) 実装 - 2025-11-17",
+    "ログ最適化 (logging_interval=100, 重要イベント強制ログ) - 2025-11-17"
   ]
 }
