@@ -17,9 +17,9 @@
       "classes": {
         "Bot": {
           "methods": ["__init__", "show_trade_data", "run", "execute_order"],
-          "depends_on": ["logger.Logger", "config.Config", "price_data_management.PriceDataManagement", "bybit_exchange.BybitExchange", "trading_strategy.TradingStrategy", "risk_management.RiskManagement", "portfolio.Portfolio", "order.Order", "indicator_service.IndicatorService"],
-          "responsibility": "メインループ/戦略判定/発注/ログ/バックテストフロー",
-          "refactored": "2025-11-17: IndicatorService共有化対応 / ログインターバル制御 (_log_counter, _logging_interval)"
+          "depends_on": ["logger.Logger", "config.Config", "price_data_management.PriceDataManagement", "bybit_exchange.BybitExchange", "trading_strategy.TradingStrategy", "risk_management.RiskManagement", "portfolio.Portfolio", "order.Order", "indicator_service.IndicatorService", "visualizer.Visualizer"],
+          "responsibility": "メインループ/戦略判定/発注/ログ/バックテストフロー + バックテスト終了時自動可視化生成",
+          "refactored": "2025-11-17: IndicatorService共有化対応 / ログインターバル制御 (_log_counter, _logging_interval) / Visualizer自動実行統合"
         }
       },
       "issues": ["execute_order 内で symbol 未使用", "バックテスト時 balance_tether 擬似値を再上書き", "ログスキップ時のデバッグ容易性 (interval=1で回避)"]
@@ -67,6 +67,10 @@
       "classes": {"Util": {"methods": ["export_trades_csv_from_logs", "extract_and_export_logs", "generate_line_profit_and_loss", "generate_line_chart", "fetch_ohlcv_and_save_to_json", "extract_parameters_and_results"], "depends_on": ["pandas", "openpyxl", "config.Config", "bybit_exchange.BybitExchange"], "responsibility": "ログ/結果集計・可視化補助 + トレード抽出CSV出力 + PnL時系列Excel統合", "refactored": "2025-11-17: export_trades_csv_from_logs追加, PnL_Timeseriesシート自動取り込み, Config期間フィルタ統合"}},
       "issues": ["巨大DataFrame操作のメモリ最適化未考慮"]
     },
+    "visualizer.py": {
+      "classes": {"Visualizer": {"methods": ["load_logs_data", "resample_to_2h_candles", "create_interactive_chart", "visualize_backtest"], "depends_on": ["pandas", "plotly", "zipfile", "config.Config"], "responsibility": "インタラクティブHTML可視化 (Plotly): 2h足ローソク+1分足線グラフ+PnLサブプロット; BUY/SELL背景色分け; ポジション/損切値/指標表示切替", "created": "2025-11-17"}},
+      "issues": []
+    },
     "logger.py": {
       "classes": {"Logger": {"patterns": ["シングルトン"], "methods": ["__new__", "_initialize", "log", "log_error", "open_log_file", "close_log_file", "log_trade_data", "compress_logs"], "depends_on": ["config.Config", "logging", "zipfile"], "responsibility": "ログ出力/ローテート/JSON+ZIP 圧縮"}},
       "issues": ["同一プロセス内複数ハンドラ多重追加の可能性", "JSONファイル末尾加工(seek)脆弱"]
@@ -109,6 +113,7 @@
     "指標計算 (ADX/PSAR/Donchian/PVO/Volatility) を IndicatorService へ分離・集約 - 2025-11-17",
     "Donchian 差分キャッシュ (monotonic deque) 実装 - 2025-11-17",
     "ログ最適化 (logging_interval=100, 重要イベント強制ログ) - 2025-11-17",
-    "util.py 可視化拡張 (トレードCSV出力, PnL時系列Excel統合, Config期間自動取得) - 2025-11-17"
+    "util.py 可視化拡張 (トレードCSV出力, PnL時系列Excel統合, Config期間自動取得) - 2025-11-17",
+    "visualizer.py インタラクティブHTML可視化 (Plotly; 2h足ローソク+1分足+PnL; BUY/SELL色分け; バックテスト自動生成) - 2025-11-17"
   ]
 }

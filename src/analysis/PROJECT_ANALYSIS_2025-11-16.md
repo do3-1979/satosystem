@@ -177,13 +177,21 @@
   - `export_trades_csv_from_logs`: トレードイベント(ENTRY/ADD/EXIT)のみ抽出してCSV出力
   - PnL時系列の自動Excel統合: `report/pnl_timeseries_*.csv` を `PnL_Timeseries` シートとして追加
   - 期間フィルタを `Config.get_start_time/end_time` から自動取得し、間引きログへ対応
+- `visualizer.py` インタラクティブHTML可視化 (Plotly):
+  - 2時間足ローソク足 + 1分足線グラフ + PnLサブプロット
+  - BUYポジション=淡緑、SELLポジション=淡赤の背景ハイライト
+  - ポジション開始/終了マーカー、損切値ライン表示
+  - Donchian/PSARなど指標のlegend操作で表示切替
+  - バックテスト終了時に `report/backtest_visualization_<ts>.html` として自動生成
 
 ### 計測結果
 - 短期(1週間, 9960 samples): logging 17.87% → 1.36%、総時間 ~41.9s → ~29.5s（約29%短縮）。PnL/Trades/Samples 完全一致。
 - 長期(2025/10/01〜11/15, 64801 samples): 総PnL 53.11、Trades 24、logging 0.41%、総時間 ~785.8s (~13m56s)。ボトルネックは price_update (~98%)。
-- `util.py` 出力:
+- util.py 出力:
   - `logs/combined_logs.xlsx`: 5シート (Param/Data/Chart/PandL/PnL_Timeseries 64,803行)
   - `logs/trades_export.csv`: 77トレードイベント抽出
+- visualizer.py 出力:
+  - `report/backtest_visualization_<ts>.html`: インタラクティブHTML (Plotly; 2h足ローソク+1分足+PnL; BUY/SELL色分け)
 
 ### 所見/次アクション
 - ログ最適化は十分達成。今後は `price_update` 支配のためデータアクセス/指標の増分化(ATR/真のレンジ導入、OHLCV参照のキャッシュ)を優先。

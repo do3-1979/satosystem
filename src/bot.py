@@ -37,6 +37,7 @@ from metrics import compute_metrics
 from indicator_service import IndicatorService
 from pnl_reporter import generate_pnl_timeseries
 from report_generator import generate_markdown_report
+from visualizer import Visualizer
 
 class PerformanceTracker:
     def __init__(self):
@@ -94,6 +95,9 @@ class Bot:
         self.trade_results = []  # list of bool win( True ) / loss( False )
         # パフォーマンス計測用トラッカー
         self.perf = PerformanceTracker()
+        # ログ出力制御用カウンタ
+        self._log_counter = 0
+        self._logging_interval = Config.get_logging_interval()
 
     def show_trade_data(self, trade_data):
         self.logger.log(f"時刻: {trade_data['real_time']}"
@@ -248,6 +252,19 @@ class Bot:
                                     self.logger.log(f"レポート出力 (Markdown): {report_md}")
                                 except Exception as re:
                                     self.logger.log_error(f"レポート出力失敗: {re}")
+                                # インタラクティブ可視化を自動生成
+                                try:
+                                    vis = Visualizer()
+                                    viz_html = os.path.join(report_dir, f"backtest_visualization_{ts}.html")
+                                    vis.visualize_backtest(
+                                        log_directory="logs",
+                                        output_html=viz_html,
+                                        start_time=Config.get_start_time(),
+                                        end_time=Config.get_end_time()
+                                    )
+                                    self.logger.log(f"インタラクティブ可視化出力: {viz_html}")
+                                except Exception as ve:
+                                    self.logger.log_error(f"可視化出力失敗: {ve}")
                         except Exception as e:
                             self.logger.log_error(f"バックテストメトリクス/パフォーマンス/PnL出力失敗: {e}")
                         
@@ -372,58 +389,69 @@ class Bot:
                 t_risk_end = perf_counter(); self.perf.record('risk_update', t_risk_start, t_risk_end)
 
                 # --------------------------------------------
-                # ログに記録
+                # ログに記録 (インターバル制御付き)
                 # --------------------------------------------
                 t_logging_start = perf_counter()
-                trade_data = self.price_data_management.get_latest_ohlcv()
-                # バックテスト時はclose priceをシミュレータ値に更新
-                if back_test_mode == 1:
-                    trade_data['real_time'] = self.price_data_management.get_latest_close_time_dt()
-                    trade_data['close_price'] = price
-                else:
-                    dt_now = datetime.now()
-                    trade_data['real_time'] = dt_now.strftime('%Y/%m/%d %H:%M:%S')
-                trade_data['stop_price'] = self.risk_management.get_stop_price()
-                trade_data['position_price'] = self.portfolio.get_position_price()
-                trade_data['position_size'] = self.risk_management.get_position_size()
-                position_size = self.portfolio.get_position_quantity()
-                quantity = position_size['quantity']
-                trade_data['position_quantity'] = quantity
-                profit, loss = self.portfolio.calc_position_quantity(price)
-                trade_data['profit_and_loss'] = profit - loss
-                trade_data['total_profit_and_loss'] = self.portfolio.get_profit_and_loss()
-                # 損益履歴へ追加 (バックテストのみ)
-                if back_test_mode == 1:
-                    self.pnl_history.append(trade_data['total_profit_and_loss'])
-                    self.close_times.append(trade_data['real_time'])
-                trade_data['volatility'] = self.price_data_management.get_volatility()
-                trade_data['stop_offset'] = self.risk_management.get_stop_offset()
-                trade_data['stop_psar_stop_offset'] = self.risk_management.get_psar_stop_offset()
-                trade_data['stop_price_surge_stop_offset'] = self.risk_management.get_price_surge_stop_offset()
+                self._log_counter += 1
+                # トレード実行時または定期ログタイミングでログ出力
+                force_log = trade_executed or (self._log_counter % self._logging_interval == 0)
                 
-                # signal info
-                signals = self.price_data_management.get_signals()
-                trade_data['dc_h'] = signals['donchian']['info']['highest']
-                trade_data['dc_l'] = signals['donchian']['info']['lowest']
-                trade_data['pvo_val'] = signals['pvo']['info']['value']
-                trade_data['psar'] = self.risk_management.get_psar()
-                trade_data['psarbull'] = self.risk_management.get_psarbull()
-                trade_data['psarbear'] = self.risk_management.get_psarbear()
-                trade_data['adx'] = self.risk_management.get_adx()
-                trade_data['adx_bull'] = self.risk_management.get_adx_bull()
-                trade_data['adx_bear'] = self.risk_management.get_adx_bear()
+                if force_log:
+                    trade_data = self.price_data_management.get_latest_ohlcv()
+                    # バックテスト時はclose priceをシミュレータ値に更新
+                    if back_test_mode == 1:
+                        trade_data['real_time'] = self.price_data_management.get_latest_close_time_dt()
+                        trade_data['close_price'] = price
+                    else:
+                        dt_now = datetime.now()
+                        trade_data['real_time'] = dt_now.strftime('%Y/%m/%d %H:%M:%S')
+                    trade_data['stop_price'] = self.risk_management.get_stop_price()
+                    trade_data['position_price'] = self.portfolio.get_position_price()
+                    trade_data['position_size'] = self.risk_management.get_position_size()
+                    position_size = self.portfolio.get_position_quantity()
+                    quantity = position_size['quantity']
+                    trade_data['position_quantity'] = quantity
+                    profit, loss = self.portfolio.calc_position_quantity(price)
+                    trade_data['profit_and_loss'] = profit - loss
+                    trade_data['total_profit_and_loss'] = self.portfolio.get_profit_and_loss()
+                    # 損益履歴へ追加 (バックテストのみ)
+                    if back_test_mode == 1:
+                        self.pnl_history.append(trade_data['total_profit_and_loss'])
+                        self.close_times.append(trade_data['real_time'])
+                    trade_data['volatility'] = self.price_data_management.get_volatility()
+                    trade_data['stop_offset'] = self.risk_management.get_stop_offset()
+                    trade_data['stop_psar_stop_offset'] = self.risk_management.get_psar_stop_offset()
+                    trade_data['stop_price_surge_stop_offset'] = self.risk_management.get_price_surge_stop_offset()
+                    
+                    # signal info
+                    signals = self.price_data_management.get_signals()
+                    trade_data['dc_h'] = signals['donchian']['info']['highest']
+                    trade_data['dc_l'] = signals['donchian']['info']['lowest']
+                    trade_data['pvo_val'] = signals['pvo']['info']['value']
+                    trade_data['psar'] = self.risk_management.get_psar()
+                    trade_data['psarbull'] = self.risk_management.get_psarbull()
+                    trade_data['psarbear'] = self.risk_management.get_psarbear()
+                    trade_data['adx'] = self.risk_management.get_adx()
+                    trade_data['adx_bull'] = self.risk_management.get_adx_bull()
+                    trade_data['adx_bear'] = self.risk_management.get_adx_bear()
 
-                trade_data.update(trade_decision)
-                trade_data.update(signals)
+                    trade_data.update(trade_decision)
+                    trade_data.update(signals)
 
-                # portfolio
-                trade_data['positions'] = self.portfolio.get_position_quantity()
+                    # portfolio
+                    trade_data['positions'] = self.portfolio.get_position_quantity()
 
-                # 取引データを表示
-                # if back_test_mode == 0:
-                self.show_trade_data(trade_data)
-                # 取引データを記録
-                self.logger.log_trade_data(trade_data)
+                    # 取引データを表示
+                    # if back_test_mode == 0:
+                    self.show_trade_data(trade_data)
+                    # 取引データを記録
+                    self.logger.log_trade_data(trade_data)
+                else:
+                    # ログスキップ時もPnL履歴は更新 (バックテストのみ)
+                    if back_test_mode == 1:
+                        self.pnl_history.append(self.portfolio.get_profit_and_loss())
+                        self.close_times.append(self.price_data_management.get_latest_close_time_dt())
+                
                 t_logging_end = perf_counter(); self.perf.record('logging', t_logging_start, t_logging_end)
                 self.perf.iterations += 1
             
