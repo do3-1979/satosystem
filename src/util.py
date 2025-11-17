@@ -14,6 +14,77 @@ import pprint
 import re
 
 class Util:
+    def export_trades_csv_from_logs(self, log_directory, output_csv_file, start_time=None, end_time=None):
+        """
+        ログ(JSON/ZIP)からトレードイベント(ENTRY/ADD/EXIT)のみを抽出し、CSVに出力します。
+
+        Args:
+            log_directory (str): ログディレクトリ (JSON/ZIP)
+            output_csv_file (str): 出力CSVパス
+            start_time (str|None): 開始 "%Y/%m/%d %H:%M"
+            end_time (str|None): 終了 "%Y/%m/%d %H:%M"
+        """
+        if start_time and end_time:
+            start_dt = datetime.strptime(start_time, "%Y/%m/%d %H:%M")
+            end_dt = datetime.strptime(end_time, "%Y/%m/%d %H:%M")
+        else:
+            start_dt = None
+            end_dt = None
+
+        log_files = []
+        for root, _, files in os.walk(log_directory):
+            for file in files:
+                if file.endswith(".zip") or file.endswith(".json"):
+                    log_files.append(os.path.join(root, file))
+
+        if not log_files:
+            print(f"No log files in {log_directory}")
+            return
+
+        log_files.sort()
+        rows = []
+        for path in log_files:
+            try:
+                if path.endswith('.zip'):
+                    with zipfile.ZipFile(path, 'r') as zf:
+                        name = zf.namelist()[0]
+                        with zf.open(name) as f:
+                            df = pd.read_json(f)
+                else:
+                    df = pd.read_json(path)
+
+                if start_dt is not None and end_dt is not None:
+                    # 文字列日時でフィルタ (real_time か close_time_dt)
+                    if 'real_time' in df.columns:
+                        mask = (pd.to_datetime(df['real_time']) >= start_dt) & (pd.to_datetime(df['real_time']) <= end_dt)
+                        df = df.loc[mask]
+                    elif 'close_time_dt' in df.columns:
+                        mask = (pd.to_datetime(df['close_time_dt']) >= start_dt) & (pd.to_datetime(df['close_time_dt']) <= end_dt)
+                        df = df.loc[mask]
+
+                if 'decision' not in df.columns:
+                    continue
+                tdf = df[df['decision'].fillna('NONE') != 'NONE']
+                if tdf.empty:
+                    continue
+                keep_cols = [
+                    'real_time','close_time_dt','close_time','close_price','high_price','low_price','open_price',
+                    'decision','side','order_type','dc_h','dc_l','pvo_val','psar','adx','position_price','position_quantity',
+                    'total_profit_and_loss'
+                ]
+                existing = [c for c in keep_cols if c in tdf.columns]
+                rows.append(tdf[existing])
+            except Exception as e:
+                print(f"skip {path}: {e}")
+
+        if not rows:
+            print("No trades found in logs")
+            return
+        out = pd.concat(rows, ignore_index=True)
+        out.sort_values('close_time', inplace=True, ignore_index=True)
+        out.to_csv(output_csv_file, index=False)
+        print(f"Trades CSV exported: {output_csv_file} ({len(out)} rows)")
+
     def extract_and_export_logs(self, log_directory, num_logs, output_excel_file, start_time=None, end_time=None):
         """
         指定された数の圧縮ログファイルを読み込み、エクセルファイルにデータとグラフを出力します。
@@ -61,7 +132,10 @@ class Util:
                         data.append(log_data)
         print(f"Processing file {i + 1}/{proccess_num_logs}: {log_file} completed")  # 処理中のファイルを表示
 
-        # データを連結
+        # データを連結（間引きログでも連結可能）
+        if len(data) == 0:
+            print("No log data collected. Check filters and directory.")
+            return
         combined_data = pd.concat(data, ignore_index=True)
 
         # エクセルファイルに出力
@@ -184,6 +258,36 @@ class Util:
         print("Generating Profit and Loss sheet...", end='\r')
         self.generate_line_profit_and_loss(combined_data, column_name, profit_and_loss_sheet, data_sheet)
         print("Generating Profit and Loss sheet...Done")
+
+        # 可能なら最新のPnL時系列CSVを追加シートとして取り込む
+        try:
+            report_dir = Config.get_report_dir_name()
+            # 最新のpnl_timeseries_*.csv を探索
+            candidates = [os.path.join(report_dir, f) for f in os.listdir(report_dir) if f.startswith('pnl_timeseries_') and f.endswith('.csv')]
+            if candidates:
+                latest = sorted(candidates)[-1]
+                pnl_df = pd.read_csv(latest)
+                sheet_name = 'PnL_Timeseries'
+                # 新しいシートを追加
+                pnl_sheet = workbook.create_sheet(title=sheet_name)
+                # データを書き込み
+                for r_idx, row in enumerate(dataframe_to_rows(pnl_df, index=False, header=True), 1):
+                    for c_idx, value in enumerate(row, 1):
+                        pnl_sheet.cell(row=r_idx, column=c_idx, value=value)
+                # 軸参照（ヘッダー込み）
+                rows = len(pnl_df.index) + 1
+                time_ref = Reference(pnl_sheet, min_col=1, min_row=2, max_row=rows)
+                pnl_ref = Reference(pnl_sheet, min_col=2, min_row=1, max_row=rows)
+                pnl_chart = LineChart()
+                pnl_chart.title = "PnL Timeseries"
+                pnl_chart.add_data(pnl_ref, titles_from_data=True)
+                pnl_chart.set_categories(time_ref)
+                pnl_chart.width = 50
+                pnl_chart.height = 15
+                pnl_sheet.add_chart(pnl_chart, "E2")
+                print(f"Added PnL timeseries sheet from {latest}")
+        except Exception as e:
+            print(f"Skip adding PnL timeseries: {e}")
         # 既存の "Sheet" シートを削除
         #if "Sheet" in writer.book.sheetnames:
         #    std_sheet = writer.book["Sheet"]
@@ -429,12 +533,18 @@ if __name__ == "__main__":
     #----------------
     # グラフ化機能使用
     
-    start_time = "2025/5/1 1:00"  # 開始時刻 (例: "2023/01/01 00:00")
-    end_time = "2025/5/24 18:00"    # 終了時刻 (例: "2023/01/02 00:00")
-    #start_time = Config.get_start_time()
-    #end_time = Config.get_end_time()
+    # config.iniから期間を読み取る（バックテスト結果と整合させる）
+    start_time = Config.get_start_time()
+    end_time = Config.get_end_time()
+    # start_time = "2025/5/1 1:00"  # 開始時刻 (例: "2023/01/01 00:00")
+    # end_time = "2025/5/24 18:00"    # 終了時刻 (例: "2023/01/02 00:00")
 
     util.extract_and_export_logs(log_directory, num_logs_to_read, output_excel_file, start_time, end_time)
+    # 取引イベントCSVを生成（可視化や検証用）
+    try:
+        util.export_trades_csv_from_logs(log_directory, os.path.join(log_directory, 'trades_export.csv'), start_time, end_time)
+    except Exception as e:
+        print(f"export_trades_csv_from_logs failed: {e}")
 
     #---------------------
     # バックテスト集約使用例

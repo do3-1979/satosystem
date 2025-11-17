@@ -64,15 +64,15 @@
       "issues": ["バックテスト用ロジック複雑化/単一クラス肥大", "シグナル判定で最新未確定足使用の一貫性要確認"]
     },
     "util.py": {
-      "classes": {"Util": {"methods": ["extract_and_export_logs", "generate_line_profit_and_loss", "generate_line_chart", "fetch_ohlcv_and_save_to_json", "extract_parameters_and_results"], "depends_on": ["pandas", "openpyxl", "config.Config", "bybit_exchange.BybitExchange"], "responsibility": "ログ/結果集計・可視化補助"}},
-      "issues": ["巨大DataFrame操作のメモリ最適化未考慮", "リアルタイム用途と分析用途混在"]
+      "classes": {"Util": {"methods": ["export_trades_csv_from_logs", "extract_and_export_logs", "generate_line_profit_and_loss", "generate_line_chart", "fetch_ohlcv_and_save_to_json", "extract_parameters_and_results"], "depends_on": ["pandas", "openpyxl", "config.Config", "bybit_exchange.BybitExchange"], "responsibility": "ログ/結果集計・可視化補助 + トレード抽出CSV出力 + PnL時系列Excel統合", "refactored": "2025-11-17: export_trades_csv_from_logs追加, PnL_Timeseriesシート自動取り込み, Config期間フィルタ統合"}},
+      "issues": ["巨大DataFrame操作のメモリ最適化未考慮"]
     },
     "logger.py": {
       "classes": {"Logger": {"patterns": ["シングルトン"], "methods": ["__new__", "_initialize", "log", "log_error", "open_log_file", "close_log_file", "log_trade_data", "compress_logs"], "depends_on": ["config.Config", "logging", "zipfile"], "responsibility": "ログ出力/ローテート/JSON+ZIP 圧縮"}},
       "issues": ["同一プロセス内複数ハンドラ多重追加の可能性", "JSONファイル末尾加工(seek)脆弱"]
     },
     "config.py": {
-      "classes": {"Config": {"methods": ["get_api_key", "get_api_secret", "get_risk_percentage", "get_account_balance", "get_leverage", "get_entry_times", "get_entry_range", "get_stop_range", "get_stop_AF", "get_stop_AF_add", "get_stop_AF_max", "get_surge_follow_price_ratio", "get_psar_time_frame", "get_market", "get_market_unit_pair", "get_time_frame", "get_start_time", "get_end_time", "get_start_epoch", "get_end_epoch", "get_volatility_term", "get_donchian_buy_term", "get_donchian_sell_term", "get_pvo_s_term", "get_pvo_l_term", "get_pvo_threshold", "get_lot_limit_lower", "get_balance_tether_limit", "get_server_retry_wait", "get_bot_operation_cycle", "get_test_initial_max_term", "get_log_file_name", "get_log_dir_name", "get_logging_interval", "get_back_test_mode", "__str__", "to_dict"], "responsibility": "設定読み出し/複数箇所参照"}},
+      "classes": {"Config": {"methods": ["get_api_key", "get_api_secret", "get_risk_percentage", "get_account_balance", "get_leverage", "get_entry_times", "get_entry_range", "get_stop_range", "get_stop_AF", "get_stop_AF_add", "get_stop_AF_max", "get_surge_follow_price_ratio", "get_psar_time_frame", "get_market", "get_market_unit_pair", "get_time_frame", "get_start_time", "get_end_time", "get_start_epoch", "get_end_epoch", "get_volatility_term", "get_donchian_buy_term", "get_donchian_sell_term", "get_pvo_s_term", "get_pvo_l_term", "get_pvo_threshold", "get_lot_limit_lower", "get_balance_tether_limit", "get_server_retry_wait", "get_bot_operation_cycle", "get_test_initial_max_term", "get_log_file_name", "get_log_dir_name", "get_report_dir_name", "get_logging_interval", "get_back_test_mode", "__str__", "to_dict"], "responsibility": "設定読み出し/複数箇所参照", "refactored": "2025-11-17: get_logging_interval, get_report_dir_name追加"}},
       "issues": ["都度 configparser 読み込みではなくキャッシュ最適化余地", "Backtest/Live の差異を設定階層で明確化未"]
     },
     "event.py": {
@@ -108,6 +108,7 @@
     "例外処理追加 (Bot.run, Exchange 呼び出し部) - 2025-11-16",
     "指標計算 (ADX/PSAR/Donchian/PVO/Volatility) を IndicatorService へ分離・集約 - 2025-11-17",
     "Donchian 差分キャッシュ (monotonic deque) 実装 - 2025-11-17",
-    "ログ最適化 (logging_interval=100, 重要イベント強制ログ) - 2025-11-17"
+    "ログ最適化 (logging_interval=100, 重要イベント強制ログ) - 2025-11-17",
+    "util.py 可視化拡張 (トレードCSV出力, PnL時系列Excel統合, Config期間自動取得) - 2025-11-17"
   ]
 }
