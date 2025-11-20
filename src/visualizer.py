@@ -14,7 +14,7 @@ from plotly.subplots import make_subplots
 import json
 import zipfile
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from config import Config
 
 
@@ -90,31 +90,32 @@ class Visualizer:
         return combined
     
     def resample_to_2h_candles(self, df):
-        """
-        1分足データから2時間足ローソク足を作成
-        
-        Args:
-            df: 1分足データ (real_time_dt, open_price, high_price, low_price, close_price, Volume)
-        
-        Returns:
-            DataFrame: 2時間足OHLCV
-        """
-        if df is None or df.empty:
+        """与えられた時系列を2時間足へ変換。ただし既に2時間以上のステップであれば再サンプリングせずそのまま返す。"""
+        if df is None or df.empty or 'real_time_dt' not in df.columns:
             return None
-        
+
+        # 間隔推定
+        times = df['real_time_dt'].sort_values().unique()
+        if len(times) >= 3:
+            deltas = pd.Series(times[1:]) - pd.Series(times[:-1])
+            median_delta = deltas.median()
+        else:
+            median_delta = timedelta(hours=2)
+
+        # 既に2時間以上の粒度ならそのままOHLC扱い
+        if median_delta >= timedelta(hours=2) and {'open_price','high_price','low_price','close_price'}.issubset(df.columns):
+            return df[['real_time_dt','open_price','high_price','low_price','close_price']].copy()
+
         df_candle = df.set_index('real_time_dt')
-        
         ohlc_dict = {
             'open_price': 'first',
             'high_price': 'max',
             'low_price': 'min',
             'close_price': 'last',
-            'Volume': 'sum'
+            'Volume': 'sum' if 'Volume' in df_candle.columns else 'count'
         }
-        
         candles_2h = df_candle.resample('2h').agg(ohlc_dict).dropna()
         candles_2h.reset_index(inplace=True)
-        
         return candles_2h
     
     def create_interactive_chart(self, df, candles_2h, output_html="backtest_visualization.html"):
@@ -137,7 +138,7 @@ class Visualizer:
         
         # === Row 1: 価格チャート ===
         
-        # 2時間足ローソク足
+        # 2時間足ローソク足（間引きなし）
         if candles_2h is not None and not candles_2h.empty:
             fig.add_trace(
                 go.Candlestick(
@@ -146,65 +147,71 @@ class Visualizer:
                     high=candles_2h['high_price'],
                     low=candles_2h['low_price'],
                     close=candles_2h['close_price'],
-                    name="2時間足",
+                    name="2時間足 (フル)",
                     visible=True
                 ),
                 row=1, col=1
             )
         
         # 1分足終値 (線グラフ)
-        fig.add_trace(
-            go.Scatter(
-                x=df['real_time_dt'],
-                y=df['close_price'],
-                mode='lines',
-                name="1分足終値",
-                line=dict(color='blue', width=1),
-                visible='legendonly'  # デフォルトで非表示
-            ),
-            row=1, col=1
-        )
+        if 'close_price' in df.columns and candles_2h is not None and len(df) > len(candles_2h):
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=df['close_price'],
+                    mode='lines',
+                    name="終値(元粒度)",
+                    line=dict(color='blue', width=1),
+                    visible='legendonly'
+                ),
+                row=1, col=1
+            )
         
         # Donchian High/Low
-        fig.add_trace(
-            go.Scatter(
-                x=df['real_time_dt'],
-                y=df['dc_h'],
-                mode='lines',
-                name="Donchian High",
-                line=dict(color='green', width=1, dash='dash'),
-                visible='legendonly'
-            ),
-            row=1, col=1
-        )
+        if 'dc_h' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=df['dc_h'],
+                    mode='lines',
+                    name="Donchian High",
+                    line=dict(color='green', width=1, dash='dash'),
+                    visible='legendonly'
+                ),
+                row=1, col=1
+            )
         
-        fig.add_trace(
-            go.Scatter(
-                x=df['real_time_dt'],
-                y=df['dc_l'],
-                mode='lines',
-                name="Donchian Low",
-                line=dict(color='red', width=1, dash='dash'),
-                visible='legendonly'
-            ),
-            row=1, col=1
-        )
+        if 'dc_l' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=df['dc_l'],
+                    mode='lines',
+                    name="Donchian Low",
+                    line=dict(color='red', width=1, dash='dash'),
+                    visible='legendonly'
+                ),
+                row=1, col=1
+            )
         
         # PSAR
-        fig.add_trace(
-            go.Scatter(
-                x=df['real_time_dt'],
-                y=df['psar'],
-                mode='markers',
-                name="PSAR",
-                marker=dict(color='orange', size=3),
-                visible='legendonly'
-            ),
-            row=1, col=1
-        )
+        if 'psar' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=df['psar'],
+                    mode='markers',
+                    name="PSAR",
+                    marker=dict(color='orange', size=3),
+                    visible='legendonly'
+                ),
+                row=1, col=1
+            )
         
         # ストップ価格 (ポジション保有時のみ表示)
-        df_with_position = df[(df['position_quantity'] > 0) & (df['stop_price'] > 0)].copy()
+        df_with_position = pd.DataFrame()
+        if 'position_quantity' in df.columns and 'stop_price' in df.columns:
+            df_with_position = df[(df['position_quantity'] > 0) & (df['stop_price'] > 0)].copy()
         if not df_with_position.empty:
             fig.add_trace(
                 go.Scatter(
@@ -219,8 +226,12 @@ class Visualizer:
             )
         
         # ポジション保有区間を背景色でハイライト（BUY=淡緑 / SELL=淡赤）
-        df['has_position'] = df['position_quantity'] > 0
-        df['position_change'] = df['has_position'].astype(int).diff().fillna(0)
+        if 'position_quantity' in df.columns:
+            df['has_position'] = df['position_quantity'] > 0
+            df['position_change'] = df['has_position'].astype(int).diff().fillna(0)
+        else:
+            df['has_position'] = False
+            df['position_change'] = 0
         
         entry_indices = df[df['position_change'] == 1].index
         exit_indices = df[df['position_change'] == -1].index
@@ -251,7 +262,10 @@ class Visualizer:
             )
         
         # ポジション開始・終了マーカー
-        df_trades = df[df['decision'].notna() & (df['decision'] != 'NONE')].copy()
+        df_trades = pd.DataFrame()
+        if 'decision' in df.columns:
+            mask = (df['decision'].notna()) & (df['decision'] != 'NONE')
+            df_trades = df[mask].copy()
         if not df_trades.empty:
             # ENTRY
             df_entry = df_trades[df_trades['decision'] == 'ENTRY']
@@ -337,7 +351,7 @@ class Visualizer:
         fig.update_yaxes(title_text="累積損益", row=2, col=1)
         
         # HTML出力
-        fig.write_html(output_html)
+        fig.write_html(output_html, include_plotlyjs='cdn')
         print(f"Interactive chart saved: {output_html}")
         
         return fig
@@ -374,8 +388,8 @@ class Visualizer:
         
         print(f"Loaded {len(df)} records")
         
-        # 2時間足ローソク足作成
-        print("Creating 2-hour candles...")
+        # 2時間足ローソク足作成 (既に2h足なら間引きなし)
+        print("Preparing 2-hour candles (no thinning)...")
         candles_2h = self.resample_to_2h_candles(df)
         
         if candles_2h is not None:

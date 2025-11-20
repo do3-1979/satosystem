@@ -267,7 +267,9 @@ class Bot:
                                     )
                                     self.logger.log(f"インタラクティブ可視化出力: {viz_html}")
                                 except Exception as ve:
+                                    import traceback
                                     self.logger.log_error(f"可視化出力失敗: {ve}")
+                                    self.logger.log_error(f"詳細: {traceback.format_exc()}")
                         except Exception as e:
                             self.logger.log_error(f"バックテストメトリクス/パフォーマンス/PnL出力失敗: {e}")
                         
