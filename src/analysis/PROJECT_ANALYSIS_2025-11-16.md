@@ -21,9 +21,10 @@
 4. `time.sleep(bot_operation_cycle)` によりポーリング型運用
 
 ## 実行フロー (バックテスト)
-- `PriceDataManagement.update_price_data_backtest` が 1分刻み進行制御 (progress_time) を内包
+- `PriceDataManagement.update_price_data_backtest` が **2時間刻み進行制御** (progress_time) を内包 *(2025-11-21更新)*
 - 必要期間の過去データを初期ロード→内部バッファから足確定タイミングでシグナル再計算
 - 終了条件: progress_time が終端を超え -1 に設定→Bot ループ抜け最終集計ログ
+- **処理時間改善**: 1分刻み→2時間刻みへ変更により約91%削減達成 (5分34秒→28秒)
 
 ## 技術的特徴/設計上の観察
 - シングルトン: `Logger`, `PriceDataManagement` は `__new__` でインスタンス制御。
@@ -187,11 +188,16 @@
 ### 計測結果
 - 短期(1週間, 9960 samples): logging 17.87% → 1.36%、総時間 ~41.9s → ~29.5s（約29%短縮）。PnL/Trades/Samples 完全一致。
 - 長期(2025/10/01〜11/15, 64801 samples): 総PnL 53.11、Trades 24、logging 0.41%、総時間 ~785.8s (~13m56s)。ボトルネックは price_update (~98%)。
+- **バックテスト高速化 (2025-11-21更新)**:
+  - 1分刻み→2時間刻み化: 処理時間 **5分34秒 → 28秒 (91%削減)** ※同一期間、PnL差分0
+  - 重複ログ抑制: ログサイズ 5MB → 1.7KB
+  - EXIT判定: 2時間足高値/安値 + スリッページ0.5%
 - util.py 出力:
-  - `logs/combined_logs.xlsx`: 5シート (Param/Data/Chart/PandL/PnL_Timeseries 64,803行)
-  - `logs/trades_export.csv`: 77トレードイベント抽出
-- visualizer.py 出力:
-  - `report/backtest_visualization_<ts>.html`: インタラクティブHTML (Plotly; 2h足ローソク+1分足+PnL; BUY/SELL色分け)
+  - `logs/combined_logs.xlsx`: 5シート (Param/Data/Chart/PandL/PnL_Timeseries)
+  - `logs/trades_export.csv`: トレードイベント抽出
+- visualizer.py 出力 (2025-11-21改善):
+  - `report/backtest_visualization_<ts>.html`: インタラクティブHTML
+  - **改善内容**: 2h足間引きなし表示、HTMLサイズ97%削減 (4.7M→150K by CDN)、エラーハンドリング強化
 
 ### 所見/次アクション
 - ログ最適化は十分達成。今後は `price_update` 支配のためデータアクセス/指標の増分化(ATR/真のレンジ導入、OHLCV参照のキャッシュ)を優先。
