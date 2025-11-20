@@ -99,6 +99,8 @@ class Bot:
         # ログ出力制御用カウンタ
         self._log_counter = 0
         self._logging_interval = Config.get_logging_interval()
+        # 重複ログ抑制用: 前回のエラーメッセージ
+        self._last_error_message = None
 
     def show_trade_data(self, trade_data):
         self.logger.log(f"時刻: {trade_data['real_time']}"
@@ -512,8 +514,12 @@ class Bot:
                     log_zipped = False
 
             except Exception as e:
-                self.logger.log_error(f"メインループエラー: {e}")
-                self.events.emit(EventType.LOOP_ERROR, {'error': str(e)})
+                # 前回と異なるエラーメッセージの場合のみログ出力
+                error_msg = str(e)
+                if error_msg != self._last_error_message:
+                    self.logger.log_error(f"メインループエラー: {e}")
+                    self._last_error_message = error_msg
+                self.events.emit(EventType.LOOP_ERROR, {'error': error_msg})
                 if back_test_mode == 0:
                     time.sleep(self.bot_operation_cycle)
 

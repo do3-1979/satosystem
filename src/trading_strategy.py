@@ -39,6 +39,10 @@ class TradingStrategy:
         self.risk_manager = risk_manager
         self.portfolio = portfolio
         self.initialize_trade_decision()
+        
+        # 重複ログ抑制用フラグ
+        self._add_limit_logged = False  # ADD上限到達ログ表示済みフラグ
+        self._last_keltner_filter_log = 0  # 最後にKeltnerフィルタログを出力した時刻（秒）
  
     def initialize_trade_decision(self):
         """
@@ -72,7 +76,12 @@ class TradingStrategy:
                 if keltner_enabled and "keltner" in signals:
                     keltner_pass = signals["keltner"]["signal"]
                     if not keltner_pass:
-                        self.logger.log(f"[条件判定:ENTRY] Keltnerフィルタで除外")
+                        # Keltnerフィルタログは10分（600秒）ごとに出力
+                        import time
+                        current_time = time.time()
+                        if current_time - self._last_keltner_filter_log >= 600:
+                            self.logger.log(f"[条件判定:ENTRY] Keltnerフィルタで除外")
+                            self._last_keltner_filter_log = current_time
 
                 # Phase B: Donchian + PVO + Keltner(オプション)
                 if keltner_pass:
@@ -110,7 +119,10 @@ class TradingStrategy:
             add_count = getattr(self.portfolio, 'add_count', 0)
             max_entries = Config.get_entry_times()
             if add_count >= max_entries:
-                self.logger.log(f"[条件判定:ADD] 上限到達 add_count={add_count}, max={max_entries}")
+                # 初回のみログ出力
+                if not self._add_limit_logged:
+                    self.logger.log(f"[条件判定:ADD] 上限到達 add_count={add_count}, max={max_entries}")
+                    self._add_limit_logged = True
                 return
 
             # 追加レンジ幅を取得
@@ -188,6 +200,8 @@ class TradingStrategy:
                 decision = "EXIT"
                 self.trade_decision["side"] = side
                 self.trade_decision["decision"] = decision
+                # ポジションクローズ時にフラグリセット
+                self._add_limit_logged = False
 
         elif position_side == "SELL":
             if close_price >= stop_price:
@@ -196,6 +210,8 @@ class TradingStrategy:
                 decision = "EXIT"
                 self.trade_decision["side"] = side
                 self.trade_decision["decision"] = decision
+                # ポジションクローズ時にフラグリセット
+                self._add_limit_logged = False
 
         return
 
