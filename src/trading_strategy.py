@@ -77,10 +77,10 @@ class TradingStrategy:
                     keltner_pass = signals["keltner"]["signal"]
                     if not keltner_pass:
                         # Keltnerフィルタログは10分（600秒）ごとに出力
-                        import time
-                        current_time = time.time()
+                        # バックテストモードでは価格データの時刻を使用
+                        current_time = self.price_data_management.get_latest_close_time()
                         if current_time - self._last_keltner_filter_log >= 600:
-                            self.logger.log(f"[条件判定:ENTRY] Keltnerフィルタで除外")
+                            self.logger.log(f"[条件判定:ENTRY] Keltnerフィルタで除外 (10分ごと表示)")
                             self._last_keltner_filter_log = current_time
 
                 # Phase B: Donchian + PVO + Keltner(オプション)
@@ -90,10 +90,14 @@ class TradingStrategy:
                         self.logger.log(f"[条件判定:ENTRY] BUY成立 (Donchian + PVO + Keltner={keltner_enabled})")
                         side = "BUY"
                         decision = "ENTRY"
+                        # 新規エントリー時にフラグリセット
+                        self._add_limit_logged = False
                     elif donchian_side == "SELL":
                         self.logger.log(f"[条件判定:ENTRY] SELL成立 (Donchian + PVO + Keltner={keltner_enabled})")
                         side = "SELL"
                         decision = "ENTRY"
+                        # 新規エントリー時にフラグリセット
+                        self._add_limit_logged = False
 
         self.trade_decision["side"] = side
         self.trade_decision["decision"] = decision
