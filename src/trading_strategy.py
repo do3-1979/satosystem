@@ -42,7 +42,8 @@ class TradingStrategy:
         
         # 重複ログ抑制用フラグ
         self._add_limit_logged = False  # ADD上限到達ログ表示済みフラグ
-        self._last_keltner_filter_log = 0  # 最後にKeltnerフィルタログを出力した時刻（秒）
+        self._keltner_filter_counter = 0  # Keltnerフィルタログ出力カウンタ
+        self._keltner_filter_interval = 600  # Keltnerフィルタログ出力間隔（600回に1回）
  
     def initialize_trade_decision(self):
         """
@@ -76,12 +77,11 @@ class TradingStrategy:
                 if keltner_enabled and "keltner" in signals:
                     keltner_pass = signals["keltner"]["signal"]
                     if not keltner_pass:
-                        # Keltnerフィルタログは10分（600秒）ごとに出力
-                        # バックテストモードでは価格データの時刻を使用
-                        current_time = self.price_data_management.get_latest_close_time()
-                        if current_time - self._last_keltner_filter_log >= 600:
-                            self.logger.log(f"[条件判定:ENTRY] Keltnerフィルタで除外 (10分ごと表示)")
-                            self._last_keltner_filter_log = current_time
+                        # Keltnerフィルタログは600回に1回出力（約10分に1回）
+                        self._keltner_filter_counter += 1
+                        if self._keltner_filter_counter >= self._keltner_filter_interval:
+                            self.logger.log(f"[条件判定:ENTRY] Keltnerフィルタで除外 (600回に1回表示)")
+                            self._keltner_filter_counter = 0
 
                 # Phase B: Donchian + PVO + Keltner(オプション)
                 if keltner_pass:
