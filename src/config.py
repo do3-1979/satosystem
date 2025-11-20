@@ -51,6 +51,9 @@ class Config:
             'volatility_term': int(cls.config['Strategy']['volatility_term']),
             'donchian_buy_term': int(cls.config['Strategy']['donchian_buy_term']),
             'donchian_sell_term': int(cls.config['Strategy']['donchian_sell_term']),
+            'keltner_ema_period': int(cls.config['Strategy']['keltner_ema_period']),
+            'keltner_atr_multiplier': float(cls.config['Strategy']['keltner_atr_multiplier']),
+            'keltner_enabled': cls.config['Strategy'].getboolean('keltner_enabled', fallback=True),
             'pvo_s_term': int(cls.config['Strategy']['pvo_s_term']),
             'pvo_l_term': int(cls.config['Strategy']['pvo_l_term']),
             'pvo_threshold': int(cls.config['Strategy']['pvo_threshold']),
@@ -87,12 +90,16 @@ class Config:
             end_time = datetime.strptime(end_time_str, "%Y/%m/%d %H:%M")
             cls._cache['end_epoch'] = int(end_time.timestamp())
         
-        # Max term
-        cls._cache['test_initial_max_term'] = max(
-            cls._cache['volatility_term'],
-            cls._cache['donchian_buy_term'],
-            cls._cache['donchian_sell_term'],
-            cls._cache['pvo_s_term']
+        # Max term: 各インジケータが安定計算に必要な最長期間を集約
+        # 余裕を持たせるため +2 本をウォームアップとして追加
+        cls._cache['test_initial_max_term'] = (
+            max(
+                cls._cache['volatility_term'],
+                cls._cache['donchian_buy_term'],
+                cls._cache['donchian_sell_term'],
+                cls._cache['keltner_ema_period'],
+                cls._cache['pvo_l_term']  # 長期EMAも考慮
+            ) + 2
         )
 
     @classmethod
@@ -347,6 +354,39 @@ class Config:
         """
         cls._initialize_cache()
         return cls._cache['donchian_sell_term']
+
+    @classmethod
+    def get_keltner_ema_period(cls):
+        """
+        ケルトナーチャネルのEMA期間を取得します.
+
+        Returns:
+            int: ケルトナーEMA期間
+        """
+        cls._initialize_cache()
+        return cls._cache['keltner_ema_period']
+
+    @classmethod
+    def get_keltner_atr_multiplier(cls):
+        """
+        ケルトナーチャネルのATR乗数を取得します.
+
+        Returns:
+            float: ケルトナーATR乗数
+        """
+        cls._initialize_cache()
+        return cls._cache['keltner_atr_multiplier']
+
+    @classmethod
+    def get_keltner_enabled(cls):
+        """
+        Keltnerフィルタ有効化フラグを取得します.
+
+        Returns:
+            bool: Keltner有効化フラグ
+        """
+        cls._initialize_cache()
+        return cls._cache['keltner_enabled']
 
     @classmethod
     def get_pvo_s_term(cls):

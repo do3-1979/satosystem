@@ -68,9 +68,17 @@ class PriceDataManagement:
         self.volume = 0
         self.time_frame = main_time_frame # 主軸タイムフレーム
         self.psar_time_frame = psar_time_frame # PSAR用タイムフレーム
-        self.signals = {'donchian': {'signal': False, 'side': None, 'info': {'highest': 0, 'lowest': 0} }, 'pvo': {'signal': False, 'side': None, 'info':{'value': 0} }}
+        self.signals = {
+            'donchian': {'signal': False, 'side': None, 'info': {'highest': 0, 'lowest': 0}},
+            'pvo': {'signal': False, 'side': None, 'info': {'value': 0}},
+            'keltner': {'signal': False, 'side': None, 'info': {'upper': 0, 'middle': 0, 'lower': 0, 'width_expanding': False}}
+        }
         self.volatility = 0
         self.prev_close_time = 0
+        
+        # Pullback state (Phase B)
+        self.pullback_state = 'none'  # 'none', 'breakout', 'pullback', 'ready'
+        self.pullback_donchian_highest = 0
         
         if Config.get_back_test_mode() == 1:
             self.back_test_ohlcv_data = [
@@ -340,6 +348,18 @@ class PriceDataManagement:
 
         self.signals['donchian']['info']['highest'] = high
         self.signals['donchian']['info']['lowest'] = low
+
+        # Keltnerシグナル演算（アクション1: Phase Bフィルタ）
+        keltner_enabled = Config.get_keltner_enabled()
+        if keltner_enabled:
+            keltner_signal, keltner_side, keltner_info = self.__evaluate_keltner(ohlcv_data, self.ticker)
+            self.signals['keltner']['signal'] = keltner_signal
+            self.signals['keltner']['side'] = keltner_side
+            self.signals['keltner']['info'] = keltner_info
+        else:
+            # Keltner無効時は常にTrue（フィルタなし）
+            self.signals['keltner']['signal'] = True
+            self.signals['keltner']['side'] = None
 
         # --------------------------------------------
         # データの更新があった場合(15分)
@@ -699,6 +719,56 @@ class PriceDataManagement:
         pvo_value = self.indicator_service.calculate_pvo(ohlcv_data, volume)
         judge = self.indicator_service.evaluate_pvo(pvo_value)
         return judge, pvo_value
+
+    def __evaluate_keltner(self, ohlcv_data, current_price):
+        """
+        Keltnerチャネルに基づくトレードシグナルを評価するメソッドです。
+        
+        Phase B条件:
+        - 価格がKeltner上限/下限を超えている（ブレイクアウト方向と一致）
+        - Keltner幅が拡大中（ボラティリティ増加）
+        
+        Args:
+            ohlcv_data (list): OHLCVデータのリスト
+            current_price (float): 現在価格
+
+        Returns:
+            tuple: (signal: bool, side: str, info: dict)
+        """
+        if len(ohlcv_data) < Config.get_keltner_ema_period():
+            return False, None, {'upper': 0, 'middle': 0, 'lower': 0, 'width_expanding': False}
+        
+        # Keltnerチャネル計算
+        upper, middle, lower = self.indicator_service.calculate_keltner_channel(ohlcv_data)
+        
+        # 現在と1本前のKeltner幅を比較
+        width_current = upper - lower
+        width_expanding = False
+        if len(ohlcv_data) >= Config.get_keltner_ema_period() + 1:
+            prev_ohlcv = ohlcv_data[:-1]
+            upper_prev, middle_prev, lower_prev = self.indicator_service.calculate_keltner_channel(prev_ohlcv)
+            width_prev = upper_prev - lower_prev
+            width_expanding = width_current > width_prev
+        
+        # Phase B条件: 価格がKeltner外側にある & 幅拡大中
+        signal = False
+        side = None
+        
+        if current_price > upper and width_expanding:
+            signal = True
+            side = 'BUY'
+        elif current_price < lower and width_expanding:
+            signal = True
+            side = 'SELL'
+        
+        info = {
+            'upper': upper,
+            'middle': middle,
+            'lower': lower,
+            'width_expanding': width_expanding
+        }
+        
+        return signal, side, info
 
 if __name__ == "__main__":
     # PriceDataManagement

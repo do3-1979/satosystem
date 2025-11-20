@@ -50,31 +50,42 @@ class TradingStrategy:
         """
         エントリー条件を評価し、エントリーするかどうかを決定します。
 
-        条件:
+        Phase B条件:
         1. ポジションを保有していない
-        2. ドンチャンチャネルブレイクが発生
-        3. PVOが閾値範囲内
+        2. PVOが閾値範囲内
+        3. ドンチャンチャネルブレイクが発生
+        4. Keltner幅が拡大中
+        5. 中央線へプルバック後に再上昇/再下落
         """
         side = 'NONE'
         decision = 'NONE'
 
-        # シグナルをチェック
         signals = self.price_data_management.get_signals()
 
         # PVO有効範囲チェック
         if signals["pvo"]["signal"] == True:
             # ドンチャンチャネルブレイク発生
             if signals["donchian"]["signal"] == True:
-                if signals["donchian"]["side"] == "BUY":
-                    self.logger.log(f"[条件判定:ENTRY] BUYのエントリー条件成立しました")
-                    side = "BUY"
-                    decision = "ENTRY"
-                elif signals["donchian"]["side"] == "SELL":
-                    self.logger.log(f"[条件判定:ENTRY] SELLのエントリー条件成立しました")
-                    side = "SELL"
-                    decision = "ENTRY"
+                # Keltnerフィルタチェック（アクション1: トグル可能）
+                keltner_enabled = Config.get_keltner_enabled()
+                keltner_pass = True
+                if keltner_enabled and "keltner" in signals:
+                    keltner_pass = signals["keltner"]["signal"]
+                    if not keltner_pass:
+                        self.logger.log(f"[条件判定:ENTRY] Keltnerフィルタで除外")
 
-        # エントリ条件がない場合はNONEで初期化する
+                # Phase B: Donchian + PVO + Keltner(オプション)
+                if keltner_pass:
+                    donchian_side = signals["donchian"]["side"]
+                    if donchian_side == "BUY":
+                        self.logger.log(f"[条件判定:ENTRY] BUY成立 (Donchian + PVO + Keltner={keltner_enabled})")
+                        side = "BUY"
+                        decision = "ENTRY"
+                    elif donchian_side == "SELL":
+                        self.logger.log(f"[条件判定:ENTRY] SELL成立 (Donchian + PVO + Keltner={keltner_enabled})")
+                        side = "SELL"
+                        decision = "ENTRY"
+
         self.trade_decision["side"] = side
         self.trade_decision["decision"] = decision
             
@@ -84,37 +95,44 @@ class TradingStrategy:
         """
         ピラミッド条件を評価し、買い増しするかどうかを決定します。
 
-        条件:
+        Phase C条件:
         1. ポジションを保有している
-        2. 追加レンジ幅が前回取得値を超過
+        2. 追加回数3回未満
+        3. entry_rangeレンジ内のみ追加
         """
         side = 'NONE'
         decision = 'NONE'
   
-        # 保有状態を確認 
         position_side = self.portfolio.get_position_side()
         
         if position_side != 'NONE':
+            # Phase C: entry_times回上限チェック
+            add_count = getattr(self.portfolio, 'add_count', 0)
+            max_entries = Config.get_entry_times()
+            if add_count >= max_entries:
+                self.logger.log(f"[条件判定:ADD] 上限到達 add_count={add_count}, max={max_entries}")
+                return
+
             # 追加レンジ幅を取得
-            range = self.risk_manager.get_add_range()
-            # 前回取得値を取得
+            range_val = self.risk_manager.get_add_range()
             last_entry_price = self.risk_manager.get_last_entry_price()
             
             # 価格がエントリー方向に基準レンジ分だけ進んだか判定する
-            # TODO rangeはprice x ボラ x 2の値。妥当？
-            if position_side == "BUY" and (price - last_entry_price) > range:
-                self.logger.log(f"[条件判定:ADD] 価格変動 {(price - last_entry_price):.2f} が変動幅 {range:.2f} を超過しました")
+            if position_side == "BUY" and (price - last_entry_price) > range_val:
+                self.logger.log(f"[条件判定:ADD] 価格変動 {(price - last_entry_price):.2f} が変動幅 {range_val:.2f} を超過")
                 side = "BUY"
                 decision = "ADD"
                 self.trade_decision["side"] = side
                 self.trade_decision["decision"] = decision
+                self.portfolio.add_count = add_count + 1  # Phase C: 回数カウント
 
-            elif position_side == "SELL" and (last_entry_price - price) > range:
-                self.logger.log(f"[条件判定:ADD] 価格変動 {(last_entry_price - price):.2f} が変動幅 {range:.2f} を超過しました")
+            elif position_side == "SELL" and (last_entry_price - price) > range_val:
+                self.logger.log(f"[条件判定:ADD] 価格変動 {(last_entry_price - price):.2f} が変動幅 {range_val:.2f} を超過")
                 side = "SELL"
                 decision = "ADD"
                 self.trade_decision["side"] = side
                 self.trade_decision["decision"] = decision
+                self.portfolio.add_count = add_count + 1  # Phase C: 回数カウント
 
         return
 
@@ -122,30 +140,50 @@ class TradingStrategy:
         """
         エグジット条件を評価し、ポジションをクローズするかどうかを決定します。
 
+        Phase D条件:
+        1. ストップロス判定
+        2. 利益率>10%で50%部分決済
         """
         side = 'NONE'
         decision = 'NONE'
         position_side = 'NONE'
 
-        # ストップ値取得
         stop_price = self.risk_manager.get_stop_price()
         
-        # 現在値取得
         price = self.price_data_management.get_latest_ohlcv()
         high_price = price['high_price']
         low_price = price['low_price']
         close_price = price['close_price']
         
+        position_side = self.portfolio.get_position_side()
+
+        # Phase D: 部分決済チェック（利益率>10%で半分決済）
+        # TODO: bot.pyでPARTIAL_EXIT処理を実装後に有効化
+        # if position_side != 'NONE':
+        #     avg_entry = self.risk_manager.get_average_entry_price()
+        #     partial_closed = getattr(self.portfolio, 'partial_closed', False)
+        #     if not partial_closed and avg_entry > 0:
+        #         profit_rate = 0
+        #         if position_side == "BUY":
+        #             profit_rate = (close_price - avg_entry) / avg_entry
+        #         elif position_side == "SELL":
+        #             profit_rate = (avg_entry - close_price) / avg_entry
+        #
+        #         if profit_rate > 0.10:
+        #             self.logger.log(f"[条件判定:PARTIAL_EXIT] 利益率 {profit_rate*100:.2f}% で50%決済")
+        #             side = "SELL" if position_side == "BUY" else "BUY"
+        #             decision = "PARTIAL_EXIT"
+        #             self.trade_decision["side"] = side
+        #             self.trade_decision["decision"] = decision
+        #             self.portfolio.partial_closed = True
+        #             return
+
         #-------------------------------------------------------
         # 現在値とストップ値比較
         #-------------------------------------------------------
-        position_side = self.portfolio.get_position_side()
-
         if position_side == "BUY":
             if close_price <= stop_price:
                 self.logger.log(f"[条件判定:EXIT] 現在値 {close_price:.2f} がストップ値 {stop_price:.2f} を割り込みました")
-#            if low_price <= stop_price:
-#                self.logger.log(f"[条件判定:EXIT] 最安値 {low_price:.2f} がストップ値 {stop_price:.2f} を割り込みました")
                 side = "SELL"
                 decision = "EXIT"
                 self.trade_decision["side"] = side
@@ -154,16 +192,10 @@ class TradingStrategy:
         elif position_side == "SELL":
             if close_price >= stop_price:
                 self.logger.log(f"[条件判定:EXIT] 現在値 {close_price:.2f} がストップ値 {stop_price:.2f} を超過しました")
-#            if high_price >= stop_price:
-#                self.logger.log(f"[条件判定:EXIT] 最高値 {high_price:.2f} がストップ値 {stop_price:.2f} を超過しました")
                 side = "BUY"
                 decision = "EXIT"
                 self.trade_decision["side"] = side
                 self.trade_decision["decision"] = decision
-
-        #-------------------------------------------------------
-        # ADXと利益からの判定
-        #-------------------------------------------------------
 
         return
 

@@ -181,6 +181,14 @@ python src/bot.py --config src/config.ini --strategy satostrategy
 2. 小さな改善は直接PR。構造変更は Issue 事前起票。
 3. バックテスト結果を PR に添付 (主要指標数値)。
 
+## 最新アップデート (2025-11-21)
+- **Keltnerチャネル実装完了**: `price_data_management.py`にKeltnerシグナル評価追加、`trading_strategy.py`でフィルタ統合（トグル可能）
+- **設定更新**: leverage=1, risk=0.03, entry_times=3, PVO業界標準(12/26/0)適用
+- **A/Bテスト準備**: Keltnerフィルタ効果検証のための基盤完成
+- **次のステップ**: バックテスト処理時間改善 → Keltner ON/OFF比較実施
+
+詳細は `src/analysis/STRATEGY.md` を参照。
+
 ## 免責
 本ソフトは教育・研究目的。実運用は自己責任で行ってください。過去成績は将来を保証しません。
 
