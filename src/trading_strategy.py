@@ -197,24 +197,29 @@ class TradingStrategy:
         #-------------------------------------------------------
         # 現在値とストップ値比較
         #-------------------------------------------------------
+        # 2時間足ベースのストップ判定（高速化＆正確性向上）
+        # BUY: 2h足の安値 <= stop でストップ成立（スリッページ -0.5%）
+        # SELL: 2h足の高値 >= stop でストップ成立（スリッページ +0.5%）
+        executed_price = None
         if position_side == "BUY":
-            if close_price <= stop_price:
-                self.logger.log(f"[条件判定:EXIT] 現在値 {close_price:.2f} がストップ値 {stop_price:.2f} を割り込みました")
+            if low_price <= stop_price:
+                executed_price = stop_price * 0.995  # スリッページ考慮
+                self.logger.log(f"[条件判定:EXIT] 2h安値 {low_price:.2f} がストップ値 {stop_price:.2f} を割り込みました (実行価格 {executed_price:.2f})")
                 side = "SELL"
                 decision = "EXIT"
                 self.trade_decision["side"] = side
                 self.trade_decision["decision"] = decision
-                # ポジションクローズ時にフラグリセット
+                self.trade_decision["exec_price"] = executed_price
                 self._add_limit_logged = False
-
         elif position_side == "SELL":
-            if close_price >= stop_price:
-                self.logger.log(f"[条件判定:EXIT] 現在値 {close_price:.2f} がストップ値 {stop_price:.2f} を超過しました")
+            if high_price >= stop_price:
+                executed_price = stop_price * 1.005  # スリッページ考慮
+                self.logger.log(f"[条件判定:EXIT] 2h高値 {high_price:.2f} がストップ値 {stop_price:.2f} を超過しました (実行価格 {executed_price:.2f})")
                 side = "BUY"
                 decision = "EXIT"
                 self.trade_decision["side"] = side
                 self.trade_decision["decision"] = decision
-                # ポジションクローズ時にフラグリセット
+                self.trade_decision["exec_price"] = executed_price
                 self._add_limit_logged = False
 
         return
