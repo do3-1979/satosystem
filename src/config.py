@@ -20,6 +20,13 @@ class Config:
     _cache = None
     
     @classmethod
+    def reload_config(cls):
+        """Reload configuration from config.ini file and clear cache."""
+        cls.config = configparser.ConfigParser()
+        cls.config.read('config.ini', encoding="utf-8_sig")
+        cls._cache = None
+    
+    @classmethod
     def _initialize_cache(cls):
         """Initialize configuration cache for performance optimization."""
         if cls._cache is not None:
@@ -57,6 +64,14 @@ class Config:
             'pvo_s_term': int(cls.config['Strategy']['pvo_s_term']),
             'pvo_l_term': int(cls.config['Strategy']['pvo_l_term']),
             'pvo_threshold': int(cls.config['Strategy']['pvo_threshold']),
+            # Classification (trend labeling)
+            'classification_k2': float(cls.config['Strategy'].get('classification_k2', 1.5)),
+            'classification_k3': float(cls.config['Strategy'].get('classification_k3', 1.2)),
+            # Partial Exit parameters
+            'partial_exit_enabled': cls.config['Strategy'].getboolean('partial_exit_enabled', fallback=False),
+            'partial_exit_profit_rate': float(cls.config['Strategy'].get('partial_exit_profit_rate', 0.10)),
+            'partial_exit_ratio': float(cls.config['Strategy'].get('partial_exit_ratio', 0.5)),
+            'partial_exit_min_bars': int(cls.config['Strategy'].get('partial_exit_min_bars', 0)),
             # Portfolio
             'lot_limit_lower': float(cls.config['Potfolio']['lot_limit_lower']),
             'balance_tether_limit': float(cls.config['Potfolio']['balance_tether_limit']),
@@ -387,6 +402,36 @@ class Config:
         """
         cls._initialize_cache()
         return cls._cache['keltner_enabled']
+
+    @classmethod
+    def get_classification_k2(cls):
+        cls._initialize_cache()
+        return cls._cache['classification_k2']
+
+    @classmethod
+    def get_classification_k3(cls):
+        cls._initialize_cache()
+        return cls._cache['classification_k3']
+
+    @classmethod
+    def get_partial_exit_enabled(cls):
+        cls._initialize_cache()
+        return cls._cache['partial_exit_enabled']
+
+    @classmethod
+    def get_partial_exit_profit_rate(cls):
+        cls._initialize_cache()
+        return cls._cache['partial_exit_profit_rate']
+
+    @classmethod
+    def get_partial_exit_ratio(cls):
+        cls._initialize_cache()
+        return cls._cache['partial_exit_ratio']
+
+    @classmethod
+    def get_partial_exit_min_bars(cls):
+        cls._initialize_cache()
+        return cls._cache['partial_exit_min_bars']
 
     @classmethod
     def get_pvo_s_term(cls):

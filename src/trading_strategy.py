@@ -57,10 +57,18 @@ class TradingStrategy:
 
         Phase B条件:
         1. ポジションを保有していない
-        2. PVOが閾値範囲内
-        3. ドンチャンチャネルブレイクが発生
-        4. Keltner幅が拡大中
-        5. 中央線へプルバック後に再上昇/再下落
+        Phase B判定:
+        
+        (Keltnerフィルタ無効時):
+        1. ドンチャンブレイク発生
+        2. PVO > 閾値
+        → ENTRY
+        
+        (Keltnerフィルタ有効時 - だまし回避):
+        1. Keltner幅 >= 閾値（ボラティリティ確認 = トレンド強い）
+        2. ドンチャンブレイク発生
+        3. PVO > 閾値
+        → ENTRY（レンジ相場のだましを除外）
         """
         side = 'NONE'
         decision = 'NONE'
@@ -75,12 +83,23 @@ class TradingStrategy:
                 keltner_enabled = Config.get_keltner_enabled()
                 keltner_pass = True
                 if keltner_enabled and "keltner" in signals:
-                    keltner_pass = signals["keltner"]["signal"]
-                    if not keltner_pass:
+                    # Keltnerボラティリティフィルタ
+                    # signals["keltner"]["signal"] = volatility_ok (ボラ十分か)
+                    volatility_ok = signals["keltner"]["signal"]
+                    
+                    if volatility_ok:
+                        keltner_pass = True  # ボラティリティOK → ENTRY許可
+                    else:
+                        keltner_pass = False  # ボラティリティ不足 → だまし疑い
                         # Keltnerフィルタログは600回に1回出力（約10分に1回）
                         self._keltner_filter_counter += 1
                         if self._keltner_filter_counter >= self._keltner_filter_interval:
-                            self.logger.log(f"[条件判定:ENTRY] Keltnerフィルタで除外 (600回に1回表示)")
+                            keltner_info = signals["keltner"].get("info", {})
+                            self.logger.log(
+                                f"[条件判定:ENTRY] Keltnerフィルタで除外 "
+                                f"(volatility_ok={volatility_ok}, width={keltner_info.get('width', 0):.2f}, atr={keltner_info.get('atr', 0):.2f}) "
+                                f"600回に1回表示"
+                            )
                             self._keltner_filter_counter = 0
 
                 # Phase B: Donchian + PVO + Keltner(オプション)
@@ -158,7 +177,7 @@ class TradingStrategy:
 
         Phase D条件:
         1. ストップロス判定
-        2. 利益率>10%で50%部分決済
+        2. (オプション) 部分利確: 利益率・保持バー数条件を満たしたら部分決済
         """
         side = 'NONE'
         decision = 'NONE'
@@ -173,26 +192,28 @@ class TradingStrategy:
         
         position_side = self.portfolio.get_position_side()
 
-        # Phase D: 部分決済チェック（利益率>10%で半分決済）
-        # TODO: bot.pyでPARTIAL_EXIT処理を実装後に有効化
-        # if position_side != 'NONE':
-        #     avg_entry = self.risk_manager.get_average_entry_price()
-        #     partial_closed = getattr(self.portfolio, 'partial_closed', False)
-        #     if not partial_closed and avg_entry > 0:
-        #         profit_rate = 0
-        #         if position_side == "BUY":
-        #             profit_rate = (close_price - avg_entry) / avg_entry
-        #         elif position_side == "SELL":
-        #             profit_rate = (avg_entry - close_price) / avg_entry
-        #
-        #         if profit_rate > 0.10:
-        #             self.logger.log(f"[条件判定:PARTIAL_EXIT] 利益率 {profit_rate*100:.2f}% で50%決済")
-        #             side = "SELL" if position_side == "BUY" else "BUY"
-        #             decision = "PARTIAL_EXIT"
-        #             self.trade_decision["side"] = side
-        #             self.trade_decision["decision"] = decision
-        #             self.portfolio.partial_closed = True
-        #             return
+        # Phase D: 部分決済チェック (設定有効時)
+        if position_side != 'NONE' and Config.get_partial_exit_enabled():
+            avg_entry = self.portfolio.get_position_price()
+            if avg_entry > 0:
+                # 利益率計算
+                if position_side == 'BUY':
+                    profit_rate = (close_price - avg_entry) / avg_entry
+                else:  # SELL
+                    profit_rate = (avg_entry - close_price) / avg_entry
+                # バー保持条件
+                bars_min = Config.get_partial_exit_min_bars()
+                # open_trade からバー数を取得可能なら利用（不足時は0）
+                bars_held = getattr(self.portfolio, 'partial_exit_count', 0)  # 簡易: 既存partial回数を利用
+                profit_thr = Config.get_partial_exit_profit_rate()
+                if profit_rate >= profit_thr and bars_held >= bars_min:
+                    exit_ratio = Config.get_partial_exit_ratio()
+                    self.logger.log(f"[条件判定:PARTIAL_EXIT] 利益率 {profit_rate*100:.2f}% >= {profit_thr*100:.2f}% で部分決済 ratio={exit_ratio:.2f}")
+                    side = 'SELL' if position_side == 'BUY' else 'BUY'
+                    decision = 'PARTIAL_EXIT'
+                    self.trade_decision['side'] = side
+                    self.trade_decision['decision'] = decision
+                    return
 
         #-------------------------------------------------------
         # 現在値とストップ値比較

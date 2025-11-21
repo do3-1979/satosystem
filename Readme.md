@@ -46,15 +46,48 @@ pip install -r requirements.txt   # 依存ライブラリ
 設定ファイル: `src/config.ini` を編集し API キーなどを投入。
 
 ## 実行方法
-バックテスト例:
+
+### 重要ルール: bot_run.sh の使用必須
+**すべてのバックテスト/ライブ実行は `src/bot_run.sh` を経由すること。**
+
+理由:
+- APIキーの自動注入/復元 (`replace_api_key.sh` による安全管理)
+- ログファイルの自動クリーンアップ
+- config.iniへのAPIキー残留防止 (コミット事故防止)
+
+**直接 `python bot.py` を実行することは禁止** (デバッグ時を除く)。
+
+### 実行例
+バックテスト (推奨):
 ```bash
-python src/backtest.py --config src/config.ini --strategy satostrategy --from 2024-01-01 --to 2024-06-30
+cd src
+./bot_run.sh
 ```
-ライブ運用 (試験運用推奨):
+
+バックグラウンド実行 (ライブ運用):
 ```bash
-python src/bot.py --config src/config.ini --strategy satostrategy
+cd src
+./bot_run.sh bg
 ```
+
+ログクリーンアップのみ:
+```bash
+cd src
+./bot_run.sh clear
+```
+
+### 自動化スクリプトの注意事項
+A/B実験や月次バックテストなどの自動化ツールは、必ず `bot_run.sh` を `subprocess` で呼び出すこと:
+```python
+# Good: bot_run.sh を使用
+subprocess.run(['bash', 'bot_run.sh'], cwd=src_dir, ...)
+
+# Bad: bot.py を直接実行 (APIキー管理が不統一になる)
+subprocess.run(['python', 'bot.py'], ...)  # NG
+```
+
 ログは `src/logs/` 以下に保存。OHLCV キャッシュは再利用されリクエスト頻度を低減。
+
 
 ## 戦略改善ワークフロー (M4)
 1. 指標設定: 勝率 / ProfitFactor / 最大ドローダウン / 日次シャープ。

@@ -242,6 +242,41 @@ class IndicatorService:
         return self.calculate_atr(ohlcv_data, term)
 
     # ========================================
+    # Keltner Channel
+    # ========================================
+    def calculate_keltner_channel(self, ohlcv_data, ema_period=20, atr_multiplier=2.0):
+        """Calculate Keltner Channel bands.
+        
+        Keltner Channel consists of:
+        - Middle line: EMA of close prices
+        - Upper band: EMA + (ATR * multiplier)
+        - Lower band: EMA - (ATR * multiplier)
+
+        Args:
+            ohlcv_data (list): List of OHLCV dicts with 'close_price'
+            ema_period (int): EMA period for middle line. Default 20.
+            atr_multiplier (float): ATR multiplier for bands. Default 2.0.
+
+        Returns:
+            tuple: (middle, upper, lower) or (None, None, None) if insufficient data
+        """
+        if not ohlcv_data or len(ohlcv_data) < ema_period:
+            return None, None, None
+        
+        # Calculate EMA of close prices
+        close_prices = [bar['close_price'] for bar in ohlcv_data]
+        middle = self.calculate_ema(ema_period, close_prices)
+        
+        # Calculate ATR
+        atr = self.calculate_atr(ohlcv_data, term=ema_period)
+        
+        # Calculate bands
+        upper = middle + (atr * atr_multiplier)
+        lower = middle - (atr * atr_multiplier)
+        
+        return middle, upper, lower
+
+    # ========================================
     # Parabolic SAR
     # ========================================
     def calculate_parabolic_sar(self, ohlcv_data):

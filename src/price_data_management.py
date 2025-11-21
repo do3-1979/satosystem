@@ -12,6 +12,12 @@ from ohlcv_cache import OHLCVCache
 class PriceDataManagement:
     # クラス変数として唯一のインスタンスを保持
     _instance = None
+    
+    @classmethod
+    def reset_instance(cls):
+        """シングルトンインスタンスをリセット（backtest用）"""
+        cls._instance = None
+    
     """
     価格データとトレードシグナルを管理するクラスです。
 
@@ -56,12 +62,10 @@ class PriceDataManagement:
         
         main_time_frame = Config.get_time_frame()
         psar_time_frame = Config.get_psar_time_frame()
-        min_time_frame = 1
         
         self.ohlcv_data = [
                 {"time_frame": main_time_frame, "data": []},
-                {"time_frame": psar_time_frame, "data": []},
-                {"time_frame": min_time_frame, "data": []}
+                {"time_frame": psar_time_frame, "data": []}
             ]
         self.latest_ohlcv_data = [] # 未確定の最新値
         self.ticker = 0
@@ -83,8 +87,7 @@ class PriceDataManagement:
         if Config.get_back_test_mode() == 1:
             self.back_test_ohlcv_data = [
                 {"time_frame": main_time_frame, "data": [], "prev_index": 0},
-                {"time_frame": psar_time_frame, "data": [], "prev_index": 0},
-                {"time_frame": min_time_frame, "data": [], "prev_index": 0}
+                {"time_frame": psar_time_frame, "data": [], "prev_index": 0}
             ]
             self.progress_time = 0 # 処理中の時刻
             self.progress_diff = 0
@@ -707,53 +710,64 @@ class PriceDataManagement:
 
     def __evaluate_keltner(self, ohlcv_data, current_price):
         """
-        Keltnerチャネルに基づくトレードシグナルを評価するメソッドです。
+        Keltnerチャネルに基づくトレードシグナルを評価するメソッドです（だまし回避フィルタ）。
         
-        Phase B条件:
-        - 価格がKeltner上限/下限を超えている（ブレイクアウト方向と一致）
-        - Keltner幅が拡大中（ボラティリティ増加）
+        判定ロジック（シンプル版）:
+        1. Keltner幅（ボラティリティ）をチェック
+        2. 幅が十分広い（= トレンド強い）ときのみENTRY許可
+        3. 幅が狭い（= レンジ相場）ときはENTRY拒否（だまし回避）
+        
+        ※ドンチャンブレイク方向との整合性は trading_strategy.py で判定
         
         Args:
             ohlcv_data (list): OHLCVデータのリスト
             current_price (float): 現在価格
 
         Returns:
-            tuple: (signal: bool, side: str, info: dict)
+                        tuple: (volatility_ok: bool, side: str, info: dict)
+                                     volatility_ok: ボラティリティ条件を満たすか（True=幅広い）
+                                     side: ブレイクアウト方向 ('BUY'/'SELL'/None) ※価格位置で判定
         """
         if len(ohlcv_data) < Config.get_keltner_ema_period():
             return False, None, {'upper': 0, 'middle': 0, 'lower': 0, 'width_expanding': False}
         
         # Keltnerチャネル計算
-        upper, middle, lower = self.indicator_service.calculate_keltner_channel(ohlcv_data)
+        ema_period = Config.get_keltner_ema_period()
+        atr_multiplier = Config.get_keltner_atr_multiplier()
+        middle, upper, lower = self.indicator_service.calculate_keltner_channel(
+            ohlcv_data, 
+            ema_period=ema_period, 
+            atr_multiplier=atr_multiplier
+        )
         
-        # 現在と1本前のKeltner幅を比較
+        # None チェック
+        if middle is None or upper is None or lower is None:
+            return False, None, {'upper': 0, 'middle': 0, 'lower': 0, 'width_expanding': False}
+        
+        # 1. ボラティリティチェック（Keltner幅 >= ATR × 閾値倍率）
         width_current = upper - lower
-        width_expanding = False
-        if len(ohlcv_data) >= Config.get_keltner_ema_period() + 1:
-            prev_ohlcv = ohlcv_data[:-1]
-            upper_prev, middle_prev, lower_prev = self.indicator_service.calculate_keltner_channel(prev_ohlcv)
-            width_prev = upper_prev - lower_prev
-            width_expanding = width_current > width_prev
+        atr = self.indicator_service.calculate_atr(ohlcv_data, term=ema_period)
+        # ATR倍率設定値をそのまま閾値として使用（例: 2.0倍なら width >= ATR×2.0）
+        volatility_ok = width_current >= (atr * atr_multiplier * 0.8)  # 80%緩和
         
-        # Phase B条件: 価格がKeltner外側にある & 幅拡大中
-        signal = False
+        # 2. 価格位置でブレイクアウト方向を判定
         side = None
-        
-        if current_price > upper and width_expanding:
-            signal = True
-            side = 'BUY'
-        elif current_price < lower and width_expanding:
-            signal = True
-            side = 'SELL'
+        if current_price > upper:
+            side = 'BUY'  # 上限突破
+        elif current_price < lower:
+            side = 'SELL'  # 下限突破
         
         info = {
             'upper': upper,
             'middle': middle,
             'lower': lower,
-            'width_expanding': width_expanding
+            'width_expanding': volatility_ok,
+            'atr': atr,
+            'width': width_current,
+            'volatility_ok': volatility_ok
         }
         
-        return signal, side, info
+        return volatility_ok, side, info
 
 if __name__ == "__main__":
     # PriceDataManagement

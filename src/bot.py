@@ -40,6 +40,11 @@ from report_generator import generate_markdown_report
 from visualizer import Visualizer
 from util import Util
 
+# 再発防止: ラッパ非経由実行検出 (bot_run.sh が BOT_WRAPPER_INVOKED を設定)
+if os.getenv("BOT_WRAPPER_INVOKED") != "1":
+    # 直接呼び出し時は警告 (バックテスト/本番共通)
+    print("[WARN] bot.py を直接実行しています。標準の前後処理(APIキー復元/ログ掃除/サマリ表示)を保証するため ./bot_run.sh run の使用を推奨します。環境変数 BOT_WRAPPER_INVOKED=1 で抑制可能。")
+
 class PerformanceTracker:
     def __init__(self):
         self.totals = {}
@@ -207,6 +212,39 @@ class Bot:
                             self.logger.log(f"[EOB処理] 未決済ポジション検出: {open_position['quantity']:.4f} {open_position['side']} @ {open_position['position_price']:.0f}")
                             self.logger.log(f"[EOB処理] 最終足価格で強制決済: {final_price:.0f}")
                             self.portfolio.clear_position_quantity(final_price)
+                            # 強制決済時にオープントレードが残っていれば分類記録
+                            if self.open_trade:
+                                pnl_total = self.portfolio.get_profit_and_loss()
+                                entry_price = self.open_trade['entry_price']
+                                side = self.open_trade['side']
+                                mfe = self.open_trade['mfe']
+                                mae = self.open_trade['mae']
+                                bars = self.open_trade['bars']
+                                atr_entry = self.open_trade['atr']
+                                capture_ratio = (pnl_total / mfe) if mfe > 0 else 0.0
+                                loss_containment_ratio = (abs(pnl_total) / mae) if (mae > 0 and pnl_total < 0) else 0.0
+                                k2 = Config.get_classification_k2()
+                                k3 = Config.get_classification_k3()
+                                if mfe >= atr_entry * k2:
+                                    classification = 'TREND'
+                                elif mae >= atr_entry * k3 and mfe < atr_entry * k2:
+                                    classification = 'FALSE_BREAK'
+                                else:
+                                    classification = 'NEUTRAL'
+                                self.closed_trades.append({
+                                    'entry_price': entry_price,
+                                    'exit_price': final_price,
+                                    'side': side,
+                                    'realized_pnl': pnl_total,
+                                    'mfe': mfe,
+                                    'mae': mae,
+                                    'bars_held': bars,
+                                    'atr_at_entry': atr_entry,
+                                    'capture_ratio': capture_ratio,
+                                    'loss_containment_ratio': loss_containment_ratio,
+                                    'classification': classification
+                                })
+                                self.open_trade = None
                             # EOB決済をPnL履歴へ追記
                             self.pnl_history.append(self.portfolio.get_profit_and_loss())
                             self.close_times.append(self.price_data_management.get_latest_close_time_dt())
@@ -437,8 +475,9 @@ class Bot:
                             atr_entry = self.open_trade['atr']
                             capture_ratio = (realized / mfe) if mfe > 0 else 0.0
                             loss_containment_ratio = (abs(realized) / mae) if (mae > 0 and realized < 0) else 0.0
-                            # 分類ロジック簡易版
-                            k2 = 2.0; k3 = 1.2
+                            # 分類ロジック: config.iniから読み込み (最適化結果: k2=1.5, k3=1.2)
+                            k2 = Config.get_classification_k2()
+                            k3 = Config.get_classification_k3()
                             if mfe >= atr_entry * k2:
                                 classification = 'TREND'
                             elif mae >= atr_entry * k3 and mfe < atr_entry * k2:
@@ -459,6 +498,10 @@ class Bot:
                                 'classification': classification
                             })
                             self.open_trade = None
+                    elif trade_decision["decision"] == "PARTIAL_EXIT":
+                        ratio = Config.get_partial_exit_ratio()
+                        self.portfolio.partial_clear_position_quantity(price, ratio)
+                        # 部分決済後もトレードは継続させるため open_trade は保持
                     elif trade_decision["decision"] == "ENTRY" or trade_decision["decision"] == "ADD":
                         self.portfolio.add_position_quantity(quantity, trade_decision["side"], price)
                         # 前回のエントリ価格を更新

@@ -36,11 +36,14 @@ def _phase_table(perf_summary: Dict) -> str:
 
 
 def _metrics_table(metrics: Dict) -> str:
+    recovery = metrics.get("recovery_period", 0)
+    recovery_str = f"{recovery} bars" if recovery >= 0 else "Not recovered"
     rows = [
         ("Total PnL", metrics.get("total_pnl", 0)),
         ("Profit Factor", metrics.get("profit_factor", 0)),
         ("Max Drawdown", metrics.get("max_drawdown", 0)),
         ("Max DD Rate", f"{metrics.get('max_drawdown_rate', 0)}%"),
+        ("Recovery Period", recovery_str),
         ("Sharpe", metrics.get("sharpe", 0)),
         ("Win Rate", f"{metrics.get('win_rate', 0)}%"),
         ("Trades", metrics.get("trades", 0)),

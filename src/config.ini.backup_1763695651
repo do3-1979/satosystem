@@ -28,11 +28,10 @@ surge_follow_price_ratio = 0.011
 psar_time_frame = 120
 
 # 取引分類パラメータ
-# k2: TREND分類の MFE/ATR 閾値 (最適化済: 2.2, MFE p60-70=2.06-2.86)
-# k3: FALSE_BREAK分類の MAE/ATR 閾値 (最適化済: 1.6, MAE p60-70=1.71-1.94)
-# 2024年間データ分析結果: k2=2.2, k3=1.6 で TREND 66件(41.8% PnL捕捉), FALSE_BREAK 52件
-classification_k2 = 2.2
-classification_k3 = 1.6
+# k2: TREND分類の MFE/ATR 閾値 (推奨: 1.5-2.0)
+# k3: FALSE_BREAK分類の MAE/ATR 閾値 (推奨: 1.2)
+classification_k2 = 1.5
+classification_k3 = 1.2
 
 [Market]
 market = BTC/USD
@@ -66,7 +65,7 @@ pvo_threshold = 20
 
 # 部分利確 (PARTIAL EXIT) 設定
 # 利確判定を有効にするか
-partial_exit_enabled = False
+partial_exit_enabled = True
 # 利確発動の最低利益率 (例: 0.10 = 10%)
 partial_exit_profit_rate = 0.10
 # 利確時に決済する保有数量比率 (0.5 = 50%)

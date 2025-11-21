@@ -1,54 +1,109 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-# 開始時間の取得
-start_time=$(date +%s)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
-# 引数の確認
-if [ "$#" -eq 1 ] && [ "$1" == "clear" ]; then
-    # clearが指定された場合、1, 2, 3のファイル削除のみを実行
-    echo "ファイルを削除して終了します。"
-    # logs ディレクトリ以下の json ファイルと zip ファイルの削除
-    find logs -name "*.json" -type f -delete
-    find logs -name "*.zip" -type f -delete
-    # log.txt の削除
-    rm -f log.txt
-    # err.log の削除
-    rm -f err.log
+START_TS=$(date +%s)
+DATE_TAG=$(date +%Y%m%d_%H%M%S)
+REPORT_DIR="report"
+
+usage() {
+    cat <<'USAGE'
+Usage: ./bot_run.sh [command]
+
+Commands:
+    run           通常実行 (前処理→bot.py→後処理)
+    bg            バックグラウンド実行 (& err.logへリダイレクト)
+    clear         古い一時ログ(json/zip/log.txt/err.log)削除のみ
+    help          このヘルプを表示
+
+特徴:
+    - APIキー自動注入/復元 (replace_api_key.sh)
+    - 前処理で古いjson/zipを掃除し結果混在防止
+    - 実行後 summary を最新ファイル名とともに表示
+    - trend_trades 未生成検出時は警告
+
+推奨フロー:
+    1) config.ini 編集 (期間/パラメータ)
+    2) ./bot_run.sh run
+    3) report/*summary*.json / trend_trades_*.json / pnl_timeseries_*.json 確認
+    4) 分類再グリッド: python tools/reclassify_trades_grid.py --input report/<trend_trades_file> --output report/classification_grid_results.json
+
+再発防止策:
+    - 直接 python bot.py を使うと API キー復元/ログ掃除/後処理が抜けるため禁止 (wrapper経由で統一)
+USAGE
+}
+
+if [[ ${1-} == "help" ]]; then
+    usage; exit 0
+fi
+
+if [[ ${1-} == "clear" ]]; then
+    echo "[CLEAN] 清掃のみ実行" >&2
+    find logs -name "*.json" -type f -delete || true
+    find logs -name "*.zip"  -type f -delete || true
+    rm -f log.txt err.log || true
     exit 0
 fi
 
-# 1: logs ディレクトリ以下の json ファイルと zip ファイルの削除
-find logs -name "*.json" -type f -delete
-find logs -name "*.zip" -type f -delete
+# 直接 bot.py 実行へのガード (対話シェル環境で検出困難だが alias 提案用メッセージ)
+if [[ ${1-} == "python" || ${1-} == "bot.py" ]]; then
+    echo "[ERROR] Use ./bot_run.sh run で実行してください" >&2
+    exit 1
+fi
 
-# 2: log.txt の削除
-rm -f log.txt
+CMD=${1-run}
 
-# 3: err.log の削除
-rm -f err.log
+echo "[START] bot_run.sh mode=$CMD at $DATE_TAG"
 
-# APIキーとシークレットを置換
+echo "[PRE] 古いログ/成果物の軽量掃除";
+find logs -name "*.json" -type f -delete || true
+find logs -name "*.zip"  -type f -delete || true
+rm -f log.txt err.log || true
+
+echo "[PRE] APIキー注入";
 ./replace_api_key.sh
 
-# 4: python bot.py の実行
-if [ "$#" -eq 1 ] && [ "$1" == "bg" ]; then
-    python bot.py &> err.log &
-    echo "Bot started in background (PID: $!). Keys will remain active."
-else
+run_bot() {
     python bot.py
+}
 
-    # 終了時間の取得
-    end_time=$(date +%s)
-
-    # 実行にかかった時間の計算
-    total_time=$((end_time - start_time))
-    total_hours=$((total_time / 3600))
-    total_minutes=$((total_time % 3600 / 60))
-    total_seconds=$((total_time % 60))
-
-    echo "実行時間: ${total_hours}h ${total_minutes}m ${total_seconds}s"
-
-    # 実行終了後にプレースホルダーへ復元
-    ./replace_api_key.sh restore
+if [[ $CMD == "bg" ]]; then
+    echo "[RUN] 背景実行開始";
+    run_bot &> err.log &
+    PID=$!
+    echo "[RUN] Background PID=$PID (err.log 監視)";
+    exit 0
+elif [[ $CMD == "run" ]]; then
+    echo "[RUN] 通常実行"
+    run_bot
+else
+    echo "[ERROR] Unknown command: $CMD" >&2
+    usage; exit 1
 fi
+
+END_TS=$(date +%s)
+ELAPSED=$((END_TS-START_TS))
+H=$((ELAPSED/3600)); M=$(((ELAPSED%3600)/60)); S=$((ELAPSED%60))
+
+echo "[POST] APIキー復元"; ./replace_api_key.sh restore || true
+
+latest_summary=$(ls -t report/backtest_summary_*.json 2>/dev/null | head -1 || true)
+latest_trades=$(ls -t report/trend_trades_*.json 2>/dev/null | head -1 || true)
+latest_pnl=$(ls -t report/pnl_timeseries_*.json 2>/dev/null | head -1 || true)
+
+echo "[DONE] 実行時間: ${H}h ${M}m ${S}s"
+echo "[DONE] Summary: ${latest_summary:-<none>}"
+echo "[DONE] Trades : ${latest_trades:-<none>}"
+echo "[DONE] PnL Ts : ${latest_pnl:-<none>}"
+
+if [[ -z "$latest_trades" ]]; then
+    echo "[WARN] trend_trades_* が生成されていません。EOB記録 or EXIT ロジック要確認。" >&2
+fi
+
+echo "[NEXT] 分類再グリッド例:" >&2
+echo "python tools/reclassify_trades_grid.py --input ${latest_trades:-report/trend_trades_<timestamp>.json} --output report/classification_grid_results.json" >&2
+
+exit 0
 

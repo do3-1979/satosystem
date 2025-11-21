@@ -29,6 +29,8 @@ class Portfolio:
         self.drawdown = 0
         #records["Drawdown"] = records.Funds.cummax().subtract(records.Funds)
 	    #records["DrawdownRate"] = round(records.Drawdown / records.Funds.cummax() * 100,1)
+        # 部分決済カウンタ
+        self.partial_exit_count = 0
 
     def get_position_quantity(self):
         """
@@ -181,6 +183,55 @@ class Portfolio:
         self.add_num = 0
         
         return
+
+    def partial_clear_position_quantity(self, price, ratio):
+        """ポジションの一部を決済し実現損益を反映する。
+
+        Args:
+            price (float): 決済価格
+            ratio (float): 決済比率 (0 < ratio <= 1)
+
+        Returns:
+            float: 今回の部分決済による実現損益 (profit - loss)
+        """
+        if ratio <= 0:
+            return 0.0
+        current = self.positions[self.market_type]
+        qty = current['quantity']
+        if qty <= 0:
+            return 0.0
+        remove_qty = qty * min(ratio, 1.0)
+        side = current['side']
+        entry = current['position_price']
+        if side == 'BUY':
+            diff = (price - entry) * remove_qty
+        elif side == 'SELL':
+            diff = (entry - price) * remove_qty
+        else:
+            diff = 0.0
+        profit = diff if diff >= 0 else 0.0
+        loss = -diff if diff < 0 else 0.0
+        # 累計更新
+        tmp_funds_max = self.funds_max + profit - loss
+        self.funds_max = max(self.funds_max, tmp_funds_max)
+        self.profit += profit
+        self.loss += loss
+        self.funds = self.profit - self.loss
+        self.drawdown = self.funds_max - self.funds
+        # 残数量計算
+        remain_qty = qty - remove_qty
+        if remain_qty <= 1e-12:
+            # ほぼゼロなら全決済と同等処理
+            current['quantity'] = 0
+            current['side'] = 'NONE'
+            current['position_price'] = 0
+        else:
+            current['quantity'] = remain_qty
+            # 取得単価は平均そのまま（加重平均変化なし）
+        self.partial_exit_count += 1
+        realized = profit - loss
+        self.logger.log(f"部分決済 ratio={ratio:.2f} qty={remove_qty:.6f} side={side} entry={entry:.2f} price={price:.2f} realized={realized:.2f} remain_qty={current['quantity']:.6f}")
+        return realized
 
     def get_position_quantity_with_symbol(self, symbol):
         """

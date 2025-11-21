@@ -17,6 +17,16 @@ from config import Config
 
 class Logger:
     _instance = None  # シングルトンインスタンスを格納するクラス変数
+    @classmethod
+    def reset_instance(cls):
+        """シングルトンインスタンスをリセット（backtest用）"""
+        if cls._instance is not None:
+            try:
+                cls._instance.close_log_file()
+            except:
+                pass
+        cls._instance = None
+    
 
     def __new__(cls):
         """

@@ -64,3 +64,4 @@ env/
 # エディタ設定
 .vscode/
 .idea/
+output_configs/
