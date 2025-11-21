@@ -46,6 +46,10 @@ config_bak.ini
 config_baseline_*.ini
 *config_backup*.ini
 *config_bak*.ini
+*config*.backup*
+src/config*.backup*
+config.adaptive_seq_backup
+config.ini.backup_quarterly
 
 # ZIP backups in parent directory (untracked)
 ../backup_*.zip

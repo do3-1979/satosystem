@@ -215,12 +215,40 @@ subprocess.run(['python', 'bot.py'], ...)  # NG
 3. バックテスト結果を PR に添付 (主要指標数値)。
 
 ## 最新アップデート (2025-11-21)
-- **Keltnerチャネル実装完了**: `price_data_management.py`にKeltnerシグナル評価追加、`trading_strategy.py`でフィルタ統合（トグル可能）
-- **設定更新**: leverage=1, risk=0.03, entry_times=3, PVO業界標準(12/26/0)適用
-- **A/Bテスト準備**: Keltnerフィルタ効果検証のための基盤完成
-- **次のステップ**: バックテスト処理時間改善 → Keltner ON/OFF比較実施
 
-詳細は `src/analysis/STRATEGY.md` を参照。
+### 🔴 適応型分類閾値システム実装完了 (優先度A)
+- **適応型モニター**: `tools/adaptive_threshold_monitor.py` 実装完了
+  - 最新trend_trades自動検出
+  - 四半期ごとの自動チェック (`--check`)
+  - config.ini自動更新 (`--apply-recommendations`)
+  - ドリフト検出 (閾値15%で警告)
+  
+- **初回チェック結果** (2025-11-21):
+  - トレード数: 168
+  - 現設定: k2=2.2, k3=1.6
+  - 推奨値: k2=1.9, k3=1.8
+  - ドリフト: k2 13.6%, k3 12.5% (閾値15%未満)
+  - 判定: ✅ 現設定は適切範囲内
+
+- **実装ロードマップ作成**: `docs/IMPLEMENTATION_ROADMAP.md`
+  - 優先度A〜D の段階的実装計画
+  - 週次マイルストーンと成功指標
+  - 進捗トラッキング (現在32.5%完了)
+
+### 🟡 EXIT戦略拡張 (優先度B - 30%完了)
+- **時間ベースEXIT**: `max_hold_bars` 実装済 (最適値探索待ち)
+- **部分利確機能**: 実装済 (パラメータ最適化待ち)
+- 次のステップ: ADX連動EXIT、レンジ相場EXIT
+
+### 🟢 バックテスト高速化計画 (優先度C)
+- 並列実行、キャッシュ最適化、段階的グリッド探索
+- 目標: 32組合せを4時間以内 (現状112時間から1/28短縮)
+
+### 過去のアップデート
+- **Keltnerチャネル実装完了**: `price_data_management.py`にKeltnerシグナル評価追加、`trading_strategy.py`でフィルタ統合（トグル可能）
+- **設定更新**: entry_times=4最適化、PVO業界標準(12/26/0)適用
+
+詳細は `docs/IMPLEMENTATION_ROADMAP.md` および `docs/ARCHITECTURE_OVERVIEW.md` を参照。
 
 ## 免責
 本ソフトは教育・研究目的。実運用は自己責任で行ってください。過去成績は将来を保証しません。

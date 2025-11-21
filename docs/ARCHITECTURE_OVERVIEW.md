@@ -210,18 +210,38 @@ Adopt internal `Side` enum (BUY, SELL, NONE) for all decision & portfolio intera
 2. `DataSource` abstraction (LiveDataSource / BacktestDataSource)
 3. `RiskEngine` separate from sizing heuristics
 
-## Priority Action Items (2025 Q1)
+## Priority Action Items (2025 Q4)
 
-### 🔴 CRITICAL: 適応型分類閾値システム導入
+### 🔴 CRITICAL: 適応型分類閾値システム導入 (80% 完了)
 **課題**: 現状の固定閾値 (k2=2.2, k3=1.6) が2024年データで最適化されたが、2025年の市場環境変化により勝率が97.80% → 1.92%へ壊滅的に劣化。
 
-**対策**: 
-- **月次MFE/MAE分布再計算** (dynamic_classification_optimizer.py実装済)
-- **四半期ごとのk2/k3自動調整** (ドリフト検出閾値: 15%乖離で再最適化)
-- **市場レジーム分類** (トレンド型 vs レンジ型の自動判定)
-- **閾値バウンド制御** (極端値回避: k2 ∈ [1.0, 4.0], k3 ∈ [0.8, 2.5])
+**実装状況 (2025-11-21更新)**:
+- ✅ **月次MFE/MAE分布再計算** (`tools/dynamic_classification_optimizer.py` 実装完了)
+  - パーセンタイル分析によるk2/k3推奨値算出
+  - JSON/Markdownレポート自動生成
+  
+- ✅ **適応型モニタリングシステム** (`tools/adaptive_threshold_monitor.py` 実装完了)
+  - 最新trend_trades自動検出
+  - 四半期ごとの自動チェック機能 (`--check`)
+  - config.ini自動更新機能 (`--apply-recommendations`)
+  - ドリフト検出閾値: 15%乖離で警告
+  
+- ⏳ **市場レジーム分類** (未実装)
+  - トレンド型 vs レンジ型の自動判定
+  - ボラティリティクラスタリング
+  - レジーム別閾値セット切り替え
+  
+- ✅ **閾値バウンド制御** (実装済)
+  - 極端値回避: k2 ∈ [1.0, 4.0], k3 ∈ [0.8, 2.5]
+  - k2 > k3 制約の自動維持
 
-**実装優先度**: 🔴 最優先 (システム稼働条件)
+**次のステップ**: 
+1. 初回実行 (`python tools/adaptive_threshold_monitor.py --check`)
+2. 2025年データで再最適化
+3. バックテストで効果検証
+
+**実装優先度**: 🔴 最優先 (システム稼働条件)  
+**詳細**: `docs/IMPLEMENTATION_ROADMAP.md` 参照
 
 ### 🟡 エントリー戦略改善
 **現状課題**: 
@@ -235,18 +255,41 @@ Adopt internal `Side` enum (BUY, SELL, NONE) for all decision & portfolio intera
 
 **実装優先度**: 🟡 中優先
 
-### 🟡 EXIT戦略拡張
+### 🟡 EXIT戦略拡張 (30% 完了)
 **現状課題**:
 - PSAR trailing stopがレンジ相場で機能不全
 - 部分利確効果は限定的 (別期間での正確な同一比較が必要)
+- 長期保持による過度なドローダウン
 
-**対策**:
-- **レンジ相場専用EXIT**: Bollinger Band平均回帰ロジック
-- **時間ベースEXIT**: 保持期間上限設定 (過度なホールド防止)
-- **ADX連動EXIT**: トレンド強度低下時の早期撤退
-- **部分利確パラメータ最適化**: profit_rate (0.08-0.12), ratio (0.33-0.67) グリッド探索
+**実装状況 (2025-11-21更新)**:
+- ✅ **時間ベースEXIT基盤** (実装済)
+  - `max_hold_bars` パラメータ (config.ini)
+  - trading_strategy.py/bot.pyでの判定ロジック実装済
+  - 最適値探索未実施 (候補: 10, 20, 30)
+  
+- ✅ **部分利確機能** (実装済・要最適化)
+  - `partial_exit_enabled`, `partial_exit_profit_rate`, `partial_exit_ratio`
+  - パラメータグリッド探索未実施
+  
+- ⏳ **ADX連動EXIT** (未実装)
+  - ADX < 20 かつ保持時間 > 10バーでEXIT
+  
+- ⏳ **レンジ相場専用EXIT** (未実装)
+  - Bollinger Band平均回帰ロジック
+  
+- ⏳ **ボラティリティ急縮小EXIT** (未実装)
+  - ATR縮小率 > 50%でEXIT
+  
+- ⏳ **トレーリングストップ強化** (未実装)
+  - 最高益からの固定%下落でEXIT
 
-**実装優先度**: 🟡 中優先
+**次のステップ**:
+1. max_hold_barsグリッド探索 (0, 10, 20, 30)
+2. ADX連動EXIT実装
+3. 統合バックテストで効果検証
+
+**実装優先度**: 🟡 中優先  
+**詳細**: `docs/IMPLEMENTATION_ROADMAP.md` 参照
 
 ---
 This document complements `Readme.md` and analysis files; update incrementally.
