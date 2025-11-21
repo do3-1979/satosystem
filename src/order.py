@@ -31,6 +31,15 @@ class Order:
         self.quantity = quantity
         self.price = price
         self.order_type = order_type
+        # トレード指標用フィールド（約定時）
+        self.entry_price = price if side in ('BUY','SELL') else None
+        self.mfe = 0.0  # 最大含み益幅
+        self.mae = 0.0  # 最大含み損幅
+        self.bars_held = 0
+        self.atr_at_entry = 0.0
+        self.classification = 'UNCLASSIFIED'
+        self.capture_ratio = 0.0
+        self.loss_containment_ratio = 0.0
 
     def to_dict(self):
         """

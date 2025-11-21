@@ -94,6 +94,9 @@ class Bot:
         self.close_times = []  # close_time 履歴
         # 約定履歴カウント (勝率計算用)
         self.trade_results = []  # list of bool win( True ) / loss( False )
+        # トレード指標管理
+        self.open_trade = None  # dict: {entry_price, side, atr, mfe, mae, bars}
+        self.closed_trades = []  # list of dict with metrics
         # パフォーマンス計測用トラッカー
         self.perf = PerformanceTracker()
         # ログ出力制御用カウンタ
@@ -221,9 +224,35 @@ class Bot:
                         self.logger.log(f"WinRate: {metrics['win_rate']:.2f}% Trades: {metrics['trades']}")
                         # JSON出力
                         try:
-                            import json, os, time as _t
+                            import json, os, time as _t, statistics
                             report_dir = Config.get_report_dir_name()
                             ts = _t.strftime('%Y%m%d%H%M%S')
+                            # トレンド指標集計
+                            trend_summary = {}
+                            if self.closed_trades:
+                                mfe_vals = [t['mfe'] for t in self.closed_trades]
+                                mae_vals = [t['mae'] for t in self.closed_trades]
+                                capture_vals = [t['capture_ratio'] for t in self.closed_trades]
+                                loss_cont_vals = [t['loss_containment_ratio'] for t in self.closed_trades if t['loss_containment_ratio'] > 0]
+                                classifications = {}
+                                for t in self.closed_trades:
+                                    classifications[t['classification']] = classifications.get(t['classification'], 0) + 1
+                                trend_summary = {
+                                    'trades': len(self.closed_trades),
+                                    'mfe_median': statistics.median(mfe_vals) if mfe_vals else 0,
+                                    'mae_median': statistics.median(mae_vals) if mae_vals else 0,
+                                    'capture_avg': sum(capture_vals)/len(capture_vals) if capture_vals else 0,
+                                    'loss_containment_avg': sum(loss_cont_vals)/len(loss_cont_vals) if loss_cont_vals else 0,
+                                    'class_counts': classifications
+                                }
+                            # 保存
+                            trend_trades_path = os.path.join(report_dir, f"trend_trades_{ts}.json")
+                            with open(trend_trades_path, 'w', encoding='utf-8') as tf:
+                                json.dump(self.closed_trades, tf, ensure_ascii=False, indent=2)
+                            trend_summary_path = os.path.join(report_dir, f"trend_summary_{ts}.json")
+                            with open(trend_summary_path, 'w', encoding='utf-8') as sf:
+                                json.dump(trend_summary, sf, ensure_ascii=False, indent=2)
+                            self.logger.log(f"トレンド指標出力: {trend_trades_path}, {trend_summary_path}")
                             os.makedirs(report_dir, exist_ok=True)
                             # メトリクス
                             summary_path = os.path.join(report_dir, f"backtest_summary_{ts}.json")
@@ -397,10 +426,50 @@ class Bot:
                         # EXITで確定した損益を勝敗判定 (正なら勝ち)
                         pnl = self.portfolio.get_profit_and_loss()
                         self.trade_results.append(pnl >= 0)
+                        # トレード指標確定
+                        if self.open_trade:
+                            realized = pnl  # 累計損益ベース（単一トレード簡易化）
+                            entry_price = self.open_trade['entry_price']
+                            side = self.open_trade['side']
+                            mfe = self.open_trade['mfe']
+                            mae = self.open_trade['mae']
+                            bars = self.open_trade['bars']
+                            atr_entry = self.open_trade['atr']
+                            capture_ratio = (realized / mfe) if mfe > 0 else 0.0
+                            loss_containment_ratio = (abs(realized) / mae) if (mae > 0 and realized < 0) else 0.0
+                            # 分類ロジック簡易版
+                            k2 = 2.0; k3 = 1.2
+                            if mfe >= atr_entry * k2:
+                                classification = 'TREND'
+                            elif mae >= atr_entry * k3 and mfe < atr_entry * k2:
+                                classification = 'FALSE_BREAK'
+                            else:
+                                classification = 'NEUTRAL'
+                            self.closed_trades.append({
+                                'entry_price': entry_price,
+                                'exit_price': price,
+                                'side': side,
+                                'realized_pnl': realized,
+                                'mfe': mfe,
+                                'mae': mae,
+                                'bars_held': bars,
+                                'atr_at_entry': atr_entry,
+                                'capture_ratio': capture_ratio,
+                                'loss_containment_ratio': loss_containment_ratio,
+                                'classification': classification
+                            })
+                            self.open_trade = None
                     elif trade_decision["decision"] == "ENTRY" or trade_decision["decision"] == "ADD":
                         self.portfolio.add_position_quantity(quantity, trade_decision["side"], price)
                         # 前回のエントリ価格を更新
                         self.risk_management.update_last_entry_price(price)
+                        # ENTRY時に初期化 / ADD時は平均価格再計算
+                        avg_entry = self.portfolio.get_position_price()
+                        atr_val = self.price_data_management.get_volatility()
+                        if trade_decision["decision"] == "ENTRY" or self.open_trade is None:
+                            self.open_trade = {'entry_price': avg_entry, 'side': trade_decision['side'], 'atr': atr_val, 'mfe': 0.0, 'mae': 0.0, 'bars': 0}
+                        else:
+                            self.open_trade['entry_price'] = avg_entry
                     # ポートフォリオ更新イベント
                     self.events.emit(EventType.PORTFOLIO_UPDATED, self.portfolio.get_position_quantity())
                     t_portfolio_end = perf_counter(); self.perf.record('portfolio_update', t_portfolio_start, t_portfolio_end)
@@ -480,8 +549,27 @@ class Bot:
                     # portfolio
                     trade_data['positions'] = self.portfolio.get_position_quantity()
 
+                    # オープントレード指標更新
+                    if self.open_trade:
+                        avg_entry = self.open_trade['entry_price']
+                        side_open = self.open_trade['side']
+                        high_p = trade_data['high_price']
+                        low_p = trade_data['low_price']
+                        if side_open == 'BUY':
+                            favorable = high_p - avg_entry
+                            adverse = avg_entry - low_p
+                        else:  # SELL
+                            favorable = avg_entry - low_p
+                            adverse = high_p - avg_entry
+                        if favorable > self.open_trade['mfe']:
+                            self.open_trade['mfe'] = favorable
+                        if adverse > self.open_trade['mae']:
+                            self.open_trade['mae'] = adverse
+                        self.open_trade['bars'] += 1
+                        trade_data['open_mfe'] = self.open_trade['mfe']
+                        trade_data['open_mae'] = self.open_trade['mae']
+                        trade_data['bars_held'] = self.open_trade['bars']
                     # 取引データを表示
-                    # if back_test_mode == 0:
                     self.show_trade_data(trade_data)
                     # 取引データを記録
                     self.logger.log_trade_data(trade_data)
