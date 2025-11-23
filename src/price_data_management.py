@@ -258,26 +258,50 @@ class PriceDataManagement:
         # --------------------------------------------
         # 初回の値取得
         if self.prev_close_time == 0:
-            # 120分足をサーバから取得
-            # TODO 取得済テーブルから取得
-            tmp_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch, self.time_frame)
-            last_ohlcv_data = tmp_ohlcv_data[-1]
+            # バックテストモード: 既に初期化済みのback_test_ohlcv_dataから取得
+            back_test_mode = Config.get_back_test_mode()
+            if back_test_mode == 1:
+                # back_test_ohlcv_data から初期値を取得
+                tmp_ohlcv_data = self.get_back_test_ohlcv_data_by_time_frame(self.time_frame)
+                if not tmp_ohlcv_data:
+                    self.logger.log_error("バックテスト用OHLCVデータが未初期化です")
+                    return True
+                
+                last_ohlcv_data = tmp_ohlcv_data[-1]
+                self.prev_close_time = last_ohlcv_data['close_time']
+                
+                # 初回のみ初期化
+                self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data, self.time_frame)
+                self.volatility = self.calcurate_volatility(tmp_ohlcv_data)
+                self.latest_ohlcv_data = []
+                latest_ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
+                self.latest_ohlcv_data.append(latest_ohlcv_data[-1])
+                
+                # PSAR用データも同様
+                tmp_ohlcv_data_psar = self.get_back_test_ohlcv_data_by_time_frame(self.psar_time_frame)
+                self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data_psar, self.psar_time_frame)
+                
+                return False
+            else:
+                # 本番モード: サーバから取得
+                tmp_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch, self.time_frame)
+                last_ohlcv_data = tmp_ohlcv_data[-1]
 
-            self.prev_close_time = last_ohlcv_data['close_time']
+                self.prev_close_time = last_ohlcv_data['close_time']
 
-            # 初回のみ初期化
-            self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data, self.time_frame)
-            self.volatility = self.calcurate_volatility(tmp_ohlcv_data)
-            self.latest_ohlcv_data = []
-            latest_ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
-            self.latest_ohlcv_data.append(latest_ohlcv_data[-1])
-            # pprint.pprint(self.latest_ohlcv_data)
+                # 初回のみ初期化
+                self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data, self.time_frame)
+                self.volatility = self.calcurate_volatility(tmp_ohlcv_data)
+                self.latest_ohlcv_data = []
+                latest_ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
+                self.latest_ohlcv_data.append(latest_ohlcv_data[-1])
+                # pprint.pprint(self.latest_ohlcv_data)
 
-            # PSAR用データをサーバから取得
-            tmp_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch, self.psar_time_frame)
-            self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data, self.psar_time_frame)
+                # PSAR用データをサーバから取得
+                tmp_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch, self.psar_time_frame)
+                self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data, self.psar_time_frame)
 
-            return False
+                return False
 
         # --------------------------------------------
         # 最新値の更新（性能改善: 1分刻み→時間足刻み）

@@ -157,8 +157,14 @@ class BybitExchange(Exchange):
         Returns:
             dict: 注文の実行結果 (ダミーモード時はシミュレーション結果)
         """
-        # ダミーモード確認
-        dummy_mode = Config.get_dummy_trading_mode()
+        # ダミーモード確認（バックテストモード時は強制的にダミー）
+        back_test_mode = Config.get_back_test_mode()
+        dummy_mode = Config.get_dummy_trading_mode() if hasattr(Config, 'get_dummy_trading_mode') else 0
+        
+        # バックテストモードでは強制的にダミー取引
+        if back_test_mode == 1:
+            dummy_mode = 1
+        
         server_retry_wait = Config.get_server_retry_wait()
         err_occuerd = False
         

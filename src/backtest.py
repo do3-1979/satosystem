@@ -165,8 +165,10 @@ def main():
     print()
 
     # 2. output_configs以下のconfig_*.ini ファイルからファイルリストを作成
-    config_files = find_config_files("output_configs")
-    print(f"Found {len(config_files)} config files to process")
+    # テスト用: 環境変数 BACKTEST_CONFIG_DIR でディレクトリ変更可能
+    config_dir = os.environ.get('BACKTEST_CONFIG_DIR', 'output_configs')
+    config_files = find_config_files(config_dir)
+    print(f"Found {len(config_files)} config files to process from {config_dir}")
     print()
 
     # 3. ファイルリストから一つずつバックテストを実行
