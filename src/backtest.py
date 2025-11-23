@@ -99,35 +99,47 @@ def load_api_keys():
     """
     .api_keyファイルからAPIキーとシークレットを読み込む
     
+    バックテスト時の仕組み:
+    1. .api_keyファイルに本番APIキーがあれば使用（Bybitからデータ取得可能）
+    2. キャッシュDBに十分なデータがあればAPI呼び出しはスキップ
+    3. .api_keyがない場合は、既存キャッシュだけで実行
+    4. キャッシュ不足で必須データがない場合はバックテストをスキップ
+    
     Returns:
         tuple: (api_key, api_secret)
     """
     api_key = None
     api_secret = None
     
-    api_key_file = ".api_key"
-    if os.path.exists(api_key_file):
-        with open(api_key_file, 'r') as f:
-            for line in f:
-                line = line.strip()
-                if line.startswith('api_key'):
-                    api_key = line.split('=', 1)[1].strip()
-                elif line.startswith('api_secret'):
-                    api_secret = line.split('=', 1)[1].strip()
+    # Try both locations: root and src/ directory
+    api_key_files = [".api_key", "src/.api_key"]
+    
+    for api_key_file in api_key_files:
+        if os.path.exists(api_key_file):
+            print(f"[INFO] Loading API keys from: {api_key_file}")
+            with open(api_key_file, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith('api_key'):
+                        api_key = line.split('=', 1)[1].strip()
+                    elif line.startswith('api_secret'):
+                        api_secret = line.split('=', 1)[1].strip()
+            break
     
     return api_key, api_secret
 
 def find_config_files(directory):
     """
-    指定したディレクトリ内のconfig_*.ini ファイルのリストを取得します。
+    指定したディレクトリ内のテスト用設定ファイルのリストを取得します。
 
     Args:
         directory (str): 検索対象のディレクトリパス
 
     Returns:
-        list: config_*.ini ファイルのリスト（ソート済み）
+        list: テスト設定ファイルのリスト（ソート済み）
     """
-    config_files = [f for f in os.listdir(directory) if f.startswith("config_") and f.endswith(".ini")]
+    # テストファイル: _q1.ini （Q1テスト用: 2024 Q1 + 2025 Q1）
+    config_files = [f for f in os.listdir(directory) if "_q1.ini" in f]
     # ファイル名でソートして順番を保証
     config_files.sort()
     return [os.path.join(directory, config_file) for config_file in config_files]
@@ -154,14 +166,17 @@ def main():
     # 1. ConfigManager初期化（テンプレート作成）
     ConfigManager.init_config_files(".")
     
-    # 1. APIキーを事前にロード
+    # 1. APIキーを事前にロード（本番APIキーを使用してBybitからデータ取得）
     api_key, api_secret = load_api_keys()
     if not api_key or not api_secret:
-        print("Error: API keys not found in .api_key file")
-        return
-    
-    print(f"Loaded API keys from .api_key")
-    print(f"API Key: {api_key[:8]}... (masked)")
+        print("[WARN] API keys not found in .api_key file.")
+        print("[INFO] キャッシュDB内に十分なデータがあれば使用します。")
+        print("[INFO] キャッシュ不足の場合はバックテストをスキップします。")
+        api_key = None
+        api_secret = None
+    else:
+        print(f"[INFO] 本番APIキーを使用します（バックテストモード）")
+        print(f"[INFO] API Key: {api_key[:8]}... (masked)")
     print()
 
     # 2. output_configs以下のconfig_*.ini ファイルからファイルリストを作成
@@ -178,10 +193,24 @@ def main():
         print(f"=" * 70)
         
         try:
-            # 一時的なconfig_temp.iniを準備
-            temp_config_path = ConfigManager.prepare_for_backtest(
-                config_file, api_key, api_secret, "."
-            )
+            # 出力configファイルを直接使用（シンプル化）
+            # APIキーを注入するだけで、merge処理は不要
+            temp_config_path = os.path.join(".", "config_temp.ini")
+            
+            # 出力configファイルをコピー
+            shutil.copy(config_file, temp_config_path)
+            
+            # APIキーを注入
+            with open(temp_config_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            if api_key:
+                content = content.replace("YOUR_API_KEY", api_key)
+            if api_secret:
+                content = content.replace("YOUR_API_SECRET", api_secret)
+            
+            with open(temp_config_path, 'w', encoding='utf-8') as f:
+                f.write(content)
             
             # Config を temp_config で読み込む
             # （元の config.ini は保護される）
@@ -192,8 +221,20 @@ def main():
             PriceDataManagement.reset_instance()
             Logger.reset_instance()
         
+            # APIキーなしでバックテストを実行する場合の警告・スキップ判定
+            actual_api_key = Config.get_api_key()
+            actual_api_secret = Config.get_api_secret()
+            
+            if actual_api_key == "YOUR_API_KEY" or actual_api_secret == "YOUR_API_SECRET":
+                print(f"⚠️  API keys are placeholders (not set in .api_key file)")
+                print(f"    キャッシュDB内のデータから実行します")
+                print(f"    不足データがある場合はバックテストをスキップします")
+                print()
+            
             # 取引所クラスを初期化
-            exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
+            # APIキーがプレースホルダーの場合も初期化は行うが、
+            # API呼び出しはキャッシュから実行される
+            exchange = BybitExchange(actual_api_key, actual_api_secret)
             # 資産管理クラスを初期化
             portfolio = Portfolio()
             
@@ -229,12 +270,28 @@ def main():
         finally:
             # 一時ファイルをクリーンアップ
             ConfigManager.cleanup_temp_configs(".")
+            # config_temp.ini を明示的に削除
+            temp_config_path = os.path.join(".", "config_temp.ini")
+            if os.path.exists(temp_config_path):
+                try:
+                    os.remove(temp_config_path)
+                except Exception as e:
+                    print(f"Warning: Failed to delete {temp_config_path}: {e}")
         
     total_elapsed_time = time.time() - total_start_time
     print("=" * 70)
     print(f"All backtests completed!")
     print(f"Total Elapsed Time: {format_elapsed_time(total_elapsed_time)}")
     print("=" * 70)
+    
+    # 最終的に config_temp.ini を確実に削除
+    final_temp_config = "config_temp.ini"
+    if os.path.exists(final_temp_config):
+        try:
+            os.remove(final_temp_config)
+            print(f"✅ Final cleanup: deleted {final_temp_config}")
+        except Exception as e:
+            print(f"⚠️  Warning: Failed to delete {final_temp_config}: {e}")
     
     # 最新のレポートファイルを表示
     display_latest_reports()

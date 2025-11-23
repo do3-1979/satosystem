@@ -279,9 +279,11 @@ class RiskManagement:
         else:
             prev_stop_price = self.stop_price
 
-        # パラボリックSAR計算
-        psar_ohlcv_data = self.price_data_management.get_ohlcv_data(psar_time_frame)
-        self.__calc_parabolic_sar(psar_ohlcv_data)
+        # パラボリックSAR計算（高速モード時はスキップ）
+        fast_summary_mode = Config.get_fast_summary_mode()
+        if fast_summary_mode == 0:
+            psar_ohlcv_data = self.price_data_management.get_ohlcv_data(psar_time_frame)
+            self.__calc_parabolic_sar(psar_ohlcv_data)
 
         # ADX計算
         adx_ohlcv_data = self.price_data_management.get_ohlcv_data(main_time_frame)

@@ -17,6 +17,7 @@ class Util:
     def export_trades_csv_from_logs(self, log_directory, output_csv_file, start_time=None, end_time=None):
         """
         ログ(JSON/ZIP)からトレードイベント(ENTRY/ADD/EXIT)のみを抽出し、CSVに出力します。
+        最新のZIPファイルのみを使用して重複を防ぎます。
 
         Args:
             log_directory (str): ログディレクトリ (JSON/ZIP)
@@ -31,13 +32,27 @@ class Util:
             start_dt = None
             end_dt = None
 
+        # 最新のZIPファイルのみを取得（重複を防ぐため）
         log_files = []
+        max_mtime = 0
+        latest_zip = None
+        
         for root, _, files in os.walk(log_directory):
             for file in files:
                 if file.endswith(".zip"):
-                    log_files.append(os.path.join(root, file))
-                elif file.endswith(".json"):
-                    # JSONファイルは対応するZIPが存在しない場合のみ含める
+                    full_path = os.path.join(root, file)
+                    mtime = os.path.getmtime(full_path)
+                    if mtime > max_mtime:
+                        max_mtime = mtime
+                        latest_zip = full_path
+        
+        if latest_zip:
+            log_files.append(latest_zip)
+        
+        # JSONファイルは対応するZIPが存在しない場合のみ含める
+        for root, _, files in os.walk(log_directory):
+            for file in files:
+                if file.endswith(".json"):
                     zip_path = os.path.join(root, file.replace('.json', '.zip'))
                     if not os.path.exists(zip_path):
                         log_files.append(os.path.join(root, file))

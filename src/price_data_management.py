@@ -580,8 +580,14 @@ class PriceDataManagement:
             # DB に十分なデータがあればそのまま使用。なければサーバから不足分取得
             if not cache.has_sufficient_cache(symbol, time_frame, start_epoch, end_epoch):
                 self.logger.log("キャッシュ不足 -> サーバから取得しDBに格納")
-                fetched = self.exchange.fetch_ohlcv(start_epoch, end_epoch, time_frame)
-                cache.upsert_candles(symbol, time_frame, fetched)
+                try:
+                    fetched = self.exchange.fetch_ohlcv(start_epoch, end_epoch, time_frame)
+                    cache.upsert_candles(symbol, time_frame, fetched)
+                except Exception as e:
+                    # バックテストモード時のAPIエラーはログして継続
+                    # キャッシュにあるデータで進行
+                    self.logger.log_error(f"キャッシュ不足かつAPI取得失敗（続行）: {e}")
+                    self.logger.log(f"既存キャッシュから利用可能なデータを使用します")
 
             # DB から最終的な範囲データを復元
             data = cache.get_range(symbol, time_frame, start_epoch, end_epoch)

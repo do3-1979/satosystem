@@ -13,7 +13,7 @@ from datetime import datetime
 import pytz
 
 class Config:
-    config = configparser.ConfigParser()
+    config = configparser.ConfigParser(inline_comment_prefixes=('#', ';'))
     config.read('config.ini',encoding="utf-8_sig")
     
     # Configuration cache (initialized on first access)
@@ -31,7 +31,7 @@ class Config:
     @classmethod
     def reload_config(cls):
         """Reload configuration from config file and clear cache."""
-        cls.config = configparser.ConfigParser()
+        cls.config = configparser.ConfigParser(inline_comment_prefixes=('#', ';'))
         cls.config.read(cls._config_file_path, encoding="utf-8_sig")
         cls._cache = None
     
@@ -87,6 +87,10 @@ class Config:
             'atr_shrink_exit_ratio': float(cls.config['Strategy'].get('atr_shrink_exit_ratio', 0)),
             'excluded_hours': cls.config['Strategy'].get('excluded_hours', ''),
             'max_profit_drawdown_pct': float(cls.config['Strategy'].get('max_profit_drawdown_pct', 0)),
+            # Phase 1: Regime detection
+            'regime_detection_enabled': cls.config['Strategy'].getboolean('regime_detection_enabled', fallback=False),
+            'regime_volatility_ratio_threshold': float(cls.config['Strategy'].get('regime_volatility_ratio_threshold', 1.2)),
+            'regime_trend_strength_threshold': float(cls.config['Strategy'].get('regime_trend_strength_threshold', 0.05)),
             # Portfolio
             'lot_limit_lower': float(cls.config['Potfolio']['lot_limit_lower']),
             'balance_tether_limit': float(cls.config['Potfolio']['balance_tether_limit']),
@@ -103,6 +107,7 @@ class Config:
             'report_directory': cls.config['Log'].get('report_directory', 'report'),
             # Backtest
             'back_test': int(cls.config['Backtest']['back_test']),
+            'fast_summary_mode': int(cls.config['Backtest'].get('fast_summary_mode', 0)),
         }
         
         # Derived values
@@ -618,12 +623,21 @@ class Config:
         return cls._cache['report_directory']
     
     @classmethod
-    @classmethod
     def get_back_test_mode(cls):
         """
         """
         cls._initialize_cache()
         return cls._cache['back_test']
+
+    @classmethod
+    def get_fast_summary_mode(cls):
+        """
+        高速サマリモード（軽い出力のみ）を取得
+        1: 高速サマリモード (JSON + ログサマリのみ、可視化/Excel/CSV スキップ)
+        0: 標準モード
+        """
+        cls._initialize_cache()
+        return cls._cache['fast_summary_mode']
 
     @classmethod
     def get_dummy_trading_mode(cls):
@@ -636,6 +650,7 @@ class Config:
             return int(cls.config['DummyTrading']['dummy_mode'])
         except (KeyError, ValueError):
             return 0  # デフォルトは実取引モード
+
 
     def __str__(self):
         """

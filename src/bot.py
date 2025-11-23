@@ -39,11 +39,7 @@ from pnl_reporter import generate_pnl_timeseries
 from report_generator import generate_markdown_report
 from visualizer import Visualizer
 from util import Util
-
-# 再発防止: ラッパ非経由実行検出 (bot_run.sh が BOT_WRAPPER_INVOKED を設定)
-if os.getenv("BOT_WRAPPER_INVOKED") != "1":
-    # 直接呼び出し時は警告 (バックテスト/本番共通)
-    print("[WARN] bot.py を直接実行しています。標準の前後処理(APIキー復元/ログ掃除/サマリ表示)を保証するため ./bot_run.sh run の使用を推奨します。環境変数 BOT_WRAPPER_INVOKED=1 で抑制可能。")
+from regime_detector import RegimeDetector
 
 class PerformanceTracker:
     def __init__(self):
@@ -91,6 +87,11 @@ class Bot:
         self.logger = Logger()
         # 軽量イベントバス（外部への副作用なし）
         self.events = EventBus()
+        
+        # 適応型レジーム検出器
+        self.regime_detector = RegimeDetector()
+        self._regime_update_counter = 0
+        self._regime_update_interval = 10  # 10バーごとにレジーム更新
 
         self.market_type = Config.get_market()
         self.bot_operation_cycle = Config.get_bot_operation_cycle()
@@ -146,7 +147,26 @@ class Bot:
         
         if back_test_mode == 1:
             self.logger.log("--- BOT START (BACK TEST MODE)-------------------------")
-            self.price_data_management.initialise_back_test_ohlcv_data()
+            try:
+                self.price_data_management.initialise_back_test_ohlcv_data()
+            except Exception as e:
+                self.logger.log_error(f"バックテストデータ初期化エラー: {e}")
+                self.logger.log("バックテスト中止")
+                import json, os, time as _t
+                # スキップ時も空のレポートを出力
+                metrics = {
+                    "status": "SKIPPED",
+                    "error": str(e),
+                    "reason": "バックテストデータ初期化失敗"
+                }
+                report_dir = Config.get_report_dir_name()
+                ts = _t.strftime('%Y%m%d%H%M%S')
+                os.makedirs(report_dir, exist_ok=True)
+                summary_path = os.path.join(report_dir, f"backtest_summary_{ts}.json")
+                with open(summary_path, 'w', encoding='utf-8') as f:
+                    json.dump(metrics, f, ensure_ascii=False, indent=2)
+                self.logger.close_log_file()
+                return  # バックテスト実行を終了
         else:
             self.logger.log("--- BOT START -----------------------------------------")
 
@@ -260,6 +280,18 @@ class Bot:
                         self.logger.log(f"最大ドローダウン率: {metrics['max_drawdown_rate']:>4.2f} [%]")
                         self.logger.log(f"Sharpe: {metrics['sharpe']:.3f}")
                         self.logger.log(f"WinRate: {metrics['win_rate']:.2f}% Trades: {metrics['trades']}")
+                        
+                        # レジーム統計を出力
+                        regime_stats = self.regime_detector.get_regime_stats()
+                        if regime_stats:
+                            self.logger.log("-------------------------------------------------------")
+                            self.logger.log("[レジーム統計]")
+                            self.logger.log(f"レジーム変更回数: {regime_stats.get('regime_change_count', 0)}")
+                            percentages = regime_stats.get('regime_percentages', {})
+                            for regime, pct in percentages.items():
+                                self.logger.log(f"  {regime}: {pct:.1f}%")
+                            self.logger.log(f"平均ボラティリティ比: {regime_stats.get('avg_volatility_ratio', 0):.2f}")
+                            self.logger.log(f"平均トレンド強度: {regime_stats.get('avg_trend_strength', 0):.2f}")
                         # JSON出力
                         try:
                             import json, os, time as _t, statistics
@@ -292,7 +324,9 @@ class Bot:
                                 json.dump(trend_summary, sf, ensure_ascii=False, indent=2)
                             self.logger.log(f"トレンド指標出力: {trend_trades_path}, {trend_summary_path}")
                             os.makedirs(report_dir, exist_ok=True)
-                            # メトリクス
+                            # メトリクス（レジーム統計を追加）
+                            regime_stats = self.regime_detector.get_regime_stats()
+                            metrics['regime_stats'] = regime_stats
                             summary_path = os.path.join(report_dir, f"backtest_summary_{ts}.json")
                             with open(summary_path, 'w', encoding='utf-8') as f:
                                 json.dump(metrics, f, ensure_ascii=False, indent=2)
@@ -303,83 +337,121 @@ class Bot:
                             with open(perf_path, 'w', encoding='utf-8') as pf:
                                 json.dump(perf_summary, pf, ensure_ascii=False, indent=2)
                             self.logger.log(f"パフォーマンスサマリ出力: {perf_path}")
+                            
+                            # fast_summary_mode チェック
+                            fast_summary_mode = config_instance.get_fast_summary_mode()
+                            
                             # PnL時系列出力
                             if self.pnl_history and self.close_times:
                                 pnl_csv, pnl_json = generate_pnl_timeseries(self.pnl_history, self.close_times, report_dir, prefix="pnl_timeseries")
                                 self.logger.log(f"PnL時系列出力 (CSV): {pnl_csv}")
                                 self.logger.log(f"PnL時系列出力 (JSON): {pnl_json}")
-                                # レポート自動生成 (Markdown)
-                                try:
-                                    report_md = generate_markdown_report(
-                                        metrics=metrics,
-                                        perf_summary=perf_summary,
-                                        output_dir=report_dir,
-                                        ts=ts,
-                                        pnl_csv_path=pnl_csv,
-                                        pnl_json_path=pnl_json,
-                                        extra_notes=None,
-                                    )
-                                    self.logger.log(f"レポート出力 (Markdown): {report_md}")
-                                except Exception as re:
-                                    self.logger.log_error(f"レポート出力失敗: {re}")
-                                # インタラクティブ可視化を自動生成
-                                try:
-                                    vis = Visualizer()
-                                    viz_html = os.path.join(report_dir, f"backtest_visualization_{ts}.html")
-                                    vis.visualize_backtest(
-                                        log_directory="logs",
-                                        output_html=viz_html,
-                                        start_time=Config.get_start_time(),
-                                        end_time=Config.get_end_time()
-                                    )
-                                    self.logger.log(f"インタラクティブ可視化出力: {viz_html}")
-                                except Exception as ve:
-                                    import traceback
-                                    self.logger.log_error(f"可視化出力失敗: {ve}")
-                                    self.logger.log_error(f"詳細: {traceback.format_exc()}")
+                                
+                                # 高速モード時はレポート・可視化をスキップ
+                                if fast_summary_mode == 0:
+                                    # レポート自動生成 (Markdown)
+                                    try:
+                                        report_md = generate_markdown_report(
+                                            metrics=metrics,
+                                            perf_summary=perf_summary,
+                                            output_dir=report_dir,
+                                            ts=ts,
+                                            pnl_csv_path=pnl_csv,
+                                            pnl_json_path=pnl_json,
+                                            extra_notes=None,
+                                        )
+                                        self.logger.log(f"レポート出力 (Markdown): {report_md}")
+                                    except Exception as re:
+                                        self.logger.log_error(f"レポート出力失敗: {re}")
+                                    # インタラクティブ可視化を自動生成
+                                    try:
+                                        vis = Visualizer()
+                                        viz_html = os.path.join(report_dir, f"backtest_visualization_{ts}.html")
+                                        vis.visualize_backtest(
+                                            log_directory="logs",
+                                            output_html=viz_html,
+                                            start_time=Config.get_start_time(),
+                                            end_time=Config.get_end_time()
+                                        )
+                                        self.logger.log(f"インタラクティブ可視化出力: {viz_html}")
+                                    except Exception as ve:
+                                        import traceback
+                                        self.logger.log_error(f"可視化出力失敗: {ve}")
+                                        self.logger.log_error(f"詳細: {traceback.format_exc()}")
+                                else:
+                                    self.logger.log("[高速サマリモード] Markdown レポート・可視化をスキップ")
                         except Exception as e:
                             self.logger.log_error(f"バックテストメトリクス/パフォーマンス/PnL出力失敗: {e}")
                         
                         # ログファイルをクローズ（ZIP圧縮含む）
                         self.logger.close_log_file()
                         
-                        # Excel集計を自動生成（ログクローズ後に実行）
-                        try:
-                            util_instance = Util()
-                            excel_path = os.path.join("logs", f"combined_logs_{ts}.xlsx")
-                            util_instance.extract_and_export_logs(
-                                log_directory="logs",
-                                num_logs=999,
-                                output_excel_file=excel_path,
-                                start_time=Config.get_start_time(),
-                                end_time=Config.get_end_time()
-                            )
-                            self.logger.log(f"Excel集計出力: {excel_path}")
-                        except Exception as ue:
-                            import traceback
-                            self.logger.log_error(f"Excel出力失敗: {ue}")
-                            self.logger.log_error(f"詳細: {traceback.format_exc()}")
+                        # fast_summary_mode チェック（Excel・CSV出力用）
+                        fast_summary_mode = config_instance.get_fast_summary_mode()
                         
-                        try:
-                            # トレードCSVも自動出力
-                            util_instance = Util()
-                            trades_csv = os.path.join("logs", f"trades_export_{ts}.csv")
-                            util_instance.export_trades_csv_from_logs(
-                                log_directory="logs",
-                                output_csv_file=trades_csv,
-                                start_time=Config.get_start_time(),
-                                end_time=Config.get_end_time()
-                            )
-                            self.logger.log(f"トレードCSV出力: {trades_csv}")
-                        except Exception as ue:
-                            import traceback
-                            self.logger.log_error(f"CSV出力失敗: {ue}")
-                            self.logger.log_error(f"詳細: {traceback.format_exc()}")
+                        # 高速モード時はExcel・CSV出力をスキップ
+                        if fast_summary_mode == 0:
+                            # Excel集計を自動生成（ログクローズ後に実行）
+                            try:
+                                util_instance = Util()
+                                excel_path = os.path.join("logs", f"combined_logs_{ts}.xlsx")
+                                util_instance.extract_and_export_logs(
+                                    log_directory="logs",
+                                    num_logs=999,
+                                    output_excel_file=excel_path,
+                                    start_time=Config.get_start_time(),
+                                    end_time=Config.get_end_time()
+                                )
+                                self.logger.log(f"Excel集計出力: {excel_path}")
+                            except Exception as ue:
+                                import traceback
+                                self.logger.log_error(f"Excel出力失敗: {ue}")
+                                self.logger.log_error(f"詳細: {traceback.format_exc()}")
+                            
+                            try:
+                                # トレードCSVも自動出力
+                                util_instance = Util()
+                                trades_csv = os.path.join("logs", f"trades_export_{ts}.csv")
+                                util_instance.export_trades_csv_from_logs(
+                                    log_directory="logs",
+                                    output_csv_file=trades_csv,
+                                    start_time=Config.get_start_time(),
+                                    end_time=Config.get_end_time()
+                                )
+                                self.logger.log(f"トレードCSV出力: {trades_csv}")
+                            except Exception as ue:
+                                import traceback
+                                self.logger.log_error(f"CSV出力失敗: {ue}")
+                                self.logger.log_error(f"詳細: {traceback.format_exc()}")
+                        else:
+                            self.logger.log("[高速サマリモード] Excel・CSV出力をスキップ")
+                        
                         self.logger.log("--- BOT END -------------------------------------------")
                         break
+
                 else:
                     self.price_data_management.update_price_data()
                     t_price_end = perf_counter(); self.perf.record('price_update', t_price_start, t_price_end)
+                
+                # --------------------------------------------
+                # 適応型レジーム検出と動的パラメータ調整
+                # --------------------------------------------
+                self._regime_update_counter += 1
+                if self._regime_update_counter >= self._regime_update_interval:
+                    t_regime_start = perf_counter()
+                    current_regime = self.regime_detector.detect_regime(self.price_data_management)
+                    regime_params = self.regime_detector.get_regime_parameters(current_regime)
+                    
+                    # 動的パラメータ適用（risk_managementに反映）
+                    self.risk_management.entry_range = regime_params['entry_range']
+                    self.risk_management.initial_stop_range = regime_params['stop_range']
+                    self.risk_management.leverage = regime_params['leverage']
+                    
+                    # 注意: keltner_atr_multiplier は indicator_service で管理されているため、
+                    # 現時点では適用せず（次フェーズで実装）
+                    
+                    self._regime_update_counter = 0
+                    t_regime_end = perf_counter(); self.perf.record('regime_detection', t_regime_start, t_regime_end)
                 
                 # 取得情報を表示
                 # self.price_data_management.show_latest_ohlcv()
@@ -413,8 +485,14 @@ class Bot:
                                 "order_type": "market"
                             }
                         else:
+                            # Phase 1: signals に regime_stats を追加（レジーム検出用）
+                            regime_stats = self.regime_detector.get_regime_stats()
+                            self.price_data_management.signals['regime_stats'] = regime_stats
                             trade_decision = self.strategy.make_trade_decision()
                     else:
+                        # Phase 1: signals に regime_stats を追加（レジーム検出用）
+                        regime_stats = self.regime_detector.get_regime_stats()
+                        self.price_data_management.signals['regime_stats'] = regime_stats
                         trade_decision = self.strategy.make_trade_decision()
                 except Exception as e:
                     self.logger.log_error(f"取引戦略実行エラー: {e}")
