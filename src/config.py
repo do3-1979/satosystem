@@ -19,11 +19,20 @@ class Config:
     # Configuration cache (initialized on first access)
     _cache = None
     
+    # 一時的な config ファイルパスを指定する（backtest用）
+    _config_file_path = 'config.ini'
+    
+    @classmethod
+    def set_config_file(cls, file_path):
+        """一時的なコンフィグファイルパスを設定（バックテスト実行時用）"""
+        cls._config_file_path = file_path
+        cls._cache = None
+    
     @classmethod
     def reload_config(cls):
-        """Reload configuration from config.ini file and clear cache."""
+        """Reload configuration from config file and clear cache."""
         cls.config = configparser.ConfigParser()
-        cls.config.read('config.ini', encoding="utf-8_sig")
+        cls.config.read(cls._config_file_path, encoding="utf-8_sig")
         cls._cache = None
     
     @classmethod
