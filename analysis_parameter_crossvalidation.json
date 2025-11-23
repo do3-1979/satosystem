@@ -1,0 +1,164 @@
+{
+  "title": "Donchian k2/k3 パラメータ交差検証分析",
+  "date": "2025-11-23T13:22:29.397041",
+  "hypothesis": {
+    "仮説A": {
+      "name": "パラメータ最適化は市場依存的",
+      "description": "k2/k3の最適値は各年の市場環境に完全に依存する",
+      "test_plan": [
+        "2025年データから最適(k2, k3)を逆算",
+        "その最適パラメータを2024年に適用",
+        "結果が悪化したら仮説A支持",
+        "結果が改善したら仮説Aは偽"
+      ]
+    },
+    "仮説B": {
+      "name": "ボラティリティ適応は必要条件だが十分条件ではない",
+      "description": "ATRの変化に応じてk値を調整すべきだが、単純な適応では不十分",
+      "test_plan": [
+        "2024年各月のATR平均を計測",
+        "2025年各月のATR平均を計測",
+        "各月の最適(k2, k3)を個別に計算",
+        "ATRとk値の関係を分析"
+      ]
+    },
+    "仮説C": {
+      "name": "市場レジーム判定がコア戦略",
+      "description": "STRONG_TREND/WEAK_TREND/SIDEWAYSで最適パラメータが大きく異なる",
+      "test_plan": [
+        "月別にレジーム分類（トレンド強度/ボラティリティ）",
+        "レジーム別に最適(k2, k3)を計算",
+        "レジーム間での最適k値の乖離を定量化",
+        "乖離が大きいほど動的パラメータ必須"
+      ]
+    }
+  },
+  "grid_parameters": {
+    "k2_range": [
+      1.2,
+      1.5,
+      1.8,
+      2.0,
+      2.2,
+      2.5
+    ],
+    "k3_range": [
+      1.0,
+      1.2,
+      1.4,
+      1.6,
+      1.8,
+      2.0
+    ],
+    "total_combinations": 36,
+    "evaluation_metrics": [
+      "total_pnl",
+      "win_rate",
+      "sharpe_ratio",
+      "profit_factor",
+      "max_drawdown",
+      "donchian_pvo_pass_ratio"
+    ]
+  },
+  "experiments": {
+    "experiment_1": {
+      "name": "2024年の最適パラメータを特定",
+      "period": "2024-01-01 ~ 2024-12-31",
+      "description": "2024年全体で最高のシャープレシオを実現する(k2, k3)を探索",
+      "expected_baseline": "(2.2, 1.6)  ← 既知値",
+      "test_expectation": "既知値と同じか？少し異なるか？"
+    },
+    "experiment_2": {
+      "name": "2025年の最適パラメータを特定",
+      "period": "2025-01-01 ~ 2025-10-31",
+      "description": "2025年(1-10月)で最高のシャープレシオを実現する(k2, k3)を探索",
+      "expected_result": "TBD（予想: (1.5, 1.2)～(1.8, 1.4)のような小さい値？）",
+      "reasoning": "2025年は低ボラティリティ・レンジ相場のため、より狭いブレイクアウト条件が有効な可能性"
+    },
+    "experiment_3": {
+      "name": "交差検証: 2025最適パラメータを2024に適用",
+      "period": "2024年全体 with 2025最適(k2, k3)",
+      "description": "2025年用に最適化されたパラメータが2024年ではどう機能するか検証",
+      "expected_outcome": {
+        "if_hypothesis_A_true": "2024年の成績が悪化（パラメータが過度に狭い）",
+        "if_hypothesis_A_false": "2024年の成績も改善（普遍的に優れたパラメータ）"
+      }
+    },
+    "experiment_4": {
+      "name": "月別最適パラメータ分析",
+      "period": "2024/01～2024/12, 2025/01～2025/10 (各月単位)",
+      "description": "各月ごとに最適(k2, k3)を計算し、時系列でパラメータの変化を観察",
+      "expected_insight": "トレンド月と調整月で異なるパラメータが必要か判定"
+    },
+    "experiment_5": {
+      "name": "ボラティリティとパラメータの相関分析",
+      "period": "2024/01～2025/10",
+      "analysis": {
+        "metric_1": "各月のATR平均",
+        "metric_2": "該当月の最適k2値",
+        "metric_3": "該当月の最適k3値",
+        "correlation_test": "Pearson相関係数を計算"
+      },
+      "hypothesis_test": "高ATR月は高k値が有効？低ATR月は低k値が有効？"
+    }
+  },
+  "implementation_roadmap": {
+    "phase_1": {
+      "name": "データ収集・分析準備",
+      "tasks": [
+        "2024年全体のOHLCVデータ確認",
+        "2025年(1-10月)のOHLCVデータ確認",
+        "ATR計測スクリプト準備"
+      ],
+      "timeline": "1日"
+    },
+    "phase_2": {
+      "name": "グリッドサーチ実行",
+      "tasks": [
+        "Experiment 1: 2024年最適パラメータ特定 (36回のバックテスト)",
+        "Experiment 2: 2025年最適パラメータ特定 (36回のバックテスト)"
+      ],
+      "timeline": "3-4日（各バックテスト10-20分）",
+      "total_backtests": 72
+    },
+    "phase_3": {
+      "name": "交差検証・分析",
+      "tasks": [
+        "Experiment 3: 2025最適を2024に適用",
+        "Experiment 4: 月別最適パラメータ分析",
+        "Experiment 5: ボラティリティ相関分析"
+      ],
+      "timeline": "2日",
+      "total_backtests": 50
+    },
+    "phase_4": {
+      "name": "結論・実装方針決定",
+      "tasks": [
+        "仮説A/B/Cの支持度を判定",
+        "オプション1/2/3のいずれを採用するか決定",
+        "実装計画作成"
+      ],
+      "timeline": "1日"
+    }
+  },
+  "expected_outcomes": {
+    "scenario_1": {
+      "name": "仮説Aが支持される場合",
+      "observation": "2025最適パラメータを2024に適用すると成績が大きく悪化",
+      "implication": "パラメータは市場依存的 = 動的調整が必須",
+      "recommendation": "オプション2または3を採用（レジーム判定 または ML）"
+    },
+    "scenario_2": {
+      "name": "仮説Bが支持される場合",
+      "observation": "ATRが高い月では大きいk値、ATRが低い月では小さいk値が有効",
+      "implication": "ボラティリティに応じた線形調整で対応可能",
+      "recommendation": "オプション1を簡略化採用（ATRベースの動的調整）"
+    },
+    "scenario_3": {
+      "name": "仮説Cが支持される場合",
+      "observation": "STRONG_TREND月と SIDEWAYS月で最適k値が劇的に異なる",
+      "implication": "レジーム判定が重要 = 各レジームで別のパラメータセット必須",
+      "recommendation": "オプション2を採用（レジーム判定 + マルチパラメータ）"
+    }
+  }
+}
