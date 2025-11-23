@@ -39,10 +39,11 @@ class RiskManagement:
         if indicator_service is not None:
             self.indicator_service = indicator_service
             # Update ADX parameters in shared instance
-            self.indicator_service.adx_term = self.adx_term
-            self.indicator_service.adx_continue_num = self.adx_continue_num
-            self.indicator_service.adx_bull_threshold = self.adx_bull_threshold
-            self.indicator_service.adx_bear_threshold = self.adx_bear_threshold
+            if indicator_service is not None:
+                self.indicator_service.adx_term = self.adx_term
+                self.indicator_service.adx_continue_num = self.adx_continue_num
+                self.indicator_service.adx_bull_threshold = self.adx_bull_threshold
+                self.indicator_service.adx_bear_threshold = self.adx_bear_threshold
         else:
             # Initialize IndicatorService with ADX parameters
             self.indicator_service = IndicatorService(

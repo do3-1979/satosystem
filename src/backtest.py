@@ -5,6 +5,12 @@ import sys
 import glob
 from configparser import ConfigParser
 import re
+
+# カレントディレクトリをsrc/に変更してモジュール読み込みを修正
+src_dir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(src_dir)
+sys.path.insert(0, src_dir)
+
 from config import Config
 from config_manager import ConfigManager
 from price_data_management import PriceDataManagement
@@ -130,7 +136,7 @@ def load_api_keys():
 
 def find_config_files(directory):
     """
-    指定したディレクトリ内のテスト用設定ファイルのリストを取得します。
+    テスト用コンフィグファイルを探す
 
     Args:
         directory (str): 検索対象のディレクトリパス
@@ -138,6 +144,11 @@ def find_config_files(directory):
     Returns:
         list: テスト設定ファイルのリスト（ソート済み）
     """
+    # ルートディレクトリ相対パスの場合は絶対パスに変換
+    if not os.path.isabs(directory):
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        directory = os.path.join(root_dir, directory)
+    
     # テストファイル: _q1.ini （Q1テスト用: 2024 Q1 + 2025 Q1）
     config_files = [f for f in os.listdir(directory) if "_q1.ini" in f]
     # ファイル名でソートして順番を保証
@@ -154,6 +165,22 @@ def main():
         print("✅ Cleanup completed. Exiting.")
         return
     
+    # 引数で設定ファイルが指定されたか確認
+    if len(sys.argv) >= 2 and sys.argv[1] != '--clear':
+        # 引数で指定されたファイルのみを処理
+        single_config_file = sys.argv[1]
+        # ルートディレクトリ相対パスの場合は絶対パスに変換
+        if not os.path.isabs(single_config_file):
+            root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            single_config_file = os.path.join(root_dir, single_config_file)
+        config_files_to_process = [single_config_file]
+        use_single_file_mode = True
+    else:
+        # output_configs内を自動検索
+        config_dir = os.environ.get('BACKTEST_CONFIG_DIR', 'output_configs')
+        config_files_to_process = find_config_files(config_dir)
+        use_single_file_mode = False
+    
     total_start_time = time.time()
     
     # 0. 古いログファイルをクリーンアップ（混在防止）
@@ -166,7 +193,7 @@ def main():
     # 1. ConfigManager初期化（テンプレート作成）
     ConfigManager.init_config_files(".")
     
-    # 1. APIキーを事前にロード（本番APIキーを使用してBybitからデータ取得）
+    # 2. APIキーを事前にロード（本番APIキーを使用してBybitからデータ取得）
     api_key, api_secret = load_api_keys()
     if not api_key or not api_secret:
         print("[WARN] API keys not found in .api_key file.")
@@ -179,17 +206,13 @@ def main():
         print(f"[INFO] API Key: {api_key[:8]}... (masked)")
     print()
 
-    # 2. output_configs以下のconfig_*.ini ファイルからファイルリストを作成
-    # テスト用: 環境変数 BACKTEST_CONFIG_DIR でディレクトリ変更可能
-    config_dir = os.environ.get('BACKTEST_CONFIG_DIR', 'output_configs')
-    config_files = find_config_files(config_dir)
-    print(f"Found {len(config_files)} config files to process from {config_dir}")
+    print(f"Found {len(config_files_to_process)} config files to process")
     print()
 
     # 3. ファイルリストから一つずつバックテストを実行
-    for idx, config_file in enumerate(config_files):
+    for idx, config_file in enumerate(config_files_to_process):
         print(f"=" * 70)
-        print(f"[{idx+1}/{len(config_files)}] Processing: {os.path.basename(config_file)}")
+        print(f"[{idx+1}/{len(config_files_to_process)}] Processing: {os.path.basename(config_file)}")
         print(f"=" * 70)
         
         try:

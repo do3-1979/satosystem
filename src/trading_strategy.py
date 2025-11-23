@@ -127,22 +127,30 @@ class TradingStrategy:
         
         # Phase 1: レジーム検出（アダプティブモード）
         regime_detection_enabled = bool(Config.config['Strategy'].getboolean('regime_detection_enabled', fallback=False))
-        # DEBUG: ログに regime_detection_enabled の値を出力
-        if decision == "ENTRY":
-            self.logger.log(f"[DEBUG] regime_detection_enabled={regime_detection_enabled}")
+        sideways_mode = Config.config['Strategy'].get('sideways_handling_mode', 'block')  # block or reduce
+        
         if decision == "ENTRY" and regime_detection_enabled:
-            # ボラティリティとトレンド強度からレジーム判定
-            # signals に regime_stats がある場合はそれを使用
             regime_stats = signals.get("regime_stats", {})
             current_regime = regime_stats.get("current_regime", "NEUTRAL")
             regime_percentages = regime_stats.get("regime_percentages", {})
-            self.logger.log(f"[DEBUG] current_regime={current_regime}, percentages={regime_percentages}")
+            self.logger.log(f"[レジーム検出] current_regime={current_regime}, mode={sideways_mode}")
             
-            # SIDEWAYS レジーム時はエントリーを回避する（試験的）
+            # SIDEWAYS レジーム時の処理
             if current_regime == "SIDEWAYS":
-                self.logger.log(f"[レジーム検出] SIDEWAYS レジーム判定 → エントリーを回避")
-                decision = 'NONE'
-                side = 'NONE'
+                if sideways_mode == 'block':
+                    # モード1: エントリーを完全にブロック
+                    self.logger.log(f"[レジーム検出] SIDEWAYS → エントリーを回避")
+                    decision = 'NONE'
+                    side = 'NONE'
+                    self.trade_decision["side"] = side
+                    self.trade_decision["decision"] = decision
+                elif sideways_mode == 'reduce':
+                    # モード2: ポジションサイズを50%に削減して進める
+                    self.logger.log(f"[レジーム検出] SIDEWAYS → ポジションサイズを50%に削減")
+                    # リスク管理層でポジションサイズを調整するため、フラグを設定
+                    if not hasattr(self, '_sideways_reduce_flag'):
+                        self._sideways_reduce_flag = True
+                    # このフラグを make_trade_decision で参照して位置サイズを調整
             
         return
     

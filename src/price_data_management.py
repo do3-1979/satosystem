@@ -3,7 +3,7 @@ from datetime import timedelta
 from config import Config
 from logger import Logger
 from bybit_exchange import BybitExchange
-from indicator_service import IndicatorService
+# from indicator_service import IndicatorService  # 削除済み、不要
 import pprint
 import json
 import os
@@ -58,7 +58,8 @@ class PriceDataManagement:
         self.exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
         self.logger = Logger()
         # IndicatorServiceを外部から受け取るか、新規作成
-        self.indicator_service = indicator_service if indicator_service is not None else IndicatorService()
+        # self.indicator_service = indicator_service if indicator_service is not None else IndicatorService()
+        self.indicator_service = indicator_service  # 削除済みのため、Noneで初期化
         
         main_time_frame = Config.get_time_frame()
         psar_time_frame = Config.get_psar_time_frame()

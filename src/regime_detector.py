@@ -63,7 +63,7 @@ class RegimeDetector:
         }
     }
     
-    # レジーム判定閾値
+    # レジーム判定閾値（デフォルト値）
     VOLATILITY_HIGH_THRESHOLD = 1.2    # ボラティリティが平均の1.2倍以上
     VOLATILITY_LOW_THRESHOLD = 0.8     # ボラティリティが平均の0.8倍以下
     TREND_STRONG_THRESHOLD = 0.6       # トレンド強度が0.6以上
@@ -75,6 +75,24 @@ class RegimeDetector:
         self.regime_history = []
         self.volatility_history = []
         self.trend_strength_history = []
+        
+        # 設定から閾値を読み込む（あれば上書き）
+        try:
+            config = Config.get_config()
+            self.volatility_high_threshold = float(config['Strategy'].get(
+                'regime_volatility_ratio_threshold_high', self.VOLATILITY_HIGH_THRESHOLD))
+            self.volatility_low_threshold = float(config['Strategy'].get(
+                'regime_volatility_ratio_threshold_low', self.VOLATILITY_LOW_THRESHOLD))
+            self.trend_strong_threshold = float(config['Strategy'].get(
+                'regime_trend_strength_threshold_strong', self.TREND_STRONG_THRESHOLD))
+            self.trend_weak_threshold = float(config['Strategy'].get(
+                'regime_trend_strength_threshold_weak', self.TREND_WEAK_THRESHOLD))
+        except:
+            # 設定読み込み失敗時はデフォルト値を使用
+            self.volatility_high_threshold = self.VOLATILITY_HIGH_THRESHOLD
+            self.volatility_low_threshold = self.VOLATILITY_LOW_THRESHOLD
+            self.trend_strong_threshold = self.TREND_STRONG_THRESHOLD
+            self.trend_weak_threshold = self.TREND_WEAK_THRESHOLD
         
         # ログ出力制御
         self._regime_change_count = 0
@@ -186,13 +204,13 @@ class RegimeDetector:
             str: レジーム名
         """
         # 高ボラティリティ & 強トレンド → STRONG_TREND
-        if volatility_ratio >= self.VOLATILITY_HIGH_THRESHOLD and \
-           trend_strength >= self.TREND_STRONG_THRESHOLD:
+        if volatility_ratio >= self.volatility_high_threshold and \
+           trend_strength >= self.trend_strong_threshold:
             return self.STRONG_TREND
         
         # 低ボラティリティ & 弱トレンド → SIDEWAYS
-        elif volatility_ratio <= self.VOLATILITY_LOW_THRESHOLD and \
-             trend_strength <= self.TREND_WEAK_THRESHOLD:
+        elif volatility_ratio <= self.volatility_low_threshold and \
+             trend_strength <= self.trend_weak_threshold:
             return self.SIDEWAYS
         
         # その他 → WEAK_TREND（デフォルト）

@@ -54,6 +54,9 @@ class Logger:
         self.logger = logging.getLogger('bot_logger')
         self.logger.setLevel(logging.DEBUG)
         self.log_directory = Config.get_log_dir_name()
+        
+        # バックテスト結果に埋め込む config 情報
+        self.config_metadata = None
 
         # ディレクトリが存在しない場合は作成
         if not os.path.exists(self.log_directory):
@@ -94,6 +97,19 @@ class Logger:
             message (str): 出力するエラーメッセージ
         """
         self.logger.error(message)
+    
+    def set_config_metadata(self, config_dict):
+        """
+        バックテスト結果に埋め込むための config 情報を設定
+        
+        Args:
+            config_dict (dict): Config オブジェクトから抽出した設定辞書
+        """
+        self.config_metadata = config_dict
+        
+    def get_config_metadata(self):
+        """埋め込まれた config 情報を取得"""
+        return self.config_metadata
         
     def open_log_file(self):
         current_time = datetime.now()
@@ -105,8 +121,20 @@ class Logger:
 
     def close_log_file(self):
         if self.current_log_file:
-            # ファイルに , を削除して ] を出力
-            self.current_log_file.seek(self.current_log_file.tell() - 2)  # カーソルを後ろに移動
+            # 最後の , を削除
+            current_pos = self.current_log_file.tell()
+            self.current_log_file.seek(current_pos - 2)
+            self.current_log_file.write("\n")
+            
+            # config metadata を追加（あれば）
+            if self.config_metadata:
+                self.current_log_file.write(",\n")
+                self.current_log_file.write('{\n')
+                self.current_log_file.write('  "__CONFIG__": ')
+                json.dump(self.config_metadata, self.current_log_file, indent=4)
+                self.current_log_file.write('\n')
+                self.current_log_file.write('}\n')
+            
             self.current_log_file.write("]\n")
             self.current_log_file.close()
             log_filepath = self.current_log_filepath  # パスを保存

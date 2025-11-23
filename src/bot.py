@@ -145,6 +145,25 @@ class Bot:
         config_instance = Config()
         back_test_mode = config_instance.get_back_test_mode()
         
+        # Logger に config 情報を埋め込み
+        config_metadata = {
+            'leverage': config_instance.get_leverage(),
+            'entry_times': Config.get_entry_times(),
+            'entry_range': Config.get_entry_range(),
+            'stop_range': Config.get_stop_range(),
+            'volatility_term': Config.get_volatility_term(),
+            'donchian_buy_term': Config.get_donchian_buy_term(),
+            'donchian_sell_term': Config.get_donchian_sell_term(),
+            'pvo_s_term': Config.get_pvo_s_term(),
+            'pvo_l_term': Config.get_pvo_l_term(),
+            'pvo_threshold': Config.get_pvo_threshold(),
+            'regime_detection_enabled': config_instance.config['Strategy'].getboolean('regime_detection_enabled', fallback=False),
+            'keltner_enabled': Config.get_keltner_enabled(),
+            'market': Config.get_market(),
+            'time_frame': Config.get_time_frame(),
+        }
+        self.logger.set_config_metadata(config_metadata)
+        
         if back_test_mode == 1:
             self.logger.log("--- BOT START (BACK TEST MODE)-------------------------")
             try:
