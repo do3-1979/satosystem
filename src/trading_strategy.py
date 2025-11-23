@@ -174,15 +174,16 @@ class TradingStrategy:
     def evaluate_exit(self):
         """
         エグジット条件を評価し、ポジションをクローズするかどうかを決定します。
-
+        
         Phase D条件:
         1. ストップロス判定
-        2. (オプション) 部分利確: 利益率・保持バー数条件を満たしたら部分決済
+        2. 時間ベースEXIT: 最大保持バー数超過で強制決済
+        3. (オプション) 部分利確: 利益率・保持バー数条件を満たしたら部分決済
         """
         side = 'NONE'
         decision = 'NONE'
         position_side = 'NONE'
-
+        
         stop_price = self.risk_manager.get_stop_price()
         
         price = self.price_data_management.get_latest_ohlcv()
@@ -191,7 +192,16 @@ class TradingStrategy:
         close_price = price['close_price']
         
         position_side = self.portfolio.get_position_side()
-
+        
+        # Phase C: 時間ベースEXIT (最大保持バー数チェック)
+        max_hold_bars = Config.get_max_hold_bars()
+        if max_hold_bars > 0 and position_side != 'NONE':
+            # bot.pyのopen_tradeからバー数を取得する必要があるため、
+            # portfolioに保存するか、別の方法で取得
+            # 現状はbot.pyで管理されているため、ここでは判定できない
+            # 代わりにbot.pyで判定する方式に変更
+            pass
+        
         # Phase D: 部分決済チェック (設定有効時)
         if position_side != 'NONE' and Config.get_partial_exit_enabled():
             avg_entry = self.portfolio.get_position_price()

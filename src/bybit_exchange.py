@@ -1,3 +1,4 @@
+
 """
 BybitExchange クラス (Exchange クラスを継承):
 
@@ -154,12 +155,34 @@ class BybitExchange(Exchange):
             order_type (str): 注文タイプ ('limit' または 'market')
 
         Returns:
-            dict: 注文の実行結果
+            dict: 注文の実行結果 (ダミーモード時はシミュレーション結果)
         """
+        # ダミーモード確認
+        dummy_mode = Config.get_dummy_trading_mode()
         server_retry_wait = Config.get_server_retry_wait()
         err_occuerd = False
         
+        # ダミー取引モード: ログのみ記録し、実際の注文を出さない
+        if dummy_mode == 1:
+            dummy_response = {
+                'symbol': self.market,
+                'side': side,
+                'type': order_type,
+                'amount': quantity,
+                'price': price,
+                'status': 'closed',
+                'info': {'dummy': True, 'mode': 'dummy_trading'}
+            }
+            self.logger.log(f"[DUMMY] {order_type}注文 ({side}): 数量={quantity}, 価格={price}")
+            return dummy_response
+        
+        # 実取引モード: 注文タイプに応じて処理
+        order = None
+        
         if order_type == 'limit':
+            if price is None:
+                raise ValueError("limit order requires price parameter")
+            
             start_ts = time.time()
             max_retry = Config.get_api_max_retry_seconds()
             while True:
@@ -170,12 +193,14 @@ class BybitExchange(Exchange):
                         amount=quantity,
                         price=price
                     )
+                    self.logger.log(f"[ORDER] 指値注文 ({side}): 数量={quantity}, 価格={price}, OrderID={order.get('id', 'N/A')}")
                     break
                 except ccxt.BaseError as e:
                     if err_occuerd == False:
                         self.logger.log_error(f"指値注文エラー:{str(e)}")
                         err_occuerd = True
                     if time.time() - start_ts >= max_retry:
+                        self.logger.log_error(f"指値注文がタイムアウト（{max_retry}秒）")
                         raise TimeoutError("create_limit_order timeout")
                     time.sleep(server_retry_wait)
 
@@ -192,12 +217,14 @@ class BybitExchange(Exchange):
                         side=side,
                         amount=quantity
                     )
+                    self.logger.log(f"[ORDER] 成行注文 ({side}): 数量={quantity}, OrderID={order.get('id', 'N/A')}")
                     break
                 except ccxt.BaseError as e:
                     if err_occuerd == False:
                         self.logger.log_error(f"成行注文エラー:{str(e)}")
                         err_occuerd = True
                     if time.time() - start_ts >= max_retry:
+                        self.logger.log_error(f"成行注文がタイムアウト（{max_retry}秒）")
                         raise TimeoutError("create_market_order timeout")
                     time.sleep(server_retry_wait)
 
@@ -207,19 +234,77 @@ class BybitExchange(Exchange):
         else:
             raise ValueError("Invalid order_type. Use 'limit' or 'market'.")
 
-        # テストでは常に成功
-        if Config.get_back_test_mode() == 1:
-            response = True
-        else:
-            response = self.exchange.create_order(
-                symbol=order['symbol'],
-                side=order['side'],
-                type=order['type'],
-                quantity=order['amount'],
-                price=order['price']
-            )
+        # 注文結果を返却（ダミーモード以外）
+        if order is None:
+            raise RuntimeError(f"Failed to execute {order_type} order")
 
-        return response
+        return order
+
+    def execute_order_with_fallback(self, side, quantity, price, order_type, timeout_sec=300):
+        """
+        Limit注文でタイムアウト時に自動的にMarket注文に切り替えます。
+        ピラミッティング時の効率化に使用。
+
+        Args:
+            side (str): 注文方向 ('buy' or 'sell')
+            quantity (float): 注文数量
+            price (float): Limit注文の指定価格
+            order_type (str): 'limit' or 'market'
+            timeout_sec (int): タイムアウト秒数（デフォルト: 300秒）
+
+        Returns:
+            dict: 注文の実行結果
+        """
+        # Limit注文の場合のみタイムアウト処理を適用
+        if order_type != 'limit' or price is None:
+            return self.execute_order(side, quantity, price, order_type)
+        
+        server_retry_wait = Config.get_server_retry_wait()
+        start_ts = time.time()
+        err_occuerd = False
+        
+        # Limit注文を試行
+        while True:
+            try:
+                order = self.exchange.create_limit_order(
+                    symbol=self.market,
+                    side=side,
+                    amount=quantity,
+                    price=price
+                )
+                self.logger.log(f"[ORDER] Limit注文成功 ({side}): 数量={quantity}, 価格={price}, OrderID={order.get('id', 'N/A')}")
+                return order
+            
+            except ccxt.BaseError as e:
+                if err_occuerd == False:
+                    self.logger.log_error(f"Limit注文エラー（タイムアウト処理中）:{str(e)}")
+                    err_occuerd = True
+                
+                # タイムアウト判定
+                elapsed = time.time() - start_ts
+                if elapsed >= timeout_sec:
+                    # タイムアウト: Market注文に自動切り替え
+                    self.logger.log_error(f"[FALLBACK] Limit注文タイムアウト（{timeout_sec}秒超過）→ Market注文に切り替え")
+                    
+                    try:
+                        market_order = self.exchange.create_market_order(
+                            symbol=self.market,
+                            side=side,
+                            amount=quantity
+                        )
+                        self.logger.log(f"[FALLBACK] Market注文成功 ({side}): 数量={quantity}, OrderID={market_order.get('id', 'N/A')}")
+                        return market_order
+                    
+                    except ccxt.BaseError as market_error:
+                        self.logger.log_error(f"[FALLBACK] Market注文も失敗: {str(market_error)}")
+                        raise TimeoutError(f"Both Limit and Market orders failed after {timeout_sec}sec")
+                
+                # リトライ待機
+                time.sleep(server_retry_wait)
+            
+            except Exception as e:
+                self.logger.log_error(f"[FALLBACK] 予期しないエラー: {str(e)}")
+                raise
 
     def get_nearest_epoch_time(self, end_epoch):
         """_summary_

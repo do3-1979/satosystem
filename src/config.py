@@ -72,6 +72,12 @@ class Config:
             'partial_exit_profit_rate': float(cls.config['Strategy'].get('partial_exit_profit_rate', 0.10)),
             'partial_exit_ratio': float(cls.config['Strategy'].get('partial_exit_ratio', 0.5)),
             'partial_exit_min_bars': int(cls.config['Strategy'].get('partial_exit_min_bars', 0)),
+            # EXIT改善パラメータ
+            'max_hold_bars': int(cls.config['Strategy'].get('max_hold_bars', 0)),
+            'min_adx_for_entry': float(cls.config['Strategy'].get('min_adx_for_entry', 0)),
+            'atr_shrink_exit_ratio': float(cls.config['Strategy'].get('atr_shrink_exit_ratio', 0)),
+            'excluded_hours': cls.config['Strategy'].get('excluded_hours', ''),
+            'max_profit_drawdown_pct': float(cls.config['Strategy'].get('max_profit_drawdown_pct', 0)),
             # Portfolio
             'lot_limit_lower': float(cls.config['Potfolio']['lot_limit_lower']),
             'balance_tether_limit': float(cls.config['Potfolio']['balance_tether_limit']),
@@ -432,6 +438,34 @@ class Config:
     def get_partial_exit_min_bars(cls):
         cls._initialize_cache()
         return cls._cache['partial_exit_min_bars']
+    
+    @classmethod
+    def get_max_hold_bars(cls):
+        cls._initialize_cache()
+        return cls._cache['max_hold_bars']
+    
+    @classmethod
+    def get_min_adx_for_entry(cls):
+        cls._initialize_cache()
+        return cls._cache['min_adx_for_entry']
+    
+    @classmethod
+    def get_atr_shrink_exit_ratio(cls):
+        cls._initialize_cache()
+        return cls._cache['atr_shrink_exit_ratio']
+    
+    @classmethod
+    def get_excluded_hours(cls):
+        cls._initialize_cache()
+        hours_str = cls._cache['excluded_hours']
+        if not hours_str or hours_str.strip() == '':
+            return []
+        return [int(h.strip()) for h in hours_str.split(',') if h.strip()]
+    
+    @classmethod
+    def get_max_profit_drawdown_pct(cls):
+        cls._initialize_cache()
+        return cls._cache['max_profit_drawdown_pct']
 
     @classmethod
     def get_pvo_s_term(cls):
@@ -575,11 +609,24 @@ class Config:
         return cls._cache['report_directory']
     
     @classmethod
+    @classmethod
     def get_back_test_mode(cls):
         """
         """
         cls._initialize_cache()
         return cls._cache['back_test']
+
+    @classmethod
+    def get_dummy_trading_mode(cls):
+        """
+        ダミー取引モードを取得
+        1: ダミーモード (注文を出さない)
+        0: 実取引モード (実際の注文を実行)
+        """
+        try:
+            return int(cls.config['DummyTrading']['dummy_mode'])
+        except (KeyError, ValueError):
+            return 0  # デフォルトは実取引モード
 
     def __str__(self):
         """

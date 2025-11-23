@@ -400,7 +400,22 @@ class Bot:
                 # --------------------------------------------
                 t_strategy_start = perf_counter()
                 try:
-                    trade_decision = self.strategy.make_trade_decision()
+                    # 時間ベースEXITチェック (戦略判定前に実行)
+                    max_hold_bars = config_instance.get_max_hold_bars()
+                    if max_hold_bars > 0 and self.open_trade is not None:
+                        bars_held = self.open_trade['bars']
+                        if bars_held >= max_hold_bars:
+                            self.logger.log(f"[時間ベースEXIT] 保持バー数 {bars_held} >= 上限 {max_hold_bars} で強制決済")
+                            position_side = self.portfolio.get_position_side()
+                            trade_decision = {
+                                "decision": "EXIT",
+                                "side": "SELL" if position_side == "BUY" else "BUY",
+                                "order_type": "market"
+                            }
+                        else:
+                            trade_decision = self.strategy.make_trade_decision()
+                    else:
+                        trade_decision = self.strategy.make_trade_decision()
                 except Exception as e:
                     self.logger.log_error(f"取引戦略実行エラー: {e}")
                     trade_decision = {"decision": "NONE"}
@@ -661,23 +676,43 @@ class Bot:
         注文を実行します。
 
         Args:
-            trade_decision (dict): トレード判断に基づいた注文情報
+            order (dict): トレード判断に基づいた注文情報
 
         Returns:
             dict: 注文の実行結果
         """
-        symbol = order['symbol'] # execute orderには使わない
+        symbol = order['symbol']
         side = order['side']
         quantity = order['quantity']
         order_type = order['order_type']
+        context = order.get('context', 'entry')
+        timeout_sec = order.get('timeout_sec', None)
+        
+        price = 0
         if order_type == 'limit':
-            price = order['price']
-        else:
-            price = 0
+            price = order.get('price', 0)
 
-        # TODO テスト処理
-        order_response = 0
-        #order_response = self.exchange.execute_order(side, quantity, price, order_type)
+        # ピラミッティング時はタイムアウト処理付き実行
+        if context == 'pyramiding' and timeout_sec:
+            order_response = self.exchange.execute_order_with_fallback(
+                side=side,
+                quantity=quantity,
+                price=price,
+                order_type=order_type,
+                timeout_sec=timeout_sec
+            )
+        else:
+            # 通常の注文実行
+            order_response = self.exchange.execute_order(
+                side=side,
+                quantity=quantity,
+                price=price,
+                order_type=order_type
+            )
+        
+        # ログ記録
+        self.logger.log(f"[EXECUTE] Context={context}, Type={order_type}, Side={side}, Qty={quantity}, Price={price}")
+        
         return order_response
 
 if __name__ == "__main__":

@@ -17,8 +17,14 @@ if [ "$1" == "restore" ]; then
     echo "api_key and api_secret restored to placeholders in config.ini"
 else
     # .api_keyファイルからapi_keyとapi_secretの値を読み込む
-    api_key=$(awk -F' = ' '/api_key/ {print $2}' .api_key)
-    api_secret=$(awk -F' = ' '/api_secret/ {print $2}' .api_key)
+    # フォーマット: 1行目=API Key, 2行目=Secret Key
+    api_key=$(sed -n '1p' .api_key | tr -d ' ')
+    api_secret=$(sed -n '2p' .api_key | tr -d ' ')
+
+    if [ -z "$api_key" ] || [ -z "$api_secret" ]; then
+        echo "Error: API key or secret not found in .api_key"
+        exit 1
+    fi
 
     # config.iniファイルを生成または上書きして値を書き込む
     sed -i "s/YOUR_API_KEY/$api_key/" config.ini
