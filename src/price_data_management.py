@@ -79,6 +79,9 @@ class PriceDataManagement:
         }
         self.volatility = 0
         self.prev_close_time = 0
+        # PVOヒット率計算用カウンタ
+        self._donchian_pvo_candidates = 0  # Donchianブレイクが発生したバー数
+        self._donchian_pvo_passes = 0      # そのうちPVO閾値を同時に満たしたバー数
         
         # Pullback state (Phase B)
         self.pullback_state = 'none'  # 'none', 'breakout', 'pullback', 'ready'
@@ -379,6 +382,11 @@ class PriceDataManagement:
             pvo, value = self.__evaluate_pvo(ohlcv_data, volume)
             self.signals['pvo']['signal'] = pvo
             self.signals['pvo']['info']['value'] = value
+            # DonchianシグナルとPVOシグナルの同時発生を記録
+            if self.signals['donchian']['signal']:
+                self._donchian_pvo_candidates += 1
+                if self.signals['pvo']['signal']:
+                    self._donchian_pvo_passes += 1
             # update volatility
             self.volatility = self.calcurate_volatility(ohlcv_data)
 
@@ -470,6 +478,11 @@ class PriceDataManagement:
             pvo, value = self.__evaluate_pvo(ohlcv_data, volume)
             self.signals['pvo']['signal'] = pvo
             self.signals['pvo']['info']['value'] = value
+            # DonchianシグナルとPVOシグナルの同時発生を記録
+            if self.signals['donchian']['signal']:
+                self._donchian_pvo_candidates += 1
+                if self.signals['pvo']['signal']:
+                    self._donchian_pvo_passes += 1
             # update volatility
             self.volatility = self.calcurate_volatility(tmp_ohlcv_data_1)
             # update last data
@@ -768,6 +781,25 @@ class PriceDataManagement:
         }
         
         return volatility_ok, side, info
+
+    # ========================================
+    # PVOヒット率メトリクス
+    # ========================================
+    def get_pvo_donchian_metrics(self):
+        """Donchian候補バー数とPVO通過バー数からヒット率を返す。
+
+        Returns:
+            dict: {'donchian_candidates': int, 'pvo_passes': int, 'pvo_pass_ratio': float}
+        """
+        if self._donchian_pvo_candidates > 0:
+            ratio = self._donchian_pvo_passes / self._donchian_pvo_candidates
+        else:
+            ratio = 0.0
+        return {
+            'donchian_candidates': self._donchian_pvo_candidates,
+            'pvo_passes': self._donchian_pvo_passes,
+            'pvo_pass_ratio': ratio
+        }
 
 if __name__ == "__main__":
     # PriceDataManagement
