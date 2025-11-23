@@ -382,10 +382,16 @@ class PriceDataManagement:
             pvo, value = self.__evaluate_pvo(ohlcv_data, volume)
             self.signals['pvo']['signal'] = pvo
             self.signals['pvo']['info']['value'] = value
+            
             # DonchianシグナルとPVOシグナルの同時発生を記録
-            if self.signals['donchian']['signal']:
+            # ✅ 修正: Donchian発生時にPVOも同時にTRUEの場合だけカウント
+            donchian_signal = self.signals['donchian']['signal']
+            pvo_signal = self.signals['pvo']['signal']
+            
+            if donchian_signal:
                 self._donchian_pvo_candidates += 1
-                if self.signals['pvo']['signal']:
+                # AND条件: 両方がTrue の時だけ「パス」
+                if pvo_signal:
                     self._donchian_pvo_passes += 1
             # update volatility
             self.volatility = self.calcurate_volatility(ohlcv_data)
@@ -478,10 +484,16 @@ class PriceDataManagement:
             pvo, value = self.__evaluate_pvo(ohlcv_data, volume)
             self.signals['pvo']['signal'] = pvo
             self.signals['pvo']['info']['value'] = value
+            
             # DonchianシグナルとPVOシグナルの同時発生を記録
-            if self.signals['donchian']['signal']:
+            # ✅ 修正: Donchian発生時にPVOも同時にTRUEの場合だけカウント
+            donchian_signal = self.signals['donchian']['signal']
+            pvo_signal = self.signals['pvo']['signal']
+            
+            if donchian_signal:
                 self._donchian_pvo_candidates += 1
-                if self.signals['pvo']['signal']:
+                # AND条件: 両方がTrue の時だけ「パス」
+                if pvo_signal:
                     self._donchian_pvo_passes += 1
             # update volatility
             self.volatility = self.calcurate_volatility(tmp_ohlcv_data_1)
