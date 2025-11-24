@@ -190,3 +190,73 @@ class IndicatorService:
             float: EMA値
         """
         return self._calculate_ema(data, term)
+    
+    def evaluate_pvo(self, ohlcv_data, short_period=12, long_period=26, threshold=0):
+        """
+        PVOを評価し、シグナルの強さを返す
+        
+        Args:
+            ohlcv_data: OHLCVデータ
+            short_period: 短期EMA期間
+            long_period: 長期EMA期間
+            threshold: 閾値
+            
+        Returns:
+            dict: {'signal': bool, 'strength': float}
+        """
+        pvo_result = self.calculate_pvo(ohlcv_data, short_period, long_period, threshold)
+        
+        if isinstance(pvo_result, dict):
+            return {
+                'signal': pvo_result.get('signal', False),
+                'strength': abs(pvo_result.get('value', 0))
+            }
+        else:
+            # 数値が返った場合（後方互換性）
+            return {'signal': False, 'strength': 0}
+    
+    def calculate_parabolic_sar(self, ohlcv_data, start_af=0.02, max_af=0.2):
+        """
+        放物線SAR（Parabolic SAR）を計算
+        
+        Args:
+            ohlcv_data: OHLCVデータ
+            start_af: 初期加速係数
+            max_af: 最大加速係数
+            
+        Returns:
+            dict: {'sar': float, 'ep': float, 'af': float, 'trend': str}
+        """
+        if len(ohlcv_data) < 2:
+            current_price = ohlcv_data[-1].get('close_price', 0) if ohlcv_data else 0
+            return {
+                'sar': current_price,
+                'ep': current_price,
+                'af': start_af,
+                'trend': 'up'
+            }
+        
+        # 簡易実装：直近の高値/安値から SAR を推定
+        recent = ohlcv_data[-20:]  # 直近20本足
+        high = max([d.get('high_price', 0) for d in recent])
+        low = min([d.get('low_price', float('inf')) for d in recent])
+        current_price = ohlcv_data[-1].get('close_price', 0)
+        
+        # トレンド判定
+        if current_price > (high + low) / 2:
+            trend = 'up'
+            sar = low
+            ep = high
+        else:
+            trend = 'down'
+            sar = high
+            ep = low
+        
+        af = start_af
+        
+        return {
+            'sar': sar,
+            'ep': ep,
+            'af': af,
+            'trend': trend
+        }

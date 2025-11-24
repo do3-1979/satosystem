@@ -8,6 +8,7 @@ import pprint
 import json
 import os
 from ohlcv_cache import OHLCVCache
+from regime_detector import RegimeDetector
 
 class PriceDataManagement:
     # クラス変数として唯一のインスタンスを保持
@@ -61,6 +62,9 @@ class PriceDataManagement:
         # self.indicator_service = indicator_service if indicator_service is not None else IndicatorService()
         self.indicator_service = indicator_service  # 削除済みのため、Noneで初期化
         
+        # RegimeDetectorを初期化
+        self.regime_detector = RegimeDetector()
+        
         main_time_frame = Config.get_time_frame()
         psar_time_frame = Config.get_psar_time_frame()
         
@@ -76,7 +80,8 @@ class PriceDataManagement:
         self.signals = {
             'donchian': {'signal': False, 'side': None, 'info': {'highest': 0, 'lowest': 0}},
             'pvo': {'signal': False, 'side': None, 'info': {'value': 0}},
-            'keltner': {'signal': False, 'side': None, 'info': {'upper': 0, 'middle': 0, 'lower': 0, 'width_expanding': False}}
+            'keltner': {'signal': False, 'side': None, 'info': {'upper': 0, 'middle': 0, 'lower': 0, 'width_expanding': False}},
+            'regime_stats': {'current_regime': 'NEUTRAL', 'regime_percentages': {}}
         }
         self.volatility = 0
         self.prev_close_time = 0
@@ -407,6 +412,18 @@ class PriceDataManagement:
             pvo, value = self.__evaluate_pvo(ohlcv_data, volume)
             self.signals['pvo']['signal'] = pvo
             self.signals['pvo']['info']['value'] = value
+            
+            # Regime stats update (Phase 1: アダプティブ)
+            regime_detection_enabled = bool(Config.config['Strategy'].getboolean('regime_detection_enabled', fallback=False))
+            if regime_detection_enabled:
+                current_regime = self.regime_detector.detect_regime(self)
+                regime_stats = self.regime_detector.get_regime_stats()
+                self.signals['regime_stats'] = {
+                    'current_regime': current_regime,
+                    'regime_percentages': regime_stats.get('regime_percentages', {}),
+                    'volatility_ratio': regime_stats.get('avg_volatility_ratio', 1.0),
+                    'trend_strength': regime_stats.get('avg_trend_strength', 0.5)
+                }
             
             # DonchianシグナルとPVOシグナルの同時発生を記録
             # ✅ 修正: Donchian発生時にPVOも同時にTRUEの場合だけカウント
