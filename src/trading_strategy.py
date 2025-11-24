@@ -135,6 +135,9 @@ class TradingStrategy:
             regime_percentages = regime_stats.get("regime_percentages", {})
             self.logger.log(f"[レジーム検出] current_regime={current_regime}, mode={sideways_mode}")
             
+            # Phase 2: リスク管理層にレジーム情報を渡す（段階的ポジションサイジング用）
+            self.risk_manager.set_regime_info(regime_stats)
+            
             # SIDEWAYS レジーム時の処理
             if current_regime == "SIDEWAYS":
                 if sideways_mode == 'block':
@@ -151,6 +154,11 @@ class TradingStrategy:
                     if not hasattr(self, '_sideways_reduce_flag'):
                         self._sideways_reduce_flag = True
                     # このフラグを make_trade_decision で参照して位置サイズを調整
+        else:
+            # レジーム検出がOFFまたはENTRY以外の場合もレジーム情報を渡す
+            regime_stats = signals.get("regime_stats", {})
+            if regime_stats:
+                self.risk_manager.set_regime_info(regime_stats)
             
         return
     

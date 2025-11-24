@@ -91,6 +91,13 @@ class RiskManagement:
         self.stop_offset = 0 # 価格ベース
         self.stop_price = 0 # 価格ベース
         self.last_entry_price = 0 # 価格ベース
+        
+        # Phase 2: 段階的ポジションサイジング用のレジーム情報
+        self.current_regime = "NEUTRAL"
+        self.graduated_sizing_enabled = Config.config['Strategy'].getboolean('graduated_sizing_enabled', fallback=False)
+        self.sideways_multiplier = float(Config.config['Strategy'].get('sideways_position_multiplier', fallback='0.75'))
+        self.weak_trend_multiplier = float(Config.config['Strategy'].get('weak_trend_position_multiplier', fallback='1.0'))
+        self.strong_trend_multiplier = float(Config.config['Strategy'].get('strong_trend_position_multiplier', fallback='1.25'))
     
     def get_entry_range(self):
         return self.entry_range
@@ -113,7 +120,28 @@ class RiskManagement:
         return self.stop_price
     
     def get_position_size(self):
-        return self.position_size
+        # Phase 2: 段階的ポジションサイジング
+        position_size = self.position_size
+        if self.graduated_sizing_enabled and self.current_regime != "NEUTRAL":
+            multiplier = self._get_regime_multiplier()
+            position_size = position_size * multiplier
+        return position_size
+    
+    def _get_regime_multiplier(self):
+        """レジーム別のポジションサイズ乗数を返す"""
+        if self.current_regime == "SIDEWAYS":
+            return self.sideways_multiplier
+        elif self.current_regime == "WEAK_TREND":
+            return self.weak_trend_multiplier
+        elif self.current_regime == "STRONG_TREND":
+            return self.strong_trend_multiplier
+        return 1.0  # デフォルト
+    
+    def set_regime_info(self, regime_stats):
+        """取引戦略からレジーム情報を受け取る"""
+        if regime_stats:
+            self.current_regime = regime_stats.get("current_regime", "NEUTRAL")
+        return
         
     def get_total_size(self):
         return self.total_size

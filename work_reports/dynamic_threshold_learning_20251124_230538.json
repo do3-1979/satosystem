@@ -1,0 +1,12 @@
+{
+  "optimal_vol_threshold": 1.01,
+  "optimal_trend_threshold": 0.566,
+  "vol_percentile": 40,
+  "trend_percentile": 45,
+  "current_vol_threshold": 1.2,
+  "current_trend_threshold": 0.6,
+  "expected_improvement": 0.0065,
+  "confidence_score": 0.0031896195351962435,
+  "recommendation": "insufficient_effectiveness",
+  "analysis_period": "30日間"
+}

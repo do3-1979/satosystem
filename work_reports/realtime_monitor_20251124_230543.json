@@ -1,0 +1,103 @@
+{
+  "timestamp": "2025-11-24T23:05:43.699290",
+  "monitoring_window_days": 7,
+  "daily_pnl": [
+    {
+      "date": "2025-11-19",
+      "value": 50
+    },
+    {
+      "date": "2025-11-20",
+      "value": 60
+    },
+    {
+      "date": "2025-11-21",
+      "value": 70
+    },
+    {
+      "date": "2025-11-22",
+      "value": 80
+    },
+    {
+      "date": "2025-11-23",
+      "value": 90
+    },
+    {
+      "date": "2025-11-23",
+      "value": 30
+    },
+    {
+      "date": "2025-11-24",
+      "value": -50
+    }
+  ],
+  "daily_win_rate": [
+    {
+      "date": "2025-11-19",
+      "value": 0.45
+    },
+    {
+      "date": "2025-11-20",
+      "value": 0.46
+    },
+    {
+      "date": "2025-11-21",
+      "value": 0.47000000000000003
+    },
+    {
+      "date": "2025-11-22",
+      "value": 0.48
+    },
+    {
+      "date": "2025-11-23",
+      "value": 0.49
+    },
+    {
+      "date": "2025-11-23",
+      "value": 0.3
+    },
+    {
+      "date": "2025-11-24",
+      "value": 0.2
+    }
+  ],
+  "daily_profit_factor": [
+    {
+      "date": "2025-11-19",
+      "value": 0.8
+    },
+    {
+      "date": "2025-11-20",
+      "value": 0.8500000000000001
+    },
+    {
+      "date": "2025-11-21",
+      "value": 0.9
+    },
+    {
+      "date": "2025-11-22",
+      "value": 0.9500000000000001
+    },
+    {
+      "date": "2025-11-23",
+      "value": 1.0
+    },
+    {
+      "date": "2025-11-23",
+      "value": 0.9
+    },
+    {
+      "date": "2025-11-24",
+      "value": 0.7
+    }
+  ],
+  "alerts": [
+    {
+      "type": "REGIME_CHANGE",
+      "severity": "MEDIUM",
+      "message": "市場レジームが変化しました（WEAK_TREND → SIDEWAYS）",
+      "action": "Task 7（環境自動判定）を実行して、Phase 2 の有効/無効を再評価してください"
+    }
+  ],
+  "recommended_phase2_status": "MONITOR"
+}
