@@ -69,3 +69,4 @@ env/
 .vscode/
 .idea/
 output_configs/
+work_reports/
