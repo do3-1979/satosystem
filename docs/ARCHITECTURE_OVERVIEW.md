@@ -1,35 +1,35 @@
-# Architecture Overview
+# アーキテクチャ概要
 
-## Component Responsibilities
-| Component | Responsibility | Key Interactions |
-|-----------|---------------|------------------|
-| Config | Centralized parameter access from config.ini | All modules read cached values |
-| BybitExchange | ccxt wrapper for market/balance/order/OHLCV | PriceDataManagement, Bot (orders) |
-| PriceDataManagement | Fetches & buffers OHLCV, derives signals (Donchian, PVO) & volatility; backtest time progression | TradingStrategy, RiskManagement |
-| OHLCVCache | SQLite persistence for multi-timeframe OHLCV (1m / 120m) with upsert & sufficiency check | PriceDataManagement (initial backtest load) |
-| TradingStrategy | Decides ENTRY / ADD / EXIT based on signals & portfolio state | Bot (decision consumer), Portfolio |
-| RiskManagement | Position sizing, STOP trailing (PSAR, surge), ADX state | Bot, Portfolio, PriceDataManagement |
-| Portfolio | Tracks positions, average price, cumulative PnL & drawdown | Bot, RiskManagement |
-| Order | DTO encapsulating order intent (including MFE/MAE metrics) | Bot, Exchange |
-| Logger | Structured logging, rotation, compression | Bot, Util, Metrics |
-| Util | Log extraction & visualization (Excel, charts) | Logger outputs |
-| Metrics | Post-backtest performance metrics (Sharpe, MaxDD, PF, WinRate, Recovery Period) | Bot (backtest summary) |
+## コンポーネント責任分担
 
-## Execution Rules
+| コンポーネント | 責務 | 主な連携先 |
+|-----------|------|----------|
+| Config | config.ini からのパラメータ一元管理・キャッシュ | すべてのモジュール |
+| BybitExchange | ccxt ラッパー（マーケット/残高/注文/OHLCV） | PriceDataManagement, Bot |
+| PriceDataManagement | OHLCV取得・バッファリング、シグナル導出（Donchian, PVO）、ボラティリティ計算、バックテスト時間進行 | TradingStrategy, RiskManagement |
+| OHLCVCache | SQLite永続化（1m/120m マルチタイムフレーム）、upsert・充分性確認 | PriceDataManagement（初期ロード） |
+| TradingStrategy | ENTRY/ADD/EXIT判定（シグナル＆ポートフォリオ状態ベース） | Bot, Portfolio |
+| RiskManagement | ポジションサイジング、トレーリングストップ（PSAR, 急伸）、ADX状態 | Bot, Portfolio, PriceDataManagement |
+| Portfolio | ポジション/平均価格/累積PnL・ドローダウン追跡 | Bot, RiskManagement |
+| Order | オーダー意図のDTO（MFE/MAEメトリクス含む） | Bot, Exchange |
+| Logger | 構造化ログ、ローテーション、圧縮 | Bot, Util, Metrics |
+| Util | ログ抽出・可視化（Excel、チャート） | Logger出力 |
+| Metrics | バックテスト後パフォーマンスメトリクス（Sharpe, MaxDD, PF, WinRate） | Bot（サマリー） |
 
-### Bot Execution Standard
-**MUST use `bot_run.sh` for all backtest/live executions.**
+## 実行ルール
 
-Rationale:
-- Unified API key management (injection/restoration via `replace_api_key.sh`)
-- Consistent log cleanup and error handling
-- Prevents accidental key leaks in config.ini commits
+### Bot 実行標準
+**直接的な `python src/bot.py` 実行で実行可能**
 
-**Direct `python bot.py` execution is PROHIBITED** except for debugging purposes.
+注意点:
+- APIキーは `.api_key` ファイルまたは環境変数 `BYBIT_API_KEY`, `BYBIT_API_SECRET` から読み込まれる
+- config.ini は テンプレート（config.template.ini）から自動生成される
+- APIキーは config.ini に含めないこと（バージョン管理の安全性）
 
-All automated scripts (batch backtests, A/B experiments, etc.) must invoke `bot_run.sh` instead of `bot.py` directly.
+バックテスト時は config ファイルの `back_test = 1` で実行モード切り替え。
 
-## Data Flow (Backtest & Live)
+## データフロー（バックテスト＆本番）
+
 ```
           +-------------+
           |   Config    |
@@ -46,7 +46,7 @@ All automated scripts (batch backtests, A/B experiments, etc.) must invoke `bot_
           +------+------+
                  | decision
           +------+------+
-          |    Bot      | loop orchestration
+          |    Bot      | ループ調整
           +--+-------+--+
              |       |
      sizing/STOP   order DTO
@@ -74,14 +74,17 @@ All automated scripts (batch backtests, A/B experiments, etc.) must invoke `bot_
              v (backtest end)
           +--+--+
           |Metrics| summary JSON
-          +------+ 
+          +------+
+``` 
 
-## Timeframe & Cache Architecture (C6)
-The system consumes two granularities:
-- 2h timeframe (120m) for strategy & risk decisions.
-- 1m timeframe for fine-grained progression and latest ticker/volume.
+## タイムフレーム・キャッシュアーキテクチャ
 
-Both are stored in a single SQLite table `candles` keyed by `(symbol, timeframe, close_time)`:
+システムは2つの粒度を消費します:
+- **2時間足（120m）**: 戦略・リスク判定用
+- **1分足**: 細粒度の進行と最新ティッカー/出来高用
+
+両者は単一の SQLite テーブル `candles` に格納され、`(symbol, timeframe, close_time)` でキー付けされます:
+
 ```
 CREATE TABLE candles (
    symbol TEXT,
@@ -96,200 +99,170 @@ CREATE TABLE candles (
 )
 ```
 
-### Initial Backtest Loading
-`PriceDataManagement.initialise_back_test_ohlcv_data()` sequence:
-1. Compute extended start (start - initial_term * timeframe).
-2. For each timeframe (1, 15?, 120) attempt legacy JSON load (current + old path) -> upsert into DB.
-3. Call `has_sufficient_cache(symbol, timeframe, start, end)`; if False, fetch full range from API and upsert.
-4. Pull unified range via `get_range(...)` into memory arrays.
-5. Emit compatibility JSON for tools that still expect file-based OHLCV.
+### 初期バックテストロード
 
-### Re-Fetch Suppression
-`has_sufficient_cache` compares actual row count with expected (allowing a tolerance of 2 candles). If sufficient, no API call. This preserves rate limits by avoiding repeat downloads of identical historical windows.
+`PriceDataManagement.initialise_back_test_ohlcv_data()` の流れ:
+1. 拡張開始日を計算（開始日 - initial_term * timeframe）
+2. 各タイムフレーム（1, 15?, 120）に対して旧JSON形式ロード試行 → DB に upsert
+3. `has_sufficient_cache(symbol, timeframe, start, end)` を呼び出し；False の場合は API から全範囲をフェッチして upsert
+4. `get_range(...)` で統一範囲をメモリ配列にプル
+5. ファイルベース OHLCV を期待する従来ツール用に互換性 JSON を出力
 
-### Current Limitations
-- Sufficiency is count-based; internal gaps (missing contiguous candles) are not detected.
-- 2h candles are fetched directly rather than rolled up from 1m data (opportunity to remove duplication).
-- Full-range fetch on insufficiency (could be narrowed to only missing segments).
+### リフェッチ抑制
 
-### Future Enhancements
-- Gap detection: identify discontinuities (`delta(close_time) > timeframe*60`) and fetch only missing spans.
-- Roll-up engine: derive higher timeframes from 1m base series for consistency & less external dependency.
-- Integrity audit: periodic report (boundary coverage, gap count, latest update timestamp).
-- Adaptive tolerance: dynamic permissible missing count based on timeframe length & strategy warm-up needs.
+`has_sufficient_cache` は実行行数と期待値を比較（許容差2キャンドル）。充分なら API呼び出しなし。これはレート制限を保護し、同一履歴窓の重複ダウンロードを回避します。
 
-### VCS & Reproducibility
-Cache DB (`src/ohlcv_data/ohlcv_cache.db` + WAL/SHM) is ignored—backtests regenerate needed ranges. Legacy JSON files remain for compatibility and may be pruned once all consumers migrate to DB queries.
+### 現在の制限
+
+- 充分性はカウントベース；内部ギャップ（連続キャンドルの欠落）は検出されない
+- 2h キャンドルは 1m データからのロールアップではなく直接フェッチ（重複排除の機会）
+- 不充分な場合は全範囲フェッチ（欠落セグメントのみに狭められる可能性）
+
+### 将来の拡張
+
+- **ギャップ検出**: 不連続を特定（`delta(close_time) > timeframe*60`）、欠落スパンのみをフェッチ
+- **ロールアップエンジン**: 1m ベースシリーズから高いタイムフレームを導出、一貫性と外部依存の低減
+- **整合性監査**: 定期レポート（境界カバレッジ、ギャップ数、最新更新タイムスタンプ）
+- **適応的許容度**: タイムフレーム長と戦略ウォームアップ需要に基づく動的許容欠落数
+
+### VCS・再現性
+
+キャッシュ DB（`src/ohlcv_data/ohlcv_cache.db` + WAL/SHM）は無視される—バックテストは必要な範囲を再生成します。旧 JSON ファイルは互換性のために保持され、すべてのコンシューマが DB クエリに移行したら削除される可能性があります。
 
 ```
 
-## Backtest Progression
-- `PriceDataManagement.update_price_data_backtest()` advances a virtual clock minute by minute.
-- Signals recalculated only on frame completion (e.g. 2h / 15m).
-- Bot collects `total_profit_and_loss` into `pnl_history` each iteration.
-- End condition triggers metrics summary JSON.
+## バックテスト進行
 
-## Extensibility Points
-| Point | Strategy | Alternative | Notes |
-|-------|----------|-------------|-------|
-| Indicator Calc | In Price/Risk | Dedicated IndicatorService | Reduces class bloat |
-| Data Source | Single class | Interface (Live vs Backtest) | Improves testability |
-| STOP Logic | Mixed (PSAR + surge) | Policy objects | Composable trailing algorithms |
-| Logging Schema | Implicit dict | Versioned schema file | Safe evolution of fields |
+- `PriceDataManagement.update_price_data_backtest()` は仮想時計を1分単位で進行させます
+- シグナルは フレーム完了時のみ再計算（例: 2h / 15m）
+- Bot は各イテレーションごとに `total_profit_and_loss` を `pnl_history` に収集
+- 終了条件がメトリクスサマリー JSON をトリガー
 
-## Strategy Optimization History
+## 拡張可能性ポイント
 
-### Keltner Channel Filter (Rejected)
-**Decision Date**: 2025-11-21  
-**Test Period**: 2025/10/01 - 2025/11/01  
-**Result**: Not adopted
+| ポイント | 現状戦略 | 代替案 | 備考 |
+|---------|---------|--------|------|
+| 指標計算 | Price/Risk内 | 専用 IndicatorService | クラス肥大化を軽減 |
+| データソース | 単一クラス | インタフェース（Live vs Backtest） | テスト可能性向上 |
+| STOP ロジック | 混合（PSAR + 急伸） | ポリシーオブジェクト | 複合化可能 |
+| ログスキーマ | 暗黙的 dict | バージョン化スキーマファイル | フィールド進化の安全化 |
 
-Tested 12 parameter combinations (EMA periods: 10/20/30 × ATR multipliers: 1.5/2.0/2.5/3.0):
-- All configurations resulted in identical poor performance: PnL -35.21 (vs baseline 9.94)
-- Profit Factor: 0.70, Max DD Rate: 58.18%, Win Rate: 46.67%, Trades: 15
-- 0/12 configurations beat baseline → conclusively rejected
+## 戦略最適化履歴
 
-**Current Status**: `keltner_enabled=False` in config.ini; code remains for future reference
+### Keltner チャネルフィルタ（却下）
 
-### Pyramiding Optimization (Adopted: entry_times=4)
-**Decision Date**: 2025-11-21  
-**Test Period**: 2025/10/01 - 2025/11/01  
-**Result**: entry_times=4 selected as optimal balance
+**決定日**: 2025-11-21  
+**テスト期間**: 2025/10/01 - 2025/11/01  
+**結果**: 採用せず
 
-Tested configurations (entry_times: 2, 3, 4, 5, 10):
+12パラメータ組み合わせをテスト（EMA周期: 10/20/30 × ATR倍率: 1.5/2.0/2.5/3.0）:
+- すべての設定で同等の悪いパフォーマンス: PnL -35.21（ベースライン 9.94 対比）
+- Profit Factor: 0.70、Max DD Rate: 58.18%、Win Rate: 46.67%、取引数: 15
+- 0/12設定がベースラインを超える → 決定的に却下
 
-| entry_times | PnL | DD Rate | Risk-Adjusted Score | PF | Sharpe | Win Rate |
-|-------------|-----|---------|---------------------|-----|--------|----------|
-| **4 (Adopted)** | **107.10** | **49.75%** | **215.27** | **1.25** | **0.343** | **93.33%** |
+**現在状態**: `keltner_enabled=False` in config.ini；将来参照用にコード保持
+
+### ピラミッディング最適化（採用: entry_times=4）
+
+**決定日**: 2025-11-21  
+**テスト期間**: 2025/10/01 - 2025/11/01  
+**結果**: entry_times=4 を最適バランスとして選択
+
+テスト設定（entry_times: 2, 3, 4, 5, 10）:
+
+| entry_times | PnL | DD Rate | リスク調整スコア | PF | Sharpe | Win Rate |
+|-------------|-----|---------|------------------|-----|--------|----------|
+| **4 (採用)** | **107.10** | **49.75%** | **215.27** | **1.25** | **0.343** | **93.33%** |
 | 2 | 281.68 | 70.07% | 402.02 | 1.20 | 0.287 | 100% |
 | 5 | 69.78 | 44.94% | 155.28 | 1.23 | 0.32 | 93.33% |
 | 3 | 45.33 | 64.47% | 70.31 | 1.08 | 0.12 | 93.33% |
-| 10 (Baseline) | 9.94 | 113.17% | 8.78 | 1.53 | 0.63 | 94.12% |
+| 10 (ベース) | 9.94 | 113.17% | 8.78 | 1.53 | 0.63 | 94.12% |
 
-**Selection Rationale**:
-- DD rate under 50% (practical risk threshold for live trading)
-- Highest Sharpe ratio (0.343) indicating best risk-adjusted returns
-- PnL improvement: +977% vs baseline
-- Balanced approach: prioritizes stability over maximum profit
-- Suitable for long-term operation
+**選択根拠**:
+- DD率が50%未満（本番トレード実用的リスク閾値）
+- 最高Sharpe比（0.343）で最良リスク調整リターン
+- PnL改善: ベースライン対比 +977%
+- 均衡アプローチ: 最大利益より安定性優先
+- 長期運用に適合
 
-**Current Status**: `entry_times=4` in config.ini
+**現在状態**: `entry_times=4` in config.ini
 
-## Planned Improvements (M Roadmap)
-- M2: Documentation consolidation (README + this file).
-- M3: Refactoring issue template & backlog categorization.
-- M4: Metrics pipeline (implemented) & iterative strategy enhancement loop.
-- M5: Trade classification optimization (k1,k2,k3,L thresholds for TREND vs FALSE_BREAK)
-- M6: Partial exit functionality for multi-position holdings
-- M7: EXIT condition refinement (trailing stop, profit target)
-- M8: PVO threshold re-optimization on latest data
+## 計画中の改善（M ロードマップ）
 
-## Metrics Calculated
-| Metric | Source | Formula (Simplified) |
-|--------|--------|----------------------|
-| total_pnl | cumulative PnL | last(pnl_history) |
-| profit_factor | incremental returns | sum(pos)/abs(sum(neg)) |
+- M2: ドキュメント統合（README + このファイル）
+- M3: リファクタリング課題テンプレート・バックログカテゴリ化
+- M4: メトリクスパイプライン（実装完了）& 反復的戦略強化ループ
+- M5: トレード分類最適化（k1,k2,k3,L閾値の TREND vs FALSE_BREAK）
+- M6: マルチポジション保持用部分利確機能
+- M7: EXIT条件の洗練化（トレーリングストップ、利益目標）
+- M8: 最新データでの PVO 閾値再最適化
+
+## 計算メトリクス
+
+| メトリクス | ソース | 計算式（簡略） |
+|-----------|--------|---------------|
+| total_pnl | 累積 PnL | last(pnl_history) |
+| profit_factor | 増分リターン | sum(pos)/abs(sum(neg)) |
 | max_drawdown | pnl_history | max(peak - trough) |
 | max_drawdown_rate | pnl_history | max_drawdown / peak * 100 |
-| sharpe | incremental returns | mean(ret)/std(ret)*sqrt(n) |
+| sharpe | 増分リターン | mean(ret)/std(ret)*sqrt(n) |
 | win_rate | trade_results | wins / trades * 100 |
 
-## Testing Considerations
-- Unit test metric functions with synthetic pnl paths (monotonic, volatile, flat).
-- Edge cases: empty history, all losses, single sample.
+## テスト検討事項
 
-## Enum Standardization (Planned C2)
-Adopt internal `Side` enum (BUY, SELL, NONE) for all decision & portfolio interactions; convert only at exchange boundary.
+- 合成 pnl パス（単調、変動、平坦）を使用したユニットテストメトリクス関数
+- エッジケース: 空履歴、すべて損失、単一サンプル
 
-## Security / Failure Handling
-- Network/API retry: basic loop with sleep; needs max-attempt & exponential backoff.
-- API keys sourced from config; avoid logging secrets.
+## Enum 標準化（計画中 C2）
 
-## Future Separation
-1. `IndicatorService` for PSAR, ADX, Donchian, PVO
-2. `DataSource` abstraction (LiveDataSource / BacktestDataSource)
-3. `RiskEngine` separate from sizing heuristics
+内部 `Side` enum（BUY, SELL, NONE）をすべてのデシジョン＆ポートフォリオ連携に採用；変換は Exchange 境界でのみ実施。
 
-## Priority Action Items (2025 Q4)
+## セキュリティ・障害処理
 
-### 🔴 CRITICAL: 適応型分類閾値システム導入 (80% 完了)
-**課題**: 現状の固定閾値 (k2=2.2, k3=1.6) が2024年データで最適化されたが、2025年の市場環境変化により勝率が97.80% → 1.92%へ壊滅的に劣化。
+- ネットワーク/API リトライ: スリープ付きの基本ループ；max-attempt & 指数バックオフが必要
+- API キーは config から取得；シークレット のログ出力を回避
 
-**実装状況 (2025-11-21更新)**:
-- ✅ **月次MFE/MAE分布再計算** (`tools/dynamic_classification_optimizer.py` 実装完了)
-  - パーセンタイル分析によるk2/k3推奨値算出
-  - JSON/Markdownレポート自動生成
-  
-- ✅ **適応型モニタリングシステム** (`tools/adaptive_threshold_monitor.py` 実装完了)
-  - 最新trend_trades自動検出
-  - 四半期ごとの自動チェック機能 (`--check`)
-  - config.ini自動更新機能 (`--apply-recommendations`)
-  - ドリフト検出閾値: 15%乖離で警告
-  
-- ⏳ **市場レジーム分類** (未実装)
-  - トレンド型 vs レンジ型の自動判定
-  - ボラティリティクラスタリング
-  - レジーム別閾値セット切り替え
-  
-- ✅ **閾値バウンド制御** (実装済)
-  - 極端値回避: k2 ∈ [1.0, 4.0], k3 ∈ [0.8, 2.5]
-  - k2 > k3 制約の自動維持
+## 将来の分離
 
-**次のステップ**: 
-1. 初回実行 (`python tools/adaptive_threshold_monitor.py --check`)
-2. 2025年データで再最適化
-3. バックテストで効果検証
+1. `IndicatorService` （PSAR, ADX, Donchian, PVO）
+2. `DataSource` 抽象化（LiveDataSource / BacktestDataSource）
+3. `RiskEngine` をサイジングヒューリスティクスから分離
 
-**実装優先度**: 🔴 最優先 (システム稼働条件)  
-**詳細**: `docs/IMPLEMENTATION_ROADMAP.md` 参照
+## 優先アクション項目（2025 Q4）
 
-### 🟡 エントリー戦略改善
-**現状課題**: 
-- Keltnerフィルタは効果不明 (押し目買いでもベースライン超え未確認)
-- ピラミッディング最適値は entry_times=4 で確定 (2025/11リバランス完了)
+### 🔴 **最優先: Phase 1マーケットレジーム検出の適用化** (100% 検証完了→次フェーズ)
 
-**対策**:
-- **ボラティリティ適応エントリー**: ATR上昇時はエントリー閾値を動的に引き上げ
-- **出来高確認強化**: PVO閾値の市場状況別調整
-- **時間帯フィルタ**: 低流動性時間帯のエントリー抑制
+**実装状況 (2025-11-24更新)**:
+- ✅ **14種類フルバックテスト完了** （2024年Q1-Q4 + 2025年Q1, Q2, Q4初期）
+- ✅ **効果分析完了**: Q2で+56.4%改善、Q4初期で-34.9%悪化
+- ✅ **改善案2個検証完了**: 動的STRONG_TREND調整、環境別PVO閾値調整とも効果なし（却下）
+- ✅ **本番導入準備完了**: deployment_readiness.md作成、チェックリスト整備
 
-**実装優先度**: 🟡 中優先
+**重要な知見**: 
+- Phase 1は**環境依存が極めて大きい**（SIDEWAYS環境では+56.4%有効、トレンド環境では-34.9%有害）
+- Binary（ON/OFF）フィルタリングは不十分 → **段階的フィルタリングが必須**
+- 現在のボラティリティ閾値（1.2）が実市場で達成されにくい → **閾値自体の再検討必要**
 
-### 🟡 EXIT戦略拡張 (30% 完了)
-**現状課題**:
-- PSAR trailing stopがレンジ相場で機能不全
-- 部分利確効果は限定的 (別期間での正確な同一比較が必要)
-- 長期保持による過度なドローダウン
+**次のステップ（優先順）**: 
+1. **Task 9: 段階的フィルタリング実装** ← **最急務**
+   - SIDEWAYS時: ポジションサイズ 0% (現在のまま)
+   - WEAK_TREND時: ポジションサイズ 75%に削減
+   - STRONG_TREND時: ポジションサイズ 125%に増加
+   - 期待効果: -34.9% → -10%程度に改善
 
-**実装状況 (2025-11-21更新)**:
-- ✅ **時間ベースEXIT基盤** (実装済)
-  - `max_hold_bars` パラメータ (config.ini)
-  - trading_strategy.py/bot.pyでの判定ロジック実装済
-  - 最適値探索未実施 (候補: 10, 20, 30)
-  
-- ✅ **部分利確機能** (実装済・要最適化)
-  - `partial_exit_enabled`, `partial_exit_profit_rate`, `partial_exit_ratio`
-  - パラメータグリッド探索未実施
-  
-- ⏳ **ADX連動EXIT** (未実装)
-  - ADX < 20 かつ保持時間 > 10バーでEXIT
-  
-- ⏳ **レンジ相場専用EXIT** (未実装)
-  - Bollinger Band平均回帰ロジック
-  
-- ⏳ **ボラティリティ急縮小EXIT** (未実装)
-  - ATR縮小率 > 50%でEXIT
-  
-- ⏳ **トレーリングストップ強化** (未実装)
-  - 最高益からの固定%下落でEXIT
+2. **Task 7: 環境自動判定スクリプト** （Task 9完了後）
+   - リアルタイムでSIDEWAYS出現率計算
+   - Phase 1 ON/OFF判定の自動化
+   - 市場環境の自動分類
 
-**次のステップ**:
-1. max_hold_barsグリッド探索 (0, 10, 20, 30)
-2. ADX連動EXIT実装
-3. 統合バックテストで効果検証
+3. **Task 11: リアルタイム監視体制** （Task 9, 7完了後）
+   - Win Rate 低下アラート
+   - 環境劣化検出
+   - 自動パラメータロールバック
 
-**実装優先度**: 🟡 中優先  
-**詳細**: `docs/IMPLEMENTATION_ROADMAP.md` 参照
+**実装優先度**: 🔴 **最優先**（本番導入の前提条件）  
+**詳細**: `docs/TRADING_STRATEGY_PLAN.md`, `docs/ACTION_LIST.md` 参照
 
 ---
-This document complements `Readme.md` and analysis files; update incrementally.
+
+このドキュメントは `README.md` および分析ファイルを補足します；段階的に更新してください。
