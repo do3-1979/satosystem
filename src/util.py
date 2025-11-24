@@ -162,7 +162,9 @@ class Util:
                             data.append(log_data)
             except Exception as e:
                 print(f"\nSkip {log_file}: {e}")
-        print(f"Processing file {i + 1}/{proccess_num_logs}: {log_file} completed")  # 処理中のファイルを表示
+        
+        if len(selected_log_files) > 0:
+            print(f"Processing file {proccess_num_logs}/{proccess_num_logs}: {selected_log_files[-1]} completed")  # 処理完了表示
 
         # データを連結（間引きログでも連結可能）
         if len(data) == 0:
