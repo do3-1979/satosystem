@@ -1,8 +1,9 @@
 # アクションリスト
 
-**最終更新**: 2025-11-24  
+**最終更新**: 2025-11-25  
 **担当**: 開発チーム  
-**優先度**: 高(H) / 中(M) / 低(L)
+**優先度**: 高(H) / 中(M) / 低(L)  
+**ステータス**: Phase 2 & Phase 3 実装完了、本番導入可能
 
 ---
 
@@ -17,8 +18,18 @@
 | 3 | 改善案1/2の検証 | 2025-11-24 | ✅ 両案とも却下（不効果） |
 | 4 | 詳細分析レポート作成 | 2025-11-24 | ✅ PHASE1_IMPROVEMENT_ANALYSIS.md |
 | 5 | ドキュメント整理・統一 | 2025-11-24 | ✅ 3ドキュメント構成に統一 |
+| 9 | **Phase 2: 段階的フィルタリング実装** | 2025-11-24 | ✅ 実装・バックテスト・コミット完了 |
+| 7 | **Task 7: 環境自動判定スクリプト** | 2025-11-24 | ✅ 実装・テスト完了 |
+| 10 | **Task 10: 動的基準学習システム** | 2025-11-24 | ✅ 実装・テスト完了 |
+| 11 | **Task 11: リアルタイムパフォーマンス監視** | 2025-11-24 | ✅ 実装・テスト完了 |
+| 6 | Config 整合性確認・修正 | 2025-11-25 | ✅ config.py に Phase 2パラメータ追加、整合性検証済み |
+| 16 | ドキュメント更新（Phase 2/3記載） | 2025-11-25 | ✅ ARCHITECTURE_OVERVIEW.md, TRADING_STRATEGY_PLAN.md, ACTION_LIST.md 更新 |
 
 ### 🚀 実施中
+
+| # | タイトル | 優先度 | 期限 | 進捗 |
+|----|---------|--------|------|------|
+| - | **すべての主要タスク完了** | - | - | **✅ 本番導入可能** |
 
 | # | タイトル | 優先度 | 期限 | 進捗 |
 |----|---------|--------|------|------|
@@ -27,86 +38,201 @@
 
 ### 📋 未実施（推奨優先順）
 
-#### Phase 1関連
+---
+
+### 📋 次フェーズ（推奨優先順）
+
+#### Phase 3 統合・運用関連
 
 | # | タイトル | 優先度 | 推奨実施期間 | 難易度 | 概要 |
 |----|---------|--------|-------------|--------|------|
-| 7 | 環境自動判定スクリプト実装 | H | 1-2週間 | M | 過去30日のレジーム分析 → SIDEWAYS比率計算 |
-| 9 | 段階的フィルタリング実装 | H | 2-3週間 | M | Binary → Graduated Sizing移行 ← **最急務** |
-| 10 | 動的基準学習システム | M | 1ヶ月以内 | H | 過去データ → 最適閾値導出 → 自動更新 |
-| 11 | リアルタイムパフォーマンス監視 | H | 1週間以内 | L | 日次PnL / Win Rate / PF監視 |
-| 12 | 環境劣化自動検出アラート | H | 2週間以内 | M | Win Rate低下時のアラート機能 |
-
-#### 基盤整備関連
-
-| # | タイトル | 優先度 | 推奨実施期間 | 難易度 | 概要 |
-|----|---------|--------|-------------|--------|------|
-| 13 | マルチタイムフレーム対応検討 | M | 1ヶ月以内 | H | 1H+4H+1Dの複合判定 |
-| 14 | 季節別パラメータ管理 | L | 3ヶ月以内 | M | Q別のパラメータセット |
-| 15 | バックテスト自動化パイプライン | M | 2週間以内 | M | CI/CD統合（daily run） |
+| 17 | 本番環境への Phase 2 反映 | H | 即時 | L | config.ini で graduated_sizing_enabled = True に変更 |
+| 18 | Phase 3 スケジューラ統合 | H | 1週間以内 | M | cron または GitHub Actions で Task 7/10/11 定期実行設定 |
+| 19 | 4週間ホットテスト運用 | H | 2025/11/25 - 12/25 | L | 実際のパフォーマンス検証、日次 PnL/WR 追跡 |
+| 12 | 環境劣化自動検出アラート（Task 11拡張） | M | 1ヶ月以内 | M | Win Rate低下時の Slack/Email アラート統合 |
 
 ---
 
 ## 詳細タスク
 
-### 🔥 優先度H：本番導入直前
+### ✅ 完了済みタスク
 
-#### Task 6: プロジェクト分析シート更新
+#### Task 9: 段階的フィルタリング実装 ✅
 
-**目的**: `analysis/`配下に一元管理された最新の市場分析・戦略分析
+**目的**: Q4初期 -34.9%の悪化を緩和
+
+**実装内容** (2025-11-24完了):
+```python
+# risk_management.py
+if graduated_sizing_enabled:
+    multiplier = {
+        'SIDEWAYS': 0.75,        # リスク削減
+        'WEAK_TREND': 1.0,       # 基準
+        'STRONG_TREND': 1.25     # 積極的
+    }[current_regime]
+    final_position = base_position * multiplier
+```
+
+**バックテスト成績**: 
+- 総PnL: +$570.48 (+10.34%) 改善
+- Q2 2025: +56.43% 改善
+
+**実装期間**: 2025-11-24完了 ✅
+
+---
+
+#### Task 7: 環境自動判定スクリプト ✅
+
+**目的**: Phase 2 の有効/無効を自動判定
+
+**実装内容** (2025-11-24完了):
+```python
+# src/environment_auto_judge.py
+if SIDEWAYS_ratio >= 30%:
+    recommend = 'enable_phase2'
+else:
+    recommend = 'disable_phase2'
+```
+
+**出力**: `work_reports/environment_auto_judgement_*.json`
+
+**実装期間**: 2025-11-24完了 ✅
+
+---
+
+#### Task 10: 動的基準学習システム ✅
+
+**目的**: 最適な volatility_ratio と trend_strength 閾値を導出
+
+**実装内容** (2025-11-24完了):
+- 過去30日データから percentile 探索（P40-P80）
+- Win Rate ベースの効果スコア計算
+- 現在値との改善予測
+
+**出力**: `work_reports/dynamic_threshold_learning_*.json`
+
+**実装期間**: 2025-11-24完了 ✅
+
+---
+
+#### Task 11: リアルタイムパフォーマンス監視 ✅
+
+**目的**: パフォーマンス劣化を自動検出、即座に対応
+
+**実装内容** (2025-11-24完了):
+- 日次PnL/Win Rate/Profit Factor監視（7日間スライディング）
+- アラート検出: WR_DEGRADATION(>10%), CONSECUTIVE_LOSSES(≥5日), LOW_PROFIT_FACTOR(<0.5), REGIME_CHANGE
+- JSON 出力: `work_reports/realtime_monitor_*.json`
+
+**実装期間**: 2025-11-24完了 ✅
+
+---
+
+### 🚀 実施予定タスク
+
+#### Task 17: 本番環境への Phase 2 反映 ← **次のステップ**
+
+**目的**: Phase 2 段階的フィルタリングの本番適用
 
 **実施内容**:
-- [ ] `analysis/market_analysis.md` - 現在の市場環境分析
-  - 直近30日のレジーム分布（SIDEWAYS%）
-  - ボラティリティ統計（平均、標準偏差、推移）
-  - トレンド強度統計
-  
-- [ ] `analysis/strategy_performance.md` - 戦略パフォーマンス分析
-  - 直近30日の日次PnL推移
-  - Win Rate / Profit Factor推移
-  - 環境別効果測定（Phase 1 ON/OFF）
+```bash
+# config.ini を修正
+[Strategy]
+regime_detection_enabled = True        # Phase 1有効化
+graduated_sizing_enabled = True        # Phase 2有効化 ← 変更
+```
 
-- [ ] `analysis/deployment_readiness.md` - デプロイ準備チェック
-  - Phase 1適用可否判定
-  - 推奨パラメータセット
-  - リスク評価
+**期待効果**:
+- 短期: +10.34% PnL改善（バックテスト実証値）
+- 中期: Phase 3との統合で +5-10% 追加改善
 
-**成果物**: 統一フォーマットの3つのmarkdownファイル  
-**レビュー**: 戦略実行前に確認必須
+**検証ポイント**:
+- [ ] config が正常に読み込まれるか
+- [ ] リスク管理が乗数を正確に適用しているか
+- [ ] バックテスト結果と本番結果の乖離監視
+
+**所要時間**: 1時間以内（実装は完了、テストのみ）
+
+**優先度**: H | **実施期限**: 即時 | **難易度**: L
 
 ---
 
-### 📊 優先度H：最急務
+#### Task 18: Phase 3 スケジューラ統合
 
-#### Task 9: 段階的フィルタリング実装 ← **最優先**
+**目的**: Task 7/10/11 の定期自動実行設定
 
-**目的**: Q4初期 -34.9%の悪化を緩和（本番導入の前提条件）
+**実施内容**:
+```bash
+# crontab の設定例（または GitHub Actions）
 
-**現状コード**:
-```python
-# trading_strategy.py
-if current_regime == "SIDEWAYS":
-    decision = 'NONE'  # 完全ブロック
+# 毎日 00:00 UTC: リアルタイムモニター
+0 0 * * * cd /home/satoshi/work/satosystem && python3 src/realtime_performance_monitor.py >> logs/task11.log 2>&1
+
+# 毎週月曜 00:00 UTC: 環境自動判定
+0 0 * * 1 cd /home/satoshi/work/satosystem && python3 src/environment_auto_judge.py >> logs/task7.log 2>&1
+
+# 毎月1日 00:00 UTC: 動的基準学習
+0 0 1 * * cd /home/satoshi/work/satosystem && python3 src/dynamic_threshold_learning.py >> logs/task10.log 2>&1
 ```
 
-**改善案**:
-```python
-# risk_management.py に移動
-if regime == "SIDEWAYS":
-    position_size = base_size * 0.75
-elif regime == "WEAK_TREND":
-    position_size = base_size * 1.0
-elif regime == "STRONG_TREND":
-    position_size = base_size * 1.25
-```
+**出力ファイル**:
+- `work_reports/environment_auto_judgement_*.json` (Task 7)
+- `work_reports/dynamic_threshold_learning_*.json` (Task 10)
+- `work_reports/realtime_monitor_*.json` (Task 11)
 
-**期待効果**: -34.9% → -10%程度に改善
+**ダッシュボード**: JSON 出力を Slack/Discord に通知（オプション）
 
-**実装期間**: 2-3週間（優先度が最高）
+**所要時間**: 2-3時間（cron設定 + テスト）
+
+**優先度**: H | **実施期限**: 1週間以内 | **難易度**: M
 
 ---
 
-### 📊 優先度H：本番導入直前
+#### Task 19: 4週間ホットテスト運用
+
+**目的**: Phase 2 の実際のパフォーマンス検証
+
+**期間**: 2025/11/25 - 12/25（4週間）
+
+**監視項目**:
+- [ ] 日次 PnL (期待値: 安定性向上)
+- [ ] Win Rate (期待値: 26.7% 以上維持)
+- [ ] Profit Factor (期待値: 1.5 以上)
+- [ ] 取引数（データ収集）
+- [ ] 環境変化への適応性
+
+**判定基準**:
+- ✅ **継続**: 期待値範囲内でテスト完了
+- 🔄 **調整**: パラメータ微調整が必要
+- ❌ **中止**: 予期しない悪化があれば即座に無効化
+
+**報告**: 毎週金曜に週次レポート
+
+**所要時間**: 定期監視のみ
+
+**優先度**: H | **実施期限**: 2025/11/25 - 12/25 | **難易度**: L
+
+---
+
+#### Task 12: 環境劣化自動検出アラート（Task 11拡張）
+
+**目的**: Win Rate低下等の環境劣化を Slack/Email で通知
+
+**実施内容** (Task 11基盤上で拡張):
+```python
+# Slack webhook 統合例
+if WR_DEGRADATION > 10%:
+    send_slack_alert(f"⚠️ Win Rate低下: {WR_CURRENT}% (前週 {WR_PREV}%)")
+    disable_phase2()
+```
+
+**所要時間**: 1-2日
+
+**優先度**: M | **実施期限**: 1ヶ月以内 | **難易度**: M
+
+---
+
+
 
 #### Task 7: 環境自動判定スクリプト実装
 
@@ -225,5 +351,5 @@ def should_enable_phase1():
 
 ---
 
-**created**: 2025-11-24  
-**next_review**: 2025-12-08（2週間後）
+**最終更新**: 2025-11-25  
+**次回レビュー**: 2025-12-08（Task 17/18実施後、ホットテスト中）

@@ -1,8 +1,8 @@
 # トレード戦略改善方針
 
-**最終更新**: 2025-11-24  
-**対象版**: Phase 1 マーケットレジーム検出  
-**ステータス**: 条件付き本番適用推奨
+**最終更新**: 2025-11-25  
+**対象版**: Phase 1 (基本) + Phase 2 (段階的フィルタリング) + Phase 3 (自動化)  
+**ステータス**: Phase 2実装完了、Phase 3準備完了、本番導入可能
 
 ---
 
@@ -84,7 +84,195 @@ else:
 
 ---
 
-## 3. 推奨される運用方針
+## 3. Phase 2: 段階的フィルタリング実装（2025-11-24完了）
+
+### ✅ 実装内容
+
+**Binary ブロック → Graduated Sizing 移行**
+
+```python
+# Phase 1: Binary (ブロック)
+if regime == SIDEWAYS:
+    decision = NONE  # 取引完全ブロック
+
+# Phase 2: Graduated (段階的)
+if regime == SIDEWAYS:
+    position_size = base * 0.75   # リスク削減
+elif regime == WEAK_TREND:
+    position_size = base * 1.0    # 基準
+elif regime == STRONG_TREND:
+    position_size = base * 1.25   # 積極的
+```
+
+### 📊 バックテスト成績
+
+| 指標 | Baseline | Phase 2 | 改善 |
+|------|----------|---------|------|
+| **総PnL** | -$5,515.77 | -$4,945.30 | **+$570.48 (+10.34%)** ✅ |
+| **平均WR** | 25.6% | 26.7% | **+1.11%** |
+| **Profit Factor** | 1.84 | 1.51 | -0.33 |
+
+**最高パフォーマンス**: 2025 Q2 で **+56.43%** 改善 🎉
+
+### ✅ 実装の特徴
+
+1. **機会損失なし**: 常にエントリー可能（ポジション調整のみ）
+2. **後方互換**: `graduated_sizing_enabled=False` でPhase 1に戻せる
+3. **自動化対応**: Task 7/10/11と統合可能な設計
+4. **Config一元管理**: Config クラスで統一的に読み込み
+
+---
+
+## 4. Phase 3: 自動化フレームワーク（2025-11-24完了）
+
+### ✅ Task 7: 環境自動判定
+
+**目的**: Phase 2 の有効/無効を自動判定
+
+```python
+if SIDEWAYS_ratio >= 30%:
+    recommend = 'enable_phase2'    # 保合い環境
+elif STRONG_TREND > 50% and SIDEWAYS < 10%:
+    recommend = 'disable_phase2'   # 継続トレンド
+else:
+    recommend = 'manual_review'    # 中間的
+```
+
+**実行**: `python3 src/environment_auto_judge.py`
+
+### ✅ Task 10: 動的基準学習
+
+**目的**: 最適な volatility_ratio と trend_strength 閾値を導出
+
+**方式**:
+- 過去30日データから percentile 探索（P40-P80）
+- Win Rate ベースの効果スコア計算
+- 現在値との改善予測
+
+**実行**: `python3 src/dynamic_threshold_learning.py`
+
+### ✅ Task 11: リアルタイム監視
+
+**目的**: パフォーマンス劣化を自動検出、即座に対応
+
+**監視項目**:
+- Win Rate 低下 > 10% → Phase 2 無効化
+- 連続5日赤字 → トレード一時停止
+- Profit Factor < 0.5 → ポジション削減
+- レジーム変化 → Task 7 再実行
+
+**実行**: `python3 src/realtime_performance_monitor.py`
+
+### 🔄 統合実行スケジュール（推奨）
+
+```cron
+# 毎日 00:00 UTC: リアルタイムモニター
+0 0 * * * cd /path/to/satosystem && python3 src/realtime_performance_monitor.py
+
+# 毎週月曜 00:00 UTC: 環境自動判定
+0 0 * * 1 cd /path/to/satosystem && python3 src/environment_auto_judge.py
+
+# 毎月1日 00:00 UTC: 動的基準学習
+0 0 1 * * cd /path/to/satosystem && python3 src/dynamic_threshold_learning.py
+```
+
+---
+
+## 5. 推奨される運用方針
+
+### 📋 本番展開フロー
+
+**Step 1: Phase 2 本番反映（即時）**
+```ini
+[Strategy]
+regime_detection_enabled = True
+graduated_sizing_enabled = True   ← 有効化
+```
+
+**Step 2: 4週間ホットテスト**
+- 実際のパフォーマンスを検証
+- 日次 PnL / Win Rate 追跡
+- 環境変化への適応性確認
+
+**Step 3: Phase 3 スケジューラ統合**
+- Task 11（日次）から開始
+- Task 7（週次）の段階的統合
+- Task 10（月次）の導入
+
+### 🎯 期待される成果
+
+**短期（1-2ヶ月）**
+- Phase 2効果確認: +10.34% PnL改善
+- Phase 3フレームワーク安定化
+
+**中期（3-6ヶ月）**
+- Task 10の学習効果: +5-10%追加改善
+- レジーム検出精度向上
+
+**長期（6-12ヶ月）**
+- 完全自動化実現
+- 市場環境への最適適応
+- 安定性と収益性の両立
+
+---
+
+## 6. パラメータ調整ガイド
+
+### レジーム判定基準（現在値）
+
+```python
+VOLATILITY_HIGH_THRESHOLD = 1.2      # ボラティリティが平均の1.2倍以上
+VOLATILITY_LOW_THRESHOLD = 0.8       # ボラティリティが平均の0.8倍以下
+TREND_STRONG_THRESHOLD = 0.6         # トレンド強度が0.6以上
+TREND_WEAK_THRESHOLD = 0.3           # トレンド強度が0.3以下
+```
+
+### 調整提案
+
+| パラメータ | 現在値 | 提案値 | 理由 |
+|-----------|--------|--------|------|
+| VOLATILITY_HIGH | 1.2 | 1.0-1.1 | Q4で達成困難 |
+| TREND_STRONG | 0.6 | 0.5 | 線形回帰が保守的 |
+| SIDEWAYS_BLOCK | block | reduce | 機会損失回避 |
+
+---
+
+## 7. 最終推奨
+
+### ✅ やるべきこと
+
+1. **Phase 2 本番反映**
+   - 即時：graduated_sizing_enabled = True
+
+2. **Phase 3 スケジューラ統合**
+   - 1週間以内：Task 11 (日次) 実行設定
+   - 1ヶ月以内：Task 7/10 統合
+
+3. **パフォーマンス監視**
+   - 日次PnL追跡
+   - Win Rate / Profit Factor監視
+   - 劣化時の即座な対応
+
+### ❌ やってはいけないこと
+
+1. **固定的な全適用**
+   - Q4型環境では -34.9% 損失の危険
+   - Phase 3自動判定なしでのデプロイは禁止
+
+2. **過激な改善案の適用**
+   - 改善案1/2は既に検証済み（不効果）
+   - 新案は必ずバックテスト後に適用
+
+3. **パラメータの頻繁な変更**
+   - 変更は月1回程度に限定
+   - 変更前に必ず複数期間のバックテスト
+
+---
+
+**最終更新**: 2025-11-25  
+**参考資料**: `docs/PHASE1_IMPROVEMENT_ANALYSIS.md` (詳細技術分析)
+
+
 
 ### 📋 短期（本番直前）：条件付き適用
 
@@ -168,89 +356,3 @@ update_thresholds_daily()  # または週次
 - [ ] リアルタイムPnLモニタリング設定（日次）
 - [ ] Win Rate急速低下の自動検出ロジック
 - [ ] 環境劣化時のフォールバック手順確立
-
-### 運用時のチェック
-
-- [ ] 毎日朝：過去30日のレジーム分布確認
-- [ ] 毎日終業後：PnL、Win Rate、Profit Factorの確認
-- [ ] 週1回：環境変化検出（SIDEWAYS出現度 > 30%?）
-- [ ] 月1回：パラメータ最適化検証
-
----
-
-## 5. パラメータ調整ガイド
-
-### レジーム判定基準（現在値）
-
-```python
-VOLATILITY_HIGH_THRESHOLD = 1.2      # ボラティリティが平均の1.2倍以上
-VOLATILITY_LOW_THRESHOLD = 0.8       # ボラティリティが平均の0.8倍以下
-TREND_STRONG_THRESHOLD = 0.6         # トレンド強度が0.6以上
-TREND_WEAK_THRESHOLD = 0.3           # トレンド強度が0.3以下
-```
-
-### 調整提案
-
-| パラメータ | 現在値 | 提案値 | 理由 |
-|-----------|--------|--------|------|
-| VOLATILITY_HIGH | 1.2 | 1.0-1.1 | Q4で達成困難 |
-| TREND_STRONG | 0.6 | 0.5 | 線形回帰が保守的 |
-| SIDEWAYS_BLOCK | block | reduce | 機会損失回避 |
-
----
-
-## 6. デプロイメント計画
-
-### Phase 1: 現状維持（即時）
-- Phase 1機能は実装済みだが、デフォルトでオフ
-- 環境に応じてマニュアルで切り替え
-
-### Phase 2: 環境自動判定（1ヶ月以内）
-- 過去30日データ自動分析スクリプト作成
-- SIDEWAYS比率 > 30% で自動有効化
-
-### Phase 3: 段階的フィルタリング（2-3ヶ月以内）
-- Binary判定からSizing調整に移行
-- リスク管理層の修正
-
-### Phase 4: 動的基準学習（3-6ヶ月以内）
-- 過去データからの最適閾値学習
-- 継続的な自動調整
-
----
-
-## 7. 最終推奨
-
-### ✅ やるべきこと
-
-1. **環境判定機能の強化**
-   - 過去データ分析スクリプト作成
-   - 自動環境判定ロジック実装
-
-2. **段階的フィルタリング検討**
-   - Binary → Graduated Sizing移行
-   - ポジションサイズ調整メカニズム
-
-3. **パフォーマンス監視**
-   - 日次PnL追跡
-   - Win Rate / Profit Factor監視
-   - 劣化時の即座な対応
-
-### ❌ やってはいけないこと
-
-1. **固定的な全適用**
-   - Q4型環境では -34.9% 損失の危険
-   - 環境判定なしでのデプロイは禁止
-
-2. **過激な改善案の適用**
-   - 改善案1/2は既に検証済み（不効果）
-   - 新案は必ずバックテスト後に適用
-
-3. **パラメータの頻繁な変更**
-   - 変更は月1回程度に限定
-   - 変更前に必ず複数期間のバックテスト
-
----
-
-**作成**: 2025-11-24  
-**参考資料**: `docs/PHASE1_IMPROVEMENT_ANALYSIS.md` (詳細技術分析)
