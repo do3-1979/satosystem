@@ -94,10 +94,10 @@ class RiskManagement:
         
         # Phase 2: 段階的ポジションサイジング用のレジーム情報
         self.current_regime = "NEUTRAL"
-        self.graduated_sizing_enabled = Config.config['Strategy'].getboolean('graduated_sizing_enabled', fallback=False)
-        self.sideways_multiplier = float(Config.config['Strategy'].get('sideways_position_multiplier', fallback='0.75'))
-        self.weak_trend_multiplier = float(Config.config['Strategy'].get('weak_trend_position_multiplier', fallback='1.0'))
-        self.strong_trend_multiplier = float(Config.config['Strategy'].get('strong_trend_position_multiplier', fallback='1.25'))
+        self.graduated_sizing_enabled = Config.get_graduated_sizing_enabled()
+        self.sideways_multiplier = Config.get_sideways_position_multiplier()
+        self.weak_trend_multiplier = Config.get_weak_trend_position_multiplier()
+        self.strong_trend_multiplier = Config.get_strong_trend_position_multiplier()
     
     def get_entry_range(self):
         return self.entry_range

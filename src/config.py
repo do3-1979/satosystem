@@ -95,6 +95,11 @@ class Config:
             'regime_detection_enabled': cls.config['Strategy'].getboolean('regime_detection_enabled', fallback=False),
             'regime_volatility_ratio_threshold': float(cls.config['Strategy'].get('regime_volatility_ratio_threshold', 1.2)),
             'regime_trend_strength_threshold': float(cls.config['Strategy'].get('regime_trend_strength_threshold', 0.05)),
+            # Phase 2: Graduated Position Sizing
+            'graduated_sizing_enabled': cls.config['Strategy'].getboolean('graduated_sizing_enabled', fallback=False),
+            'sideways_position_multiplier': float(cls.config['Strategy'].get('sideways_position_multiplier', 0.75)),
+            'weak_trend_position_multiplier': float(cls.config['Strategy'].get('weak_trend_position_multiplier', 1.0)),
+            'strong_trend_position_multiplier': float(cls.config['Strategy'].get('strong_trend_position_multiplier', 1.25)),
             # Portfolio
             'lot_limit_lower': float(cls.config['Potfolio']['lot_limit_lower']),
             'balance_tether_limit': float(cls.config['Potfolio']['balance_tether_limit']),
@@ -590,6 +595,50 @@ class Config:
         """
         cls._initialize_cache()
         return cls._cache['test_initial_max_term']
+
+    @classmethod
+    def get_graduated_sizing_enabled(cls):
+        """
+        Phase 2 段階的ポジションサイジング有効化フラグを取得します
+
+        Returns:
+            bool: 有効化フラグ
+        """
+        cls._initialize_cache()
+        return cls._cache['graduated_sizing_enabled']
+
+    @classmethod
+    def get_sideways_position_multiplier(cls):
+        """
+        SIDEWAYS時のポジションサイズ乗数を取得します
+
+        Returns:
+            float: ポジションサイズ乗数 (デフォルト: 0.75)
+        """
+        cls._initialize_cache()
+        return cls._cache['sideways_position_multiplier']
+
+    @classmethod
+    def get_weak_trend_position_multiplier(cls):
+        """
+        WEAK_TREND時のポジションサイズ乗数を取得します
+
+        Returns:
+            float: ポジションサイズ乗数 (デフォルト: 1.0)
+        """
+        cls._initialize_cache()
+        return cls._cache['weak_trend_position_multiplier']
+
+    @classmethod
+    def get_strong_trend_position_multiplier(cls):
+        """
+        STRONG_TREND時のポジションサイズ乗数を取得します
+
+        Returns:
+            float: ポジションサイズ乗数 (デフォルト: 1.25)
+        """
+        cls._initialize_cache()
+        return cls._cache['strong_trend_position_multiplier']
 
     @classmethod
     def get_log_file_name(cls):
