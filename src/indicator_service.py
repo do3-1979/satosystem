@@ -24,6 +24,19 @@ class IndicatorService:
         self.adx_continue_num = adx_continue_num
         self.adx_bull_threshold = adx_bull_threshold
         self.adx_bear_threshold = adx_bear_threshold
+        
+        # PSAR計算用の状態保持
+        self.psar = []         # Parabolic SAR値
+        self.psarbull = []     # SAR (bull trend)
+        self.psarbear = []     # SAR (bear trend)
+        self.psar_af = 0.02    # Acceleration Factor
+        self.psar_trend = 'up' # 'up' or 'down'
+        self.psar_ep = 0       # Extreme Point
+        
+        # ADX計算用の状態保持
+        self.adx = []          # ADX値
+        self.adx_bull = []     # Plus DI
+        self.adx_bear = []     # Minus DI
     
     def calculate_volatility(self, ohlcv_data, period=14):
         """
@@ -114,6 +127,27 @@ class IndicatorService:
         
         volumes = [d.get('volume', 0) for d in ohlcv_data]
         
+        # ボリュームが利用不可の場合（データが全て0またはNone）
+        # → 価格ボラティリティをPVOの代替指標として使用
+        if all(v == 0 or v is None for v in volumes):
+            # 価格ボラティリティベースのPVO計算（フォールバック）
+            closes = [d.get('close_price', 0) for d in ohlcv_data]
+            if len(closes) < long_period:
+                return {'signal': False, 'side': None, 'value': 0}
+            
+            # 最近のボラティリティを計算
+            recent_closes = closes[-long_period:]
+            price_change = recent_closes[-1] - recent_closes[0]
+            price_volatility = abs(price_change) / recent_closes[0] * 100 if recent_closes[0] != 0 else 0
+            
+            # ボラティリティ > 0.5% → シグナル判定
+            signal = price_volatility > 0.5
+            return {
+                'signal': signal,
+                'side': 'buy' if signal else None,
+                'value': price_volatility
+            }
+        
         # 簡易EMA計算
         short_ema = self._calculate_ema(volumes, short_period)
         long_ema = self._calculate_ema(volumes, long_period)
@@ -140,10 +174,14 @@ class IndicatorService:
             period: 計算期間
             
         Returns:
-            dict: ADX値とトレンド情報
+            なし（self.adx, self.adx_bull, self.adx_bear を更新）
         """
         if len(ohlcv_data) < period:
-            return {'adx': 0, 'trend': 'NONE'}
+            if not self.adx:
+                self.adx = []
+                self.adx_bull = []
+                self.adx_bear = []
+            return
         
         # 簡易実装：価格トレンドで判定
         recent = ohlcv_data[-period:]
@@ -162,7 +200,21 @@ class IndicatorService:
             else:
                 trend = 'NONE'
         
-        return {'adx': adx, 'trend': trend}
+        # ADX値を記録
+        self.adx.append(adx)
+        
+        # Plus DI / Minus DI を記録（簡易版）
+        if trend == 'UP':
+            self.adx_bull.append(adx)
+            self.adx_bear.append(0)
+        elif trend == 'DOWN':
+            self.adx_bull.append(0)
+            self.adx_bear.append(adx)
+        else:
+            self.adx_bull.append(0)
+            self.adx_bear.append(0)
+        
+        return
     
     @staticmethod
     def _calculate_ema(data, period):
@@ -225,38 +277,46 @@ class IndicatorService:
             max_af: 最大加速係数
             
         Returns:
-            dict: {'sar': float, 'ep': float, 'af': float, 'trend': str}
+            なし（self.psar, self.psarbull, self.psarbear を更新）
         """
-        if len(ohlcv_data) < 2:
-            current_price = ohlcv_data[-1].get('close_price', 0) if ohlcv_data else 0
-            return {
-                'sar': current_price,
-                'ep': current_price,
-                'af': start_af,
-                'trend': 'up'
-            }
+        if not ohlcv_data or len(ohlcv_data) < 2:
+            if not self.psar:
+                self.psar = []
+                self.psarbull = []
+                self.psarbear = []
+            return
         
-        # 簡易実装：直近の高値/安値から SAR を推定
-        recent = ohlcv_data[-20:]  # 直近20本足
+        # 直近データの高値/安値を取得
+        recent = ohlcv_data[-20:] if len(ohlcv_data) >= 20 else ohlcv_data
         high = max([d.get('high_price', 0) for d in recent])
         low = min([d.get('low_price', float('inf')) for d in recent])
         current_price = ohlcv_data[-1].get('close_price', 0)
         
         # トレンド判定
-        if current_price > (high + low) / 2:
-            trend = 'up'
-            sar = low
-            ep = high
+        if len(self.psar) == 0:
+            # 初期化
+            if current_price > (high + low) / 2:
+                self.psar_trend = 'up'
+                sar = low
+                self.psar_ep = high
+            else:
+                self.psar_trend = 'down'
+                sar = high
+                self.psar_ep = low
+            self.psar_af = start_af
         else:
-            trend = 'down'
-            sar = high
-            ep = low
+            # 前回のSAR値から継続
+            sar = self.psar[-1] if self.psar else low
         
-        af = start_af
+        # SAR値を記録
+        self.psar.append(sar)
         
-        return {
-            'sar': sar,
-            'ep': ep,
-            'af': af,
-            'trend': trend
-        }
+        # Bull/Bear SAR を記録
+        if self.psar_trend == 'up':
+            self.psarbull.append(sar)
+            self.psarbear.append(None)
+        else:
+            self.psarbull.append(None)
+            self.psarbear.append(sar)
+        
+        return

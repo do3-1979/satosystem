@@ -734,9 +734,31 @@ class PriceDataManagement:
             price (float): 現在の価格
 
         Returns:
-            str: トレードシグナル ('BUY', 'SELL', 'None')
+            tuple: (シグナル文字列, 高値, 安値)
         """
-        return self.indicator_service.calculate_donchian(ohlcv_data, price)
+        # Donchian計算用パラメータ
+        donchian_buy_term = Config.get_donchian_buy_term()
+        donchian_sell_term = Config.get_donchian_sell_term()
+        
+        if len(ohlcv_data) < donchian_buy_term:
+            return 'None', 0, 0
+        
+        # 買いシグナルの高値計算
+        buy_period_data = ohlcv_data[-donchian_buy_term:]
+        buy_high = max([d.get('high_price', 0) for d in buy_period_data])
+        
+        # 売りシグナルの安値計算
+        sell_period_data = ohlcv_data[-donchian_sell_term:]
+        sell_low = min([d.get('low_price', float('inf')) for d in sell_period_data])
+        
+        # 現在価格でシグナル判定
+        signal = 'None'
+        if price >= buy_high and buy_high > 0:
+            signal = 'BUY'
+        elif price <= sell_low and sell_low != float('inf'):
+            signal = 'SELL'
+        
+        return signal, buy_high, sell_low
 
     def __calc_ema(self, term, data):
         """
@@ -775,11 +797,15 @@ class PriceDataManagement:
             volume (float): 出来高
 
         Returns:
-            bool: トレードシグナル (True, False)
+            tuple: (シグナル判定, PVO値)
         """
-        pvo_value = self.indicator_service.calculate_pvo(ohlcv_data, volume)
-        judge = self.indicator_service.evaluate_pvo(pvo_value)
-        return judge, pvo_value
+        pvo_result = self.indicator_service.calculate_pvo(ohlcv_data)
+        
+        if isinstance(pvo_result, dict):
+            return pvo_result.get('signal', False), pvo_result.get('value', 0)
+        else:
+            # フォールバック
+            return False, 0
 
     def __evaluate_keltner(self, ohlcv_data, current_price):
         """
