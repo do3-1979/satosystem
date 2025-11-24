@@ -196,6 +196,10 @@ class RegimeDetector:
         """
         ボラティリティ比率とトレンド強度からレジームを分類
         
+        動的STRONG_TREND判定:
+        - 高ボラティリティ & 強トレンド → STRONG_TREND（従来通り）
+        - 中程度ボラティリティ & 非常に強トレンド(>0.7) → STRONG_TREND（トレンド継続時に適用）
+        
         Args:
             volatility_ratio: ボラティリティ比率（平均に対する比率）
             trend_strength: トレンド強度 (0.0-1.0)
@@ -203,19 +207,23 @@ class RegimeDetector:
         Returns:
             str: レジーム名
         """
-        # 高ボラティリティ & 強トレンド → STRONG_TREND
+        # パターン1: 高ボラティリティ & 強トレンド → STRONG_TREND（従来通り）
         if volatility_ratio >= self.volatility_high_threshold and \
            trend_strength >= self.trend_strong_threshold:
             return self.STRONG_TREND
         
+        # パターン2: トレンド非常に強い(>0.7)場合はSTRONG_TRENDに昇格
+        # （トレンド継続環境での過度な制限を回避）
+        if trend_strength > 0.7:
+            return self.STRONG_TREND
+        
         # 低ボラティリティ & 弱トレンド → SIDEWAYS
-        elif volatility_ratio <= self.volatility_low_threshold and \
-             trend_strength <= self.trend_weak_threshold:
+        if volatility_ratio <= self.volatility_low_threshold and \
+           trend_strength <= self.trend_weak_threshold:
             return self.SIDEWAYS
         
         # その他 → WEAK_TREND（デフォルト）
-        else:
-            return self.WEAK_TREND
+        return self.WEAK_TREND
     
     def get_current_regime(self):
         """現在のレジームを取得"""

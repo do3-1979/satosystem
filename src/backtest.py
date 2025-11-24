@@ -279,10 +279,10 @@ def main():
             elapsed_time = time.time() - start_time
 
             # 処理中のconfigファイルの名前と進捗率を表示
-            progress = (idx + 1) / len(config_files) * 100
+            progress = (idx + 1) / len(config_files_to_process) * 100
             print()
             print(f"Completed: {os.path.basename(config_file)}")
-            print(f"Progress: {progress:.2f}% ({idx+1}/{len(config_files)})")
+            print(f"Progress: {progress:.2f}% ({idx+1}/{len(config_files_to_process)})")
             print(f"Elapsed Time: {format_elapsed_time(elapsed_time)}")
             print()
         
