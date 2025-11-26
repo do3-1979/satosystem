@@ -25,18 +25,21 @@ import sys
 import json
 import subprocess
 import time
+import glob
 from datetime import datetime
+from pathlib import Path
 
-src_dir = os.path.dirname(os.path.abspath(__file__))
-os.chdir(src_dir)
+# Path utilities をインポート
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+from path_utils import PathManager
 
 
 class QuarterlyBacktestScheduler:
     """四半期バックテスト スケジューラ"""
     
     def __init__(self):
-        self.base_dir = os.path.dirname(os.path.abspath(__file__))
-        self.work_reports_dir = os.path.join(self.base_dir, 'work_reports')
+        self.project_root = PathManager.get_project_root()
+        self.work_reports_dir = PathManager.get_work_reports_dir()
         
         # 四半期定義（優先度順）
         self.quarters_high = [
@@ -63,29 +66,26 @@ class QuarterlyBacktestScheduler:
     
     def run_backtest(self, quarter_key, pattern_key):
         """バックテストを実行"""
-        config_file = os.path.join(
-            self.base_dir, 'output_configs',
-            f'quarterly_{quarter_key}_{pattern_key}.ini'
-        )
+        config_file = self.project_root / 'output_configs' / f'quarterly_{quarter_key}_{pattern_key}.ini'
         
-        if not os.path.exists(config_file):
-            print(f"  ⚠️  Config not found: {os.path.basename(config_file)}")
+        if not config_file.exists():
+            print(f"  ⚠️  Config not found: {config_file.name}")
             return None
         
         print(f"  🚀 {pattern_key}...", end='', flush=True)
         
         try:
             # バックテスト実行前に古いレポートをクリア
-            import glob
-            for report_file in glob.glob(os.path.join(self.base_dir, 'report', '*.json')):
+            report_dir = PathManager.get_report_dir()
+            for report_file in report_dir.glob('*.json'):
                 try:
-                    os.remove(report_file)
+                    report_file.unlink()
                 except:
                     pass
             
             # backtest.py を実行
             result = subprocess.run(
-                [sys.executable, os.path.join('src', 'backtest.py'), config_file],
+                [sys.executable, str(self.project_root / 'src' / 'backtest.py'), str(config_file)],
                 capture_output=True,
                 text=True,
                 timeout=3600  # 1時間
@@ -108,11 +108,11 @@ class QuarterlyBacktestScheduler:
     def _extract_metrics(self):
         """レポートから主要メトリクスを抽出"""
         try:
-            import glob
+            report_dir = PathManager.get_report_dir()
             
             report_files = sorted(
-                glob.glob(os.path.join('report', 'backtest_summary_*.json')),
-                key=os.path.getmtime,
+                report_dir.glob('backtest_summary_*.json'),
+                key=lambda x: x.stat().st_mtime,
                 reverse=True
             )
             
@@ -198,18 +198,12 @@ class QuarterlyBacktestScheduler:
     
     def _save_interim_results(self):
         """進捗をファイルに保存"""
-        os.makedirs(self.work_reports_dir, exist_ok=True)
+        PathManager.ensure_dir_exists(self.work_reports_dir)
         
-        date_dir = os.path.join(
-            self.work_reports_dir,
-            datetime.now().strftime("%Y-%m-%d")
-        )
-        os.makedirs(date_dir, exist_ok=True)
+        date_dir = self.work_reports_dir / datetime.now().strftime("%Y-%m-%d")
+        PathManager.ensure_dir_exists(date_dir)
         
-        interim_file = os.path.join(
-            date_dir,
-            'quarterly_backtest_interim.json'
-        )
+        interim_file = date_dir / 'quarterly_backtest_interim.json'
         
         with open(interim_file, 'w', encoding='utf-8') as f:
             json.dump(self.results, f, indent=2, ensure_ascii=False)
@@ -364,18 +358,12 @@ class QuarterlyBacktestScheduler:
     
     def save_final_results(self):
         """最終結果をファイルに保存"""
-        os.makedirs(self.work_reports_dir, exist_ok=True)
+        PathManager.ensure_dir_exists(self.work_reports_dir)
         
-        date_dir = os.path.join(
-            self.work_reports_dir,
-            datetime.now().strftime("%Y-%m-%d")
-        )
-        os.makedirs(date_dir, exist_ok=True)
+        date_dir = self.work_reports_dir / datetime.now().strftime("%Y-%m-%d")
+        PathManager.ensure_dir_exists(date_dir)
         
-        final_file = os.path.join(
-            date_dir,
-            f'quarterly_backtest_final_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
-        )
+        final_file = date_dir / f'quarterly_backtest_final_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
         
         with open(final_file, 'w', encoding='utf-8') as f:
             json.dump(self.results, f, indent=2, ensure_ascii=False)

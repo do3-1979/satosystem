@@ -816,26 +816,17 @@ if __name__ == "__main__":
     # bot class test flag
     bot_order_test = False
     
+    # Path utilities をインポート
+    from path_utils import PathManager, load_api_keys_from_file
+    
     # APIキーを .api_key ファイルから読み込む（優先度高）
+    api_key_file = PathManager.get_api_key_file()
     api_key = None
     api_secret = None
-    api_key_files = ["src/.api_key", ".api_key"]
     
-    for api_key_file in api_key_files:
-        if os.path.exists(api_key_file):
-            print(f"[INFO] Loading API keys from: {api_key_file}")
-            try:
-                with open(api_key_file, 'r') as f:
-                    for line in f:
-                        line = line.strip()
-                        if line.startswith('api_key'):
-                            api_key = line.split('=', 1)[1].strip()
-                        elif line.startswith('api_secret'):
-                            api_secret = line.split('=', 1)[1].strip()
-                if api_key and api_secret:
-                    break
-            except Exception as e:
-                print(f"[WARN] Error reading {api_key_file}: {e}")
+    if api_key_file.exists():
+        print(f"[INFO] Loading API keys from: {api_key_file}")
+        api_key, api_secret = load_api_keys_from_file()
     
     # APIキーが見つからない場合は config.ini から読み込む
     if not api_key or not api_secret:
@@ -851,9 +842,8 @@ if __name__ == "__main__":
         # .api_key から読み込めた場合は、Config クラスにも反映させる
         # 一時的な config ファイルを作成して使用
         import shutil
-        temp_config_path = os.path.join(".", "config_temp_bot.ini")
-        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        config_src = os.path.join(root_dir, 'src', 'config.ini')
+        temp_config_path = PathManager.get_project_root() / "config_temp_bot.ini"
+        config_src = PathManager.get_config_file()
         
         try:
             shutil.copy(config_src, temp_config_path)

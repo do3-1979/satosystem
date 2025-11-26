@@ -5,11 +5,15 @@ import sys
 import glob
 from configparser import ConfigParser
 import re
+from pathlib import Path
 
 # カレントディレクトリをsrc/に変更してモジュール読み込みを修正
 src_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(src_dir)
 sys.path.insert(0, src_dir)
+
+# Path utilities をインポート
+from path_utils import PathManager, load_api_keys_from_file
 
 from config import Config
 from config_manager import ConfigManager
@@ -77,22 +81,21 @@ def cleanup_old_logs():
                 print(f"⚠️  Failed to delete {log_file}: {e}")
 
 def display_latest_reports():
-    """
-    実行後の最新レポートファイルを表示
-    """
+    """Display latest report files using PathManager."""
+    report_dir = PathManager.get_report_dir()
     report_patterns = [
-        ('report', 'backtest_summary_*.json', 'Summary'),
-        ('report', 'trend_trades_*.json', 'Trades'),
-        ('report', 'pnl_timeseries_*.json', 'PnL Timeseries'),
+        ('backtest_summary_*.json', 'Summary'),
+        ('trend_trades_*.json', 'Trades'),
+        ('pnl_timeseries_*.json', 'PnL Timeseries'),
     ]
     
     print("\n" + "=" * 70)
     print("📊 Latest Report Files")
     print("=" * 70)
     
-    for directory, pattern, label in report_patterns:
-        if os.path.isdir(directory):
-            files = sorted(glob.glob(os.path.join(directory, pattern)), reverse=True)
+    for pattern, label in report_patterns:
+        if report_dir.exists():
+            files = sorted(report_dir.glob(pattern), reverse=True)
             if files:
                 latest = files[0]
                 print(f"✅ {label:20s}: {latest}")
@@ -102,37 +105,16 @@ def display_latest_reports():
     print("=" * 70 + "\n")
 
 def load_api_keys():
-    """
-    .api_keyファイルからAPIキーとシークレットを読み込む
-    
-    バックテスト時の仕組み:
-    1. .api_keyファイルに本番APIキーがあれば使用（Bybitからデータ取得可能）
-    2. キャッシュDBに十分なデータがあればAPI呼び出しはスキップ
-    3. .api_keyがない場合は、既存キャッシュだけで実行
-    4. キャッシュ不足で必須データがない場合はバックテストをスキップ
+    """Load API keys using PathManager for consistent path resolution.
     
     Returns:
-        tuple: (api_key, api_secret)
+        tuple: (api_key, api_secret) or (None, None) if not found
     """
-    api_key = None
-    api_secret = None
-    
-    # Try both locations: root and src/ directory
-    api_key_files = [".api_key", "src/.api_key"]
-    
-    for api_key_file in api_key_files:
-        if os.path.exists(api_key_file):
-            print(f"[INFO] Loading API keys from: {api_key_file}")
-            with open(api_key_file, 'r') as f:
-                for line in f:
-                    line = line.strip()
-                    if line.startswith('api_key'):
-                        api_key = line.split('=', 1)[1].strip()
-                    elif line.startswith('api_secret'):
-                        api_secret = line.split('=', 1)[1].strip()
-            break
-    
-    return api_key, api_secret
+    api_key_file = PathManager.get_api_key_file()
+    if api_key_file.exists():
+        print(f"[INFO] Loading API keys from: {api_key_file}")
+        return load_api_keys_from_file()
+    return None, None
 
 def find_config_files(directory):
     """
@@ -177,8 +159,8 @@ def main():
         use_single_file_mode = True
     else:
         # output_configs内を自動検索
-        config_dir = os.environ.get('BACKTEST_CONFIG_DIR', 'output_configs')
-        config_files_to_process = find_config_files(config_dir)
+        config_dir = PathManager.get_output_configs_dir()
+        config_files_to_process = find_config_files(str(config_dir))
         use_single_file_mode = False
     
     total_start_time = time.time()
