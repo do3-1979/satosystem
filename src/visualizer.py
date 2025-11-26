@@ -208,6 +208,166 @@ class Visualizer:
                 row=1, col=1
             )
         
+        # Volatility (ボラティリティ)
+        if 'volatility' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=df['volatility'],
+                    mode='lines',
+                    name="Volatility",
+                    line=dict(color='purple', width=1),
+                    visible='legendonly'
+                ),
+                row=1, col=1
+            )
+        
+        # ATR (Average True Range)
+        if 'atr' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=df['atr'],
+                    mode='lines',
+                    name="ATR",
+                    line=dict(color='brown', width=1),
+                    visible='legendonly'
+                ),
+                row=1, col=1
+            )
+        
+        # PVO (Percentage Volume Oscillator)
+        if 'pvo_val' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=df['pvo_val'],
+                    mode='lines',
+                    name="PVO",
+                    line=dict(color='cyan', width=1),
+                    visible='legendonly'
+                ),
+                row=1, col=1
+            )
+        elif 'pvo' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=df['pvo'],
+                    mode='lines',
+                    name="PVO",
+                    line=dict(color='cyan', width=1),
+                    visible='legendonly'
+                ),
+                row=1, col=1
+            )
+        
+        # Keltner Upper/Lower (dict から抽出)
+        if 'keltner' in df.columns:
+            try:
+                df['keltner_upper'] = df['keltner'].apply(
+                    lambda x: x.get('info', {}).get('upper', 0) if isinstance(x, dict) else 0
+                )
+                df['keltner_lower'] = df['keltner'].apply(
+                    lambda x: x.get('info', {}).get('lower', 0) if isinstance(x, dict) else 0
+                )
+                
+                fig.add_trace(
+                    go.Scatter(
+                        x=df['real_time_dt'],
+                        y=df['keltner_upper'],
+                        mode='lines',
+                        name="Keltner Upper",
+                        line=dict(color='lime', width=1, dash='dot'),
+                        visible='legendonly'
+                    ),
+                    row=1, col=1
+                )
+                
+                fig.add_trace(
+                    go.Scatter(
+                        x=df['real_time_dt'],
+                        y=df['keltner_lower'],
+                        mode='lines',
+                        name="Keltner Lower",
+                        line=dict(color='pink', width=1, dash='dot'),
+                        visible='legendonly'
+                    ),
+                    row=1, col=1
+                )
+            except Exception as e:
+                print(f"Keltner チャネル抽出エラー: {e}")
+        
+        # Keltner Upper (従来の方法)
+        elif 'keltner_upper' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=df['keltner_upper'],
+                    mode='lines',
+                    name="Keltner Upper",
+                    line=dict(color='lime', width=1, dash='dot'),
+                    visible='legendonly'
+                ),
+                row=1, col=1
+            )
+        
+        # Keltner Lower (従来の方法)
+        if 'keltner_lower' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=df['keltner_lower'],
+                    mode='lines',
+                    name="Keltner Lower",
+                    line=dict(color='pink', width=1, dash='dot'),
+                    visible='legendonly'
+                ),
+                row=1, col=1
+            )
+        
+        # ADX (Average Directional Index)
+        if 'adx' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=df['adx'],
+                    mode='lines',
+                    name="ADX",
+                    line=dict(color='navy', width=1),
+                    visible='legendonly'
+                ),
+                row=1, col=1
+            )
+        
+        # EMA短期
+        if 'ema_s' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=df['ema_s'],
+                    mode='lines',
+                    name="EMA短期",
+                    line=dict(color='gold', width=1),
+                    visible='legendonly'
+                ),
+                row=1, col=1
+            )
+        
+        # EMA長期
+        if 'ema_l' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=df['ema_l'],
+                    mode='lines',
+                    name="EMA長期",
+                    line=dict(color='maroon', width=1),
+                    visible='legendonly'
+                ),
+                row=1, col=1
+            )
+        
         # ストップ価格 (ポジション保有時のみ表示)
         df_with_position = pd.DataFrame()
         if 'position_quantity' in df.columns and 'stop_price' in df.columns:
