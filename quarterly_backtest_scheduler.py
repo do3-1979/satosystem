@@ -75,6 +75,14 @@ class QuarterlyBacktestScheduler:
         print(f"  🚀 {pattern_key}...", end='', flush=True)
         
         try:
+            # バックテスト実行前に古いレポートをクリア
+            import glob
+            for report_file in glob.glob(os.path.join(self.base_dir, 'report', '*.json')):
+                try:
+                    os.remove(report_file)
+                except:
+                    pass
+            
             # backtest.py を実行
             result = subprocess.run(
                 [sys.executable, os.path.join('src', 'backtest.py'), config_file],
