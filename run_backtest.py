@@ -109,19 +109,25 @@ def run_backtest(logging_interval=1, start_time=None, end_time=None, fast_summar
         print(f"[INFO] ロギング間隔: {logging_interval}")
         print(f"[INFO] 高速サマリモード: {'ON' if fast_summary else 'OFF'}")
         
-        # バックテスト実行（既存の初期化コード）
+        # バックテスト実行（bot.py の本来の初期化パターンに準拠）
         config_instance = Config()
         
         # Exchange
-        exchange = BybitExchange(is_test=True)
+        api_key = config_instance.get_api_key()
+        api_secret = config_instance.get_api_secret()
+        exchange = BybitExchange(api_key, api_secret)
         
         # Price Data Management
         price_data_management = PriceDataManagement(exchange)
         
-        # Strategy, Risk Management, Portfolio
-        trading_strategy = TradingStrategy(price_data_management, None, None)
-        risk_management = RiskManagement()
+        # Portfolio
         portfolio = Portfolio()
+        
+        # Risk Management (portfolio が先に必要)
+        risk_management = RiskManagement(price_data_management, portfolio)
+        
+        # Strategy
+        trading_strategy = TradingStrategy(price_data_management, risk_management, portfolio)
         
         # Bot
         bot = Bot(exchange, trading_strategy, risk_management, price_data_management, portfolio)

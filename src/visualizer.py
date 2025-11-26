@@ -49,44 +49,49 @@ class Visualizer:
             print(f"No log files in {log_directory}")
             return None
         
+        # 最新のログファイルのみを使用（複数ファイルの重複データを防ぐ）
         log_files.sort()
+        latest_file = log_files[-1]
+        print(f"[INFO] Using latest log file: {latest_file}")
+        
         dataframes = []
         
-        for path in log_files:
-            try:
-                if path.endswith('.zip'):
-                    with zipfile.ZipFile(path, 'r') as zf:
-                        name = zf.namelist()[0]
-                        with zf.open(name) as f:
-                            df = pd.read_json(f)
-                else:
-                    df = pd.read_json(path)
-                
-                if start_time is not None and end_time is not None:
-                    if 'real_time' in df.columns:
-                        df['real_time_dt'] = pd.to_datetime(df['real_time'])
-                        mask = (df['real_time_dt'] >= start_time) & (df['real_time_dt'] <= end_time)
-                        df = df.loc[mask]
-                    elif 'close_time_dt' in df.columns:
-                        df['close_time_dt_parsed'] = pd.to_datetime(df['close_time_dt'])
-                        mask = (df['close_time_dt_parsed'] >= start_time) & (df['close_time_dt_parsed'] <= end_time)
-                        df = df.loc[mask]
-                
-                if not df.empty:
-                    dataframes.append(df)
-            except Exception as e:
-                print(f"Skip {path}: {e}")
+        try:
+            path = latest_file
+            if path.endswith('.zip'):
+                with zipfile.ZipFile(path, 'r') as zf:
+                    name = zf.namelist()[0]
+                    with zf.open(name) as f:
+                        df = pd.read_json(f)
+            else:
+                df = pd.read_json(path)
+            
+            if start_time is not None and end_time is not None:
+                if 'real_time' in df.columns:
+                    df['real_time_dt'] = pd.to_datetime(df['real_time'])
+                    mask = (df['real_time_dt'] >= start_time) & (df['real_time_dt'] <= end_time)
+                    df = df.loc[mask]
+                elif 'close_time_dt' in df.columns:
+                    df['close_time_dt_parsed'] = pd.to_datetime(df['close_time_dt'])
+                    mask = (df['close_time_dt_parsed'] >= start_time) & (df['close_time_dt_parsed'] <= end_time)
+                    df = df.loc[mask]
+            
+            if not df.empty:
+                dataframes.append(df)
+        except Exception as e:
+            print(f"Skip {latest_file}: {e}")
         
         if not dataframes:
             print("No valid data found")
             return None
         
-        combined = pd.concat(dataframes, ignore_index=True)
+        combined = dataframes[0]
         # real_time をdatetimeに変換
         if 'real_time' in combined.columns:
             combined['real_time_dt'] = pd.to_datetime(combined['real_time'])
             combined.sort_values('real_time_dt', inplace=True)
         
+        print(f"[INFO] Loaded {len(combined)} records from {latest_file}")
         return combined
     
     def resample_to_2h_candles(self, df):

@@ -79,9 +79,7 @@ cd src
 ### ロギング制御（グラフ分析用）
 実データグラフを詳細に分析する場合、ログ間引き制御が必要です。詳細は以下を参照：
 
-**クイックガイド**: [`docs/LOGGING_QUICK_START.md`](docs/LOGGING_QUICK_START.md)
-**詳細ドキュメント**: [`docs/LOGGING_CONTROL_GUIDE.md`](docs/LOGGING_CONTROL_GUIDE.md)
-**データフロー**: [`docs/LOGGING_DATA_FLOW.md`](docs/LOGGING_DATA_FLOW.md)
+**統合ガイド**: [`docs/LOGGING_GUIDE.md`](docs/LOGGING_GUIDE.md)
 
 **実行例（全ログ出力でグラフ分析）**:
 ```bash
