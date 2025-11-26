@@ -22,33 +22,117 @@ class Visualizer:
     def __init__(self):
         self.config = Config()
         
-    def load_logs_data(self, log_directory, start_time=None, end_time=None, log_file=None):
+    def detect_period_log_files(self, log_directory, start_time, end_time):
+        """
+        指定期間に含まれるZIPファイルを自動検出
+        
+        ファイル名のパターン: *.zip または *-YYYYMMDD_HHMMSS-YYYYMMDD_HHMMSS.zip
+        ファイル名から期間を抽出し、指定期間と一致するファイルを検出
+        
+        Args:
+            log_directory: ログディレクトリ
+            start_time: 期間開始時刻 (datetime)
+            end_time: 期間終了時刻 (datetime)
+        
+        Returns:
+            list: 期間に含まれるZIPファイルパスのリスト（時系列順）
+        """
+        import re
+        
+        if isinstance(start_time, str):
+            start_time = datetime.strptime(start_time, "%Y/%m/%d %H:%M")
+        if isinstance(end_time, str):
+            end_time = datetime.strptime(end_time, "%Y/%m/%d %H:%M")
+        
+        # ファイル名フォーマット例: 20251126184913-20250101_0000-20250131_2359.zip
+        pattern = r'(\d{8})_(\d{4})-(\d{8})_(\d{4})\.zip$'
+        
+        zip_files = []
+        for root, _, files in os.walk(log_directory):
+            for file in files:
+                if file.endswith(".zip"):
+                    zip_files.append(os.path.join(root, file))
+        
+        if not zip_files:
+            print(f"[INFO] ZIPファイルが見つかりません: {log_directory}")
+            return []
+        
+        zip_files.sort()
+        relevant_files = []
+        
+        print(f"[INFO] 期間 {start_time:%Y/%m/%d %H:%M} ～ {end_time:%Y/%m/%d %H:%M} に含まれるログファイルを検出中...")
+        
+        for zf in zip_files:
+            basename = os.path.basename(zf)
+            match = re.search(pattern, basename)
+            
+            if match:
+                # ファイル名から期間を抽出
+                # Group 1: start_date (YYYYMMDD), Group 2: start_time (HHMM)
+                # Group 3: end_date (YYYYMMDD), Group 4: end_time (HHMM)
+                start_date_str = match.group(1)  # YYYYMMDD
+                start_time_str = match.group(2)  # HHMM
+                end_date_str = match.group(3)    # YYYYMMDD
+                end_time_str = match.group(4)    # HHMM
+                
+                file_start_str = f"{start_date_str[:4]}/{start_date_str[4:6]}/{start_date_str[6:8]} {start_time_str[:2]}:{start_time_str[2:4]}"
+                file_end_str = f"{end_date_str[:4]}/{end_date_str[4:6]}/{end_date_str[6:8]} {end_time_str[:2]}:{end_time_str[2:4]}"
+                
+                file_start = datetime.strptime(file_start_str, "%Y/%m/%d %H:%M")
+                file_end = datetime.strptime(file_end_str, "%Y/%m/%d %H:%M")
+                
+                # 指定期間と重複するかチェック
+                if file_end >= start_time and file_start <= end_time:
+                    relevant_files.append((file_start, zf))
+                    print(f"  ✓ {basename}: {file_start_str} ～ {file_end_str}")
+        
+        if relevant_files:
+            relevant_files.sort(key=lambda x: x[0])
+            result_files = [f[1] for f in relevant_files]
+            print(f"[INFO] 検出: {len(result_files)} ファイル")
+            return result_files
+        else:
+            print(f"[INFO] 期間内のファイルが見つかりません")
+            return []
+    
+    def load_logs_data(self, log_directory, start_time=None, end_time=None, log_file=None, lookback_days=20):
         """
         ログディレクトリから全データを読み込む (JSON/ZIP対応)
         
+        計算用の拡張期間を遡って読み込み、計算完了後に指定期間のみを返す
+        
+        指定期間に含まれるすべてのZIPファイルを自動検出して統合する
+        
         Args:
             log_directory: ログディレクトリパス
-            start_time: 開始時刻 (datetime or str)
-            end_time: 終了時刻 (datetime or str)
-            log_file: 特定のログファイルを指定（Noneの場合は最新ファイル）
+            start_time: 表示開始時刻 (datetime or str)
+            end_time: 表示終了時刻 (datetime or str)
+            log_file: 特定のログファイルを指定（Noneの場合は期間から自動検出）
+            lookback_days: 計算用に遡る日数（デフォルト: 20日）
         
         Returns:
-            DataFrame: 統合されたログデータ
+            tuple: (全データDF, 表示用期間のみのDF, 表示用のstart_time, 表示用のend_time)
         """
         if isinstance(start_time, str):
             start_time = datetime.strptime(start_time, "%Y/%m/%d %H:%M")
         if isinstance(end_time, str):
             end_time = datetime.strptime(end_time, "%Y/%m/%d %H:%M")
         
+        # 計算用に拡張期間を設定
+        calc_start_time = start_time - timedelta(days=lookback_days) if start_time else None
+        display_start_time = start_time
+        display_end_time = end_time
+        
         log_files = []
         for root, _, files in os.walk(log_directory):
             for file in files:
-                if file.endswith(".json") or file.endswith(".zip"):
+                # zipファイルのみを対象とする（完全なログ）
+                if file.endswith(".zip"):
                     log_files.append(os.path.join(root, file))
         
         if not log_files:
             print(f"No log files in {log_directory}")
-            return None
+            return None, None, display_start_time, display_end_time
         
         # ログファイルを選択
         if log_file is not None:
@@ -56,50 +140,76 @@ class Visualizer:
             target_file = log_file if os.path.isabs(log_file) else os.path.join(log_directory, log_file)
             if not os.path.exists(target_file):
                 print(f"Log file not found: {target_file}")
-                return None
-            latest_file = target_file
+                return None, None, display_start_time, display_end_time
+            files_to_process = [target_file]
+            print(f"[INFO] Using specified log file: {os.path.basename(target_file)}")
         else:
-            # 最新のログファイルのみを使用（複数ファイルの重複データを防ぐ）
-            log_files.sort()
-            latest_file = log_files[-1]
+            # デフォルト: 指定期間に含まれるZIPファイルを自動検出して結合
+            files_to_process = self.detect_period_log_files(log_directory, calc_start_time, display_end_time)
+            if not files_to_process:
+                # フォールバック: 最新のZIPファイルを使用
+                log_files_zip = [f for f in log_files if f.endswith('.zip')]
+                if log_files_zip:
+                    log_files_zip.sort()
+                    files_to_process = [log_files_zip[-1]]
+                    print(f"[INFO] No files in period, using latest: {os.path.basename(files_to_process[0])}")
+                else:
+                    print(f"No ZIP log files in {log_directory}")
+                    return None, None, display_start_time, display_end_time
         
-        print(f"[INFO] Using log file: {latest_file}")
+        print(f"[INFO] Processing {len(files_to_process)} log file(s)")
+        print(f"[INFO] Calculation period: {calc_start_time} to {display_end_time}")
+        print(f"[INFO] Display period: {display_start_time} to {display_end_time}")
         
         dataframes = []
+        processed_count = 0
         
-        try:
-            path = latest_file
-            if path.endswith('.zip'):
-                with zipfile.ZipFile(path, 'r') as zf:
-                    name = zf.namelist()[0]
-                    with zf.open(name) as f:
-                        df = pd.read_json(f)
-            else:
-                df = pd.read_json(path)
-            
-            # real_time をdatetimeに変換（最初に実施）
-            if 'real_time' in df.columns:
-                df['real_time_dt'] = pd.to_datetime(df['real_time'])
-            
-            if start_time is not None and end_time is not None:
-                if 'real_time_dt' in df.columns:
-                    mask = (df['real_time_dt'] >= start_time) & (df['real_time_dt'] <= end_time)
-                    df = df.loc[mask]
-                elif 'close_time_dt' in df.columns:
-                    df['close_time_dt_parsed'] = pd.to_datetime(df['close_time_dt'])
-                    mask = (df['close_time_dt_parsed'] >= start_time) & (df['close_time_dt_parsed'] <= end_time)
-                    df = df.loc[mask]
-            
-            if not df.empty:
-                dataframes.append(df)
-        except Exception as e:
-            print(f"Skip {latest_file}: {e}")
+        for file_idx, path in enumerate(files_to_process, 1):
+            try:
+                if path.endswith('.zip'):
+                    with zipfile.ZipFile(path, 'r') as zf:
+                        name = zf.namelist()[0]
+                        with zf.open(name) as f:
+                            df = pd.read_json(f)
+                else:
+                    df = pd.read_json(path)
+                
+                # __CONFIG__ レコードを除外（最後の設定オブジェクト）
+                if df is not None and not df.empty:
+                    # real_time が存在し、かつ有効な値を持つレコードのみを保持
+                    df = df[df['real_time'].notna() & (df['real_time'] != '')]
+                    # close_price が 0.0 でないレコードのみを保持（__CONFIG__除外）
+                    df = df[df['close_price'] != 0.0]
+                    # NaN レコードを除外
+                    df = df.dropna(subset=['close_price', 'real_time'])
+                
+                # real_time をdatetimeに変換（最初に実施）
+                if 'real_time' in df.columns:
+                    df['real_time_dt'] = pd.to_datetime(df['real_time'], errors='coerce')
+                    # 1970年の無効な日付を除外（エポック時刻の異常レコード）
+                    if 'real_time_dt' in df.columns:
+                        df = df[df['real_time_dt'] >= pd.Timestamp('2000-01-01')]
+                
+                # 計算用期間でフィルタリング（拡張期間を含む）
+                if calc_start_time is not None and display_end_time is not None:
+                    if 'real_time_dt' in df.columns:
+                        mask = (df['real_time_dt'] >= calc_start_time) & (df['real_time_dt'] <= display_end_time)
+                        df = df.loc[mask]
+                
+                if not df.empty:
+                    dataframes.append(df)
+                    processed_count += 1
+                    print(f"  [File {file_idx}/{len(files_to_process)}] Loaded {len(df)} records from {os.path.basename(path)}")
+            except Exception as e:
+                print(f"  [Warning] Skip {path}: {str(e)[:50]}")
         
         if not dataframes:
             print("No valid data found")
-            return None
+            return None, None, display_start_time, display_end_time
         
-        combined = dataframes[0]
+        # 複数ファイルのデータを統合
+        combined = pd.concat(dataframes, ignore_index=True)
+        
         # real_time_dt が存在することを確認してソート
         if 'real_time_dt' in combined.columns:
             combined.sort_values('real_time_dt', inplace=True)
@@ -107,8 +217,22 @@ class Visualizer:
             combined['real_time_dt'] = pd.to_datetime(combined['real_time'])
             combined.sort_values('real_time_dt', inplace=True)
         
-        print(f"[INFO] Loaded {len(combined)} records from {latest_file}")
-        return combined
+        # 重複排除（real_time_dt が同じレコードは最後のものを保持）
+        if 'real_time_dt' in combined.columns:
+            combined = combined.drop_duplicates(subset=['real_time_dt'], keep='last')
+        
+        print(f"[INFO] Loaded {len(combined)} records (including {lookback_days}-day lookback) from {processed_count} file(s)")
+        
+        # 表示用期間のデータを抽出
+        if 'real_time_dt' in combined.columns:
+            mask_display = (combined['real_time_dt'] >= display_start_time) & (combined['real_time_dt'] <= display_end_time)
+            df_display = combined.loc[mask_display].copy()
+        else:
+            df_display = combined.copy()
+        
+        print(f"[INFO] Display records: {len(df_display)} (after filtering to display period)")
+        
+        return combined, df_display, display_start_time, display_end_time
     
     def resample_to_2h_candles(self, df):
         """与えられた時系列を2時間足へ変換。ただし既に2時間以上のステップであれば再サンプリングせずそのまま返す。"""
@@ -470,11 +594,13 @@ class Visualizer:
         """
         バックテスト結果を可視化 (メインエントリポイント)
         
+        計算用の拡張期間でデータを読み込み、表示用期間のみでグラフを出力
+        
         Args:
             log_directory: ログディレクトリ
             output_html: 出力HTMLファイル名（デフォルト: report/backtest_visualization.html）
-            start_time: 開始時刻 (datetime or str "%Y/%m/%d %H:%M")
-            end_time: 終了時刻 (datetime or str "%Y/%m/%d %H:%M")
+            start_time: 表示開始時刻 (datetime or str "%Y/%m/%d %H:%M")
+            end_time: 表示終了時刻 (datetime or str "%Y/%m/%d %H:%M")
         """
         # デフォルト期間はConfigから取得
         if start_time is None:
@@ -488,25 +614,39 @@ class Visualizer:
             os.makedirs(output_dir)
             print(f"Created directory: {output_dir}")
         
-        print(f"Loading logs from {log_directory} (period: {start_time} to {end_time})...")
-        df = self.load_logs_data(log_directory, start_time, end_time)
+        print(f"Loading logs from {log_directory} (display period: {start_time} to {end_time})...")
         
-        if df is None or df.empty:
+        # 計算用の拡張期間でデータを読み込む
+        df_calc, df_display, display_start, display_end = self.load_logs_data(
+            log_directory, start_time, end_time, lookback_days=20
+        )
+        
+        if df_calc is None or df_calc.empty:
             print("No data to visualize")
             return
         
-        print(f"Loaded {len(df)} records")
+        print(f"Loaded {len(df_calc)} records for calculation (including lookback period)")
+        print(f"Display period: {len(df_display)} records")
         
-        # 2時間足ローソク足作成 (既に2h足なら間引きなし)
+        # 2時間足ローソク足作成 (計算用データから作成)
         print("Preparing 2-hour candles (no thinning)...")
-        candles_2h = self.resample_to_2h_candles(df)
+        candles_2h_calc = self.resample_to_2h_candles(df_calc)
         
-        if candles_2h is not None:
-            print(f"Created {len(candles_2h)} 2-hour candles")
+        if candles_2h_calc is not None:
+            print(f"Created {len(candles_2h_calc)} 2-hour candles (including lookback)")
+            # 表示用期間のみに絞る
+            if 'real_time_dt' in candles_2h_calc.columns:
+                mask = (candles_2h_calc['real_time_dt'] >= display_start) & (candles_2h_calc['real_time_dt'] <= display_end)
+                candles_2h_display = candles_2h_calc.loc[mask].copy()
+                print(f"Display candles: {len(candles_2h_display)}")
+            else:
+                candles_2h_display = candles_2h_calc
+        else:
+            candles_2h_display = None
         
-        # チャート生成
+        # チャート生成（表示用データ + 計算用データ for 指標）
         print("Generating interactive chart...")
-        self.create_interactive_chart(df, candles_2h, output_html)
+        self.create_interactive_chart(df_display, candles_2h_display, output_html)
         
         print("Done!")
 
