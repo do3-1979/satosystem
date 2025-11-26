@@ -91,3 +91,7 @@ _archive_scripts/
 .pytest_cache/
 __pycache__/
 _archive_old_scripts/
+
+# ドキュメントアーカイブ（永続管理対象外）
+docs/_archive/
+docs/analysis/
