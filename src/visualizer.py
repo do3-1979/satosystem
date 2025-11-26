@@ -310,39 +310,69 @@ class Visualizer:
             fig.add_trace(candlestick, row=1, col=1)
         
         # ポジション保有区間を背景色でハイライト（BUY=淡緑 / SELL=淡赤）
-        if 'position_quantity' in df.columns:
+        # action_name から ENTRY/EXIT を検出してハイライト
+        if 'action_name' in df.columns:
+            entry_records = df[df['action_name'] == 'ENTRY']
+            exit_records = df[df['action_name'] == 'EXIT']
+            
+            # ENTRYとEXITをペアリング
+            for entry_idx, entry_row in entry_records.iterrows():
+                # この ENTRY より後ろの EXIT を探す
+                exit_candidates = exit_records[exit_records.index > entry_idx]
+                if len(exit_candidates) > 0:
+                    exit_idx = exit_candidates.index[0]
+                    exit_row = df.loc[exit_idx]
+                else:
+                    # EXIT がない場合は最後まで
+                    exit_idx = df.index[-1]
+                    exit_row = df.loc[exit_idx]
+                
+                entry_time = entry_row['real_time_dt']
+                exit_time = exit_row['real_time_dt']
+                
+                position_side = entry_row['side'] if 'side' in entry_row else 'BUY'
+                if position_side == 'BUY':
+                    fill_color = "lightgreen"
+                else:
+                    fill_color = "lightcoral"
+                
+                fig.add_vrect(
+                    x0=entry_time, x1=exit_time,
+                    fillcolor=fill_color, opacity=0.1,
+                    layer="below", line_width=0,
+                    row=1, col=1
+                )
+        elif 'position_quantity' in df.columns:
+            # フォールバック: position_quantity ベース
             df['has_position'] = df['position_quantity'] > 0
             df['position_change'] = df['has_position'].astype(int).diff().fillna(0)
-        else:
-            df['has_position'] = False
-            df['position_change'] = 0
-        
-        entry_indices = df[df['position_change'] == 1].index
-        exit_indices = df[df['position_change'] == -1].index
-        
-        # ENTRYとEXITをペアリング
-        for entry_idx in entry_indices:
-            exit_idx_candidates = exit_indices[exit_indices > entry_idx]
-            if len(exit_idx_candidates) > 0:
-                exit_idx = exit_idx_candidates[0]
-            else:
-                exit_idx = df.index[-1]
             
-            entry_time = df.loc[entry_idx, 'real_time_dt']
-            exit_time = df.loc[exit_idx, 'real_time_dt']
+            entry_indices = df[df['position_change'] == 1].index
+            exit_indices = df[df['position_change'] == -1].index
             
-            position_side = df.loc[entry_idx, 'side'] if 'side' in df.columns else 'BUY'
-            if position_side == 'BUY':
-                fill_color = "lightgreen"
-            else:
-                fill_color = "lightcoral"
-            
-            fig.add_vrect(
-                x0=entry_time, x1=exit_time,
-                fillcolor=fill_color, opacity=0.1,
-                layer="below", line_width=0,
-                row=1, col=1
-            )
+            # ENTRYとEXITをペアリング
+            for entry_idx in entry_indices:
+                exit_idx_candidates = exit_indices[exit_indices > entry_idx]
+                if len(exit_idx_candidates) > 0:
+                    exit_idx = exit_idx_candidates[0]
+                else:
+                    exit_idx = df.index[-1]
+                
+                entry_time = df.loc[entry_idx, 'real_time_dt']
+                exit_time = df.loc[exit_idx, 'real_time_dt']
+                
+                position_side = df.loc[entry_idx, 'side'] if 'side' in df.columns else 'BUY'
+                if position_side == 'BUY':
+                    fill_color = "lightgreen"
+                else:
+                    fill_color = "lightcoral"
+                
+                fig.add_vrect(
+                    x0=entry_time, x1=exit_time,
+                    fillcolor=fill_color, opacity=0.1,
+                    layer="below", line_width=0,
+                    row=1, col=1
+                )
         
         # Donchian High/Low
         if 'dc_h' in df.columns:
@@ -387,7 +417,11 @@ class Visualizer:
         
         # ストップ価格 (ポジション保有時のみ表示)
         # stop_price が 0 の場合は PSAR から推定、またはエントリー価格から計算
-        df_with_position = df[df['position_quantity'] > 0].copy()
+        # ENTRY/EXIT/ADD アクションのあるレコード、または position_quantity > 0 のレコードを含める
+        mask = (df['position_quantity'] > 0)
+        if 'action_name' in df.columns:
+            mask = mask | df['action_name'].isin(['ENTRY', 'EXIT', 'ADD'])
+        df_with_position = df[mask].copy()
         
         if not df_with_position.empty:
             # stop_price が 0 の場合、PSAR または推定値を使用
@@ -424,13 +458,18 @@ class Visualizer:
         
         # ポジション開始・終了マーカー
         df_trades = pd.DataFrame()
-        if 'decision' in df.columns:
+        if 'action_name' in df.columns:
+            mask = (df['action_name'].notna()) & (df['action_name'].isin(['ENTRY', 'EXIT', 'ADD']))
+            df_trades = df[mask].copy()
+        elif 'decision' in df.columns:
             mask = (df['decision'].notna()) & (df['decision'] != 'NONE')
             df_trades = df[mask].copy()
         
         if not df_trades.empty:
             # ENTRY
-            df_entry = df_trades[df_trades['decision'] == 'ENTRY']
+            action_col = 'action_name' if 'action_name' in df_trades.columns else 'decision'
+            
+            df_entry = df_trades[df_trades[action_col] == 'ENTRY']
             if not df_entry.empty:
                 fig.add_trace(
                     go.Scatter(
@@ -445,7 +484,7 @@ class Visualizer:
                 )
             
             # ADD
-            df_add = df_trades[df_trades['decision'] == 'ADD']
+            df_add = df_trades[df_trades[action_col] == 'ADD']
             if not df_add.empty:
                 fig.add_trace(
                     go.Scatter(
@@ -460,7 +499,7 @@ class Visualizer:
                 )
             
             # EXIT
-            df_exit = df_trades[df_trades['decision'] == 'EXIT']
+            df_exit = df_trades[df_trades[action_col] == 'EXIT']
             if not df_exit.empty:
                 fig.add_trace(
                     go.Scatter(
