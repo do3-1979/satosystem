@@ -291,6 +291,13 @@ class Bot:
                         self.logger.log("-------------------------------------------------------")
                         self.logger.log(f"最終ポートフォリオ: {self.portfolio.get_position_quantity()}")
                         
+                        # ===== P0-1 修正: trade_results を closed_trades から再構築 =====
+                        # closed_trades に記録されたデータから win/loss を判定
+                        reconstructed_trade_results = [t.get('realized_pnl', 0) >= 0 for t in self.closed_trades]
+                        if len(reconstructed_trade_results) != len(self.trade_results):
+                            self.logger.log(f"[P0-1修正] trade_results 再構築: {len(self.trade_results)} → {len(reconstructed_trade_results)}")
+                            self.trade_results = reconstructed_trade_results
+                        
                         # メトリクス計算 (統一的なドローダウン計算を使用)
                         metrics = compute_metrics(self.pnl_history, self.trade_results)
                         self.logger.log(f"最終損益: {metrics['total_pnl']:>4.0f} [BTC/USD]")
