@@ -55,18 +55,20 @@ class QuarterlyBacktestScheduler:
             ('2025_Q2', '2025 Q2'),
         ]
         
+        # Task 17 以降は単一パターン（現在の config 設定）でテスト
         self.patterns = [
-            'baseline_old',   # Phase 1 OFF, stop_range=2.0
-            'baseline_new',   # Phase 1 OFF, stop_range=4.0
-            'phase1_old',     # Phase 1 ON, stop_range=2.0
-            'phase1_new',     # Phase 1 ON, stop_range=4.0
+            'current',   # Phase 1 ON, Phase 2 ON (Task 17以降の本番設定)
         ]
         
         self.results = {}
     
     def run_backtest(self, quarter_key, pattern_key):
         """バックテストを実行"""
-        config_file = self.project_root / 'output_configs' / f'quarterly_{quarter_key}_{pattern_key}.ini'
+        # Task 17 以降は config.ini を直接使用
+        if pattern_key == 'current':
+            config_file = self.project_root / 'src' / 'config.ini'
+        else:
+            config_file = self.project_root / 'output_configs' / f'quarterly_{quarter_key}_{pattern_key}.ini'
         
         if not config_file.exists():
             print(f"  ⚠️  Config not found: {config_file.name}")
@@ -262,99 +264,46 @@ class QuarterlyBacktestScheduler:
         """統計情報を表示"""
         print("\n【統計分析】\n")
         
-        # stop_range の効果を比較
-        print("📈 stop_range 修正の影響（baseline_old vs baseline_new）")
+        # Task 17 以降: 本番設定 (Phase 1 ON + Phase 2 ON) のパフォーマンス
+        print("📊 現在の設定（Phase 1 ON + Phase 2 ON）のパフォーマンス分析")
         print("-" * 90)
         
-        improved_count = 0
         total_count = 0
-        total_pnl_delta = 0
+        total_pnl = 0
+        total_trades = 0
+        total_wins = 0
+        avg_pf = 0
+        avg_sharpe = 0
         
         for quarter_key in self.results:
-            baseline_old = self.results[quarter_key].get('baseline_old')
-            baseline_new = self.results[quarter_key].get('baseline_new')
+            current_result = self.results[quarter_key].get('current')
             
-            if baseline_old and baseline_new:
+            if current_result:
                 total_count += 1
-                pnl_delta = baseline_new['pnl'] - baseline_old['pnl']
-                total_pnl_delta += pnl_delta
+                pnl = current_result['pnl']
+                trades = current_result['trades']
+                win_rate = current_result['win_rate']
+                pf = current_result['profit_factor']
+                sharpe = current_result['sharpe']
+                max_dd = current_result['max_drawdown']
                 
-                if pnl_delta > 0:
-                    improved_count += 1
-                    symbol = "✅"
-                else:
-                    symbol = "❌"
+                total_pnl += pnl
+                total_trades += trades
+                total_wins += (trades * win_rate / 100)
+                avg_pf += pf
+                avg_sharpe += sharpe
                 
-                trade_delta = baseline_new['trades'] - baseline_old['trades']
-                wr_delta = baseline_new['win_rate'] - baseline_old['win_rate']
-                pf_delta = baseline_new['profit_factor'] - baseline_old['profit_factor']
-                
-                print(f"{symbol} {quarter_key}")
-                print(f"   PnL:        ${baseline_old['pnl']:>10.0f} → ${baseline_new['pnl']:>10.0f} (Δ ${pnl_delta:>8.0f})")
-                print(f"   Trades:     {baseline_old['trades']:>10} → {baseline_new['trades']:>10} (Δ {trade_delta:>8})")
-                print(f"   Win Rate:   {baseline_old['win_rate']:>9.1f}% → {baseline_new['win_rate']:>9.1f}% (Δ {wr_delta:>7.1f}%)")
-                print(f"   PF:         {baseline_old['profit_factor']:>10.4f} → {baseline_new['profit_factor']:>10.4f} (Δ {pf_delta:>8.4f})")
+                status = "✅" if pnl > 0 else "⚠️"
+                print(f"{status} {quarter_key:12} | PnL: ${pnl:>10.0f} | PF: {pf:>7.4f} | Sharpe: {sharpe:>7.4f} | Win: {win_rate:>6.1f}% | Max DD: {max_dd:>10.2f}")
         
         if total_count > 0:
-            print(f"\n✅ 改善期間: {improved_count}/{total_count}")
-            print(f"   総PnL改善: ${total_pnl_delta:+.0f}")
-            print(f"   平均PnL改善: ${total_pnl_delta/total_count:+.0f}")
-        
-        # Phase 1 の効果を比較
-        print("\n\n🎯 Phase 1 の有効性（baseline_old vs phase1_old）")
-        print("-" * 90)
-        
-        phase1_improved = 0
-        phase1_total = 0
-        
-        for quarter_key in self.results:
-            baseline_old = self.results[quarter_key].get('baseline_old')
-            phase1_old = self.results[quarter_key].get('phase1_old')
-            
-            if baseline_old and phase1_old:
-                phase1_total += 1
-                pnl_delta = phase1_old['pnl'] - baseline_old['pnl']
-                
-                if pnl_delta > 0:
-                    phase1_improved += 1
-                    symbol = "✅"
-                else:
-                    symbol = "❌"
-                
-                print(f"{symbol} {quarter_key}: ${baseline_old['pnl']:>10.0f} → ${phase1_old['pnl']:>10.0f} (Δ ${pnl_delta:>8.0f})")
-        
-        if phase1_total > 0:
-            print(f"\n✅ 改善期間: {phase1_improved}/{phase1_total}")
-        
-        # 両方改善の効果
-        print("\n\n⚡ 両方の改善（baseline_old vs phase1_new）")
-        print("-" * 90)
-        
-        both_improved = 0
-        both_total = 0
-        total_both_delta = 0
-        
-        for quarter_key in self.results:
-            baseline_old = self.results[quarter_key].get('baseline_old')
-            phase1_new = self.results[quarter_key].get('phase1_new')
-            
-            if baseline_old and phase1_new:
-                both_total += 1
-                pnl_delta = phase1_new['pnl'] - baseline_old['pnl']
-                total_both_delta += pnl_delta
-                
-                if pnl_delta > 0:
-                    both_improved += 1
-                    symbol = "✅"
-                else:
-                    symbol = "❌"
-                
-                print(f"{symbol} {quarter_key}: ${baseline_old['pnl']:>10.0f} → ${phase1_new['pnl']:>10.0f} (Δ ${pnl_delta:>8.0f})")
-        
-        if both_total > 0:
-            print(f"\n✅ 改善期間: {both_improved}/{both_total}")
-            print(f"   総PnL改善: ${total_both_delta:+.0f}")
-            print(f"   平均PnL改善: ${total_both_delta/both_total:+.0f}")
+            print("\n【総計】")
+            print(f"  期間数: {total_count}")
+            print(f"  総PnL: ${total_pnl:+.0f}")
+            print(f"  総取引数: {int(total_trades)}")
+            print(f"  平均勝率: {(total_wins/total_trades*100) if total_trades > 0 else 0:.1f}%")
+            print(f"  平均PF: {avg_pf/total_count:.4f}")
+            print(f"  平均Sharpe: {avg_sharpe/total_count:.4f}")
     
     def save_final_results(self):
         """最終結果をファイルに保存"""
