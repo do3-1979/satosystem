@@ -43,16 +43,16 @@ class QuarterlyBacktestScheduler:
         
         # 四半期定義（優先度順）
         self.quarters_high = [
-            ('2024_Q1', '2024 Q1 (Baseline)'),
-            ('2024_Q2', '2024 Q2 (Drawdown)'),
-            ('2024_Q3', '2024 Q3 (Drawdown)'),
-            ('2025_Q1', '2025 Q1 (New Period)'),
-            ('2025_Q3', '2025 Q3 (Recent)'),
+            ('2024_Q1', '2024 Q1 (Baseline)', '2024-01-01', '2024-03-31'),
+            ('2024_Q2', '2024 Q2 (Drawdown)', '2024-04-01', '2024-06-30'),
+            ('2024_Q3', '2024 Q3 (Drawdown)', '2024-07-01', '2024-09-30'),
+            ('2025_Q1', '2025 Q1 (New Period)', '2025-01-01', '2025-03-31'),
+            ('2025_Q3', '2025 Q3 (Recent)', '2025-07-01', '2025-09-30'),
         ]
         
         self.quarters_medium = [
-            ('2024_Q4', '2024 Q4'),
-            ('2025_Q2', '2025 Q2'),
+            ('2024_Q4', '2024 Q4', '2024-10-01', '2024-12-31'),
+            ('2025_Q2', '2025 Q2', '2025-04-01', '2025-06-30'),
         ]
         
         # Task 17 以降は単一パターン（現在の config 設定）でテスト
@@ -62,7 +62,7 @@ class QuarterlyBacktestScheduler:
         
         self.results = {}
     
-    def run_backtest(self, quarter_key, pattern_key):
+    def run_backtest(self, quarter_key, quarter_label, start_date, end_date, pattern_key):
         """バックテストを実行"""
         # Task 17 以降は config.ini を直接使用
         if pattern_key == 'current':
@@ -74,7 +74,10 @@ class QuarterlyBacktestScheduler:
             print(f"  ⚠️  Config not found: {config_file.name}")
             return None
         
-        print(f"  🚀 {pattern_key}...", end='', flush=True)
+        # 一時的に config.ini を修正して期間を設定
+        temp_config = self._create_temp_config(config_file, start_date, end_date)
+        
+        print(f"  🚀 {start_date} to {end_date}...", end='', flush=True)
         
         try:
             # バックテスト実行前に古いレポートをクリア
@@ -85,9 +88,9 @@ class QuarterlyBacktestScheduler:
                 except:
                     pass
             
-            # backtest.py を実行
+            # backtest.py を実行（修正した期間設定で）
             result = subprocess.run(
-                [sys.executable, str(self.project_root / 'src' / 'backtest.py'), str(config_file)],
+                [sys.executable, str(self.project_root / 'src' / 'backtest.py'), str(temp_config)],
                 capture_output=True,
                 text=True,
                 timeout=3600  # 1時間
@@ -108,6 +111,7 @@ class QuarterlyBacktestScheduler:
             return None
     
     def _extract_metrics(self):
+        """レポートから主要メトリクスを抽出"""
         """レポートから主要メトリクスを抽出"""
         try:
             report_dir = PathManager.get_report_dir()
@@ -147,6 +151,29 @@ class QuarterlyBacktestScheduler:
             print(f"    ⚠️  Metric extraction error: {e}")
             return None
     
+    def _create_temp_config(self, base_config, start_date, end_date):
+        """期間設定を変更した一時的な config ファイルを作成"""
+        from configparser import ConfigParser
+        
+        # ベース config を読み込み
+        cfg = ConfigParser()
+        cfg.read(base_config)
+        
+        # 期間設定を更新
+        if not cfg.has_section('Period'):
+            cfg.add_section('Period')
+        
+        cfg.set('Period', 'start_time', f'{start_date} 0:00')
+        cfg.set('Period', 'end_time', f'{end_date} 23:59')
+        
+        # 一時ファイルに保存
+        temp_config = self.project_root / 'src' / f'config_temp_{start_date.replace("-", "")}.ini'
+        
+        with open(temp_config, 'w', encoding='utf-8') as f:
+            cfg.write(f)
+        
+        return temp_config
+    
     def run_priority_backtests(self):
         """優先度 HIGH の四半期でバックテストを実行"""
         print("\n" + "="*70)
@@ -156,7 +183,7 @@ class QuarterlyBacktestScheduler:
         total = len(self.quarters_high) * len(self.patterns)
         current = 0
         
-        for quarter_key, quarter_label in self.quarters_high:
+        for quarter_key, quarter_label, start_date, end_date in self.quarters_high:
             print(f"\n📅 {quarter_label}")
             self.results[quarter_key] = {}
             
@@ -164,7 +191,7 @@ class QuarterlyBacktestScheduler:
                 current += 1
                 print(f"   [{current}/{total}]", end='')
                 
-                result = self.run_backtest(quarter_key, pattern_key)
+                result = self.run_backtest(quarter_key, quarter_label, start_date, end_date, pattern_key)
                 self.results[quarter_key][pattern_key] = result
             
             # 進捗を保存
@@ -182,7 +209,7 @@ class QuarterlyBacktestScheduler:
         total = len(all_quarters) * len(self.patterns)
         current = 0
         
-        for quarter_key, quarter_label in all_quarters:
+        for quarter_key, quarter_label, start_date, end_date in all_quarters:
             print(f"\n📅 {quarter_label}")
             self.results[quarter_key] = {}
             
@@ -190,7 +217,7 @@ class QuarterlyBacktestScheduler:
                 current += 1
                 print(f"   [{current}/{total}]", end='')
                 
-                result = self.run_backtest(quarter_key, pattern_key)
+                result = self.run_backtest(quarter_key, quarter_label, start_date, end_date, pattern_key)
                 self.results[quarter_key][pattern_key] = result
             
             # 進捗を保存
