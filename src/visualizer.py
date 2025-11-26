@@ -278,16 +278,18 @@ class Visualizer:
             candles_2h: 2時間足ローソク足データ
             output_html: 出力HTMLファイルパス
         """
-        # サブプロット: 3行
-        # Row 1: 価格系 (ローソク足 + Donchian + PSAR)
-        # Row 2: テクニカル指標系 (Volatility + PVO + ADX)
-        # Row 3: 累積損益 (PnL)
+        # サブプロット: 4行
+        # Row 1: 価格系 (ローソク足 + Donchian + PSAR + Keltner Channel)
+        # Row 2: ボリューム (Volume Bar)
+        # Row 3: テクニカル指標系 (Volatility + PVO + ADX)
+        # Row 4: 累積損益 (PnL)
         fig = make_subplots(
-            rows=3, cols=1,
+            rows=4, cols=1,
             shared_xaxes=True,
-            vertical_spacing=0.08,
-            row_heights=[0.4, 0.3, 0.3],
-            subplot_titles=("価格チャート (2h足ローソク + Donchian + PSAR)", 
+            vertical_spacing=0.06,
+            row_heights=[0.4, 0.15, 0.25, 0.2],
+            subplot_titles=("価格チャート (2h足ローソク + Donchian + PSAR + Keltner Channel)", 
+                           "ボリューム (Volume)", 
                            "テクニカル指標 (Volatility / PVO / ADX)", 
                            "累積損益 (PnL)")
         )
@@ -415,6 +417,64 @@ class Visualizer:
                 row=1, col=1
             )
         
+        # Keltner Channel (Upper Band)
+        if 'keltner' in df.columns and df['keltner'].notna().any():
+            # keltner がスカラー値でなく、upper/lower の辞書または配列の場合に対応
+            df_keltner = df.copy()
+            try:
+                # keltner が JSON/dict 文字列の場合、パース
+                if isinstance(df_keltner['keltner'].iloc[0], str):
+                    df_keltner['keltner_dict'] = df_keltner['keltner'].apply(
+                        lambda x: json.loads(x) if isinstance(x, str) else x
+                    )
+                    df_keltner['keltner_upper'] = df_keltner['keltner_dict'].apply(
+                        lambda x: x.get('upper', None) if isinstance(x, dict) else None
+                    )
+                    df_keltner['keltner_lower'] = df_keltner['keltner_dict'].apply(
+                        lambda x: x.get('lower', None) if isinstance(x, dict) else None
+                    )
+                elif isinstance(df_keltner['keltner'].iloc[0], dict):
+                    df_keltner['keltner_upper'] = df_keltner['keltner'].apply(
+                        lambda x: x.get('upper', None) if isinstance(x, dict) else None
+                    )
+                    df_keltner['keltner_lower'] = df_keltner['keltner'].apply(
+                        lambda x: x.get('lower', None) if isinstance(x, dict) else None
+                    )
+                else:
+                    # スカラー値の場合はスキップ
+                    df_keltner['keltner_upper'] = None
+                    df_keltner['keltner_lower'] = None
+                
+                # Upper Band
+                if df_keltner['keltner_upper'].notna().any():
+                    fig.add_trace(
+                        go.Scatter(
+                            x=df_keltner['real_time_dt'],
+                            y=df_keltner['keltner_upper'],
+                            mode='lines',
+                            name="Keltner Upper",
+                            line=dict(color='blue', width=1, dash='dot'),
+                            visible=True
+                        ),
+                        row=1, col=1
+                    )
+                
+                # Lower Band
+                if df_keltner['keltner_lower'].notna().any():
+                    fig.add_trace(
+                        go.Scatter(
+                            x=df_keltner['real_time_dt'],
+                            y=df_keltner['keltner_lower'],
+                            mode='lines',
+                            name="Keltner Lower",
+                            line=dict(color='blue', width=1, dash='dot'),
+                            visible=True
+                        ),
+                        row=1, col=1
+                    )
+            except Exception as e:
+                print(f"[WARN] Keltner Channel parsing error: {e}")
+        
         # ストップ価格 (ポジション保有時のみ表示)
         # stop_price が 0 の場合は PSAR から推定、またはエントリー価格から計算
         # ENTRY/EXIT/ADD アクションのあるレコード、または position_quantity > 0 のレコードを含める
@@ -513,7 +573,22 @@ class Visualizer:
                     row=1, col=1
                 )
         
-        # === Row 2: テクニカル指標 (Volatility / PVO / ADX) ===
+        # === Row 2: ボリューム (Volume Bar) ===
+        
+        if 'Volume' in df.columns and df['Volume'].notna().any():
+            fig.add_trace(
+                go.Bar(
+                    x=df['real_time_dt'],
+                    y=df['Volume'],
+                    name="Volume",
+                    marker=dict(color='steelblue'),
+                    visible=True,
+                    showlegend=True
+                ),
+                row=2, col=1
+            )
+        
+        # === Row 3: テクニカル指標 (Volatility / PVO / ADX) ===
         
         # Volatility (ボラティリティ)
         if 'volatility' in df.columns:
@@ -526,7 +601,7 @@ class Visualizer:
                     line=dict(color='purple', width=1),
                     visible=True
                 ),
-                row=2, col=1
+                row=3, col=1
             )
         
         # PVO (Percentage Volume Oscillator)
@@ -540,7 +615,7 @@ class Visualizer:
                     line=dict(color='cyan', width=1),
                     visible=True
                 ),
-                row=2, col=1
+                row=3, col=1
             )
         elif 'pvo' in df.columns:
             fig.add_trace(
@@ -552,7 +627,7 @@ class Visualizer:
                     line=dict(color='cyan', width=1),
                     visible=True
                 ),
-                row=2, col=1
+                row=3, col=1
             )
         
         # ADX (Average Directional Index)
@@ -566,7 +641,7 @@ class Visualizer:
                     line=dict(color='navy', width=1),
                     visible=True
                 ),
-                row=2, col=1
+                row=3, col=1
             )
         
         # ATR (Average True Range) - オプション表示
@@ -580,10 +655,10 @@ class Visualizer:
                     line=dict(color='brown', width=1),
                     visible='legendonly'
                 ),
-                row=2, col=1
+                row=3, col=1
             )
         
-        # === Row 3: 累積損益 (PnL) ===
+        # === Row 4: 累積損益 (PnL) ===
         if 'total_profit_and_loss' in df.columns:
             fig.add_trace(
                 go.Scatter(
@@ -596,10 +671,10 @@ class Visualizer:
                     fillcolor='rgba(0,100,255,0.1)',
                     visible=True
                 ),
-                row=3, col=1
+                row=4, col=1
             )
             # PnLゼロライン
-            fig.add_hline(y=0, line_dash="dash", line_color="gray", row=3, col=1)
+            fig.add_hline(y=0, line_dash="dash", line_color="gray", row=4, col=1)
         
         # レイアウト設定
         fig.update_layout(
@@ -619,8 +694,9 @@ class Visualizer:
         
         # Y軸ラベル
         fig.update_yaxes(title_text="価格 (USD)", row=1, col=1)
-        fig.update_yaxes(title_text="テクニカル指標値", row=2, col=1)
-        fig.update_yaxes(title_text="累積損益 (USD)", row=3, col=1)
+        fig.update_yaxes(title_text="ボリューム", row=2, col=1)
+        fig.update_yaxes(title_text="テクニカル指標値", row=3, col=1)
+        fig.update_yaxes(title_text="累積損益 (USD)", row=4, col=1)
         
         # HTML出力
         fig.write_html(output_html, include_plotlyjs='cdn')

@@ -14,6 +14,7 @@ from logger import Logger
 from price_data_management import PriceDataManagement
 from bybit_exchange import BybitExchange
 from portfolio import Portfolio
+import pandas as pd
 from indicator_service import IndicatorService
 import numpy as np
 
@@ -332,17 +333,34 @@ class RiskManagement:
             if prev_stop_offset > new_stop_offset:
                 self.stop_offset = new_stop_offset
 
-            # 前回のoffsetから変化がなかったらストップ値は変更しない
+            # PSAR値をそのままストップとして記録（ログ出力用）
+            # psarbull: BUY時のストップ（SAR値）/ psarbear: SELL時のストップ（SAR値）
             if side == "BUY":
                 # ストップ値再計算
                 tmp_stop_price = position_price - self.stop_offset
                 self.stop_price = max(tmp_stop_price, prev_stop_price)
-                #self.logger.log(f"prev stop offset {prev_stop_offset} psar offset {psar_stop_offset} new_stop_offset {new_stop_offset} tmp_stop_price {tmp_stop_price} prev_stop_price {prev_stop_price} stop_price {self.stop_price} price {price} ")
+                # PSAR が有効なら使用
+                try:
+                    psar_val = self.psarbear
+                    if isinstance(psar_val, (list, pd.Series)):
+                        psar_val = psar_val.iloc[0] if isinstance(psar_val, pd.Series) else psar_val[0]
+                    if psar_val is not None and psar_val != 0 and psar_val == psar_val:  # NaN check
+                        self.stop_price = float(psar_val)
+                except:
+                    pass
             if side == "SELL":
                 # ストップ値再計算
                 tmp_stop_price = position_price + self.stop_offset
                 self.stop_price = min(tmp_stop_price, prev_stop_price)
-                #self.logger.log(f"prev stop offset {prev_stop_offset} psar offset {psar_stop_offset} new_stop_offset {new_stop_offset} tmp_stop_price {tmp_stop_price} prev_stop_price {prev_stop_price} stop_price {self.stop_price} price {price} ")
+                # PSAR が有効なら使用
+                try:
+                    psar_val = self.psarbull
+                    if isinstance(psar_val, (list, pd.Series)):
+                        psar_val = psar_val.iloc[0] if isinstance(psar_val, pd.Series) else psar_val[0]
+                    if psar_val is not None and psar_val != 0 and psar_val == psar_val:  # NaN check
+                        self.stop_price = float(psar_val)
+                except:
+                    pass
         else:
             self.psar_stop_offset = 0
             self.price_surge_stop_offset = 0

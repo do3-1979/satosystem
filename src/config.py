@@ -117,6 +117,7 @@ class Config:
             # Backtest
             'back_test': int(cls.config['Backtest']['back_test']),
             'fast_summary_mode': int(cls.config['Backtest'].get('fast_summary_mode', 0)),
+            'enable_excel_export': int(cls.config['Backtest'].get('enable_excel_export', 0)),
         }
         
         # Derived values
@@ -695,6 +696,16 @@ class Config:
         """
         cls._initialize_cache()
         return cls._cache['fast_summary_mode']
+    
+    @classmethod
+    def get_enable_excel_export(cls):
+        """
+        Excel出力の有効化を取得
+        1: Excel出力有効（処理が遅い）
+        0: Excel出力無効（デフォルト）
+        """
+        cls._initialize_cache()
+        return cls._cache.get('enable_excel_export', 0)
 
     @classmethod
     def get_dummy_trading_mode(cls):

@@ -17,7 +17,7 @@ class Util:
     def export_trades_csv_from_logs(self, log_directory, output_csv_file, start_time=None, end_time=None):
         """
         ログ(JSON/ZIP)からトレードイベント(ENTRY/ADD/EXIT)のみを抽出し、CSVに出力します。
-        最新のZIPファイルのみを使用して重複を防ぎます。
+        新しい期間埋め込みファイル名形式（YYYYMMDD_HHMMSS-YYYYMMDD_HHMMSS-YYYYMMDD_HHMMSS.zip）に対応しています。
 
         Args:
             log_directory (str): ログディレクトリ (JSON/ZIP)
@@ -25,15 +25,15 @@ class Util:
             start_time (str|None): 開始 "%Y/%m/%d %H:%M"
             end_time (str|None): 終了 "%Y/%m/%d %H:%M"
         """
+        start_dt = None
+        end_dt = None
         if start_time and end_time:
             start_dt = datetime.strptime(start_time, "%Y/%m/%d %H:%M")
             end_dt = datetime.strptime(end_time, "%Y/%m/%d %H:%M")
-        else:
-            start_dt = None
-            end_dt = None
 
-        # 最新のZIPファイルのみを取得（重複を防ぐため）
+        # 期間情報をファイル名から抽出して対象ファイルを絞り込む
         log_files = []
+        period_pattern = re.compile(r'(\d{8})_(\d{4})-(\d{8})_(\d{4})\.zip$')
         max_mtime = 0
         latest_zip = None
         
@@ -42,11 +42,32 @@ class Util:
                 if file.endswith(".zip"):
                     full_path = os.path.join(root, file)
                     mtime = os.path.getmtime(full_path)
-                    if mtime > max_mtime:
-                        max_mtime = mtime
-                        latest_zip = full_path
+                    
+                    # 期間埋め込みファイル名かチェック
+                    match = period_pattern.search(file)
+                    if match and start_dt and end_dt:
+                        # 新しい形式: 期間情報をファイル名から抽出してフィルタ
+                        # Group 1: start_date (YYYYMMDD), Group 2: start_time (HHMM)
+                        # Group 3: end_date (YYYYMMDD), Group 4: end_time (HHMM)
+                        try:
+                            file_start_dt = datetime.strptime(match.group(1) + match.group(2), "%Y%m%d%H%M")
+                            file_end_dt = datetime.strptime(match.group(3) + match.group(4), "%Y%m%d%H%M")
+                            # ファイルの期間と指定期間が重なるかチェック
+                            if file_end_dt >= start_dt and file_start_dt <= end_dt:
+                                log_files.append(full_path)
+                                if mtime > max_mtime:
+                                    max_mtime = mtime
+                                    latest_zip = full_path
+                        except Exception as e:
+                            print(f"Warning: Failed to parse period from {file}: {e}")
+                    else:
+                        # 旧い形式またはその他のZIP: 互換性のため最新のみを対象
+                        if mtime > max_mtime:
+                            max_mtime = mtime
+                            latest_zip = full_path
         
-        if latest_zip:
+        # 最新のZIPが見つかった場合はそれを追加
+        if latest_zip and latest_zip not in log_files:
             log_files.append(latest_zip)
         
         # JSONファイルは対応するZIPが存在しない場合のみ含める
@@ -110,24 +131,53 @@ class Util:
     def extract_and_export_logs(self, log_directory, num_logs, output_excel_file, start_time=None, end_time=None):
         """
         指定された数の圧縮ログファイルを読み込み、エクセルファイルにデータとグラフを出力します。
+        新しい期間埋め込みファイル名形式（YYYYMMDD_HHMMSS-YYYYMMDD_HHMMSS-YYYYMMDD_HHMMSS.zip）に対応しています。
 
         Args:
             log_directory (str): 圧縮ログファイルが格納されているディレクトリ
             num_logs (int): 読み込むログファイルの数
             output_excel_file (str): 出力するエクセルファイルの名前
-            start_time (str): 開始時刻 (%Y/%m/%d %H:%M:%S 形式)
-            end_time (str): 終了時刻 (%Y/%m/%d %H:%M:%S 形式)
+            start_time (str): 開始時刻 (%Y/%m/%d %H:%M 形式)
+            end_time (str): 終了時刻 (%Y/%m/%d %H:%M 形式)
         """
+        config = Config()
+        spec_start_dt = None
+        spec_end_dt = None
+        
         if start_time and end_time:
-            start_time = datetime.strptime(start_time, "%Y/%m/%d %H:%M")
-            end_time = datetime.strptime(end_time, "%Y/%m/%d %H:%M")
+            spec_start_dt = datetime.strptime(start_time, "%Y/%m/%d %H:%M")
+            spec_end_dt = datetime.strptime(end_time, "%Y/%m/%d %H:%M")
 
-        # 圧縮ログファイルのリストを作成
+        # 圧縮ログファイルのリストを作成（期間情報をファイル名から抽出）
         log_files = []
+        period_pattern = re.compile(r'(\d{8})_(\d{4})-(\d{8})_(\d{4})\.zip$')
+        
         for root, _, files in os.walk(log_directory):
             for file in files:
                 if file.endswith(".zip"):
-                    log_files.append(os.path.join(root, file))
+                    full_path = os.path.join(root, file)
+                    # 期間埋め込みファイル名かチェック
+                    match = period_pattern.search(file)
+                    if match:
+                        # 新しい形式: 期間情報をファイル名から抽出
+                        # Group 1: start_date (YYYYMMDD), Group 2: start_time (HHMM)
+                        # Group 3: end_date (YYYYMMDD), Group 4: end_time (HHMM)
+                        try:
+                            # フィルタリング: 指定期間と重なるファイルのみを対象
+                            if spec_start_dt and spec_end_dt:
+                                file_start_dt = datetime.strptime(match.group(1) + match.group(2), "%Y%m%d%H%M")
+                                file_end_dt = datetime.strptime(match.group(3) + match.group(4), "%Y%m%d%H%M")
+                                # ファイルの期間と指定期間が重なるかチェック
+                                if file_end_dt >= spec_start_dt and file_start_dt <= spec_end_dt:
+                                    log_files.append(full_path)
+                            else:
+                                log_files.append(full_path)
+                        except Exception as e:
+                            print(f"Warning: Failed to parse period from {file}: {e}")
+                            log_files.append(full_path)
+                    else:
+                        # 旧い形式またはその他のZIP: 互換性のため含める
+                        log_files.append(full_path)
                 elif file.endswith(".json"):
                     # JSONファイルは対応するZIPが存在しない場合のみ含める
                     zip_path = os.path.join(root, file.replace('.json', '.zip'))
