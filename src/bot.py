@@ -405,6 +405,8 @@ class Bot:
                                         self.logger.log_error(f"レポート出力失敗: {re}")
                                     # インタラクティブ可視化を自動生成
                                     try:
+                                        # Config を明示的にリロード（キャッシュクリア）
+                                        Config.reload_config()
                                         vis = Visualizer()
                                         viz_html = os.path.join(report_dir, f"backtest_visualization_{ts}.html")
                                         vis.visualize_backtest(
@@ -429,8 +431,9 @@ class Bot:
                         # fast_summary_mode チェック（Excel・CSV出力用）
                         fast_summary_mode = config_instance.get_fast_summary_mode()
                         
-                        # 高速モード時はExcel・CSV出力をスキップ
-                        if fast_summary_mode == 0:
+                        # 高速モード時とExcel出力無効時はExcel・CSV出力をスキップ
+                        enable_excel = config_instance.get_enable_excel_export()
+                        if fast_summary_mode == 0 and enable_excel == 1:
                             # Excel集計を自動生成（ログクローズ後に実行）
                             try:
                                 util_instance = Util()
@@ -467,6 +470,15 @@ class Bot:
                             self.logger.log("[高速サマリモード] Excel・CSV出力をスキップ")
                         
                         self.logger.log("--- BOT END -------------------------------------------")
+                        
+                        # ログファイルをZIP圧縮（期間情報をファイル名に含める）
+                        try:
+                            start_time = config_instance.get_start_time()
+                            end_time = config_instance.get_end_time()
+                            self.logger.compress_log_with_period(start_time, end_time)
+                        except Exception as e:
+                            self.logger.log_error(f"ログ圧縮失敗: {e}")
+                        
                         break
 
                 else:
@@ -740,6 +752,7 @@ class Bot:
                     trade_data['position_size'] = self.risk_management.get_position_size()
                     position_size = self.portfolio.get_position_quantity()
                     quantity = position_size['quantity']
+                    side = position_size['side']
                     trade_data['position_quantity'] = quantity
                     profit, loss = self.portfolio.calc_position_quantity(price)
                     trade_data['profit_and_loss'] = profit - loss
@@ -758,15 +771,30 @@ class Bot:
                     trade_data['dc_h'] = signals['donchian']['info']['highest']
                     trade_data['dc_l'] = signals['donchian']['info']['lowest']
                     trade_data['pvo_val'] = signals['pvo']['info']['value']
-                    trade_data['psar'] = self.risk_management.get_psar()
-                    trade_data['psarbull'] = self.risk_management.get_psarbull()
-                    trade_data['psarbear'] = self.risk_management.get_psarbear()
+                    psar_val = self.risk_management.get_psar()
+                    psarbull_val = self.risk_management.get_psarbull()
+                    psarbear_val = self.risk_management.get_psarbear()
+                    trade_data['psar'] = psar_val
+                    trade_data['psarbull'] = psarbull_val
+                    trade_data['psarbear'] = psarbear_val
+                    
+                    # ポジション保有中の場合、PSAR値をストップとして記録
+                    if quantity > 0:
+                        if side == "BUY" and psarbear_val is not None and psarbear_val != 0:
+                            trade_data['stop_price'] = psarbear_val
+                        elif side == "SELL" and psarbull_val is not None and psarbull_val != 0:
+                            trade_data['stop_price'] = psarbull_val
+                    
                     trade_data['adx'] = self.risk_management.get_adx()
                     trade_data['adx_bull'] = self.risk_management.get_adx_bull()
                     trade_data['adx_bear'] = self.risk_management.get_adx_bear()
 
                     trade_data.update(trade_decision)
                     trade_data.update(signals)
+                    
+                    # action_name をログに記録
+                    if 'decision' in trade_decision:
+                        trade_data['action_name'] = trade_decision['decision']
 
                     # portfolio
                     trade_data['positions'] = self.portfolio.get_position_quantity()
