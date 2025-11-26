@@ -131,23 +131,28 @@ class Visualizer:
     
     def create_interactive_chart(self, df, candles_2h, output_html="backtest_visualization.html"):
         """
-        インタラクティブなチャートを生成
+        インタラクティブなチャートを生成（3つのサブプロット）
         
         Args:
             df: 1分足データ (全指標含む)
             candles_2h: 2時間足ローソク足データ
             output_html: 出力HTMLファイルパス
         """
-        # サブプロット: メイン(価格) + 損益(PnL)
+        # サブプロット: 3行
+        # Row 1: 価格系 (ローソク足 + Donchian + PSAR)
+        # Row 2: テクニカル指標系 (Volatility + PVO + ADX)
+        # Row 3: 累積損益 (PnL)
         fig = make_subplots(
-            rows=2, cols=1,
+            rows=3, cols=1,
             shared_xaxes=True,
-            vertical_spacing=0.05,
-            row_heights=[0.7, 0.3],
-            subplot_titles=("価格チャート (2h足ローソク + 1分足)", "損益推移 (PnL)")
+            vertical_spacing=0.08,
+            row_heights=[0.4, 0.3, 0.3],
+            subplot_titles=("価格チャート (2h足ローソク + Donchian + PSAR)", 
+                           "テクニカル指標 (Volatility / PVO / ADX)", 
+                           "累積損益 (PnL)")
         )
         
-        # === Row 1: 価格チャート ===
+        # === Row 1: 価格チャート (ローソク足 + Donchian + PSAR) ===
         
         # 2時間足ローソク足を最初に追加（後のトレースに隠されないように）
         if candles_2h is not None and not candles_2h.empty:
@@ -169,7 +174,6 @@ class Visualizer:
             print("[WARNING] candles_2h is None or empty")
         
         # ポジション保有区間を背景色でハイライト（BUY=淡緑 / SELL=淡赤）
-        # これをローソク足の下に配置するために、vrectで描画
         if 'position_quantity' in df.columns:
             df['has_position'] = df['position_quantity'] > 0
             df['position_change'] = df['has_position'].astype(int).diff().fillna(0)
@@ -204,21 +208,6 @@ class Visualizer:
                 row=1, col=1
             )
         
-        # 1分足終値 (線グラフ)
-        if 'close_price' in df.columns and candles_2h is not None and len(df) > len(candles_2h):
-            fig.add_trace(
-                go.Scatter(
-                    x=df['real_time_dt'],
-                    y=df['close_price'],
-                    mode='lines',
-                    name="終値(元粒度)",
-                    line=dict(color='blue', width=0.5),
-                    opacity=0.5,
-                    visible='legendonly'
-                ),
-                row=1, col=1
-            )
-        
         # Donchian High/Low
         if 'dc_h' in df.columns:
             fig.add_trace(
@@ -228,7 +217,7 @@ class Visualizer:
                     mode='lines',
                     name="Donchian High",
                     line=dict(color='green', width=1, dash='dash'),
-                    visible='legendonly'
+                    visible=True
                 ),
                 row=1, col=1
             )
@@ -241,7 +230,7 @@ class Visualizer:
                     mode='lines',
                     name="Donchian Low",
                     line=dict(color='red', width=1, dash='dash'),
-                    visible='legendonly'
+                    visible=True
                 ),
                 row=1, col=1
             )
@@ -254,166 +243,8 @@ class Visualizer:
                     y=df['psar'],
                     mode='markers',
                     name="PSAR",
-                    marker=dict(color='orange', size=3),
-                    visible='legendonly'
-                ),
-                row=1, col=1
-            )
-        
-        # Volatility (ボラティリティ)
-        if 'volatility' in df.columns:
-            fig.add_trace(
-                go.Scatter(
-                    x=df['real_time_dt'],
-                    y=df['volatility'],
-                    mode='lines',
-                    name="Volatility",
-                    line=dict(color='purple', width=1),
-                    visible='legendonly'
-                ),
-                row=1, col=1
-            )
-        
-        # ATR (Average True Range)
-        if 'atr' in df.columns:
-            fig.add_trace(
-                go.Scatter(
-                    x=df['real_time_dt'],
-                    y=df['atr'],
-                    mode='lines',
-                    name="ATR",
-                    line=dict(color='brown', width=1),
-                    visible='legendonly'
-                ),
-                row=1, col=1
-            )
-        
-        # PVO (Percentage Volume Oscillator)
-        if 'pvo_val' in df.columns:
-            fig.add_trace(
-                go.Scatter(
-                    x=df['real_time_dt'],
-                    y=df['pvo_val'],
-                    mode='lines',
-                    name="PVO",
-                    line=dict(color='cyan', width=1),
-                    visible='legendonly'
-                ),
-                row=1, col=1
-            )
-        elif 'pvo' in df.columns:
-            fig.add_trace(
-                go.Scatter(
-                    x=df['real_time_dt'],
-                    y=df['pvo'],
-                    mode='lines',
-                    name="PVO",
-                    line=dict(color='cyan', width=1),
-                    visible='legendonly'
-                ),
-                row=1, col=1
-            )
-        
-        # Keltner Upper/Lower (dict から抽出)
-        if 'keltner' in df.columns:
-            try:
-                df['keltner_upper'] = df['keltner'].apply(
-                    lambda x: x.get('info', {}).get('upper', 0) if isinstance(x, dict) else 0
-                )
-                df['keltner_lower'] = df['keltner'].apply(
-                    lambda x: x.get('info', {}).get('lower', 0) if isinstance(x, dict) else 0
-                )
-                
-                fig.add_trace(
-                    go.Scatter(
-                        x=df['real_time_dt'],
-                        y=df['keltner_upper'],
-                        mode='lines',
-                        name="Keltner Upper",
-                        line=dict(color='lime', width=1, dash='dot'),
-                        visible='legendonly'
-                    ),
-                    row=1, col=1
-                )
-                
-                fig.add_trace(
-                    go.Scatter(
-                        x=df['real_time_dt'],
-                        y=df['keltner_lower'],
-                        mode='lines',
-                        name="Keltner Lower",
-                        line=dict(color='pink', width=1, dash='dot'),
-                        visible='legendonly'
-                    ),
-                    row=1, col=1
-                )
-            except Exception as e:
-                print(f"Keltner チャネル抽出エラー: {e}")
-        
-        elif 'keltner_upper' in df.columns:
-            fig.add_trace(
-                go.Scatter(
-                    x=df['real_time_dt'],
-                    y=df['keltner_upper'],
-                    mode='lines',
-                    name="Keltner Upper",
-                    line=dict(color='lime', width=1, dash='dot'),
-                    visible='legendonly'
-                ),
-                row=1, col=1
-            )
-        
-        if 'keltner_lower' in df.columns:
-            fig.add_trace(
-                go.Scatter(
-                    x=df['real_time_dt'],
-                    y=df['keltner_lower'],
-                    mode='lines',
-                    name="Keltner Lower",
-                    line=dict(color='pink', width=1, dash='dot'),
-                    visible='legendonly'
-                ),
-                row=1, col=1
-            )
-        
-        # ADX (Average Directional Index)
-        if 'adx' in df.columns:
-            fig.add_trace(
-                go.Scatter(
-                    x=df['real_time_dt'],
-                    y=df['adx'],
-                    mode='lines',
-                    name="ADX",
-                    line=dict(color='navy', width=1),
-                    visible='legendonly'
-                ),
-                row=1, col=1
-            )
-        
-        # EMA短期
-        if 'ema_s' in df.columns:
-            fig.add_trace(
-                go.Scatter(
-                    x=df['real_time_dt'],
-                    y=df['ema_s'],
-                    mode='lines',
-                    name="EMA短期",
-                    line=dict(color='gold', width=1),
-                    visible='legendonly'
-                ),
-                row=1, col=1
-            )
-        
-        # EMA長期
-        if 'ema_l' in df.columns:
-            fig.add_trace(
-                go.Scatter(
-                    x=df['real_time_dt'],
-                    y=df['ema_l'],
-                    mode='lines',
-                    name="EMA長期",
-                    line=dict(color='maroon', width=1),
-                    visible='legendonly'
+                    marker=dict(color='orange', size=4),
+                    visible=True
                 ),
                 row=1, col=1
             )
@@ -430,7 +261,7 @@ class Visualizer:
                     mode='lines',
                     name="損切値 (Stop)",
                     line=dict(color='purple', width=1, dash='dot'),
-                    visible='legendonly'
+                    visible=True
                 ),
                 row=1, col=1
             )
@@ -486,7 +317,77 @@ class Visualizer:
                     row=1, col=1
                 )
         
-        # === Row 2: 損益推移 (PnL) ===
+        # === Row 2: テクニカル指標 (Volatility / PVO / ADX) ===
+        
+        # Volatility (ボラティリティ)
+        if 'volatility' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=df['volatility'],
+                    mode='lines',
+                    name="Volatility",
+                    line=dict(color='purple', width=1),
+                    visible=True
+                ),
+                row=2, col=1
+            )
+        
+        # PVO (Percentage Volume Oscillator)
+        if 'pvo_val' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=df['pvo_val'],
+                    mode='lines',
+                    name="PVO",
+                    line=dict(color='cyan', width=1),
+                    visible=True
+                ),
+                row=2, col=1
+            )
+        elif 'pvo' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=df['pvo'],
+                    mode='lines',
+                    name="PVO",
+                    line=dict(color='cyan', width=1),
+                    visible=True
+                ),
+                row=2, col=1
+            )
+        
+        # ADX (Average Directional Index)
+        if 'adx' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=df['adx'],
+                    mode='lines',
+                    name="ADX",
+                    line=dict(color='navy', width=1),
+                    visible=True
+                ),
+                row=2, col=1
+            )
+        
+        # ATR (Average True Range) - オプション表示
+        if 'atr' in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=df['atr'],
+                    mode='lines',
+                    name="ATR",
+                    line=dict(color='brown', width=1),
+                    visible='legendonly'
+                ),
+                row=2, col=1
+            )
+        
+        # === Row 3: 累積損益 (PnL) ===
         if 'total_profit_and_loss' in df.columns:
             fig.add_trace(
                 go.Scatter(
@@ -494,35 +395,36 @@ class Visualizer:
                     y=df['total_profit_and_loss'],
                     mode='lines',
                     name="累積損益 (PnL)",
-                    line=dict(color='blue', width=2),
+                    line=dict(color='darkblue', width=2),
                     fill='tozeroy',
                     fillcolor='rgba(0,100,255,0.1)',
                     visible=True
                 ),
-                row=2, col=1
+                row=3, col=1
             )
             # PnLゼロライン
-            fig.add_hline(y=0, line_dash="dash", line_color="gray", row=2, col=1)
+            fig.add_hline(y=0, line_dash="dash", line_color="gray", row=3, col=1)
         
         # レイアウト設定
         fig.update_layout(
-            title="バックテスト可視化 (インタラクティブ)",
+            title="バックテスト可視化 (インタラクティブ - 3グラフ表示)",
             xaxis_title="時刻",
-            height=1200,
+            height=1400,
             hovermode='x unified',
             xaxis_rangeslider_visible=False,
             legend=dict(
                 orientation="v",
                 yanchor="top",
-                y=1,
+                y=0.99,
                 xanchor="left",
                 x=1.01
             )
         )
         
         # Y軸ラベル
-        fig.update_yaxes(title_text="価格", row=1, col=1)
-        fig.update_yaxes(title_text="累積損益", row=2, col=1)
+        fig.update_yaxes(title_text="価格 (USD)", row=1, col=1)
+        fig.update_yaxes(title_text="テクニカル指標値", row=2, col=1)
+        fig.update_yaxes(title_text="累積損益 (USD)", row=3, col=1)
         
         # HTML出力
         fig.write_html(output_html, include_plotlyjs='cdn')
