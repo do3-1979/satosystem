@@ -22,7 +22,7 @@ class Visualizer:
     def __init__(self):
         self.config = Config()
         
-    def load_logs_data(self, log_directory, start_time=None, end_time=None):
+    def load_logs_data(self, log_directory, start_time=None, end_time=None, log_file=None):
         """
         ログディレクトリから全データを読み込む (JSON/ZIP対応)
         
@@ -30,6 +30,7 @@ class Visualizer:
             log_directory: ログディレクトリパス
             start_time: 開始時刻 (datetime or str)
             end_time: 終了時刻 (datetime or str)
+            log_file: 特定のログファイルを指定（Noneの場合は最新ファイル）
         
         Returns:
             DataFrame: 統合されたログデータ
@@ -49,10 +50,20 @@ class Visualizer:
             print(f"No log files in {log_directory}")
             return None
         
-        # 最新のログファイルのみを使用（複数ファイルの重複データを防ぐ）
-        log_files.sort()
-        latest_file = log_files[-1]
-        print(f"[INFO] Using latest log file: {latest_file}")
+        # ログファイルを選択
+        if log_file is not None:
+            # 特定ファイルが指定されている場合
+            target_file = log_file if os.path.isabs(log_file) else os.path.join(log_directory, log_file)
+            if not os.path.exists(target_file):
+                print(f"Log file not found: {target_file}")
+                return None
+            latest_file = target_file
+        else:
+            # 最新のログファイルのみを使用（複数ファイルの重複データを防ぐ）
+            log_files.sort()
+            latest_file = log_files[-1]
+        
+        print(f"[INFO] Using log file: {latest_file}")
         
         dataframes = []
         
@@ -66,9 +77,12 @@ class Visualizer:
             else:
                 df = pd.read_json(path)
             
+            # real_time をdatetimeに変換（最初に実施）
+            if 'real_time' in df.columns:
+                df['real_time_dt'] = pd.to_datetime(df['real_time'])
+            
             if start_time is not None and end_time is not None:
-                if 'real_time' in df.columns:
-                    df['real_time_dt'] = pd.to_datetime(df['real_time'])
+                if 'real_time_dt' in df.columns:
                     mask = (df['real_time_dt'] >= start_time) & (df['real_time_dt'] <= end_time)
                     df = df.loc[mask]
                 elif 'close_time_dt' in df.columns:
@@ -86,8 +100,10 @@ class Visualizer:
             return None
         
         combined = dataframes[0]
-        # real_time をdatetimeに変換
-        if 'real_time' in combined.columns:
+        # real_time_dt が存在することを確認してソート
+        if 'real_time_dt' in combined.columns:
+            combined.sort_values('real_time_dt', inplace=True)
+        elif 'real_time' in combined.columns:
             combined['real_time_dt'] = pd.to_datetime(combined['real_time'])
             combined.sort_values('real_time_dt', inplace=True)
         
@@ -154,9 +170,8 @@ class Visualizer:
         
         # === Row 1: 価格チャート (ローソク足 + Donchian + PSAR) ===
         
-        # 2時間足ローソク足を最初に追加（後のトレースに隠されないように）
+        # ローソク足を最初に追加（後のトレースに隠されないように）
         if candles_2h is not None and not candles_2h.empty:
-            print(f"[DEBUG] Adding Candlestick: {len(candles_2h)} candles")
             candlestick = go.Candlestick(
                 x=candles_2h['real_time_dt'],
                 open=candles_2h['open_price'],
@@ -169,9 +184,6 @@ class Visualizer:
                 yaxis="y"
             )
             fig.add_trace(candlestick, row=1, col=1)
-            print(f"[DEBUG] Traces after Candlestick: {len(fig.data)}")
-        else:
-            print("[WARNING] candles_2h is None or empty")
         
         # ポジション保有区間を背景色でハイライト（BUY=淡緑 / SELL=淡赤）
         if 'position_quantity' in df.columns:
@@ -291,6 +303,7 @@ class Visualizer:
         if 'decision' in df.columns:
             mask = (df['decision'].notna()) & (df['decision'] != 'NONE')
             df_trades = df[mask].copy()
+        
         if not df_trades.empty:
             # ENTRY
             df_entry = df_trades[df_trades['decision'] == 'ENTRY']
