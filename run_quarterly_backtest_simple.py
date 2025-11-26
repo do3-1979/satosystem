@@ -59,33 +59,36 @@ class SimpleQuarterlyBacktest:
         if not cfg.has_section('Period'):
             cfg.add_section('Period')
         
-        cfg.set('Period', 'start_time', f'{start_date} 0:00')
-        cfg.set('Period', 'end_time', f'{end_date} 23:59')
+        # 日付形式を YYYY/MM/DD HH:MM に変換
+        start_parts = start_date.split('-')
+        end_parts = end_date.split('-')
         
-        # 一時ファイルに保存
-        temp_config = self.src_dir / f'config_temp_{start_date.replace("-", "")}.ini'
-        with open(temp_config, 'w') as f:
+        cfg.set('Period', 'start_time', f'{start_parts[0]}/{start_parts[1]}/{start_parts[2]} 00:00')
+        cfg.set('Period', 'end_time', f'{end_parts[0]}/{end_parts[1]}/{end_parts[2]} 23:59')
+        
+        # config.ini に書き込み
+        with open(self.src_dir / 'config.ini', 'w') as f:
             cfg.write(f)
         
-        return temp_config
+        return True
     
     def run_backtest(self, quarter_key, start_date, end_date):
         """バックテストを実行"""
         # 古いレポートをクリア
-        for report_file in self.report_dir.glob('*.json'):
+        for report_file in self.report_dir.glob('*.md'):
             try:
                 report_file.unlink()
             except:
                 pass
         
-        # 一時 config を作成
-        temp_config = self.create_temp_config(start_date, end_date)
+        # config.ini の Period セクションを更新
+        self.create_temp_config(start_date, end_date)
         
         print(f"  🚀 {start_date} to {end_date}...", end='', flush=True)
         
         try:
             result = subprocess.run(
-                [sys.executable, str(self.src_dir / 'backtest.py'), str(temp_config)],
+                [sys.executable, str(self.src_dir / 'bot.py')],
                 capture_output=True,
                 text=True,
                 timeout=600,
@@ -106,46 +109,41 @@ class SimpleQuarterlyBacktest:
         except Exception as e:
             print(f" ❌ ({e})")
             return None
-        finally:
-            # クリーンアップ
-            try:
-                temp_config.unlink()
-            except:
-                pass
     
     def _extract_metrics(self):
-        """レポートから主要メトリクスを抽出"""
+        """レポートから主要メトリクスを抽出（JSON形式）"""
         try:
+            # JSON レポートを探す
             report_files = sorted(
                 self.report_dir.glob('backtest_summary_*.json'),
                 key=lambda x: x.stat().st_mtime,
                 reverse=True
             )
             
-            if not report_files:
-                return None
+            if report_files:
+                with open(report_files[0], 'r', encoding='utf-8') as f:
+                    report = json.load(f)
+                
+                pnl = report.get('total_pnl', 0)
+                trades = report.get('trades', 0)
+                win_rate = report.get('win_rate', 0)
+                pf = report.get('profit_factor', 0)
+                sharpe = report.get('sharpe', 0)
+                max_dd = report.get('max_drawdown', 0)
+                
+                return {
+                    'pnl': float(pnl),
+                    'trades': int(trades),
+                    'win_rate': float(win_rate) * 100 if win_rate < 1 else float(win_rate),
+                    'profit_factor': float(pf),
+                    'sharpe': float(sharpe),
+                    'max_drawdown': float(max_dd),
+                }
             
-            with open(report_files[0], 'r', encoding='utf-8') as f:
-                report = json.load(f)
-            
-            pnl = report.get('total_pnl') or report.get('total_profit_loss') or 0
-            trades = report.get('trades') or report.get('total_trades') or 0
-            win_rate = report.get('win_rate') or 0
-            pf = report.get('profit_factor') or 0
-            sharpe = report.get('sharpe') or 0
-            max_dd = report.get('max_drawdown') or report.get('max_drawdown_percent') or 0
-            
-            return {
-                'pnl': float(pnl),
-                'trades': int(trades),
-                'win_rate': float(win_rate) * 100 if win_rate < 1 else float(win_rate),
-                'profit_factor': float(pf),
-                'sharpe': float(sharpe),
-                'max_drawdown': float(max_dd),
-            }
+            return None
         
         except Exception as e:
-            print(f"    ⚠️  Error: {e}")
+            print(f"    ⚠️  Error extracting metrics: {e}")
             return None
     
     def run_priority_backtests(self):
