@@ -76,6 +76,25 @@ cd src
 ./bot_run.sh clear
 ```
 
+### ロギング制御（グラフ分析用）
+実データグラフを詳細に分析する場合、ログ間引き制御が必要です。詳細は以下を参照：
+
+**クイックガイド**: [`docs/LOGGING_QUICK_START.md`](docs/LOGGING_QUICK_START.md)
+**詳細ドキュメント**: [`docs/LOGGING_CONTROL_GUIDE.md`](docs/LOGGING_CONTROL_GUIDE.md)
+**データフロー**: [`docs/LOGGING_DATA_FLOW.md`](docs/LOGGING_DATA_FLOW.md)
+
+**実行例（全ログ出力でグラフ分析）**:
+```bash
+python3 run_backtest.py --full-logging
+# または
+python3 run_backtest.py --logging-interval 1
+```
+
+**実行例（高速テスト）**:
+```bash
+python3 run_backtest.py --fast-summary
+```
+
 ### 自動化スクリプトの注意事項
 A/B実験や月次バックテストなどの自動化ツールは、必ず `bot_run.sh` を `subprocess` で呼び出すこと:
 ```python
