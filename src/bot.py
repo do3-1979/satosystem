@@ -270,6 +270,14 @@ class Bot:
                                     classification = 'FALSE_BREAK'
                                 else:
                                     classification = 'NEUTRAL'
+                                # 技術指標を取得
+                                volatility = self.price_data_management.get_volatility()
+                                current_stop = self.risk_management.get_stop_price()
+                                current_psar = self.risk_management.get_psar()
+                                # Keltner チャネル情報があれば取得（なければ 0）
+                                keltner_upper = getattr(self.risk_management, 'keltner_upper', 0)
+                                keltner_lower = getattr(self.risk_management, 'keltner_lower', 0)
+                                
                                 self.closed_trades.append({
                                     'entry_price': entry_price,
                                     'exit_price': final_price,
@@ -281,7 +289,13 @@ class Bot:
                                     'atr_at_entry': atr_entry,
                                     'capture_ratio': capture_ratio,
                                     'loss_containment_ratio': loss_containment_ratio,
-                                    'classification': classification
+                                    'classification': classification,
+                                    'volatility_at_exit': volatility,
+                                    'stop_loss_price': current_stop,
+                                    'psar_at_exit': current_psar,
+                                    'keltner_upper': keltner_upper,
+                                    'keltner_lower': keltner_lower,
+                                    'stop_loss_hit': self.open_trade.get('stop_loss_hit', False)
                                 })
                                 self.open_trade = None
                             # EOB決済をPnL履歴へ追記
@@ -552,6 +566,9 @@ class Bot:
                         self.logger.log(f"[STOP LOSS HIT - SELL] Price={current_price:.2f} >= Stop={stop_price:.2f}")
                     
                     if stop_hit:
+                        # open_trade に stop_loss_hit フラグを設定
+                        if self.open_trade:
+                            self.open_trade['stop_loss_hit'] = True
                         # ストップロス発動時は EXIT を強制
                         trade_decision = {
                             "decision": "EXIT",
@@ -632,6 +649,14 @@ class Bot:
                                 classification = 'FALSE_BREAK'
                             else:
                                 classification = 'NEUTRAL'
+                            # 技術指標を取得
+                            volatility = self.price_data_management.get_volatility()
+                            current_stop = self.risk_management.get_stop_price()
+                            current_psar = self.risk_management.get_psar()
+                            # Keltner チャネル情報があれば取得（なければ 0）
+                            keltner_upper = getattr(self.risk_management, 'keltner_upper', 0)
+                            keltner_lower = getattr(self.risk_management, 'keltner_lower', 0)
+                            
                             self.closed_trades.append({
                                 'entry_price': entry_price,
                                 'exit_price': price,
@@ -643,7 +668,13 @@ class Bot:
                                 'atr_at_entry': atr_entry,
                                 'capture_ratio': capture_ratio,
                                 'loss_containment_ratio': loss_containment_ratio,
-                                'classification': classification
+                                'classification': classification,
+                                'volatility_at_exit': volatility,
+                                'stop_loss_price': current_stop,
+                                'psar_at_exit': current_psar,
+                                'keltner_upper': keltner_upper,
+                                'keltner_lower': keltner_lower,
+                                'stop_loss_hit': self.open_trade.get('stop_loss_hit', False)
                             })
                             self.open_trade = None
                     elif trade_decision["decision"] == "PARTIAL_EXIT":
@@ -658,7 +689,7 @@ class Bot:
                         avg_entry = self.portfolio.get_position_price()
                         atr_val = self.price_data_management.get_volatility()
                         if trade_decision["decision"] == "ENTRY" or self.open_trade is None:
-                            self.open_trade = {'entry_price': avg_entry, 'side': trade_decision['side'], 'atr': atr_val, 'mfe': 0.0, 'mae': 0.0, 'bars': 0}
+                            self.open_trade = {'entry_price': avg_entry, 'side': trade_decision['side'], 'atr': atr_val, 'mfe': 0.0, 'mae': 0.0, 'bars': 0, 'stop_loss_hit': False}
                         else:
                             self.open_trade['entry_price'] = avg_entry
                     # ポートフォリオ更新イベント
