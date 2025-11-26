@@ -144,18 +144,58 @@ class Visualizer:
         
         # === Row 1: 価格チャート ===
         
-        # 2時間足ローソク足（間引きなし）
+        # 2時間足ローソク足を最初に追加（後のトレースに隠されないように）
         if candles_2h is not None and not candles_2h.empty:
-            fig.add_trace(
-                go.Candlestick(
-                    x=candles_2h['real_time_dt'],
-                    open=candles_2h['open_price'],
-                    high=candles_2h['high_price'],
-                    low=candles_2h['low_price'],
-                    close=candles_2h['close_price'],
-                    name="2時間足 (フル)",
-                    visible=True
-                ),
+            print(f"[DEBUG] Adding Candlestick: {len(candles_2h)} candles")
+            candlestick = go.Candlestick(
+                x=candles_2h['real_time_dt'],
+                open=candles_2h['open_price'],
+                high=candles_2h['high_price'],
+                low=candles_2h['low_price'],
+                close=candles_2h['close_price'],
+                name="2時間足",
+                visible=True,
+                xaxis="x",
+                yaxis="y"
+            )
+            fig.add_trace(candlestick, row=1, col=1)
+            print(f"[DEBUG] Traces after Candlestick: {len(fig.data)}")
+        else:
+            print("[WARNING] candles_2h is None or empty")
+        
+        # ポジション保有区間を背景色でハイライト（BUY=淡緑 / SELL=淡赤）
+        # これをローソク足の下に配置するために、vrectで描画
+        if 'position_quantity' in df.columns:
+            df['has_position'] = df['position_quantity'] > 0
+            df['position_change'] = df['has_position'].astype(int).diff().fillna(0)
+        else:
+            df['has_position'] = False
+            df['position_change'] = 0
+        
+        entry_indices = df[df['position_change'] == 1].index
+        exit_indices = df[df['position_change'] == -1].index
+        
+        # ENTRYとEXITをペアリング
+        for entry_idx in entry_indices:
+            exit_idx_candidates = exit_indices[exit_indices > entry_idx]
+            if len(exit_idx_candidates) > 0:
+                exit_idx = exit_idx_candidates[0]
+            else:
+                exit_idx = df.index[-1]
+            
+            entry_time = df.loc[entry_idx, 'real_time_dt']
+            exit_time = df.loc[exit_idx, 'real_time_dt']
+            
+            position_side = df.loc[entry_idx, 'side'] if 'side' in df.columns else 'BUY'
+            if position_side == 'BUY':
+                fill_color = "lightgreen"
+            else:
+                fill_color = "lightcoral"
+            
+            fig.add_vrect(
+                x0=entry_time, x1=exit_time,
+                fillcolor=fill_color, opacity=0.1,
+                layer="below", line_width=0,
                 row=1, col=1
             )
         
@@ -167,7 +207,8 @@ class Visualizer:
                     y=df['close_price'],
                     mode='lines',
                     name="終値(元粒度)",
-                    line=dict(color='blue', width=1),
+                    line=dict(color='blue', width=0.5),
+                    opacity=0.5,
                     visible='legendonly'
                 ),
                 row=1, col=1
@@ -304,7 +345,6 @@ class Visualizer:
             except Exception as e:
                 print(f"Keltner チャネル抽出エラー: {e}")
         
-        # Keltner Upper (従来の方法)
         elif 'keltner_upper' in df.columns:
             fig.add_trace(
                 go.Scatter(
@@ -318,7 +358,6 @@ class Visualizer:
                 row=1, col=1
             )
         
-        # Keltner Lower (従来の方法)
         if 'keltner_lower' in df.columns:
             fig.add_trace(
                 go.Scatter(
@@ -385,45 +424,9 @@ class Visualizer:
                     y=df_with_position['stop_price'],
                     mode='lines',
                     name="損切値 (Stop)",
-                    line=dict(color='purple', width=2, dash='dot'),
-                    visible=True
+                    line=dict(color='purple', width=1, dash='dot'),
+                    visible='legendonly'
                 ),
-                row=1, col=1
-            )
-        
-        # ポジション保有区間を背景色でハイライト（BUY=淡緑 / SELL=淡赤）
-        if 'position_quantity' in df.columns:
-            df['has_position'] = df['position_quantity'] > 0
-            df['position_change'] = df['has_position'].astype(int).diff().fillna(0)
-        else:
-            df['has_position'] = False
-            df['position_change'] = 0
-        
-        entry_indices = df[df['position_change'] == 1].index
-        exit_indices = df[df['position_change'] == -1].index
-        
-        # ENTRYとEXITをペアリング
-        for entry_idx in entry_indices:
-            exit_idx_candidates = exit_indices[exit_indices > entry_idx]
-            if len(exit_idx_candidates) > 0:
-                exit_idx = exit_idx_candidates[0]
-            else:
-                exit_idx = df.index[-1]  # 最後まで保有
-            
-            entry_time = df.loc[entry_idx, 'real_time_dt']
-            exit_time = df.loc[exit_idx, 'real_time_dt']
-            
-            # ポジションのside判定（BUY or SELL）
-            position_side = df.loc[entry_idx, 'side'] if 'side' in df.columns else 'BUY'
-            if position_side == 'BUY':
-                fill_color = "lightgreen"
-            else:  # SELL
-                fill_color = "lightcoral"
-            
-            fig.add_vrect(
-                x0=entry_time, x1=exit_time,
-                fillcolor=fill_color, opacity=0.2,
-                layer="below", line_width=0,
                 row=1, col=1
             )
         
