@@ -191,12 +191,19 @@ class AllChecksRunner:
             symbol = '✅' if result == 'PASS' else '❌' if result == 'FAIL' else '⏱️ '
             print(f"  {symbol} {check}: {result}")
 
-        # レポートをファイルに保存
+        # レポートをファイルに保存（日付ディレクトリに保存）
         work_reports_dir = os.path.join(self.repo_root, 'work_reports')
         os.makedirs(work_reports_dir, exist_ok=True)
 
-        report_file = os.path.join(
+        # 日付ごとのディレクトリを作成（docs/README.md ルール）
+        date_dir = os.path.join(
             work_reports_dir,
+            datetime.now().strftime("%Y-%m-%d")
+        )
+        os.makedirs(date_dir, exist_ok=True)
+
+        report_file = os.path.join(
+            date_dir,
             f'all_checks_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
         )
 

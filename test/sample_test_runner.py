@@ -224,12 +224,19 @@ class SampleTestRunner:
         return len(self.test_results['errors']) == 0
 
     def _save_report(self):
-        """レポートを JSON ファイルに保存"""
+        """レポートを JSON ファイルに保存（日付ディレクトリに保存）"""
         work_reports_dir = os.path.join(self.repo_root, 'work_reports')
         os.makedirs(work_reports_dir, exist_ok=True)
 
-        report_file = os.path.join(
+        # 日付ごとのディレクトリを作成（docs/README.md ルール）
+        date_dir = os.path.join(
             work_reports_dir,
+            datetime.now().strftime("%Y-%m-%d")
+        )
+        os.makedirs(date_dir, exist_ok=True)
+
+        report_file = os.path.join(
+            date_dir,
             f'sample_test_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
         )
 

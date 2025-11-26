@@ -143,5 +143,59 @@ class TestConfigSecurityCheck:
                                 f"Line {i+1}: {line} appears to contain actual credentials"
 
 
+class TestDocumentManagementStructure:
+    """ドキュメント管理ルール（docs/README.md）の構造検証"""
+
+    def test_work_reports_directory_exists(self):
+        """work_reports ディレクトリが存在するか"""
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        work_reports_dir = os.path.join(repo_root, 'work_reports')
+        assert os.path.exists(work_reports_dir), "work_reports directory should exist"
+        assert os.path.isdir(work_reports_dir), "work_reports should be a directory"
+
+    def test_work_reports_has_management_guide(self):
+        """work_reports に 00_MANAGEMENT_GUIDE.md があるか"""
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        guide_file = os.path.join(repo_root, 'work_reports', '00_MANAGEMENT_GUIDE.md')
+        assert os.path.exists(guide_file), "00_MANAGEMENT_GUIDE.md should exist in work_reports"
+
+    def test_work_reports_date_directory_structure(self):
+        """work_reports に日付ディレクトリが存在するか（例: 2025-11-24/）"""
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        work_reports_dir = os.path.join(repo_root, 'work_reports')
+        
+        # 少なくとも1つの日付ディレクトリが存在することを確認
+        date_dirs = [
+            d for d in os.listdir(work_reports_dir)
+            if os.path.isdir(os.path.join(work_reports_dir, d)) and 
+            len(d) == 10 and d.count('-') == 2  # YYYY-MM-DD 形式
+        ]
+        
+        # docs/README.md ルールに従い、日付ディレクトリが存在すること
+        assert len(date_dirs) > 0, \
+            "work_reports should contain at least one date directory (YYYY-MM-DD format)"
+
+    def test_docs_readme_exists(self):
+        """docs/README.md が存在するか"""
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        readme_file = os.path.join(repo_root, 'docs', 'README.md')
+        assert os.path.exists(readme_file), "docs/README.md should exist"
+
+    def test_docs_core_documents_exist(self):
+        """docs/ に3つのコアドキュメント（ARCHITECTURE_OVERVIEW, TRADING_STRATEGY_PLAN, ACTION_LIST）が存在するか"""
+        repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        docs_dir = os.path.join(repo_root, 'docs')
+        
+        core_docs = [
+            'ARCHITECTURE_OVERVIEW.md',
+            'TRADING_STRATEGY_PLAN.md',
+            'ACTION_LIST.md',
+        ]
+        
+        for doc in core_docs:
+            doc_path = os.path.join(docs_dir, doc)
+            assert os.path.exists(doc_path), f"{doc} should exist in docs/"
+
+
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

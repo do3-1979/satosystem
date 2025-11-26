@@ -91,6 +91,8 @@ class RiskManagement:
         self.stop_offset = 0 # 価格ベース
         self.stop_price = 0 # 価格ベース
         self.last_entry_price = 0 # 価格ベース
+        self.psar_stop_offset = 0 # PSAR ストップオフセット
+        self.price_surge_stop_offset = 0 # サージフォロー用ストップオフセット
         
         # Phase 2: 段階的ポジションサイジング用のレジーム情報
         self.current_regime = "NEUTRAL"
@@ -207,9 +209,10 @@ class RiskManagement:
 
     def __calc_stop_psar(self):
         """
-        ストップ値をパラボリックASRにする関数
+        ストップ値をパラボリックSARにする関数
         
         ポジションのBUY/SELLに応じてパラボリックSARの値をストップポジションとする
+        ストップオフセットは常に正の値（絶対値）
         """
 
         # 現在のストップレンジ
@@ -226,15 +229,13 @@ class RiskManagement:
         position_price = self.portfolio.get_position_price()
         tmp_stop_offset = prev_stop_offset
 
-        #tmp_stop_offsetb = round(position_price - psarbull)
-        #tmp_stop_offsets = round(psarbear - position_price)
-        #print(f"prev_stop_offset: {prev_stop_offset} position_price: {position_price} psarbull {psarbull} psarbear {psarbear} BUY diff {tmp_stop_offsetb} SELL diff {0}")
-        # BUYの時は現在値からpsarbullの差をstopとする。SELLはpserbear
-        if self.portfolio.get_position_side() == "BUY" and psarbull != None:
-            tmp_stop_offset = round(position_price - psarbull)
+        # BUYの時は現在値からpsarbullの差をstopとする。SELLはpsarbear
+        # ストップオフセットは常に正の値（絶対値）
+        if self.portfolio.get_position_side() == "BUY" and psarbull is not None:
+            tmp_stop_offset = abs(round(position_price - psarbull))
 
-        if self.portfolio.get_position_side() == "SELL" and psarbear != None:
-            tmp_stop_offset = round(psarbear - position_price)
+        if self.portfolio.get_position_side() == "SELL" and psarbear is not None:
+            tmp_stop_offset = abs(round(psarbear - position_price))
 
         self.psar_stop_offset = tmp_stop_offset
 

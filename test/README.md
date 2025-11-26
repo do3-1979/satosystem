@@ -132,6 +132,13 @@ test/
 - config.ini に API キーが含まれていないか
 - config.template.ini に実際の API キーが含まれていないか
 
+#### TestDocumentManagementStructure ✨ NEW
+- work_reports ディレクトリの存在確認
+- 00_MANAGEMENT_GUIDE.md の存在確認
+- 日付ディレクトリ（YYYY-MM-DD 形式）の存在確認
+- docs/README.md の存在確認
+- 3つのコアドキュメント（ARCHITECTURE_OVERVIEW, TRADING_STRATEGY_PLAN, ACTION_LIST）の存在確認
+
 ### test_risk_management.py
 
 #### TestRiskManagementBasics
@@ -189,12 +196,27 @@ test/
 
 ### レポート出力先
 
+**ドキュメント管理ルール（docs/README.md）に従い、日付ごとのディレクトリに保存します**:
+
 ```
 work_reports/
-├── all_checks_report_YYYYMMDD_HHMMSS.json       # 一括実行結果
-├── sample_test_report_YYYYMMDD_HHMMSS.json      # サンプルテスト結果
+├── 2025-11-24/
+│   ├── all_checks_report_20251124_HHMMSS.json
+│   ├── sample_test_report_20251124_HHMMSS.json
+│   └── ...
+├── 2025-11-25/
+│   ├── all_checks_report_20251125_HHMMSS.json
+│   ├── sample_test_report_20251125_HHMMSS.json
+│   └── ...
+├── 2025-11-26/
+│   ├── all_checks_report_20251126_HHMMSS.json
+│   ├── sample_test_report_20251126_HHMMSS.json
+│   └── ...
+├── 00_MANAGEMENT_GUIDE.md
 └── ...
 ```
+
+**注**: 各実行日ごとに日付ディレクトリが自動作成されます
 
 ### レポートフォーマット
 
@@ -226,6 +248,10 @@ work_reports/
 - [ ] すべてのテストが ✅ PASS を確認
 - [ ] 失敗がある場合は問題を修正して再実行
 - [ ] レポートを確認して問題がないことを確認
+- [ ] **ドキュメント管理ルール確認**（docs/README.md 参照）:
+  - [ ] work_reports に日付ディレクトリ（YYYY-MM-DD）が作成されたか
+  - [ ] レポートが日付ディレクトリ直下に保存されたか
+  - [ ] 3つのコアドキュメント（docs/ 内）は最新か
 
 ---
 

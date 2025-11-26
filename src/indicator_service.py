@@ -30,8 +30,9 @@ class IndicatorService:
         self.psarbull = []     # SAR (bull trend)
         self.psarbear = []     # SAR (bear trend)
         self.psar_af = 0.02    # Acceleration Factor
-        self.psar_trend = 'up' # 'up' or 'down'
+        self.psar_trend = None # 'up' or 'down' (None=未初期化)
         self.psar_ep = 0       # Extreme Point
+        self.psar_sar = 0      # Current SAR value
         
         # ADX計算用の状態保持
         self.adx = []          # ADX値
@@ -269,7 +270,7 @@ class IndicatorService:
     
     def calculate_parabolic_sar(self, ohlcv_data, start_af=0.02, max_af=0.2):
         """
-        放物線SAR（Parabolic SAR）を計算
+        放物線SAR（Parabolic SAR）を計算 - 完全実装版
         
         Args:
             ohlcv_data: OHLCVデータ
@@ -286,37 +287,81 @@ class IndicatorService:
                 self.psarbear = []
             return
         
-        # 直近データの高値/安値を取得
-        recent = ohlcv_data[-20:] if len(ohlcv_data) >= 20 else ohlcv_data
-        high = max([d.get('high_price', 0) for d in recent])
-        low = min([d.get('low_price', float('inf')) for d in recent])
+        # 初期状態の初期化
+        if not hasattr(self, 'psar_trend'):
+            self.psar_trend = None
+            self.psar_af = start_af
+            self.psar_ep = None
+            self.psar_sar = None
+        
+        current_high = ohlcv_data[-1].get('high_price', 0)
+        current_low = ohlcv_data[-1].get('low_price', 0)
         current_price = ohlcv_data[-1].get('close_price', 0)
         
-        # トレンド判定
-        if len(self.psar) == 0:
-            # 初期化
-            if current_price > (high + low) / 2:
+        # 初回計算
+        if self.psar_trend is None:
+            recent = ohlcv_data[-5:] if len(ohlcv_data) >= 5 else ohlcv_data
+            period_high = max([d.get('high_price', 0) for d in recent])
+            period_low = min([d.get('low_price', float('inf')) for d in recent])
+            
+            if current_price >= (period_high + period_low) / 2:
                 self.psar_trend = 'up'
-                sar = low
-                self.psar_ep = high
+                self.psar_sar = period_low
+                self.psar_ep = period_high
             else:
                 self.psar_trend = 'down'
-                sar = high
-                self.psar_ep = low
+                self.psar_sar = period_high
+                self.psar_ep = period_low
             self.psar_af = start_af
-        else:
-            # 前回のSAR値から継続
-            sar = self.psar[-1] if self.psar else low
         
         # SAR値を記録
-        self.psar.append(sar)
+        self.psar.append(self.psar_sar)
         
-        # Bull/Bear SAR を記録
+        # Trend継続時にSARを更新
         if self.psar_trend == 'up':
-            self.psarbull.append(sar)
+            self.psarbull.append(self.psar_sar)
             self.psarbear.append(None)
-        else:
+            
+            # EP（極値）の更新
+            if current_high > self.psar_ep:
+                self.psar_ep = current_high
+                self.psar_af = min(self.psar_af + 0.02, max_af)
+            
+            # トレンド反転チェック
+            if current_low < self.psar_sar:
+                self.psar_trend = 'down'
+                self.psar_sar = self.psar_ep
+                self.psar_ep = current_low
+                self.psar_af = start_af
+            else:
+                # SAR更新
+                self.psar_sar = self.psar_sar + self.psar_af * (self.psar_ep - self.psar_sar)
+                self.psar_sar = min(self.psar_sar, current_low)
+                if len(ohlcv_data) >= 2:
+                    prev_low = ohlcv_data[-2].get('low_price', 0)
+                    self.psar_sar = min(self.psar_sar, prev_low)
+        
+        else:  # down trend
             self.psarbull.append(None)
-            self.psarbear.append(sar)
+            self.psarbear.append(self.psar_sar)
+            
+            # EP（極値）の更新
+            if current_low < self.psar_ep:
+                self.psar_ep = current_low
+                self.psar_af = min(self.psar_af + 0.02, max_af)
+            
+            # トレンド反転チェック
+            if current_high > self.psar_sar:
+                self.psar_trend = 'up'
+                self.psar_sar = self.psar_ep
+                self.psar_ep = current_high
+                self.psar_af = start_af
+            else:
+                # SAR更新
+                self.psar_sar = self.psar_sar - self.psar_af * (self.psar_sar - self.psar_ep)
+                self.psar_sar = max(self.psar_sar, current_high)
+                if len(ohlcv_data) >= 2:
+                    prev_high = ohlcv_data[-2].get('high_price', 0)
+                    self.psar_sar = max(self.psar_sar, prev_high)
         
         return

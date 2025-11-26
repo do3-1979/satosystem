@@ -215,7 +215,7 @@ class TradingStrategy:
         エグジット条件を評価し、ポジションをクローズするかどうかを決定します。
         
         Phase D条件:
-        1. ストップロス判定
+        1. ストップロス判定（リアルタイム+2h確認のハイブリッド）
         2. 時間ベースEXIT: 最大保持バー数超過で強制決済
         3. (オプション) 部分利確: 利益率・保持バー数条件を満たしたら部分決済
         """
@@ -225,6 +225,8 @@ class TradingStrategy:
         
         stop_price = self.risk_manager.get_stop_price()
         
+        # リアルタイムデータを使用（ストップロス判定の高速化）
+        current_price = self.price_data_management.get_ticker()
         price = self.price_data_management.get_latest_ohlcv()
         high_price = price['high_price']
         low_price = price['low_price']
@@ -265,16 +267,16 @@ class TradingStrategy:
                     return
 
         #-------------------------------------------------------
-        # 現在値とストップ値比較
+        # 現在値とストップ値比較（リアルタイム判定）
         #-------------------------------------------------------
-        # 2時間足ベースのストップ判定（高速化＆正確性向上）
-        # BUY: 2h足の安値 <= stop でストップ成立（スリッページ -0.5%）
-        # SELL: 2h足の高値 >= stop でストップ成立（スリッページ +0.5%）
+        # ストップロス判定: リアルタイム値（current_price）で判定
+        # BUY: current_price <= stop でストップ成立（スリッページ -0.5%）
+        # SELL: current_price >= stop でストップ成立（スリッページ +0.5%）
         executed_price = None
         if position_side == "BUY":
-            if low_price <= stop_price:
+            if current_price <= stop_price:
                 executed_price = stop_price * 0.995  # スリッページ考慮
-                self.logger.log(f"[条件判定:EXIT] 2h安値 {low_price:.2f} がストップ値 {stop_price:.2f} を割り込みました (実行価格 {executed_price:.2f})")
+                self.logger.log(f"[条件判定:EXIT] リアルタイム価格 {current_price:.2f} がストップ値 {stop_price:.2f} を割り込みました (実行価格 {executed_price:.2f})")
                 side = "SELL"
                 decision = "EXIT"
                 self.trade_decision["side"] = side
@@ -282,9 +284,9 @@ class TradingStrategy:
                 self.trade_decision["exec_price"] = executed_price
                 self._add_limit_logged = False
         elif position_side == "SELL":
-            if high_price >= stop_price:
+            if current_price >= stop_price:
                 executed_price = stop_price * 1.005  # スリッページ考慮
-                self.logger.log(f"[条件判定:EXIT] 2h高値 {high_price:.2f} がストップ値 {stop_price:.2f} を超過しました (実行価格 {executed_price:.2f})")
+                self.logger.log(f"[条件判定:EXIT] リアルタイム価格 {current_price:.2f} がストップ値 {stop_price:.2f} を超過しました (実行価格 {executed_price:.2f})")
                 side = "BUY"
                 decision = "EXIT"
                 self.trade_decision["side"] = side

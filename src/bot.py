@@ -816,8 +816,67 @@ if __name__ == "__main__":
     # bot class test flag
     bot_order_test = False
     
+    # APIキーを .api_key ファイルから読み込む（優先度高）
+    api_key = None
+    api_secret = None
+    api_key_files = ["src/.api_key", ".api_key"]
+    
+    for api_key_file in api_key_files:
+        if os.path.exists(api_key_file):
+            print(f"[INFO] Loading API keys from: {api_key_file}")
+            try:
+                with open(api_key_file, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith('api_key'):
+                            api_key = line.split('=', 1)[1].strip()
+                        elif line.startswith('api_secret'):
+                            api_secret = line.split('=', 1)[1].strip()
+                if api_key and api_secret:
+                    break
+            except Exception as e:
+                print(f"[WARN] Error reading {api_key_file}: {e}")
+    
+    # APIキーが見つからない場合は config.ini から読み込む
+    if not api_key or not api_secret:
+        api_key = Config.get_api_key()
+        api_secret = Config.get_api_secret()
+        
+        # テンプレート値の場合は警告
+        if api_key == "YOUR_API_KEY" or api_secret == "YOUR_API_SECRET":
+            print("[ERROR] API keys are not configured!")
+            print("[ERROR] Please create src/.api_key with API credentials")
+            exit(1)
+    else:
+        # .api_key から読み込めた場合は、Config クラスにも反映させる
+        # 一時的な config ファイルを作成して使用
+        import shutil
+        temp_config_path = os.path.join(".", "config_temp_bot.ini")
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        config_src = os.path.join(root_dir, 'src', 'config.ini')
+        
+        try:
+            shutil.copy(config_src, temp_config_path)
+            
+            # APIキーを注入
+            with open(temp_config_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            content = content.replace("YOUR_API_KEY", api_key)
+            content = content.replace("YOUR_API_SECRET", api_secret)
+            
+            with open(temp_config_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            
+            # Config を temp_config で読み込む
+            Config.set_config_file(temp_config_path)
+            Config.reload_config()
+            print("[INFO] Config reloaded with API keys from .api_key file")
+        except Exception as e:
+            print(f"[WARN] Failed to create temp config: {e}")
+    
     # 取引所クラスを初期化
-    exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
+    exchange = BybitExchange(api_key, api_secret)
 
     # 資産管理クラスを初期化
     portfolio = Portfolio()
