@@ -68,5 +68,26 @@ env/
 # エディタ設定
 .vscode/
 .idea/
+
+# ===== アーカイブ対象（コミット除外） =====
+# 不要なテストスクリプト・分析スクリプト
+src/test_*.py
+src/analyze_*.py
+src/demo_*.py
+test_*.py
+
+# 古い四半期テストスクリプト
+quarterly_backtest_scheduler.py
+quarterly_backtest_2024_2025.py
+
+# 出力ディレクトリ（動的生成）
 output_configs/
 work_reports/
+_archive/
+_archive_scripts/
+
+# 実行結果・キャッシュ
+*.pyc
+.pytest_cache/
+__pycache__/
+_archive_old_scripts/
