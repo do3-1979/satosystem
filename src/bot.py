@@ -403,23 +403,6 @@ class Bot:
                                         self.logger.log(f"レポート出力 (Markdown): {report_md}")
                                     except Exception as re:
                                         self.logger.log_error(f"レポート出力失敗: {re}")
-                                    # インタラクティブ可視化を自動生成
-                                    try:
-                                        # Config を明示的にリロード（キャッシュクリア）
-                                        Config.reload_config()
-                                        vis = Visualizer()
-                                        viz_html = os.path.join(report_dir, f"backtest_visualization_{ts}.html")
-                                        vis.visualize_backtest(
-                                            log_directory="logs",
-                                            output_html=viz_html,
-                                            start_time=Config.get_start_time(),
-                                            end_time=Config.get_end_time()
-                                        )
-                                        self.logger.log(f"インタラクティブ可視化出力: {viz_html}")
-                                    except Exception as ve:
-                                        import traceback
-                                        self.logger.log_error(f"可視化出力失敗: {ve}")
-                                        self.logger.log_error(f"詳細: {traceback.format_exc()}")
                                 else:
                                     self.logger.log("[高速サマリモード] Markdown レポート・可視化をスキップ")
                         except Exception as e:
@@ -428,8 +411,24 @@ class Bot:
                         # ログファイルをクローズ（ZIP圧縮含む）
                         self.logger.close_log_file()
                         
-                        # fast_summary_mode チェック（Excel・CSV出力用）
-                        fast_summary_mode = config_instance.get_fast_summary_mode()
+                        # ログ圧縮後に可視化を生成（新しいZIPファイルを確実に読み込むため）
+                        if fast_summary_mode == 0:
+                            try:
+                                # Config を明示的にリロード（キャッシュクリア）
+                                Config.reload_config()
+                                vis = Visualizer()
+                                viz_html = os.path.join(report_dir, f"backtest_visualization_{ts}.html")
+                                vis.visualize_backtest(
+                                    log_directory="logs",
+                                    output_html=viz_html,
+                                    start_time=Config.get_start_time(),
+                                    end_time=Config.get_end_time()
+                                )
+                                self.logger.log(f"インタラクティブ可視化出力: {viz_html}")
+                            except Exception as ve:
+                                import traceback
+                                self.logger.log_error(f"可視化出力失敗: {ve}")
+                                self.logger.log_error(f"詳細: {traceback.format_exc()}")
                         
                         # 高速モード時とExcel出力無効時はExcel・CSV出力をスキップ
                         enable_excel = config_instance.get_enable_excel_export()
