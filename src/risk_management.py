@@ -340,27 +340,37 @@ class RiskManagement:
                 tmp_stop_price = position_price - self.stop_offset
                 self.stop_price = max(tmp_stop_price, prev_stop_price)
                 # PSAR が有効なら使用
+                psar_applied = False
                 try:
                     psar_val = self.psarbear
                     if isinstance(psar_val, (list, pd.Series)):
                         psar_val = psar_val.iloc[0] if isinstance(psar_val, pd.Series) else psar_val[0]
                     if psar_val is not None and psar_val != 0 and psar_val == psar_val:  # NaN check
                         self.stop_price = float(psar_val)
+                        psar_applied = True
                 except:
                     pass
-            if side == "SELL":
+                # PSAR計算がスキップされた場合は stop_offset ベースの値を使用
+                if not psar_applied and (self.stop_price == 0 or self.stop_price != self.stop_price):  # NaN check
+                    self.stop_price = tmp_stop_price
+            elif side == "SELL":
                 # ストップ値再計算
                 tmp_stop_price = position_price + self.stop_offset
                 self.stop_price = min(tmp_stop_price, prev_stop_price)
                 # PSAR が有効なら使用
+                psar_applied = False
                 try:
                     psar_val = self.psarbull
                     if isinstance(psar_val, (list, pd.Series)):
                         psar_val = psar_val.iloc[0] if isinstance(psar_val, pd.Series) else psar_val[0]
                     if psar_val is not None and psar_val != 0 and psar_val == psar_val:  # NaN check
                         self.stop_price = float(psar_val)
+                        psar_applied = True
                 except:
                     pass
+                # PSAR計算がスキップされた場合は stop_offset ベースの値を使用
+                if not psar_applied and (self.stop_price == 0 or self.stop_price != self.stop_price):  # NaN check
+                    self.stop_price = tmp_stop_price
         else:
             self.psar_stop_offset = 0
             self.price_surge_stop_offset = 0
