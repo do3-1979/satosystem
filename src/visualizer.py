@@ -104,9 +104,15 @@ class Visualizer:
 
         # 既に2時間以上の粒度ならそのままOHLC扱い
         if median_delta >= timedelta(hours=2) and {'open_price','high_price','low_price','close_price'}.issubset(df.columns):
-            return df[['real_time_dt','open_price','high_price','low_price','close_price']].copy()
+            # 重複を削除してから返す
+            result = df[['real_time_dt','open_price','high_price','low_price','close_price']].copy()
+            result = result.drop_duplicates(subset=['real_time_dt'], keep='first')
+            result = result.sort_values('real_time_dt').reset_index(drop=True)
+            return result
 
-        df_candle = df.set_index('real_time_dt')
+        # 重複を削除してからリサンプリング
+        df_unique = df.drop_duplicates(subset=['real_time_dt'], keep='first').copy()
+        df_candle = df_unique.set_index('real_time_dt')
         ohlc_dict = {
             'open_price': 'first',
             'high_price': 'max',
