@@ -1,46 +1,74 @@
 # アクションリスト
 
-**最終更新**: 2025-11-25  
+**最終更新**: 2025-11-26 23:30 UTC  
 **担当**: 開発チーム  
 **優先度**: 高(H) / 中(M) / 低(L)  
-**ステータス**: Phase 2 & Phase 3 実装完了、本番導入可能
+**ステータス**: P0完了 → Task 17完了 → Task 18実施準備完了
 
 ---
 
-## 📌 ドキュメント管理ルール（必読）
+## 🗂️ プロジェクト構成（2025-11-26 整理完了）
 
-### 管理対象ドキュメント（永続保管）
+### ✅ 永続管理対象（git 追跡）
 
-以下の 4ファイルのみが `/docs/` に保管されます：
+#### ドキュメント（docs/）
+```
+docs/
+├── ACTION_LIST.md          ← このファイル（タスク管理）
+├── ARCHITECTURE_OVERVIEW.md ← システムアーキテクチャ全体
+├── TRADING_STRATEGY_PLAN.md ← 戦略方針・改善案
+└── README.md               ← プロジェクト概要
+```
 
-1. **TRADING_STRATEGY_PLAN.md** - 戦略方針・改善案
-2. **ARCHITECTURE_OVERVIEW.md** - システムアーキテクチャ全体
-3. **ACTION_LIST.md** - このファイル（タスク管理）
-4. **README.md** - プロジェクト概要
+**ルール**: 上記 4ファイル以外の .md を docs/ に新規作成しない
 
-### 一時ドキュメント管理ルール
+#### スクリプト（実用版）
+```
+ルートレベル:
+├── run_quarterly_backtest_simple.py - 四半期別バックテスト監視（Task 19用）
 
-- **新規生成の禁止**: 上記4ファイル以外の `.md` ファイルを `/docs/` に作成しない
-- **一時的な分析・レポート**: `/work_reports/YYYY-MM-DD/` ディレクトリに出力
-- **work_reports ディレクトリ構造**: 日付ごとに整理
-  ```
-  work_reports/
-  ├── 2025-11-26/
-  │   ├── LIVE_BOT_VALIDATION_20251126.md
-  │   └── LIVE_BOT_FIX_RESULTS_20251126.md
-  ├── 2025-11-25/
-  │   └── （その日のレポート）
-  ```
+src/:
+├── bot.py                  - メインバックテストロジック
+├── backtest.py             - バックテスト実行エンジン
+├── trading_strategy.py     - トレード戦略判定
+├── config.py / config_manager.py - 設定管理
+├── path_utils.py           - パス統一化
+├── environment_auto_judge.py - Task 7: 環境自動判定
+├── dynamic_threshold_learning.py - Task 10: 動的基準学習
+└── realtime_performance_monitor.py - Task 11: リアルタイム監視
+```
 
-### 加筆修正ルール
+### ⛔ アーカイブ対象（git 除外）
 
-新しい情報・発見は **必ず既存ドキュメントに加筆修正** する：
+#### スクリプト（古いバージョン）
+```
+_archive_old_scripts/
+├── quarterly_backtest_2024_2025.py（ストップレンジ比較用 - 不要）
+├── quarterly_backtest_scheduler.py（初期版 - 置き換え済み）
+├── test_*.py               （分析スクリプト × 3個）
+├── analyze_*.py            （分析スクリプト × 1個）
+├── run_*.sh                （古い shell スクリプト × 8個）
+└── メモ・ドキュメント × 5個
+```
 
-- **Issue・課題発見** → ARCHITECTURE_OVERVIEW.md の「Issues」セクションに追加
-- **戦略改善案** → TRADING_STRATEGY_PLAN.md の「改善案」セクションに追加
-- **タスク・進捗** → ACTION_LIST.md（このファイル）に追加
+#### ドキュメント（docs 配下）
+```
+docs/_archive/             （旧分析ドキュメント × 17ファイル）
+docs/analysis/             （その他分析資料 × 7ファイル）
+```
+
+#### 動的生成（実行時出力）
+```
+output_configs/            （四半期別 config - 自動生成）
+work_reports/              （日付別レポート - 自動生成）
+_archive/                  （その他アーカイブ - 自動生成）
+logs/                      （実行ログ - 自動生成）
+report/                    （バックテストレポート - 自動生成）
+```
 
 ---
+
+
 
 ## 📊 現在のステータス (2025-11-26更新)
 
