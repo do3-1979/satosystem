@@ -141,13 +141,10 @@ class Logger:
             self.current_log_file = None
             self.current_log_filepath = None
             
-            # バックテストモードの場合は自動ZIP圧縮（このセッションのJSONのみ）
-            try:
-                config = Config()
-                if config.get_back_test_mode() == 1 and os.path.exists(log_filepath):
-                    self.compress_single_log(log_filepath)
-            except Exception as e:
-                self.logger.error(f"ログ圧縮失敗: {e}")
+            # バックテストモードの場合は自動ZIP圧縮
+            # NOTE: bot.py側で compress_log_with_period を呼び出し、期間情報をファイル名に含める
+            # ここでは何もしない（compress_log_with_period で処理される）
+            pass
 
     def log_trade_data(self, trade_data):
         if self.current_log_file:
@@ -175,7 +172,87 @@ class Logger:
         except Exception as e:
             self.logger.error(f"ログファイル圧縮エラー ({log_filepath}): {e}")
     
-    def compress_logs(self):
+    def compress_log_with_period(self, start_time=None, end_time=None):
+        """
+        ログファイルをZIP圧縮（期間情報をファイル名に含める）
+        
+        ファイル名形式: YYYYMMDD_HHMMSS-YYYYMMDD_HHMMSS-YYYYMMDD_HHMMSS.zip
+        （作成時刻-期間開始-期間終了）
+        
+        Args:
+            start_time (str): バックテスト開始時刻 (format: "YYYY/MM/DD HH:MM")
+            end_time (str): バックテスト終了時刻 (format: "YYYY/MM/DD HH:MM")
+        """
+        # 最後に作成/閉じられたJSONファイルを取得
+        # NOTE: close_log_file()の後に呼ばれるため、current_log_fileはNone
+        # current_log_fileパスは保存していないので、ファイルを探す必要がある
+        # または、close_log_fileで保存する
+        
+        # 簡潔な方法: current_log_filepath を使用（既に設定済みのはず）
+        # ただし、close_log_file()で None に設定されている場合がある
+        
+        # bot.py側で呼ばれるため、最新のJSONファイルを探して圧縮
+        import glob
+        
+        # logs ディレクトリから最新のJSONファイルを探す
+        json_files = glob.glob(os.path.join(self.log_directory, '*.json'))
+        if not json_files:
+            self.logger.warning("圧縮対象のJSONファイルが見つかりません")
+            return
+        
+        # 最新ファイルを取得
+        json_files.sort()
+        log_filepath = json_files[-1]
+        
+        # ファイル名に期間情報を含める
+        if start_time and end_time:
+            # 形式: YYYYMMDDHHMMSS-YYYYMMDD_HHMM-YYYYMMDD_HHMM.zip
+            base_name = os.path.basename(log_filepath).replace('.json', '')
+            
+            # 期間を形式化: "2025/01/01 00:00" または "2025/1/01 0:00" → "20250101_0000"
+            # ゼロパディングを追加して正規化
+            from datetime import datetime
+            try:
+                # フォーマット: "YYYY/M/DD H:MM" または "YYYY/MM/DD HH:MM"
+                # datetimeで解析して正規化
+                start_dt = datetime.strptime(start_time, "%Y/%m/%d %H:%M")
+                end_dt = datetime.strptime(end_time, "%Y/%m/%d %H:%M")
+                
+                start_fmt = start_dt.strftime("%Y%m%d_%H%M")  # YYYYMMDD_HHMM
+                end_fmt = end_dt.strftime("%Y%m%d_%H%M")      # YYYYMMDD_HHMM
+            except ValueError:
+                # フォーマットが異なる場合の代替処理
+                start_parts = start_time.replace('/', '').replace(' ', '').replace(':', '')
+                end_parts = end_time.replace('/', '').replace(' ', '').replace(':', '')
+                start_fmt = f"{start_parts[:8]}_{start_parts[8:12]}"
+                end_fmt = f"{end_parts[:8]}_{end_parts[8:12]}"
+            
+            zip_filename = f"{base_name}-{start_fmt}-{end_fmt}.zip"
+        else:
+            # デフォルト（期間情報なし）
+            zip_filename = os.path.basename(log_filepath).replace('.json', '.zip')
+        
+        zip_filepath = os.path.join(self.log_directory, zip_filename)
+        
+        # 既にZIPが存在する場合はスキップ
+        if os.path.exists(zip_filepath):
+            self.logger.info(f"ZIPファイルは既に存在します: {zip_filename}")
+            # JSONを削除してもよい
+            try:
+                os.remove(log_filepath)
+            except:
+                pass
+            return
+        
+        try:
+            with zipfile.ZipFile(zip_filepath, "w", zipfile.ZIP_DEFLATED) as log_zip:
+                log_zip.write(log_filepath, os.path.basename(log_filepath))
+            os.remove(log_filepath)
+            self.logger.info(f"ログファイル圧縮完了: {zip_filename}")
+        except Exception as e:
+            self.logger.error(f"ログファイル圧縮エラー: {e}")
+    
+    def compress_log(self):
         """全JSONログファイルを一括ZIP圧縮（手動実行用、非推奨）"""
         current_time = datetime.now()
         log_count = 0  # 圧縮済みログファイルのカウント
