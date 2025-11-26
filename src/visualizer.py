@@ -250,21 +250,41 @@ class Visualizer:
             )
         
         # ストップ価格 (ポジション保有時のみ表示)
-        df_with_position = pd.DataFrame()
-        if 'position_quantity' in df.columns and 'stop_price' in df.columns:
-            df_with_position = df[(df['position_quantity'] > 0) & (df['stop_price'] > 0)].copy()
+        # stop_price が 0 の場合は PSAR から推定、またはエントリー価格から計算
+        df_with_position = df[df['position_quantity'] > 0].copy()
+        
         if not df_with_position.empty:
-            fig.add_trace(
-                go.Scatter(
-                    x=df_with_position['real_time_dt'],
-                    y=df_with_position['stop_price'],
-                    mode='lines',
-                    name="損切値 (Stop)",
-                    line=dict(color='purple', width=1, dash='dot'),
-                    visible=True
-                ),
-                row=1, col=1
-            )
+            # stop_price が 0 の場合、PSAR または推定値を使用
+            df_with_position['display_stop'] = df_with_position['stop_price'].copy()
+            
+            # stop_price が 0 で PSAR がある場合は PSAR を使用
+            zero_stop_mask = df_with_position['display_stop'] == 0
+            if 'psar' in df_with_position.columns:
+                df_with_position.loc[zero_stop_mask, 'display_stop'] = df_with_position.loc[zero_stop_mask, 'psar']
+            
+            # それでも 0 の場合は、エントリー価格から stop_offset で計算
+            still_zero = (df_with_position['display_stop'] == 0) & ('position_price' in df_with_position.columns)
+            if still_zero.any() and 'stop_offset' in df_with_position.columns:
+                df_with_position.loc[still_zero, 'display_stop'] = (
+                    df_with_position.loc[still_zero, 'position_price'] - 
+                    df_with_position.loc[still_zero, 'stop_offset']
+                )
+            
+            # display_stop が 0 より大きいレコードのみを表示
+            df_stop_display = df_with_position[df_with_position['display_stop'] > 0]
+            
+            if not df_stop_display.empty:
+                fig.add_trace(
+                    go.Scatter(
+                        x=df_stop_display['real_time_dt'],
+                        y=df_stop_display['display_stop'],
+                        mode='lines',
+                        name="損切値 (Stop)",
+                        line=dict(color='orangered', width=2, dash='dot'),
+                        visible=True
+                    ),
+                    row=1, col=1
+                )
         
         # ポジション開始・終了マーカー
         df_trades = pd.DataFrame()
