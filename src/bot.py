@@ -525,9 +525,38 @@ class Bot:
                     elif trade_decision.get("decision") == "EXIT":
                         self.events.emit(EventType.EXIT_SIGNAL, trade_decision)
                 t_strategy_end = perf_counter(); self.perf.record('strategy', t_strategy_start, t_strategy_end)
-                # --------------------------------------------
+                
+                # ====================================================
+                # ストップロス判定（戦略シグナルより優先）
+                # ====================================================
+                # ポジションがある場合、ストップロス判定を実施
+                position = self.portfolio.get_position_quantity()
+                if position['quantity'] > 0 and position['side'] != 'NONE':
+                    current_price = self.price_data_management.get_ticker()
+                    stop_price = self.risk_management.get_stop_price()
+                    side = position['side']
+                    
+                    stop_hit = False
+                    if side == "BUY" and current_price <= stop_price:
+                        stop_hit = True
+                        self.logger.log(f"[STOP LOSS HIT - BUY] Price={current_price:.2f} <= Stop={stop_price:.2f}")
+                    elif side == "SELL" and current_price >= stop_price:
+                        stop_hit = True
+                        self.logger.log(f"[STOP LOSS HIT - SELL] Price={current_price:.2f} >= Stop={stop_price:.2f}")
+                    
+                    if stop_hit:
+                        # ストップロス発動時は EXIT を強制
+                        trade_decision = {
+                            "decision": "EXIT",
+                            "side": "SELL" if side == "BUY" else "BUY",
+                            "order_type": "market",
+                            "reason": "stop_loss"
+                        }
+                        self.logger.log(f"[EXIT DECISION] Triggered by stop loss: {position['side']} position closed")
+                
+                # ====================================================
                 # 取引決定の場合
-                # --------------------------------------------
+                # ====================================================
                 if trade_decision["decision"] != 'NONE' and trade_executed == False:
                     t_order_start = perf_counter()
                     # --------------------------------------------
