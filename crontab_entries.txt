@@ -1,0 +1,15 @@
+# Task 18: Phase 3 スケジューラ統合 - cron エントリー
+# 作成日: 2025-11-26
+# 目的: Task 7/10/11 の定期実行自動化
+
+# Task 11: 毎日 00:00 UTC で realtime_performance_monitor.py を実行
+# 用途: 日次パフォーマンス監視（PnL/勝率/Sharpe比 等）
+0 0 * * * cd /home/satoshi/work/satosystem && python3 src/realtime_performance_monitor.py >> logs/task11.log 2>&1
+
+# Task 7: 毎週月曜日 00:00 UTC で environment_auto_judge.py を実行
+# 用途: 過去30日のレジーム分析 → Phase 2 適用判定の自動化
+0 0 * * 1 cd /home/satoshi/work/satosystem && python3 src/environment_auto_judge.py >> logs/task7.log 2>&1
+
+# Task 10: 毎月1日 00:00 UTC で dynamic_threshold_learning.py を実行
+# 用途: 過去30日のデータから最適閾値を動的に学習
+0 0 1 * * cd /home/satoshi/work/satosystem && python3 src/dynamic_threshold_learning.py >> logs/task10.log 2>&1

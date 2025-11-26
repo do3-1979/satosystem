@@ -1,8 +1,9 @@
 #ログファイル
 *.log
 
-#テキストファイル
+#テキストファイル（ただし crontab_entries.txt は除外）
 *.txt
+!crontab_entries.txt
 
 #pngファイル
 *.png
