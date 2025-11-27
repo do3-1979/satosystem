@@ -293,8 +293,15 @@ class PriceDataManagement:
                 if current_price == 0:
                     current_price = last_ohlcv_data['close_price'] if last_ohlcv_data['close_price'] != 0 else last_ohlcv_data['open_price']
                 
+                # 初期化時のDonchian計算では、直近のレコードのみを使用（全データ使用を回避）
+                # Donchian計算は内部で-donchian_buy_term:スライシングするが、初期化時は
+                # 十分な過去データがあるため、適度にlimitする
+                max_initial_records = 200  # 初期化時の最大履歴レコード数（≒20期間*10倍のマージン）
+                ohlcv_data_limited = ohlcv_data[-max_initial_records:] if len(ohlcv_data) > max_initial_records else ohlcv_data
+                
                 # Donchian計算
-                dc, high, low = self.__evaluate_donchian(ohlcv_data, current_price)
+                dc, high, low = self.__evaluate_donchian(ohlcv_data_limited, current_price)
+                self.logger.log(f"[初期化シグナル] Donchian: signal={dc}, high={high:.0f}, low={low:.0f}, current_price={current_price:.0f}, data_count={len(ohlcv_data_limited)}")
                 if dc == 'BUY':
                     self.signals['donchian']['signal'] = True
                     self.signals['donchian']['side'] = 'BUY'
@@ -308,8 +315,9 @@ class PriceDataManagement:
                 self.signals['donchian']['info']['lowest'] = low
                 
                 # PSAR初期計算（戻り値なし、内部状態を更新）
+                # PSARも同じく初期化時は十分な履歴のみを使用
                 indicator_service = self.indicator_service
-                indicator_service.calculate_parabolic_sar(ohlcv_data)
+                indicator_service.calculate_parabolic_sar(ohlcv_data_limited)
                 # indicator_service内部で psar, psarbull, psarbear が計算済み
                 
                 return False
@@ -380,7 +388,11 @@ class PriceDataManagement:
 
         # donchianシグナル演算
         ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
-        dc, high, low = self.__evaluate_donchian(ohlcv_data, self.ticker)
+        # Donchian計算時には、十分な履歴（最近20期間より少し多い程度）を使用して計算
+        # 全データを使うと、バックテスト開始時の古い値により計算がゆがむ
+        donchian_period = max(Config.get_donchian_buy_term(), Config.get_donchian_sell_term()) * 2
+        ohlcv_data_for_dc = ohlcv_data[-donchian_period:] if len(ohlcv_data) > donchian_period else ohlcv_data
+        dc, high, low = self.__evaluate_donchian(ohlcv_data_for_dc, self.ticker)
         
         if dc == 'BUY':
             self.signals['donchian']['signal'] = True
