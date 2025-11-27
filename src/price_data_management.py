@@ -287,6 +287,31 @@ class PriceDataManagement:
                 tmp_ohlcv_data_psar = self.get_back_test_ohlcv_data_by_time_frame(self.psar_time_frame)
                 self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data_psar, self.psar_time_frame)
                 
+                # 初回シグナル計算（初期 Donchian/PSAR を計算）
+                ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
+                current_price = last_ohlcv_data['close_price']
+                if current_price == 0:
+                    current_price = last_ohlcv_data['close_price'] if last_ohlcv_data['close_price'] != 0 else last_ohlcv_data['open_price']
+                
+                # Donchian計算
+                dc, high, low = self.__evaluate_donchian(ohlcv_data, current_price)
+                if dc == 'BUY':
+                    self.signals['donchian']['signal'] = True
+                    self.signals['donchian']['side'] = 'BUY'
+                elif dc == 'SELL':
+                    self.signals['donchian']['signal'] = True
+                    self.signals['donchian']['side'] = 'SELL'
+                else:
+                    self.signals['donchian']['signal'] = False
+                    self.signals['donchian']['side'] = 'None'
+                self.signals['donchian']['info']['highest'] = high
+                self.signals['donchian']['info']['lowest'] = low
+                
+                # PSAR初期計算
+                indicator_service = self.indicator_service
+                psar_val, psarbull_val, psarbear_val = indicator_service.calculate_parabolic_sar(ohlcv_data)
+                # 初期化時は PSAR も計算されるため、後続処理で使用可能
+                
                 return False
             else:
                 # 本番モード: サーバから取得

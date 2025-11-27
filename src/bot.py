@@ -777,6 +777,25 @@ class Bot:
                     trade_data['psarbull'] = psarbull_val
                     trade_data['psarbear'] = psarbear_val
                     
+                    # 取引詳細情報の追加
+                    trade_data['entry_price'] = None  # ENTRY時のエントリー価格
+                    trade_data['avg_entry_price'] = None  # ADD を含めた平均購入価格
+                    trade_data['exit_price'] = None  # EXIT時の清算価格
+                    
+                    # ENTRY/ADD/EXIT アクション情報から詳細を取得
+                    if 'action_name' in trade_data:
+                        if trade_data['action_name'] == 'ENTRY':
+                            trade_data['entry_price'] = price
+                            trade_data['avg_entry_price'] = price
+                        elif trade_data['action_name'] == 'ADD':
+                            # 平均購入価格を更新（保有中の場合）
+                            if quantity > 0 and self.portfolio.get_position_price() > 0:
+                                trade_data['avg_entry_price'] = self.portfolio.get_position_price()
+                            trade_data['entry_price'] = price  # ADD時の追加価格
+                        elif trade_data['action_name'] == 'EXIT':
+                            trade_data['exit_price'] = price
+                            trade_data['avg_entry_price'] = self.portfolio.get_position_price()
+                    
                     # ポジション保有中の場合、PSAR値をストップとして記録
                     if quantity > 0:
                         if side == "BUY" and psarbear_val is not None and psarbear_val != 0:

@@ -531,13 +531,28 @@ class Visualizer:
             
             df_entry = df_trades[df_trades[action_col] == 'ENTRY']
             if not df_entry.empty:
+                # テキスト情報の準備
+                entry_texts = df_entry.apply(
+                    lambda row: f"ENTRY<br>Price: {row['close_price']:.2f}", 
+                    axis=1
+                )
+                # ホバー情報の準備
+                entry_hover = df_entry.apply(
+                    lambda row: f"<b>ENTRY</b><br>時刻: {row.get('real_time_dt', '')}<br>価格: {row['close_price']:.2f}<br>エントリー価格: {row.get('entry_price', 'N/A')}", 
+                    axis=1
+                )
                 fig.add_trace(
                     go.Scatter(
                         x=df_entry['real_time_dt'],
                         y=df_entry['close_price'],
-                        mode='markers',
+                        mode='markers+text',
                         name="ENTRY",
-                        marker=dict(color='lime', size=10, symbol='triangle-up'),
+                        text=entry_texts,
+                        hovertext=entry_hover,
+                        hoverinfo='text',
+                        textposition='top center',
+                        marker=dict(color='lime', size=14, symbol='triangle-up', line=dict(color='darkgreen', width=2)),
+                        textfont=dict(size=10, color='darkgreen'),
                         visible=True
                     ),
                     row=1, col=1
@@ -546,13 +561,27 @@ class Visualizer:
             # ADD
             df_add = df_trades[df_trades[action_col] == 'ADD']
             if not df_add.empty:
+                add_texts = df_add.apply(
+                    lambda row: f"ADD<br>Price: {row['close_price']:.2f}", 
+                    axis=1
+                )
+                # ホバー情報の準備
+                add_hover = df_add.apply(
+                    lambda row: f"<b>ADD</b><br>時刻: {row.get('real_time_dt', '')}<br>追加価格: {row['close_price']:.2f}<br>平均購入価格: {row.get('avg_entry_price', 'N/A')}", 
+                    axis=1
+                )
                 fig.add_trace(
                     go.Scatter(
                         x=df_add['real_time_dt'],
                         y=df_add['close_price'],
-                        mode='markers',
+                        mode='markers+text',
                         name="ADD",
-                        marker=dict(color='yellow', size=8, symbol='circle'),
+                        text=add_texts,
+                        hovertext=add_hover,
+                        hoverinfo='text',
+                        textposition='top center',
+                        marker=dict(color='yellow', size=12, symbol='circle', line=dict(color='orange', width=2)),
+                        textfont=dict(size=9, color='orange'),
                         visible=True
                     ),
                     row=1, col=1
@@ -561,13 +590,27 @@ class Visualizer:
             # EXIT
             df_exit = df_trades[df_trades[action_col] == 'EXIT']
             if not df_exit.empty:
+                exit_texts = df_exit.apply(
+                    lambda row: f"EXIT<br>Price: {row['close_price']:.2f}", 
+                    axis=1
+                )
+                # ホバー情報の準備
+                exit_hover = df_exit.apply(
+                    lambda row: f"<b>EXIT</b><br>時刻: {row.get('real_time_dt', '')}<br>清算価格: {row['close_price']:.2f}<br>平均購入価格: {row.get('avg_entry_price', 'N/A')}", 
+                    axis=1
+                )
                 fig.add_trace(
                     go.Scatter(
                         x=df_exit['real_time_dt'],
                         y=df_exit['close_price'],
-                        mode='markers',
+                        mode='markers+text',
                         name="EXIT",
-                        marker=dict(color='red', size=10, symbol='triangle-down'),
+                        text=exit_texts,
+                        hovertext=exit_hover,
+                        hoverinfo='text',
+                        textposition='bottom center',
+                        marker=dict(color='red', size=14, symbol='triangle-down', line=dict(color='darkred', width=2)),
+                        textfont=dict(size=10, color='darkred'),
                         visible=True
                     ),
                     row=1, col=1
