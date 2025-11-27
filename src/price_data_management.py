@@ -307,10 +307,10 @@ class PriceDataManagement:
                 self.signals['donchian']['info']['highest'] = high
                 self.signals['donchian']['info']['lowest'] = low
                 
-                # PSAR初期計算
+                # PSAR初期計算（戻り値なし、内部状態を更新）
                 indicator_service = self.indicator_service
-                psar_val, psarbull_val, psarbear_val = indicator_service.calculate_parabolic_sar(ohlcv_data)
-                # 初期化時は PSAR も計算されるため、後続処理で使用可能
+                indicator_service.calculate_parabolic_sar(ohlcv_data)
+                # indicator_service内部で psar, psarbull, psarbear が計算済み
                 
                 return False
             else:
