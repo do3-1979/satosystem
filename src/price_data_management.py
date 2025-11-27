@@ -277,15 +277,22 @@ class PriceDataManagement:
                 self.prev_close_time = last_ohlcv_data['close_time']
                 
                 # 初回のみ初期化
-                self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data, self.time_frame)
+                # IMPORTANT: バックテスト初期化時は全データではなく、最新データのみをメモリに保持
+                # 理由: 毎バーのDonchian計算で古い極値が含まれることを回避
+                # 具体的には: 過去最高値 108797 のような古い極値がDonchian計算に含まれてしまう
+                # → 最新の20期間のみを初期状態として保持
+                lookback_periods = max(Config.get_donchian_buy_term(), Config.get_donchian_sell_term()) * 2
+                tmp_ohlcv_data_limited = tmp_ohlcv_data[-lookback_periods:] if len(tmp_ohlcv_data) > lookback_periods else tmp_ohlcv_data
+                self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data_limited, self.time_frame)
                 self.volatility = self.calcurate_volatility(tmp_ohlcv_data)
                 self.latest_ohlcv_data = []
                 latest_ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
                 self.latest_ohlcv_data.append(latest_ohlcv_data[-1])
                 
-                # PSAR用データも同様
+                # PSAR用データも同様に制限
                 tmp_ohlcv_data_psar = self.get_back_test_ohlcv_data_by_time_frame(self.psar_time_frame)
-                self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data_psar, self.psar_time_frame)
+                tmp_ohlcv_data_psar_limited = tmp_ohlcv_data_psar[-lookback_periods:] if len(tmp_ohlcv_data_psar) > lookback_periods else tmp_ohlcv_data_psar
+                self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data_psar_limited, self.psar_time_frame)
                 
                 # 初回シグナル計算（初期 Donchian/PSAR を計算）
                 ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
