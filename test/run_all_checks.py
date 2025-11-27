@@ -23,6 +23,8 @@ class AllChecksRunner:
     def __init__(self):
         self.repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.test_dir = os.path.join(self.repo_root, 'test')
+        self.config_ini_path = os.path.join(self.repo_root, 'src', 'config.ini')
+        self.config_ini_hash_before = self._get_file_hash(self.config_ini_path)
         self.results = {
             'timestamp': datetime.now().isoformat(),
             'checks': {},
@@ -32,6 +34,18 @@ class AllChecksRunner:
                 'failed': 0,
             }
         }
+
+    def _get_file_hash(self, file_path):
+        """ファイルのハッシュ値を取得（変更検知用）"""
+        if not os.path.exists(file_path):
+            return None
+        
+        try:
+            import hashlib
+            with open(file_path, 'rb') as f:
+                return hashlib.md5(f.read()).hexdigest()
+        except Exception:
+            return None
 
     def run_pytest(self):
         """pytest によるユニットテスト実行"""
@@ -170,6 +184,36 @@ class AllChecksRunner:
             self.results['summary']['failed'] += 1
             self.results['summary']['total'] += 1
 
+    def check_config_integrity(self):
+        """config.ini が変更されていないか確認"""
+        print("\n" + "=" * 70)
+        print("4️⃣  ファイル整合性チェック (config.ini)")
+        print("=" * 70)
+
+        config_ini_hash_after = self._get_file_hash(self.config_ini_path)
+
+        if self.config_ini_hash_before is None:
+            print("⚠️  config.ini が見つかりません（スキップ）")
+            self.results['checks']['config_integrity'] = 'SKIP'
+            return True
+
+        if self.config_ini_hash_before == config_ini_hash_after:
+            print("✅ config.ini: 変更なし")
+            self.results['checks']['config_integrity'] = 'PASS'
+            self.results['summary']['passed'] += 1
+        else:
+            print("❌ config.ini: テスト実行中に変更されました")
+            print(f"   ⚠️  警告: テストスクリプトが config.ini を修正しようとしました")
+            print(f"   🔧 修正対象のテストスクリプトを確認してください")
+            print(f"      - test/run_all_checks.py")
+            print(f"      - test/sample_test_runner.py")
+            print(f"      - test/security_check.py")
+            self.results['checks']['config_integrity'] = 'FAIL'
+            self.results['summary']['failed'] += 1
+
+        self.results['summary']['total'] += 1
+        return self.config_ini_hash_before == config_ini_hash_after
+
     def generate_final_report(self):
         """最終レポート生成"""
         print("\n" + "=" * 70)
@@ -188,7 +232,7 @@ class AllChecksRunner:
 
         print(f"\n📝 詳細:")
         for check, result in self.results['checks'].items():
-            symbol = '✅' if result == 'PASS' else '❌' if result == 'FAIL' else '⏱️ '
+            symbol = '✅' if result == 'PASS' else '❌' if result == 'FAIL' else ('⏱️ ' if result == 'TIMEOUT' else '⊘ ')
             print(f"  {symbol} {check}: {result}")
 
         # レポートをファイルに保存（日付ディレクトリに保存）
@@ -217,6 +261,7 @@ class AllChecksRunner:
         # 最終判定
         if summary['failed'] == 0:
             print("\n✅ すべてのテスト・チェックに合格しました！")
+            print("✅ プロジェクトファイル（config.ini）の整合性も確認されました。")
             print("🚀 コミット・プッシュの準備ができています。")
             return True
         else:
@@ -229,10 +274,14 @@ class AllChecksRunner:
         print("\n" + "#" * 70)
         print("# 🧪 全テスト・チェック一括実行")
         print("#" * 70)
+        print("\n⚠️  注意: このスクリプトはチェック・判定のみを行い、修正は行いません")
+        print("   問題が見つかった場合は、出力に従ってユーザが手動で修正してください")
+        print("   テスト実行中に config.ini を含むプロジェクトファイルは変更しません\n")
 
         self.run_pytest()
         self.run_security_check()
         self.run_sample_tests()
+        self.check_config_integrity()
 
         return self.generate_final_report()
 

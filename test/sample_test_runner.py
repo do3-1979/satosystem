@@ -28,23 +28,25 @@ class SampleTestRunner:
         sys.path.insert(0, self.src_dir)
 
     def test_config_loading(self):
-        """Config の読み込みテスト"""
+        """Config の読み込みテスト（読み取り専用）"""
         print("\n📋 Config 読み込みテスト...")
         try:
             from config import Config
             
-            # 主要なパラメータを取得（クラスメソッドで呼び出し）
+            # Config は読み取り専用のみ、変更は行わない
             test_values = {
-                'api_key_exists': Config.get_api_key() is not None,
                 'market_pair': Config.get_market_unit_pair(),
                 'leverage': Config.get_leverage(),
+                'time_frame': Config.get_time_frame(),
+                'start_time': Config.get_start_time(),
+                'end_time': Config.get_end_time(),
             }
             
             self.test_results['config_load_test'] = {
                 'status': 'PASS',
                 'values': test_values
             }
-            print("  ✅ Config 読み込み成功")
+            print("  ✅ Config 読み込み成功（読み取り専用）")
             return True
         except Exception as e:
             self.test_results['config_load_test'] = {
@@ -166,6 +168,131 @@ class SampleTestRunner:
         self.test_results['phase3_modules'] = results
         return True
 
+    def test_visualization_files(self):
+        """可視化ファイル生成テスト（読み取り専用チェック）"""
+        print("\n📊 可視化ファイル生成テスト...")
+        
+        report_dir = os.path.join(self.repo_root, 'report')
+        viz_files = []
+        
+        try:
+            if os.path.exists(report_dir):
+                viz_files = [f for f in os.listdir(report_dir) if f.startswith('backtest_visualization_') and f.endswith('.html')]
+            
+            if viz_files:
+                # 最新のファイルをチェック
+                latest_file = sorted(viz_files)[-1]
+                file_path = os.path.join(report_dir, latest_file)
+                file_size = os.path.getsize(file_path)
+                
+                # グラフファイルサイズが最小限度より大きいかチェック
+                if file_size > 10000:  # 10KB以上
+                    print(f"  ✅ グラフファイル生成確認: {latest_file} ({file_size/1024:.1f}KB)")
+                    self.test_results['visualization_test'] = {
+                        'status': 'PASS',
+                        'latest_file': latest_file,
+                        'file_size_kb': file_size/1024
+                    }
+                    return True
+                else:
+                    print(f"  ⚠️  グラフファイルサイズが小さい: {latest_file} ({file_size}B)")
+                    self.test_results['visualization_test'] = {
+                        'status': 'WARNING',
+                        'latest_file': latest_file,
+                        'file_size_kb': file_size/1024
+                    }
+                    self.test_results['errors'].append(f"Visualization file too small: {file_size}B")
+                    return False
+            else:
+                print("  ⚠️  グラフファイルが見つかりません")
+                self.test_results['visualization_test'] = {
+                    'status': 'NOT_FOUND',
+                }
+                self.test_results['errors'].append("No visualization files found")
+                return False
+                
+        except Exception as e:
+            print(f"  ❌ グラフファイルチェックエラー: {str(e)}")
+            self.test_results['visualization_test'] = {
+                'status': 'ERROR',
+                'error': str(e)
+            }
+            self.test_results['errors'].append(f"Visualization check error: {str(e)}")
+            return False
+
+    def test_log_files(self):
+        """ログファイル生成テスト（読み取り専用チェック）"""
+        print("\n📝 ログファイル生成テスト...")
+        
+        log_dir = os.path.join(self.repo_root, 'logs')
+        
+        try:
+            if os.path.exists(log_dir):
+                zip_files = [f for f in os.listdir(log_dir) if f.endswith('.zip')]
+                
+                if zip_files:
+                    # 最新のZIPファイルをチェック
+                    latest_file = sorted(zip_files)[-1]
+                    file_path = os.path.join(log_dir, latest_file)
+                    file_size = os.path.getsize(file_path)
+                    
+                    print(f"  ✅ ログファイル生成確認: {latest_file} ({file_size/1024:.1f}KB)")
+                    self.test_results['log_files_test'] = {
+                        'status': 'PASS',
+                        'latest_file': latest_file,
+                        'file_size_kb': file_size/1024,
+                        'total_files': len(zip_files)
+                    }
+                    return True
+                else:
+                    print("  ⚠️  ログZIPファイルが見つかりません")
+                    self.test_results['log_files_test'] = {
+                        'status': 'NOT_FOUND',
+                    }
+                    return True  # 警告だが、テストは失敗としない
+            else:
+                print("  ⚠️  ログディレクトリが見つかりません")
+                self.test_results['log_files_test'] = {
+                    'status': 'NOT_FOUND',
+                }
+                return True  # 警告だが、テストは失敗としない
+                
+        except Exception as e:
+            print(f"  ❌ ログファイルチェックエラー: {str(e)}")
+            self.test_results['log_files_test'] = {
+                'status': 'ERROR',
+                'error': str(e)
+            }
+            self.test_results['errors'].append(f"Log files check error: {str(e)}")
+            return False
+
+    def test_data_integrity(self):
+        """データ整合性テスト（読み取り専用チェック）"""
+        print("\n✔️  データ整合性テスト...")
+        
+        integrity_checks = {
+            'src_directory_exists': os.path.exists(os.path.join(self.repo_root, 'src')),
+            'config_ini_exists': os.path.exists(os.path.join(self.repo_root, 'src', 'config.ini')),
+            'bot_py_exists': os.path.exists(os.path.join(self.repo_root, 'src', 'bot.py')),
+            'run_backtest_py_exists': os.path.exists(os.path.join(self.repo_root, 'run_backtest.py')),
+        }
+        
+        all_pass = all(integrity_checks.values())
+        
+        for check, result in integrity_checks.items():
+            symbol = '✅' if result else '❌'
+            print(f"  {symbol} {check}: {result}")
+        
+        self.test_results['data_integrity_test'] = {
+            'status': 'PASS' if all_pass else 'FAIL',
+            'checks': integrity_checks
+        }
+        
+        if not all_pass:
+            self.test_results['errors'].append("Data integrity check failed")
+        
+        return all_pass
+
     def generate_report(self):
         """テスト結果レポートを生成"""
         print("\n" + "=" * 70)
@@ -173,12 +300,15 @@ class SampleTestRunner:
         print("=" * 70)
 
         # サマリー
-        total_tests = 4
+        total_tests = 7
         passed_tests = sum([
             1 if self.test_results.get('config_load_test', {}).get('status') == 'PASS' else 0,
             1 if self.test_results.get('module_import_test') else 0,
             1 if self.test_results.get('backtest_results') else 0,
             1 if self.test_results.get('phase3_modules') else 0,
+            1 if self.test_results.get('visualization_test', {}).get('status') == 'PASS' else 0,
+            1 if self.test_results.get('log_files_test', {}).get('status') == 'PASS' else 0,
+            1 if self.test_results.get('data_integrity_test', {}).get('status') == 'PASS' else 0,
         ])
 
         print(f"\n📈 総合結果: {passed_tests}/{total_tests} テスト成功")
@@ -211,6 +341,25 @@ class SampleTestRunner:
             for module, result in self.test_results['phase3_modules'].items():
                 symbol = '✅' if result == 'PASS' else '⚠️ ' if result == 'NOT_FOUND' else '❌'
                 print(f"    {symbol} {module}: {result}")
+
+        if self.test_results.get('visualization_test'):
+            viz_status = self.test_results['visualization_test'].get('status', 'UNKNOWN')
+            symbol = '✅' if viz_status == 'PASS' else '⚠️ ' if viz_status == 'WARNING' else '❌'
+            print(f"\n{symbol} グラフファイル生成テスト: {viz_status}")
+            if viz_status == 'PASS' and 'file_size_kb' in self.test_results['visualization_test']:
+                print(f"    - {self.test_results['visualization_test'].get('latest_file')} ({self.test_results['visualization_test']['file_size_kb']:.1f}KB)")
+
+        if self.test_results.get('log_files_test'):
+            log_status = self.test_results['log_files_test'].get('status', 'UNKNOWN')
+            symbol = '✅' if log_status == 'PASS' else '⚠️ ' if log_status == 'NOT_FOUND' else '❌'
+            print(f"\n{symbol} ログファイルテスト: {log_status}")
+            if log_status == 'PASS' and 'total_files' in self.test_results['log_files_test']:
+                print(f"    - ファイル数: {self.test_results['log_files_test']['total_files']}")
+
+        if self.test_results.get('data_integrity_test'):
+            integrity_status = self.test_results['data_integrity_test'].get('status', 'UNKNOWN')
+            symbol = '✅' if integrity_status == 'PASS' else '❌'
+            print(f"\n{symbol} データ整合性テスト: {integrity_status}")
 
         if self.test_results['errors']:
             print(f"\n⚠️  エラー ({len(self.test_results['errors'])} 件):")
@@ -250,11 +399,18 @@ class SampleTestRunner:
         print("=" * 70)
         print("🧪 サンプルテスト実行開始")
         print("=" * 70)
+        
+        print("\n⚠️  注意: このスクリプトはテスト・チェック・判定のみを行います")
+        print("   問題が見つかった場合は、出力に従ってユーザが手動で修正してください")
+        print("   テスト実行中に config.ini を含むプロジェクトファイルは変更しません\n")
 
         self.test_config_loading()
         self.test_module_imports()
         self.test_backtest_sample()
         self.test_phase3_modules()
+        self.test_visualization_files()
+        self.test_log_files()
+        self.test_data_integrity()
 
         return self.generate_report()
 
