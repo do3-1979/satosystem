@@ -53,16 +53,18 @@ class TradingStrategy:
  
     def evaluate_entry(self):
         """
-        エントリー条件を評価し、エントリーするかどうかを決定します。
+        エントリー条件を評価し、新規エントリーするかどうかを決定します。
 
-        Phase B条件:
+        **重要**: このメソッドはポジション保有時は呼び出されません
+        (make_trade_decision内で分岐制御)
+
+        Phase B条件（新規エントリー）:
         1. ポジションを保有していない
-        Phase B判定:
+        2. PVO > 閾値（出来高確認）
+        3. Donchianブレイク発生
         
         (Keltnerフィルタ無効時):
-        1. ドンチャンブレイク発生
-        2. PVO > 閾値
-        → ENTRY
+        → ENTRY判定
         
         (Keltnerフィルタ有効時 - だまし回避):
         1. Keltner幅 >= 閾値（ボラティリティ確認 = トレンド強い）
@@ -164,12 +166,21 @@ class TradingStrategy:
     
     def evaluate_add(self, price):
         """
-        ピラミッド条件を評価し、買い増しするかどうかを決定します。
+        ピラミッディング（段階的ポジション増加）条件を評価します。
+        
+        **重要な役割**: 
+        ENTRY後に再度ENTRYシグナルが発生した場合、
+        ADDで対応する（単なる無視ではなく、体系的に処理）
 
-        Phase C条件:
+        Phase C条件（ピラミッディング）:
         1. ポジションを保有している
-        2. 追加回数3回未満
-        3. entry_rangeレンジ内のみ追加
+        2. 追加回数が上限（entry_times）未満
+        3. 価格が前回エントリー価格から add_range 以上変動
+        
+        **戦略目的**:
+        - 保合い→トレンド転換時に段階的にポジションを増やす
+        - 各追加は前回エントリーから一定変動後のみ許可
+        - 回数上限で過度な積み上げを防止
         """
         side = 'NONE'
         decision = 'NONE'
@@ -300,15 +311,22 @@ class TradingStrategy:
         """
         トレードの実行判断を行います。
 
+        ロジック:
+        1. ポジションなし → ENTRY判定のみ
+        2. ポジションあり → ADD判定 → EXIT判定
+        
+        ※ ENTRY後に再度ENTRYシグナル発生 → ADD処理に転換
+           (段階的ポジション増加 Phase C)
         """
         portfolio = self.portfolio.get_position_quantity()
+        price = self.price_data_management.get_ticker()
         
-        # エントリ・買い増し直後に離脱しないように
+        # ポジション有無で処理を分岐
         if portfolio["quantity"] == 0:        
+            # ポジションなし: ENTRY判定のみ
             self.evaluate_entry()
         else:
-            price = self.price_data_management.get_ticker()
-            
+            # ポジションあり: ADD → EXIT判定（優先度順）
             self.evaluate_add(price)
             self.evaluate_exit()
  
