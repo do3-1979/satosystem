@@ -368,16 +368,18 @@ class RiskManagement:
                     if isinstance(psar_val, (list, pd.Series)):
                         psar_val = psar_val.iloc[0] if isinstance(psar_val, pd.Series) else psar_val[0]
                     if psar_val is not None and psar_val != 0 and psar_val == psar_val:  # NaN check
-                        self.stop_price = float(psar_val)
-                        psar_applied = True
+                        # PSAR値のサニティチェック：BUY時のストップは常に position_price より下であるべき
+                        if psar_val < position_price:
+                            self.stop_price = float(psar_val)
+                            psar_applied = True
                 except:
                     pass
                 # PSAR計算がスキップされた場合は stop_offset ベースの値を使用
                 if not psar_applied and (self.stop_price == 0 or self.stop_price != self.stop_price):  # NaN check
                     self.stop_price = tmp_stop_price
-                # サニティチェック：BUY時のストップは常に position_price より下であるべき
+                # 最終サニティチェック：BUY時のストップは常に position_price より下であるべき
                 if self.stop_price >= position_price:
-                    self.logger.log_warn(f"[警告] BUY時のSTOP価格が異常: {self.stop_price} >= {position_price}")
+                    self.logger.log_warn(f"[警告] BUY時のSTOP価格が異常: {self.stop_price} >= {position_price}, 修正")
                     self.stop_price = position_price - self.stop_offset
             elif side == "SELL":
                 # ストップ値再計算
@@ -390,16 +392,18 @@ class RiskManagement:
                     if isinstance(psar_val, (list, pd.Series)):
                         psar_val = psar_val.iloc[0] if isinstance(psar_val, pd.Series) else psar_val[0]
                     if psar_val is not None and psar_val != 0 and psar_val == psar_val:  # NaN check
-                        self.stop_price = float(psar_val)
-                        psar_applied = True
+                        # PSAR値のサニティチェック：SELL時のストップは常に position_price より上であるべき
+                        if psar_val > position_price:
+                            self.stop_price = float(psar_val)
+                            psar_applied = True
                 except:
                     pass
                 # PSAR計算がスキップされた場合は stop_offset ベースの値を使用
                 if not psar_applied and (self.stop_price == 0 or self.stop_price != self.stop_price):  # NaN check
                     self.stop_price = tmp_stop_price
-                # サニティチェック：SELL時のストップは常に position_price より上であるべき
+                # 最終サニティチェック：SELL時のストップは常に position_price より上であるべき
                 if self.stop_price <= position_price:
-                    self.logger.log_warn(f"[警告] SELL時のSTOP価格が異常: {self.stop_price} <= {position_price}")
+                    self.logger.log_warn(f"[警告] SELL時のSTOP価格が異常: {self.stop_price} <= {position_price}, 修正")
                     self.stop_price = position_price + self.stop_offset
         else:
             self.psar_stop_offset = 0
