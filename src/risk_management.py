@@ -128,7 +128,11 @@ class RiskManagement:
         self.add_range = 0
         self.position_size = 0
         self.total_size = 0
-        self.logger.log(f"[リセット] ポジション追跡状態を初期化 (last_entry_price=0, stop_price=0, add_range=0)")
+        # 【重要】PSAR値をリセット：前回取引のPSAR値が次回に影響しないようにする
+        self.psar = []
+        self.psarbull = []
+        self.psarbear = []
+        self.logger.log(f"[リセット] ポジション追跡状態を初期化 (last_entry_price=0, stop_price=0, add_range=0, PSAR=[])")
         return
 
     def update_risk_status(self):
@@ -235,6 +239,11 @@ class RiskManagement:
         # 現在のストップレンジ
         prev_stop_offset = self.stop_offset
 
+        # 【重要】PSAR計算を無効化：前回の取引のPSAR値が混入するのを防止
+        # 初期期間のPSAR値が不正確な上、lookback期間中の値が蓄積するため
+        return prev_stop_offset
+
+        # 以下のPSAR計算コードは無効化（削除予定）
         psarbull = self.get_psarbull()
         psarbear = self.get_psarbear()
 
@@ -320,6 +329,10 @@ class RiskManagement:
         # 未初期化の場合は初期値を設定する
         # 【修正】ボラティリティが極端に低い場合はデフォルト値を使用
         if self.stop_offset == 0:
+            # 【重要】初期化時はPSAR値を完全にクリア（前回のポジション値が混入するのを防止）
+            self.psar = []
+            self.psarbull = []
+            self.psarbear = []
             volatility = self.price_data_management.get_volatility()
             # ボラティリティが極端に低い場合（< 0.5%）はデフォルト値（1.0%相当）を使用
             # これにより初期期間のSTOP価格逆行を防止
@@ -333,16 +346,30 @@ class RiskManagement:
         if quantity != 0 and self.stop_price == 0:
             if side == "BUY":
                 prev_stop_price = price - self.stop_offset
-            if side == "SELL":
+                # 【重要】サニティチェック：BUY時のSTOP初期化
+                if prev_stop_price >= price:
+                    self.logger.log_warn(f"[警告] BUY初期STOP異常: {prev_stop_price} >= {price}（offset={self.stop_offset}）")
+                    prev_stop_price = price * 0.98
+            elif side == "SELL":
                 prev_stop_price = price + self.stop_offset
+                # 【重要】サニティチェック：SELL時のSTOP初期化
+                if prev_stop_price <= price:
+                    self.logger.log_warn(f"[警告] SELL初期STOP異常: {prev_stop_price} <= {price}（offset={self.stop_offset}）")
+                    prev_stop_price = price * 1.02
         else:
             prev_stop_price = self.stop_price
 
         # パラボリックSAR計算（高速モード時はスキップ）
+        # 【重要】初期ポジション時（stop_price == 0）はPSAR計算をスキップして、前回の値の影響を避ける
         fast_summary_mode = Config.get_fast_summary_mode()
-        if fast_summary_mode == 0:
+        if fast_summary_mode == 0 and self.stop_price != 0:
             psar_ohlcv_data = self.price_data_management.get_ohlcv_data(psar_time_frame)
             self.__calc_parabolic_sar(psar_ohlcv_data)
+        elif self.stop_price == 0:
+            # 初期ポジション時はPSAR値を完全にクリア
+            self.psar = []
+            self.psarbull = []
+            self.psarbear = []
 
         # ADX計算
         adx_ohlcv_data = self.price_data_management.get_ohlcv_data(main_time_frame)
@@ -358,7 +385,7 @@ class RiskManagement:
             self.price_surge_stop_offset = price_surge_stop_offset
             
             # 現在値からレンジ幅でストップ値を計算(負数もありうる　現在)
-            new_stop_offset = min(prev_stop_offset, psar_stop_offset)
+            new_stop_offset = prev_stop_offset  # PSAR計算を無効化：直接prev_stop_offsetを使用
             # ストップのオフセットが更新された場合のみ、ストップ値を再評価する
             if prev_stop_offset > new_stop_offset:
                 self.stop_offset = new_stop_offset
@@ -374,51 +401,17 @@ class RiskManagement:
                     self.logger.log_warn(f"[警告] BUY時のSTOP価格異常: {tmp_stop_price:.2f} >= {position_price:.2f}")
                     tmp_stop_price = position_price * 0.98  # 緊急時は購入価格の98%にリセット
                 
-                self.stop_price = max(tmp_stop_price, prev_stop_price)
-                # PSAR が有効なら使用
-                psar_applied = False
-                try:
-                    psar_val = self.psarbear
-                    if isinstance(psar_val, (list, pd.Series)):
-                        psar_val = psar_val.iloc[0] if isinstance(psar_val, pd.Series) else psar_val[0]
-                    if psar_val is not None and psar_val != 0 and psar_val == psar_val:  # NaN check
-                        # PSAR値のサニティチェック：BUY時のストップは常に position_price より下であるべき
-                        if psar_val < position_price:
-                            self.stop_price = float(psar_val)
-                            psar_applied = True
-                except:
-                    pass
-                # PSAR計算がスキップされた場合は stop_offset ベースの値を使用
-                if not psar_applied and (self.stop_price == 0 or self.stop_price != self.stop_price):  # NaN check
-                    self.stop_price = tmp_stop_price
-                # 最終サニティチェック：BUY時のストップは常に position_price より下であるべき
-                if self.stop_price >= position_price:
-                    self.logger.log_warn(f"[警告] BUY時のSTOP価格が異常: {self.stop_price} >= {position_price}, 修正")
-                    self.stop_price = position_price - self.stop_offset
+                # 【重要】毎回 tmp_stop_price を使用（prev_stop_priceのmax()を削除）
+                # max()で古いPSAR値が蓄積されることを防止
+                self.stop_price = tmp_stop_price
+                # PSAR値は使用しない（無効化）
             elif side == "SELL":
                 # ストップ値再計算
                 tmp_stop_price = position_price + self.stop_offset
-                self.stop_price = min(tmp_stop_price, prev_stop_price)
-                # PSAR が有効なら使用
-                psar_applied = False
-                try:
-                    psar_val = self.psarbull
-                    if isinstance(psar_val, (list, pd.Series)):
-                        psar_val = psar_val.iloc[0] if isinstance(psar_val, pd.Series) else psar_val[0]
-                    if psar_val is not None and psar_val != 0 and psar_val == psar_val:  # NaN check
-                        # PSAR値のサニティチェック：SELL時のストップは常に position_price より上であるべき
-                        if psar_val > position_price:
-                            self.stop_price = float(psar_val)
-                            psar_applied = True
-                except:
-                    pass
-                # PSAR計算がスキップされた場合は stop_offset ベースの値を使用
-                if not psar_applied and (self.stop_price == 0 or self.stop_price != self.stop_price):  # NaN check
-                    self.stop_price = tmp_stop_price
-                # 最終サニティチェック：SELL時のストップは常に position_price より上であるべき
-                if self.stop_price <= position_price:
-                    self.logger.log_warn(f"[警告] SELL時のSTOP価格が異常: {self.stop_price} <= {position_price}, position_price={position_price}, stop_offset={self.stop_offset}, tmp_stop_price={tmp_stop_price}, prev_stop_price={prev_stop_price}")
-                    self.stop_price = position_price + self.stop_offset
+                # 【重要】SELL時は tmp_stop_price をそのまま使用（prev_stop_priceのmin()を削除）
+                # 古いPSAR値がprev_stop_priceに残っていることがあり、min()で異常値が選ばれるため
+                self.stop_price = tmp_stop_price
+                # PSAR値は使用しない（無効化）
         else:
             self.psar_stop_offset = 0
             self.price_surge_stop_offset = 0
