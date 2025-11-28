@@ -318,9 +318,15 @@ class RiskManagement:
         #ohlcv = self.price_data_management.get_latest_ohlcv()
         
         # 未初期化の場合は初期値を設定する
-        # TODO 初期ストップ値の再考慮　ボラティリティで決めていいのか
+        # 【修正】ボラティリティが極端に低い場合はデフォルト値を使用
         if self.stop_offset == 0:
-            self.stop_offset = self.price_data_management.get_volatility() * self.initial_stop_range
+            volatility = self.price_data_management.get_volatility()
+            # ボラティリティが極端に低い場合（< 0.5%）はデフォルト値（1.0%相当）を使用
+            # これにより初期期間のSTOP価格逆行を防止
+            if volatility < 0.5:
+                volatility = 1.0
+                self.logger.log(f"[警告] ボラティリティが極端に低い: {volatility:.2f}% -> デフォルト値 1.0% を使用")
+            self.stop_offset = volatility * self.initial_stop_range
 
         prev_stop_offset = self.stop_offset
 
@@ -362,6 +368,12 @@ class RiskManagement:
             if side == "BUY":
                 # ストップ値再計算
                 tmp_stop_price = position_price - self.stop_offset
+                
+                # 【重要】サニティチェック：BUY時のSTOP価格は常に position_price より低い
+                if tmp_stop_price >= position_price:
+                    self.logger.log_warn(f"[警告] BUY時のSTOP価格異常: {tmp_stop_price:.2f} >= {position_price:.2f}")
+                    tmp_stop_price = position_price * 0.98  # 緊急時は購入価格の98%にリセット
+                
                 self.stop_price = max(tmp_stop_price, prev_stop_price)
                 # PSAR が有効なら使用
                 psar_applied = False
