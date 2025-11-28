@@ -126,7 +126,9 @@ class RiskManagement:
         self.psar_stop_offset = 0
         self.price_surge_stop_offset = 0
         self.add_range = 0
-        self.logger.log(f"[リセット] ポジション追跡状態を初期化 (last_entry_price=0, stop_price=0)")
+        self.position_size = 0
+        self.total_size = 0
+        self.logger.log(f"[リセット] ポジション追跡状態を初期化 (last_entry_price=0, stop_price=0, add_range=0)")
         return
 
     def update_risk_status(self):
@@ -411,7 +413,8 @@ class RiskManagement:
             self.stop_price = 0
             self.stop_offset = 0
             self.position_size = 0 
-            self.add_range = 0 
+            # 【修正】EXIT時のみ add_range をリセット（ポジション保有中のリセットは防止）
+            # self.add_range = 0  # ← reset_position_tracking() で明示的にリセット
             self.total_size = 0
             self.stop_ATR = 0
             self.last_entry_price = 0 # 価格ベース

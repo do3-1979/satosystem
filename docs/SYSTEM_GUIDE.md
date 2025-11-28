@@ -102,6 +102,299 @@ stop_offset = 1.5                 ← ストップロス距離
 
 ---
 
+## 🎯 トレード条件（Phase B-D）
+
+戦略は以下の4つの明確なトレード条件で構成されています。これらは `src/trading_strategy.py` の `TradingStrategy` クラスで実装されています。
+
+### 1️⃣ ENTRY条件（Phase B）
+
+**目的**: ポジションを新規開始する
+
+**実装メソッド**: `TradingStrategy.evaluate_entry()`
+
+**判定ロジック（優先度順）**:
+```
+1. ポジション保有状態: NO（量 = 0）
+2. PVO シグナル: YES (出来高確認)
+3. Donchian ブレイク: YES (BUY/SELL発生)
+   
+   [Keltner フィルタ無効時]
+   → ENTRY判定完了 ✓
+   
+   [Keltner フィルタ有効時]
+   4. Keltner 幅: >= 閾値 (ボラティリティ十分 = トレンド強い)
+   → ENTRY判定完了 ✓
+   
+   [レジーム検出有効時]
+   5. レジーム判定: SIDEWAYS 判定で除外
+      WEAK_TREND / STRONG_TREND で許可
+   → ENTRY判定完了 ✓
+```
+
+**パラメータ** (config.ini):
+- `donchian_buy_term` / `donchian_sell_term`: Donchian チャネル期間
+- `pvo_threshold`: PVO 出来高閾値
+- `keltner_enabled`: フィルタ有効化（True/False）
+- `regime_detection_enabled`: レジーム検出有効化（True/False）
+
+**シグナル情報** (from `PriceDataManagement.get_signals()`):
+```python
+{
+  "pvo": {"signal": bool},                    # 出来高OK
+  "donchian": {"signal": bool, "side": str},  # "BUY" or "SELL"
+  "keltner": {"signal": bool, "info": {...}}, # ボラティリティOK
+  "regime_stats": {...}                       # レジーム情報
+}
+```
+
+**実装例** (`src/trading_strategy.py` Line 55-160):
+```python
+def evaluate_entry(self):
+    signals = self.price_data_management.get_signals()
+    if signals["pvo"]["signal"] == True:
+        if signals["donchian"]["signal"] == True:
+            if keltner_pass:  # フィルタ判定
+                donchian_side = signals["donchian"]["side"]
+                if donchian_side == "BUY":
+                    side = "BUY"
+                    decision = "ENTRY"
+```
+
+---
+
+### 2️⃣ ADD条件（Phase C）
+
+**目的**: 既存ポジションをピラミッディング（段階的に増やす）
+
+**実装メソッド**: `TradingStrategy.evaluate_add(price)`
+
+**判定ロジック**:
+```
+1. ポジション保有状態: YES（量 > 0）
+2. ADD回数上限: add_count < entry_times
+   (entry_times = 4 = 最大4回のポジション分割)
+3. 価格変動条件:
+   - BUY ポジション: price - last_entry_price > add_range
+   - SELL ポジション: last_entry_price - price > add_range
+   
+   → ADD判定完了 ✓
+```
+
+**重要**: 
+- 最初の ENTRY は price_based のみ判定
+- 2回目以降の ADD は add_range (= entry_range / √entry_times) 条件
+- ADD直後は EXIT判定をスキップ（同一バー内 EXIT 重複防止）
+
+**パラメータ** (config.ini):
+- `entry_times`: 分割回数（最適値: 4）
+- `entry_range`: 初回エントリー範囲（初期STOP基準値）
+- `add_range`: 追加レンジ幅（自動計算: entry_range / √entry_times）
+
+**ポジション追跡** (from `RiskManagement`):
+```python
+self.last_entry_price      # 前回エントリー価格
+self.add_range             # 追加実行判定用レンジ幅
+self.portfolio.add_count   # 追加回数（0-3）
+```
+
+**実装例** (`src/trading_strategy.py` Line 168-220):
+```python
+def evaluate_add(self, price):
+    position_side = self.portfolio.get_position_side()
+    if position_side != 'NONE':
+        add_count = getattr(self.portfolio, 'add_count', 0)
+        if add_count < max_entries:
+            range_val = self.risk_manager.get_add_range()
+            last_entry_price = self.risk_manager.get_last_entry_price()
+            if position_side == "BUY" and (price - last_entry_price) > range_val:
+                side = "BUY"
+                decision = "ADD"
+                self.portfolio.add_count = add_count + 1
+```
+
+---
+
+### 3️⃣ EXIT条件（Phase D）
+
+**目的**: ポジションをクローズする
+
+**実装メソッド**: `TradingStrategy.evaluate_exit()`
+
+**判定ロジック（優先度順）**:
+```
+1. 時間制限 (max_hold_bars 有効時):
+   bars_held >= max_hold_bars
+   → EXIT実行（強制決済）✓
+   
+2. 部分利確 (partial_exit_enabled 有効時):
+   profit_rate >= partial_exit_profit_rate
+   AND bars_held >= partial_exit_min_bars
+   → PARTIAL_EXIT実行（50%決済）✓
+   
+3. ストップロス判定 (リアルタイム価格):
+   - BUY: current_price <= stop_price
+   - SELL: current_price >= stop_price
+   → EXIT実行（スリッページ考慮）✓
+```
+
+**重要**: 
+- ポジション成立直後 (bars=0) のストップロス判定は **スキップ**
+  （極限価格でのストップロス発火防止）
+- ADD実行直後もストップロス判定をスキップ（ADD→EXIT連鎖防止）
+- EXIT後は `risk_manager.reset_position_tracking()` でポジション追跡状態をリセット
+
+**パラメータ** (config.ini):
+- `max_hold_bars`: 最大保持バー数（0=無効）
+- `partial_exit_enabled`: 部分利確有効化（True/False）
+- `partial_exit_profit_rate`: 利確率（例: 0.10 = 10%）
+- `partial_exit_ratio`: 利確割合（例: 0.5 = 50%決済）
+- `partial_exit_min_bars`: 利確最小保持バー数
+
+**実装例** (`src/trading_strategy.py` Line 225-345):
+```python
+def evaluate_exit(self):
+    if portfolio.bars_held >= max_hold_bars:
+        decision = "EXIT"  # 時間制限
+        
+    if profit_rate >= partial_exit_profit_rate:
+        decision = "PARTIAL_EXIT"  # 部分利確
+        
+    if not skip_stoploss:
+        if position_side == "BUY" and current_price <= stop_price:
+            decision = "EXIT"  # ストップロス
+```
+
+---
+
+### 4️⃣ STOP条件
+
+**目的**: リスク管理用に各ポジションのストップロス価格を計算・管理
+
+**実装メソッド**: `RiskManagement.update_stop_price()` / `get_stop_price()`
+
+**判定ロジック（複数ソース統合）**:
+```
+1. 基本STOP (ボラティリティ基準):
+   BUY: entry_price - (ATR * initial_stop_range)
+   SELL: entry_price + (ATR * initial_stop_range)
+   
+2. PSAR (Parabolic SAR + サニティチェック):
+   - PSAR値が逆行していないか確認
+   - BUY: PSAR < entry_price の場合のみ採用
+   - SELL: PSAR > entry_price の場合のみ採用
+   
+3. トレーリングストップ (価格上昇時):
+   - AF（加速係数）で段階的にSTOP更新
+   - AF_initial → AF_initial + AF_add (最大AF_max)
+   - 極限価格（±0.5%スリッページ）との比較
+   
+4. 最終STOP = MAX(基本STOP, PSAR, トレーリング)
+   （最も保守的な値）
+```
+
+**パラメータ** (config.ini):
+- `stop_range`: 基本ストップ幅（ATR乗数、例: 2.0）
+- `stop_AF`: 初期加速係数（例: 0.02）
+- `stop_AF_add`: AF増加ステップ（例: 0.02）
+- `stop_AF_max`: 最大加速係数（例: 0.20）
+- `surge_follow_price_ratio`: 極限価格用乗数（例: 0.995）
+- `psar_time_frame`: PSAR時間軸（例: 120 = 2時間足）
+
+**ポジション追跡** (from `RiskManagement`):
+```python
+self.stop_price              # 最終ストップ価格（全ソース統合）
+self.stop_offset             # STOP価格オフセット（価格ベース）
+self.last_entry_price        # 前回エントリー価格
+self.psar_stop_offset        # PSAR由来のオフセット
+self.price_surge_stop_offset # トレーリング由来のオフセット
+```
+
+**実装例** (`src/risk_management.py`):
+```python
+def update_stop_price(self, entry_side, entry_price):
+    # 1. 基本STOP (ATR基準)
+    base_stop = entry_price - ATR * initial_stop_range  # BUY の場合
+    
+    # 2. PSAR (サニティチェック付き)
+    psar_stop = self.__follow_psar()  # BUY時: stop < entry, SELL時: stop > entry
+    
+    # 3. トレーリング (AF加速)
+    trailing_stop = self.__follow_price_surge()
+    
+    # 4. 統合
+    self.stop_price = max(base_stop, psar_stop, trailing_stop)
+```
+
+**重要な修正** (Commit: f5f74ea / 16ae12f / 7863fee):
+- ✅ PSAR逆行チェック: BUY時に `psar > entry_price` なら採用しない
+- ✅ 初期化時ゼロ値対応: ボラティリティ計算前はSTOP=0で代替
+- ✅ ADD直後のEXIT重複防止: `bars=-1` リセット
+
+---
+
+### トレード条件フロー図
+
+```
+[ポジションなし] 
+    ↓
+    → evaluate_entry()
+         │
+         ├─ PVO OK? ❌ → ENTRY判定なし
+         │
+         ├─ Donchian BUY/SELL? ❌ → ENTRY判定なし
+         │
+         ├─ Keltner フィルタ? ❌ → ENTRY判定なし
+         │
+         └─ レジーム OK? ✓ → ENTRY決定! 
+              ↓
+              [ENTRY実行] → ポジション成立 (quantity > 0, bars=0)
+    
+    
+[ポジション保有] 
+    ↓
+    → ADD判定可? (bars >= 1)
+         │
+         ├─ add_count >= max? ✓ → ADD判定なし
+         │
+         └─ 価格変動 > add_range? ✓ → ADD決定!
+              ↓
+              [ADD実行] → ポジション増加 (quantity += 1, add_count += 1)
+              
+    ↓ (ADD判定結果で EXIT判定スキップ)
+    
+    → evaluate_exit() [ADD未発火時のみ]
+         │
+         ├─ 時間超過? ✓ → EXIT決定!
+         │
+         ├─ 利益確定? ✓ → PARTIAL_EXIT決定!
+         │
+         └─ ストップロス? ✓ → EXIT決定!
+              ↓
+              [EXIT実行] → ポジション決済 (quantity = 0)
+              ↓
+              [状態リセット] → reset_position_tracking()
+    
+    ↓
+    [ポジションなし] ← ループ開始へ
+```
+
+---
+
+### パラメータ最適値（テスト済み）
+
+| パラメータ | 現在値 | テスト範囲 | 最適理由 |
+|-----------|--------|-----------|--------|
+| `entry_times` | 4 | 2-10 | Sharpe 0.343、DD 49.75% |
+| `donchian_buy_term` | 20 | 10-50 | 標準的なDonchian期間 |
+| `pvo_threshold` | 10 | 5-50 | 出来高フィルタ精度 |
+| `keltner_enabled` | True | - | ダマシ回避（却下テスト: -35.21） |
+| `regime_detection_enabled` | True | - | SIDEWAYS除外で改善 |
+| `stop_range` | 2.0 | 1.5-3.0 | リスク許容度バランス |
+| `stop_AF` | 0.02 | 0.01-0.05 | トレーリング段階性 |
+| `max_hold_bars` | 0 | - | 無制限（デフォルト） |
+
+---
+
 ## 🔄 Phase 3 - 自動化ループ
 
 ### Task 11: リアルタイムパフォーマンス監視
