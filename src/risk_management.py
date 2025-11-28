@@ -260,8 +260,8 @@ class RiskManagement:
         return stop
 
     def __follow_price_surge(self, price):
-        # ストップ値は「ポジションの取得単価」に対する差額。ポジション取得単価より高い場合は負値。
-        # 現在の終値との差額を求めてから新しいストップ値を求める
+        # ストップオフセット = ポジション取得単価から離れた距離（常に正の値）
+        # 価格が大きく動いた場合、ストップを価格追従させる
         prev_stop_offset = self.stop_offset
         surge_follow_price = self.surge_follow_price_ratio * price
         position_price = self.portfolio.get_position_price()
@@ -273,15 +273,23 @@ class RiskManagement:
             diff_price = price - ( position_price - prev_stop_offset )
             # 終値との差分が固定値を超えていたらストップ値が固定値以下になるようにする
             if diff_price > surge_follow_price:
-                # 新ストップ値はポジション取得単価と目標価格との差額
+                # 新ストップ値 = ポジション取得単価と（現在値 - 固定値）との差額
+                # BUY時のストップは取得単価より下にあるべき
                 tmp_stop_offset = position_price - ( price - surge_follow_price )
+                # ストップオフセットが負になる場合は正の最小値を設定（ストップが逆行してはいけない）
+                if tmp_stop_offset < 0:
+                    tmp_stop_offset = abs(tmp_stop_offset)
 
         if self.portfolio.get_position_side() == "SELL":
             diff_price = ( position_price + prev_stop_offset ) - price
             # 終値との差分が固定値を超えていたらストップ値が固定値以下になるようにする
             if diff_price > surge_follow_price:
-                # 新ストップ値 = 目標値 ( = 現在の終値 + 固定値) とポジション取得単価の差額
+                # 新ストップ値 = （現在値 + 固定値）とポジション取得単価の差額
+                # SELL時のストップは取得単価より上にあるべき
                 tmp_stop_offset = ( price + surge_follow_price ) - position_price
+                # ストップオフセットが負になる場合は正の最小値を設定（ストップが逆行してはいけない）
+                if tmp_stop_offset < 0:
+                    tmp_stop_offset = abs(tmp_stop_offset)
 
         return tmp_stop_offset
 
@@ -367,6 +375,10 @@ class RiskManagement:
                 # PSAR計算がスキップされた場合は stop_offset ベースの値を使用
                 if not psar_applied and (self.stop_price == 0 or self.stop_price != self.stop_price):  # NaN check
                     self.stop_price = tmp_stop_price
+                # サニティチェック：BUY時のストップは常に position_price より下であるべき
+                if self.stop_price >= position_price:
+                    self.logger.log_warn(f"[警告] BUY時のSTOP価格が異常: {self.stop_price} >= {position_price}")
+                    self.stop_price = position_price - self.stop_offset
             elif side == "SELL":
                 # ストップ値再計算
                 tmp_stop_price = position_price + self.stop_offset
@@ -385,6 +397,10 @@ class RiskManagement:
                 # PSAR計算がスキップされた場合は stop_offset ベースの値を使用
                 if not psar_applied and (self.stop_price == 0 or self.stop_price != self.stop_price):  # NaN check
                     self.stop_price = tmp_stop_price
+                # サニティチェック：SELL時のストップは常に position_price より上であるべき
+                if self.stop_price <= position_price:
+                    self.logger.log_warn(f"[警告] SELL時のSTOP価格が異常: {self.stop_price} <= {position_price}")
+                    self.stop_price = position_price + self.stop_offset
         else:
             self.psar_stop_offset = 0
             self.price_surge_stop_offset = 0
