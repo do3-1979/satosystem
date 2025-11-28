@@ -627,8 +627,17 @@ class Bot:
                         order_response = self.execute_order(order.to_dict())
                         #self.logger.log(f"注文実行: {order_response}")
                         self.events.emit(EventType.ORDER_EXECUTED, order.to_dict())
+                        order_executed_successfully = True
                     except Exception as e:
                         self.logger.log_error(f"注文実行エラー: {e}")
+                        order_executed_successfully = False
+
+                    # 注文実行失敗時の処理
+                    if not order_executed_successfully:
+                        self.logger.log(f"[注文失敗] トレード決定をリセット: decision={trade_decision['decision']}")
+                        # open_tradeをクリア（ENTRYが実行されていないため）
+                        if trade_decision["decision"] == "ENTRY":
+                            self.open_trade = None
                         continue  # 注文失敗時はポートフォリオ更新をスキップ
 
                     # --------------------------------------------

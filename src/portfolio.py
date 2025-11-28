@@ -92,6 +92,11 @@ class Portfolio:
         """
         通貨の保有ポジション量を更新
         """
+        # quantity=0の場合はスキップ（発注失敗）
+        if quantity == 0:
+            self.logger.log_error(f"[ポジション追加スキップ] quantity=0（発注失敗の可能性）")
+            return
+        
         current_quantity = self.positions[self.market_type]["quantity"]
         current_position_price = self.positions[self.market_type]["position_price"]
         current_side = self.positions[self.market_type]["side"]
@@ -179,6 +184,7 @@ class Portfolio:
         self.positions[self.market_type]["quantity"] = 0
         self.positions[self.market_type]["side"] = 'NONE'
         self.positions[self.market_type]["position_price"] = 0
+        self.logger.log(f"[EXIT後ポジション状態] {self.positions[self.market_type]}")
         
         self.add_num = 0
         
