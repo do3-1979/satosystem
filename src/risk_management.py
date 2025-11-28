@@ -403,7 +403,7 @@ class RiskManagement:
                     self.stop_price = tmp_stop_price
                 # 最終サニティチェック：SELL時のストップは常に position_price より上であるべき
                 if self.stop_price <= position_price:
-                    self.logger.log_warn(f"[警告] SELL時のSTOP価格が異常: {self.stop_price} <= {position_price}, 修正")
+                    self.logger.log_warn(f"[警告] SELL時のSTOP価格が異常: {self.stop_price} <= {position_price}, position_price={position_price}, stop_offset={self.stop_offset}, tmp_stop_price={tmp_stop_price}, prev_stop_price={prev_stop_price}")
                     self.stop_price = position_price + self.stop_offset
         else:
             self.psar_stop_offset = 0
