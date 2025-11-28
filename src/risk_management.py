@@ -114,6 +114,20 @@ class RiskManagement:
     def update_last_entry_price(self, price):
         self.last_entry_price = price
         return
+    
+    def reset_position_tracking(self):
+        """
+        ポジション決済後の状態リセット
+        次のエントリーに備えて内部状態をクリアする
+        """
+        self.last_entry_price = 0
+        self.stop_price = 0
+        self.stop_offset = 0
+        self.psar_stop_offset = 0
+        self.price_surge_stop_offset = 0
+        self.add_range = 0
+        self.logger.log(f"[リセット] ポジション追跡状態を初期化 (last_entry_price=0, stop_price=0)")
+        return
 
     def update_risk_status(self):
         self.__update_stop_price()
@@ -404,6 +418,18 @@ class RiskManagement:
             # ボラティリティの幅からストップ幅を計算
             volatility = self.price_data_management.get_volatility()
             price = self.price_data_management.get_ticker()
+            
+            # =====================================================================
+            # 【修正】ボラティリティがゼロまたは無効な場合の対応
+            # =====================================================================
+            # ボラティリティがゼロまたは計算不可の場合はデフォルト値を使用
+            if volatility == 0 or volatility is None or (isinstance(volatility, float) and (np.isnan(volatility) or np.isinf(volatility))):
+                # デフォルトボラティリティ: 0.5%（低ボラティリティ環境での安全マージン）
+                # ただし、最初のENTRY実行時はボラティリティ計算失敗が多いため
+                # より保守的に 1.0% を使用
+                volatility = 1.0
+                self.logger.log(f"[警告] ボラティリティ計算不可: デフォルト値 {volatility}% を使用")
+            
             stop_range = self.initial_stop_range * volatility
 
             # ゼロ除算を防ぐ
@@ -443,6 +469,12 @@ class RiskManagement:
             self.position_size = position_size
             # 購入可能上限に分割数をかけたものが総購入サイズ
             self.total_size = position_size * self.entry_times
+            
+            # =====================================================================
+            # 【追加ログ】計算の透明化
+            # =====================================================================
+            self.logger.log(f"[ポジションサイズ計算] volatility={volatility:.2f}%, stop_range={stop_range:.2f}, "
+                           f"balance={balance_tether:.2f}, position_size={position_size:.7f} ({position_size*price:.2f}USD)")
 
         return position_size
 

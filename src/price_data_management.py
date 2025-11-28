@@ -393,6 +393,16 @@ class PriceDataManagement:
         self.latest_ohlcv_data = []
         self.latest_ohlcv_data.append(latest_ohlcv_data_tmp)
 
+        # =====================================================================
+        # 【重要】シグナルリセット: 前バーのシグナルを一度リセットして新規判定へ
+        # =====================================================================
+        # Donchianシグナルが複数バーにわたって保持されるバグを防ぐため、
+        # 毎バー必ず一度 False にしてから、新しいブレイク判定のみを True にする
+        self.signals['donchian']['signal'] = False
+        self.signals['donchian']['side'] = 'None'
+        self.signals['donchian']['info']['highest'] = 0
+        self.signals['donchian']['info']['lowest'] = 0
+        
         # donchianシグナル演算
         ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
         # Donchian計算時には、十分な履歴（最近20期間より少し多い程度）を使用して計算
@@ -407,12 +417,15 @@ class PriceDataManagement:
         elif dc == 'SELL':
             self.signals['donchian']['signal'] = True
             self.signals['donchian']['side'] = 'SELL'
-        else:
-            self.signals['donchian']['signal'] = False
-            self.signals['donchian']['side'] = 'None'
 
         self.signals['donchian']['info']['highest'] = high
         self.signals['donchian']['info']['lowest'] = low
+        
+        # ログ出力（500回に1回 = 約8時間に1回）
+        self._donchian_reset_counter = getattr(self, '_donchian_reset_counter', 0) + 1
+        if self._donchian_reset_counter >= 500:
+            self.logger.log(f"[シグナルリセット] Donchian signal={self.signals['donchian']['signal']}, side={self.signals['donchian']['side']}, high={high:.0f}, low={low:.0f}")
+            self._donchian_reset_counter = 0
 
         # Keltnerシグナル演算（アクション1: Phase Bフィルタ）
         keltner_enabled = Config.get_keltner_enabled()

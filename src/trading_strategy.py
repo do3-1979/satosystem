@@ -246,13 +246,31 @@ class TradingStrategy:
         position_side = self.portfolio.get_position_side()
         
         # Phase C: 時間ベースEXIT (最大保持バー数チェック)
+        # =====================================================================
+        # 【改善】max_hold_bars で時間切れ決済を判定
+        # =====================================================================
         max_hold_bars = Config.get_max_hold_bars()
         if max_hold_bars > 0 and position_side != 'NONE':
-            # bot.pyのopen_tradeからバー数を取得する必要があるため、
-            # portfolioに保存するか、別の方法で取得
-            # 現状はbot.pyで管理されているため、ここでは判定できない
-            # 代わりにbot.pyで判定する方式に変更
-            pass
+            # portfolio に bars_held カウンタを管理
+            bars_held = getattr(self.portfolio, 'bars_held', 0)
+            self.portfolio.bars_held = bars_held + 1  # 毎バー +1
+            
+            if self.portfolio.bars_held >= max_hold_bars:
+                self.logger.log(f"[条件判定:EXIT] 時間ベースEXIT: 保持バー数 {self.portfolio.bars_held} >= 上限 {max_hold_bars}")
+                side = "SELL" if position_side == "BUY" else "BUY"
+                decision = "EXIT"
+                self.trade_decision["side"] = side
+                self.trade_decision["decision"] = decision
+                self.trade_decision["reason"] = "max_hold_bars"
+                
+                # EXIT後の状態リセット
+                self.risk_manager.reset_position_tracking()
+                if hasattr(self.portfolio, 'add_count'):
+                    self.portfolio.add_count = 0
+                if hasattr(self.portfolio, 'bars_held'):
+                    self.portfolio.bars_held = 0
+                    
+                return
         
         # Phase D: 部分決済チェック (設定有効時)
         if position_side != 'NONE' and Config.get_partial_exit_enabled():
@@ -294,6 +312,17 @@ class TradingStrategy:
                 self.trade_decision["decision"] = decision
                 self.trade_decision["exec_price"] = executed_price
                 self._add_limit_logged = False
+                
+                # =====================================================================
+                # 【重要】EXIT後の状態リセット
+                # =====================================================================
+                # ポジション決済後、risk_manager の内部状態をクリアして
+                # 次のエントリーに備える。これにより「EXIT後のENTRY遅延」を回避
+                self.risk_manager.reset_position_tracking()
+                if hasattr(self.portfolio, 'add_count'):
+                    self.portfolio.add_count = 0
+                    self.logger.log(f"[EXIT処理] add_count をリセット")
+                
         elif position_side == "SELL":
             if current_price >= stop_price:
                 executed_price = stop_price * 1.005  # スリッページ考慮
@@ -304,6 +333,16 @@ class TradingStrategy:
                 self.trade_decision["decision"] = decision
                 self.trade_decision["exec_price"] = executed_price
                 self._add_limit_logged = False
+                
+                # =====================================================================
+                # 【重要】EXIT後の状態リセット
+                # =====================================================================
+                # ポジション決済後、risk_manager の内部状態をクリアして
+                # 次のエントリーに備える。これにより「EXIT後のENTRY遅延」を回避
+                self.risk_manager.reset_position_tracking()
+                if hasattr(self.portfolio, 'add_count'):
+                    self.portfolio.add_count = 0
+                    self.logger.log(f"[EXIT処理] add_count をリセット")
 
         return
 
@@ -317,6 +356,11 @@ class TradingStrategy:
         
         ※ ENTRY後に再度ENTRYシグナル発生 → ADD処理に転換
            (段階的ポジション増加 Phase C)
+           
+        【修正】ENTRY実行直後のサイクルでも：
+        - 初回 ENTRY時は quantity=0 → ENTRY判定
+        - ENTRY実行後、次のサイクルまで quantity は 0 のまま
+        - したがって、毎サイクルで条件が満たされると ADD判定に正しく遷移
         """
         portfolio = self.portfolio.get_position_quantity()
         price = self.price_data_management.get_ticker()

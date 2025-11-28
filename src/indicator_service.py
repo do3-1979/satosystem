@@ -50,18 +50,32 @@ class IndicatorService:
         Returns:
             float: ボラティリティ（%）
         """
-        if len(ohlcv_data) < period:
+        # =====================================================================
+        # 【修正】データ不足またはNaN対応
+        # =====================================================================
+        if ohlcv_data is None or len(ohlcv_data) < period:
             return 0.0
         
         closes = np.array([d.get('close_price', 0) for d in ohlcv_data[-period:]], dtype=float)
-        if len(closes) == 0 or np.all(closes == 0):
+        
+        # NaN/inf チェック
+        if len(closes) == 0 or np.all(closes == 0) or np.any(np.isnan(closes)) or np.any(np.isinf(closes)):
             return 0.0
         
         # 日次リターンを計算
         returns = np.diff(closes) / closes[:-1]
         
+        # NaN/inf チェック（リターン計算後）
+        if np.any(np.isnan(returns)) or np.any(np.isinf(returns)):
+            return 0.0
+        
         # 標準偏差をパーセンテージで返す
         volatility = np.std(returns) * 100
+        
+        # 最終チェック
+        if np.isnan(volatility) or np.isinf(volatility):
+            return 0.0
+            
         return float(volatility)
     
     def calculate_donchian(self, ohlcv_data, period=20, side='buy'):
