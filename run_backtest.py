@@ -194,6 +194,9 @@ def run_backtest(logging_interval=1, start_time=None, end_time=None, fast_summar
         # Bot
         bot = Bot(exchange, strategy, risk_management, price_data_management, portfolio)
         
+        # logging_interval を Botに反映させる（Config リロード後）
+        bot._logging_interval = Config.get_logging_interval()
+        
         # Run
         print("[INFO] バックテスト開始...")
         bot.run()
