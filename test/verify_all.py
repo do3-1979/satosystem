@@ -343,6 +343,56 @@ class UnifiedTestRunner:
         
         return all_pass
 
+    def test_docs_structure(self):
+        """ドキュメント管理ルールの構造検証"""
+        print("\n📚 ドキュメント構造テスト...")
+        
+        docs_checks = {
+            'docs_directory_exists': os.path.exists(os.path.join(self.repo_root, 'docs')),
+            'docs_readme_exists': os.path.exists(os.path.join(self.repo_root, 'docs', 'README.md')),
+            'architecture_overview_exists': os.path.exists(os.path.join(self.repo_root, 'docs', 'ARCHITECTURE_OVERVIEW.md')),
+            'trading_strategy_plan_exists': os.path.exists(os.path.join(self.repo_root, 'docs', 'TRADING_STRATEGY_PLAN.md')),
+            'action_list_exists': os.path.exists(os.path.join(self.repo_root, 'docs', 'ACTION_LIST.md')),
+        }
+        
+        all_pass = all(docs_checks.values())
+        
+        for check, result in docs_checks.items():
+            symbol = '✅' if result else '❌'
+            print(f"  {symbol} {check}: {result}")
+        
+        return all_pass
+
+    def test_work_reports_structure(self):
+        """work_reports ドキュメント管理構造検証"""
+        print("\n📋 work_reports 構造テスト...")
+        
+        work_reports_checks = {
+            'work_reports_directory_exists': os.path.exists(os.path.join(self.repo_root, 'work_reports')),
+            'management_guide_exists': os.path.exists(os.path.join(self.repo_root, 'work_reports', '00_MANAGEMENT_GUIDE.md')),
+        }
+        
+        # 日付ディレクトリ（YYYY-MM-DD 形式）の存在確認
+        work_reports_dir = os.path.join(self.repo_root, 'work_reports')
+        has_date_dirs = False
+        if os.path.exists(work_reports_dir):
+            date_dirs = [
+                d for d in os.listdir(work_reports_dir)
+                if os.path.isdir(os.path.join(work_reports_dir, d)) and 
+                len(d) == 10 and d.count('-') == 2  # YYYY-MM-DD 形式
+            ]
+            has_date_dirs = len(date_dirs) > 0
+        
+        work_reports_checks['date_directories_exist'] = has_date_dirs
+        
+        all_pass = all(work_reports_checks.values())
+        
+        for check, result in work_reports_checks.items():
+            symbol = '✅' if result else '❌'
+            print(f"  {symbol} {check}: {result}")
+        
+        return all_pass
+
     def run_sample_tests(self):
         """サンプルテスト実行"""
         print("\n" + "=" * 70)
@@ -359,6 +409,8 @@ class UnifiedTestRunner:
         all_pass = self.test_visualization_files() and all_pass
         all_pass = self.test_log_files() and all_pass
         all_pass = self.test_data_integrity() and all_pass
+        all_pass = self.test_docs_structure() and all_pass
+        all_pass = self.test_work_reports_structure() and all_pass
 
         if all_pass:
             print("\n✅ サンプルテスト: PASS")
