@@ -361,6 +361,10 @@ class TradingStrategy:
         - 初回 ENTRY時は quantity=0 → ENTRY判定
         - ENTRY実行後、次のサイクルまで quantity は 0 のまま
         - したがって、毎サイクルで条件が満たされると ADD判定に正しく遷移
+        
+        【重要】ADD判定直後のEXIT重複防止：
+        - ADD実行後は1バー待機してからEXIT判定を実行
+        - これにより ENTRY→ADD→EXIT の連鎖を防止
         """
         portfolio = self.portfolio.get_position_quantity()
         price = self.price_data_management.get_ticker()
@@ -371,8 +375,13 @@ class TradingStrategy:
             self.evaluate_entry()
         else:
             # ポジションあり: ADD → EXIT判定（優先度順）
+            # ADD判定の結果でフラグ確認
+            prev_decision = self.trade_decision.get("decision", "NONE")
             self.evaluate_add(price)
-            self.evaluate_exit()
+            
+            # ADD判定直後はEXIT判定をスキップ（ADD実行時に直後EXIT重複を防止）
+            if self.trade_decision.get("decision") != "ADD":
+                self.evaluate_exit()
  
         return self.trade_decision
     

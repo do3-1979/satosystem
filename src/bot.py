@@ -568,26 +568,34 @@ class Bot:
                     stop_price = self.risk_management.get_stop_price()
                     side = position['side']
                     
-                    stop_hit = False
-                    if side == "BUY" and current_price <= stop_price:
-                        stop_hit = True
-                        self.logger.log(f"[STOP LOSS HIT - BUY] Price={current_price:.2f} <= Stop={stop_price:.2f}")
-                    elif side == "SELL" and current_price >= stop_price:
-                        stop_hit = True
-                        self.logger.log(f"[STOP LOSS HIT - SELL] Price={current_price:.2f} >= Stop={stop_price:.2f}")
+                    # 【重要】ポジション成立直後（bars=0）のストップロス判定をスキップ
+                    # ENTRY/ADD直後の極限価格でのストップロス発火を防ぐ
+                    skip_stoploss = False
+                    if self.open_trade and self.open_trade.get('bars', 0) == 0:
+                        skip_stoploss = True
+                        self.logger.log(f"[ストップロス判定スキップ] 1バー目のため (bars=0)")
                     
-                    if stop_hit:
-                        # open_trade に stop_loss_hit フラグを設定
-                        if self.open_trade:
-                            self.open_trade['stop_loss_hit'] = True
-                        # ストップロス発動時は EXIT を強制
-                        trade_decision = {
-                            "decision": "EXIT",
-                            "side": "SELL" if side == "BUY" else "BUY",
-                            "order_type": "market",
-                            "reason": "stop_loss"
-                        }
-                        self.logger.log(f"[EXIT DECISION] Triggered by stop loss: {position['side']} position closed")
+                    if not skip_stoploss:
+                        stop_hit = False
+                        if side == "BUY" and current_price <= stop_price:
+                            stop_hit = True
+                            self.logger.log(f"[STOP LOSS HIT - BUY] Price={current_price:.2f} <= Stop={stop_price:.2f}")
+                        elif side == "SELL" and current_price >= stop_price:
+                            stop_hit = True
+                            self.logger.log(f"[STOP LOSS HIT - SELL] Price={current_price:.2f} >= Stop={stop_price:.2f}")
+                        
+                        if stop_hit:
+                            # open_trade に stop_loss_hit フラグを設定
+                            if self.open_trade:
+                                self.open_trade['stop_loss_hit'] = True
+                            # ストップロス発動時は EXIT を強制
+                            trade_decision = {
+                                "decision": "EXIT",
+                                "side": "SELL" if side == "BUY" else "BUY",
+                                "order_type": "market",
+                                "reason": "stop_loss"
+                            }
+                            self.logger.log(f"[EXIT DECISION] Triggered by stop loss: {position['side']} position closed")
                 
                 # ====================================================
                 # 取引決定の場合
