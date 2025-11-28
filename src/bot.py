@@ -719,7 +719,10 @@ class Bot:
                         if trade_decision["decision"] == "ENTRY" or self.open_trade is None:
                             self.open_trade = {'entry_price': avg_entry, 'side': trade_decision['side'], 'atr': atr_val, 'mfe': 0.0, 'mae': 0.0, 'bars': 0, 'stop_loss_hit': False}
                         else:
+                            # ADD実行時：平均価格を更新し、bars=0にリセット（同じバー内でのEXIT判定をスキップ）
                             self.open_trade['entry_price'] = avg_entry
+                            self.open_trade['bars'] = -1  # -1にリセット → bars()インクリメント後に0になる
+                            self.logger.log(f"[ADD実行] bars をリセット（-1にセット、次ローソク足で0になる）")
                     # ポートフォリオ更新イベント
                     self.events.emit(EventType.PORTFOLIO_UPDATED, self.portfolio.get_position_quantity())
                     t_portfolio_end = perf_counter(); self.perf.record('portfolio_update', t_portfolio_start, t_portfolio_end)
