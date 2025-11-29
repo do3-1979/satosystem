@@ -1,12 +1,17 @@
 #ログファイル
 *.log
 
-#テキストファイル（ただし crontab_entries.txt は除外）
+#テキストファイル（ただし Readme.md と docs/ は除外）
 *.txt
-!crontab_entries.txt
+!Readme.md
+!README*.md
 
 #pngファイル
 *.png
+
+# HTML/DrawIO ファイル（ローカル描画・図)
+*.drawio.html
+*.drawio
 
 #xlsxファイル
 *.xlsx
@@ -45,6 +50,12 @@ src/ohlcv_data/ohlcv_cache.db-wal
 src/ohlcv_data/ohlcv_cache.db-shm
 
 # ===== Secrets / Backup Configs (exclude) =====
+# API KEY ファイル（すべての派生物含む）
+.api_key
+.api_key.*
+*api_key*
+.secure_backup*
+
 # Backups that may contain real API keys should never be tracked
 config_bak.ini
 config_baseline_*.ini
@@ -54,10 +65,15 @@ config_baseline_*.ini
 src/config*.backup*
 config.adaptive_seq_backup
 config.ini.backup_quarterly
+cache.db
+cache.db-wal
+cache.db-shm
 
 # ZIP backups in parent directory (untracked)
 ../backup_*.zip
 ../satosystem_*.zip
+*backup*.zip
+*サーバ移動*.zip
 
 # Local logs outside src (if generated)
 logs/
