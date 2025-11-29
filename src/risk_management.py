@@ -101,6 +101,9 @@ class RiskManagement:
         self.sideways_multiplier = Config.get_sideways_position_multiplier()
         self.weak_trend_multiplier = Config.get_weak_trend_position_multiplier()
         self.strong_trend_multiplier = Config.get_strong_trend_position_multiplier()
+        
+        # EXIT時のSTOP値キャッシュ（reset_position_tracking()でリセットされる前の値を保持）
+        self._exit_stop_cache = 0
     
     def get_entry_range(self):
         return self.entry_range
@@ -122,7 +125,7 @@ class RiskManagement:
         """
         self.last_entry_price = 0
         self.stop_price = 0
-        self.stop_offset = 0
+        self.stop_offset = 0  # 【重要】次のポジションで初期化条件（stop_offset==0）が実行されるようにリセット
         self.psar_stop_offset = 0
         self.price_surge_stop_offset = 0
         self.add_range = 0
@@ -132,7 +135,11 @@ class RiskManagement:
         self.psar = []
         self.psarbull = []
         self.psarbear = []
-        self.logger.log(f"[リセット] ポジション追跡状態を初期化 (last_entry_price=0, stop_price=0, add_range=0, PSAR=[])")
+        # 【重要】ADX値もリセット
+        self.adx = []
+        self.adx_bull = False
+        self.adx_bear = False
+        self.logger.log(f"[リセット] ポジション追跡状態を初期化 (last_entry_price=0, stop_price=0, stop_offset=0, add_range=0, PSAR=[], ADX=[])")
         return
 
     def update_risk_status(self):
@@ -413,8 +420,10 @@ class RiskManagement:
                 self.stop_price = tmp_stop_price
                 # PSAR値は使用しない（無効化）
         else:
-            self.psar_stop_offset = 0
-            self.price_surge_stop_offset = 0
+            # 【重要】ポジションがない場合、stop_price = 0を明示的に保証
+            if self.stop_price != 0:
+                self.logger.log_debug(f"[警告] ポジションなし（quantity=0）だが、stop_price={self.stop_price}が残っている。クリア")
+                self.stop_price = 0
             self.stop_price = 0
             self.stop_offset = 0
             self.position_size = 0 

@@ -110,6 +110,16 @@ class Bot:
         self._logging_interval = Config.get_logging_interval()
         # 重複ログ抑制用: 前回のエラーメッセージ
         self._last_error_message = None
+        # EXIT時のSTOP値キャッシュ（trading_strategy内で値が失われる前に保存）
+        self._exit_stop_price_cache = 0
+        # 直前フレームの stop_price を保存（毎フレーム更新）
+        self._previous_stop_price = 0
+        # 毎フレームのSTOP値履歴（最後の有効な値を取得するため）
+        self._stop_price_history = []
+        # EXIT実行フラグ（trade_executedとの同期）
+        self._exit_was_executed = False
+        # EXIT実行時のSTOP値キャッシュ（保持用）
+        self._last_exit_stop_cache = 0
 
     def show_trade_data(self, trade_data):
         self.logger.log(f"時刻: {trade_data['real_time']}"
@@ -559,8 +569,38 @@ class Bot:
                 t_strategy_end = perf_counter(); self.perf.record('strategy', t_strategy_start, t_strategy_end)
                 
                 # ====================================================
+                # 現在のSTOP値を保存（EXIT判定前）
+                # ====================================================
+                # 毎フレーム STOP値を保存（trading_strategy内でリセットされる前の値を記録）
+                self._previous_stop_price = self.risk_management.get_stop_price()
+                self._stop_price_history.append(self._previous_stop_price)
+                if len(self._stop_price_history) > 100:
+                    self._stop_price_history.pop(0)
+                
+                # 最後の有効な（0でない）STOP値を取得
+                last_valid_stop = 0
+                for stop_val in reversed(self._stop_price_history):
+                    if stop_val > 0:
+                        last_valid_stop = stop_val
+                        break
+                self.logger.log(f"[フレーム更新] current_stop={self._previous_stop_price:.2f}, last_valid={last_valid_stop:.2f}")
+                
+                # ====================================================
+                # EXIT判定前にSTOP値をキャッシュ保存（risk_managementのリセット前に）
+                # ====================================================
+                # 現在のtrade_decisionにおいてEXIT判定の可能性がある場合、STOP値を先にキャッシュ
+                if trade_decision.get("decision") == "EXIT":
+                    self._exit_stop_price_cache = last_valid_stop if last_valid_stop > 0 else self._previous_stop_price
+                    self.logger.log(f"[キャッシュ保存] EXIT判定: cache={self._exit_stop_price_cache:.2f}")
+                
+                # ====================================================
                 # ストップロス判定（戦略シグナルより優先）
                 # ====================================================
+                # EXIT判定前にSTOP値をキャッシュ保存（risk_managementのリセット前に）
+                # 現在のtrade_decisionにおいてEXIT判定の可能性がある場合、STOP値を先にキャッシュ
+                if trade_decision.get("decision") == "EXIT":
+                    self._exit_stop_price_cache = self.risk_management.get_stop_price()
+                    self.logger.log(f"[キャッシュ保存] STOP値: {self._exit_stop_price_cache:.2f}")
                 # ポジションがある場合、ストップロス判定を実施
                 position = self.portfolio.get_position_quantity()
                 if position['quantity'] > 0 and position['side'] != 'NONE':
@@ -588,6 +628,8 @@ class Bot:
                             # open_trade に stop_loss_hit フラグを設定
                             if self.open_trade:
                                 self.open_trade['stop_loss_hit'] = True
+                            # EXIT前にSTOP値をキャッシュ（stop_hit時）
+                            self._exit_stop_price_cache = stop_price
                             # ストップロス発動時は EXIT を強制
                             trade_decision = {
                                 "decision": "EXIT",
@@ -595,7 +637,7 @@ class Bot:
                                 "order_type": "market",
                                 "reason": "stop_loss"
                             }
-                            self.logger.log(f"[EXIT DECISION] Triggered by stop loss: {position['side']} position closed")
+                            self.logger.log(f"[EXIT DECISION] Triggered by stop loss: {position['side']} position closed, cache={self._exit_stop_price_cache:.2f}")
                 
                 # ====================================================
                 # 取引決定の場合
@@ -730,6 +772,13 @@ class Bot:
                     #self.logger.log(f"ポートフォリオ更新: {self.portfolio.get_position_quantity()}")
                     #self.logger.log(f"損益: {self.portfolio.get_profit_and_loss()} [BTC/USD]")
                     
+                    # EXIT時のキャッシュ値を trade_data に直接格納（後続処理でのリセット対策）
+                    if trade_decision.get("decision") == "EXIT" and self._exit_stop_price_cache > 0:
+                        # このフレームでEXITが実行されたことを記録
+                        self._last_exit_stop_cache = self._exit_stop_price_cache
+                        self._exit_was_executed = True
+                        self.logger.log(f"[EXIT実行時キャッシュ記録] stop_cache={self._exit_stop_price_cache:.2f}, will be used in next log output")
+                    
                     trade_executed = True
                 else:
                     trade_executed = False
@@ -751,6 +800,8 @@ class Bot:
 
                 # --------------------------------------------
                 # ログに記録 (インターバル制御付き)
+                # EXIT時のキャッシュを一時保存（後続処理でリセットされるため）
+                current_exit_cache = self._last_exit_stop_cache if self._exit_was_executed else 0
                 # --------------------------------------------
                 t_logging_start = perf_counter()
                 self._log_counter += 1
@@ -766,6 +817,9 @@ class Bot:
                     else:
                         dt_now = datetime.now()
                         trade_data['real_time'] = dt_now.strftime('%Y/%m/%d %H:%M:%S')
+                    # EXIT時のSTOP値キャッシュ使用 (debug)
+                    # 注意：この時点では trade_data が未更新のため、直接スコープ内の trade_decision を確認
+                    # trade_data['decision'] で判定するために、この行はスキップしてうしろで判定 
                     trade_data['stop_price'] = self.risk_management.get_stop_price()
                     trade_data['position_price'] = self.portfolio.get_position_price()
                     trade_data['position_size'] = self.risk_management.get_position_size()
@@ -832,8 +886,33 @@ class Bot:
                     trade_data['adx_bull'] = self.risk_management.get_adx_bull()
                     trade_data['adx_bear'] = self.risk_management.get_adx_bear()
 
+                    # 【重要】trade_decision を更新する前に、ポートフォリオの side を保存
+                    portfolio_side = trade_data.get('side', 'NONE')
+                    
                     trade_data.update(trade_decision)
                     trade_data.update(signals)
+                    
+                    # 【EXIT時のSTOP値修正】EXIT時にはキャッシュ値を使用（ポジション 0 後でも有効な値を保持）
+                    self.logger.log(f"[DEBUG] ログ記録時の判定: decision={trade_data.get('decision')}, action_name={trade_data.get('action_name')}, cache={current_exit_cache:.2f}")
+                    
+                    # risk_management からEXITキャッシュを取得
+                    rm_cache = getattr(self.risk_management, '_exit_stop_cache', 0)
+                    effective_cache = rm_cache if rm_cache > 0 else current_exit_cache
+                    self.logger.log(f"[DEBUG] risk_management cache={rm_cache:.2f}, effective_cache={effective_cache:.2f}")
+                    
+                    if trade_data.get('decision') == "EXIT" and effective_cache > 0:
+                        trade_data['stop_price'] = effective_cache
+                        self.logger.log(f"[DEBUG] ✅ EXIT時STOP値キャッシュ使用: {effective_cache:.2f}")
+                    elif trade_data.get('action_name') == "EXIT" and effective_cache > 0:
+                        trade_data['stop_price'] = effective_cache
+                        self.logger.log(f"[DEBUG] ✅ EXIT(action_name)時STOP値キャッシュ使用: {effective_cache:.2f}")
+                    else:
+                        self.logger.log(f"[DEBUG] 通常STOP値: decision={trade_data.get('decision')}, cache={current_exit_cache:.2f}")
+                    
+                    # 【重要】ポジションがある場合、side を portfolio_side に戻す
+                    # trade_decision の side='NONE' がポートフォリオの side を上書きするのを防止
+                    if quantity > 0 and portfolio_side != 'NONE':
+                        trade_data['side'] = portfolio_side
                     
                     # action_name をログに記録
                     if 'decision' in trade_decision:

@@ -79,6 +79,13 @@ class TradingStrategy:
         side = 'NONE'
         decision = 'NONE'
 
+        # 【重要】証拠金不足でエントリーを禁止
+        if self.risk_manager.capital_exhausted:
+            self.logger.log("[TRADING HALT] 証拠金不足のためエントリーを禁止")
+            self.trade_decision["side"] = 'NONE'
+            self.trade_decision["decision"] = 'NONE'
+            return
+
         signals = self.price_data_management.get_signals()
 
         # PVO有効範囲チェック
@@ -263,6 +270,12 @@ class TradingStrategy:
                 self.trade_decision["decision"] = decision
                 self.trade_decision["reason"] = "max_hold_bars"
                 
+                # EXIT前にSTOP値を保存（reset_position_tracking()でリセットされる前に）
+                current_stop = self.risk_manager.get_stop_price()
+                if hasattr(self.risk_manager, '_exit_stop_cache'):
+                    self.risk_manager._exit_stop_cache = current_stop
+                self.logger.log(f"[trading_strategy:EXIT前キャッシュ] stop={current_stop:.2f}")
+                
                 # EXIT後の状態リセット
                 self.risk_manager.reset_position_tracking()
                 if hasattr(self.portfolio, 'add_count'):
@@ -313,6 +326,12 @@ class TradingStrategy:
                 self.trade_decision["exec_price"] = executed_price
                 self._add_limit_logged = False
                 
+                # EXIT前にSTOP値を保存（reset_position_tracking()でリセットされる前に）
+                current_stop = self.risk_manager.get_stop_price()
+                if hasattr(self.risk_manager, '_exit_stop_cache'):
+                    self.risk_manager._exit_stop_cache = current_stop
+                self.logger.log(f"[trading_strategy:EXIT前キャッシュ] stop={current_stop:.2f}")
+                
                 # =====================================================================
                 # 【重要】EXIT後の状態リセット
                 # =====================================================================
@@ -333,6 +352,12 @@ class TradingStrategy:
                 self.trade_decision["decision"] = decision
                 self.trade_decision["exec_price"] = executed_price
                 self._add_limit_logged = False
+                
+                # EXIT前にSTOP値を保存（reset_position_tracking()でリセットされる前に）
+                current_stop = self.risk_manager.get_stop_price()
+                if hasattr(self.risk_manager, '_exit_stop_cache'):
+                    self.risk_manager._exit_stop_cache = current_stop
+                self.logger.log(f"[trading_strategy:EXIT前キャッシュ] stop={current_stop:.2f}")
                 
                 # =====================================================================
                 # 【重要】EXIT後の状態リセット
