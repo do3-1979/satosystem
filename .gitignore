@@ -30,6 +30,9 @@ src/logs/*.json
 src/logs/*.zip
 src/ohlcv_data
 src/output_configs
+# ローカルキャッシュ（ohlcv_data ディレクトリはローカルに残す）
+ohlcv_data/*.db
+ohlcv_data/*.json
 
 # レポート出力先（コミット対象外）
 report/
