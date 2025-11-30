@@ -46,22 +46,34 @@ class Util:
         # 選択されたログファイルからデータを抽出
         for i, log_file in enumerate(reversed(selected_log_files)):  # 逆順に処理
             print(f"Processing file {i + 1}/{proccess_num_logs}: {log_file}", end='\r')  # 処理中のファイルを表示
-            if log_file.endswith(".zip"):
-                with zipfile.ZipFile(log_file, "r") as log_zip:
-                    with log_zip.open(log_zip.namelist()[0]) as log_json:
+            try:
+                if log_file.endswith(".zip"):
+                    with zipfile.ZipFile(log_file, "r") as log_zip:
+                        with log_zip.open(log_zip.namelist()[0]) as log_json:
+                            log_data = pd.read_json(log_json)
+                elif log_file.endswith(".json"):
+                    with open(log_file, "r") as log_json:
                         log_data = pd.read_json(log_json)
-                        # データが期間内のものであれば追加
-                        if start_time <= log_data['close_time'].max() and end_time >= log_data['close_time'].min():
-                            data.append(log_data)
-            elif log_file.endswith(".json"):
-                with open(log_file, "r") as log_json:
-                    log_data = pd.read_json(log_json)
-                    # データが期間内のものであれば追加
-                    if start_time <= log_data['close_time'].max() and end_time >= log_data['close_time'].min():
-                        data.append(log_data)
+                else:
+                    continue
+                # DataFrameでなければスキップ
+                if not isinstance(log_data, pd.DataFrame) or log_data.empty:
+                    print(f"[WARN] {log_file} is not a valid DataFrame or is empty. Skipped.")
+                    continue
+                # データが期間内のものであれば追加
+                if start_time <= log_data['close_time'].max() and end_time >= log_data['close_time'].min():
+                    data.append(log_data)
+                else:
+                    print(f"[INFO] {log_file} is out of the specified time range. Skipped.")
+            except Exception as e:
+                print(f"[ERROR] Failed to load {log_file}: {e}")
+                continue
         print(f"Processing file {i + 1}/{proccess_num_logs}: {log_file} completed")  # 処理中のファイルを表示
 
-        # データを連結
+        # データを連結（空の場合はエラー表示して終了）
+        if not data:
+            print("[ERROR] 指定した期間・条件に該当するデータがありません。処理を中断します。")
+            return
         combined_data = pd.concat(data, ignore_index=True)
 
         # エクセルファイルに出力
@@ -361,58 +373,54 @@ class Util:
             "Back Test Mode:",
         """
         # エクセルファイルにデータを書き込む
+        data = {}
+        for i, log_file in enumerate(log_files):
+            file_name = os.path.basename(log_file)
+            keyword = "File Name"
+            if keyword not in data:
+                data[keyword] = []
+            data[keyword].append(file_name)
+
+            print(f"Processing file {i+1}/{len(log_files)}: {file_name}", end='\r')
+            with open(log_file, "r") as input_f:
+                for line in input_f:
+                    for keyword in keywords:
+                        if keyword in line:
+                            output_line = line.split(" - INFO - ", 1)[-1]
+                            keyword, value = output_line.split(':', 1)
+                            keyword = keyword.strip()
+                            value = value.strip().split(' [')[0]
+                            if keyword not in data:
+                                data[keyword] = []
+                            data[keyword].append(value)
+
+                    if "最終ポートフォリオ" in line:
+                        match = re.search(r"'quantity':\s*([0-9.]+),\s*'side':\s*'(\w+)',\s*'position_price':\s*([0-9.]+)", line)
+                        if match:
+                            quantity = match.group(1)
+                            side = match.group(2)
+                            position_price = match.group(3)
+                            if "quantity" not in data:
+                                data["quantity"] = []
+                            if "side" not in data:
+                                data["side"] = []
+                            if "position_price" not in data:
+                                data["position_price"] = []
+                            data["quantity"].append(quantity)
+                            data["side"].append(side)
+                            data["position_price"].append(position_price)
+
+        if not data or all(len(lst) == 0 for lst in data.values()):
+            print("[ERROR] ログから抽出できるデータがありません。Excel出力をスキップします。")
+            return
+
+        max_length = max(len(lst) for lst in data.values())
+        for key in data:
+            data[key] += [''] * (max_length - len(data[key]))
+
         with pd.ExcelWriter(output_excel_file, engine='openpyxl') as writer:
-            data = {}
-            for i, log_file in enumerate(log_files):
-                # ファイル名からパス部分を取り除く
-                file_name = os.path.basename(log_file)
-                # ファイル名の列を追加
-                keyword = "File Name"
-                if keyword not in data:
-                    data[keyword] = []
-                data[keyword].append(file_name)
-
-                print(f"Processing file {i+1}/{len(log_files)}: {file_name}", end='\r')
-                with open(log_file, "r") as input_f:
-                    for line in input_f:
-                        for keyword in keywords:
-                            if keyword in line:
-                                # キーワード行だけを抽出
-                                output_line = line.split(" - INFO - ", 1)[-1]
-                                keyword, value = output_line.split(':', 1)
-                                keyword = keyword.strip()  # 先頭と末尾の空白を削除
-                                value = value.strip().split(' [')[0]      # 先頭と末尾の空白を削除し、[BTC/USD] や [%] を削除
-                                if keyword not in data:
-                                    data[keyword] = []
-                                #print(f"file_name {file_name} keyword {keyword} value {value}")
-                                data[keyword].append(value)
-
-                        if "最終ポートフォリオ" in line:
-                            # 正規表現を使用してquantity、side、position_priceの値を抽出
-                            match = re.search(r"'quantity':\s*([0-9.]+),\s*'side':\s*'(\w+)',\s*'position_price':\s*([0-9.]+)", line)
-                            if match:
-                                quantity = match.group(1)
-                                side = match.group(2)
-                                position_price = match.group(3)
-                                if "quantity" not in data:
-                                    data["quantity"] = []
-                                if "side" not in data:
-                                    data["side"] = []
-                                if "position_price" not in data:
-                                    data["position_price"] = []
-                                data["quantity"].append(quantity)
-                                data["side"].append(side)
-                                data["position_price"].append(position_price)
-
-            # 最長のリストの長さに合わせて、他のリストに空の文字列を追加する
-            max_length = max(len(lst) for lst in data.values())
-            for key in data:
-                data[key] += [''] * (max_length - len(data[key]))
-
-            # データをエクセルに書き込む
             df = pd.DataFrame(data)
             df.to_excel(writer, index=False, sheet_name="Log Data")
-
             print("\nExporting to Excel completed!")
 
 if __name__ == "__main__":
@@ -429,20 +437,20 @@ if __name__ == "__main__":
     #----------------
     # グラフ化機能使用
     
-    start_time = "2025/5/1 1:00"  # 開始時刻 (例: "2023/01/01 00:00")
-    end_time = "2025/5/24 18:00"    # 終了時刻 (例: "2023/01/02 00:00")
-    #start_time = Config.get_start_time()
-    #end_time = Config.get_end_time()
+    #start_time = "2025/5/1 1:00"  # 開始時刻 (例: "2023/01/01 00:00")
+    #end_time = "2025/5/24 18:00"    # 終了時刻 (例: "2023/01/02 00:00")
+    start_time = Config.get_start_time()
+    end_time = Config.get_end_time()
 
     util.extract_and_export_logs(log_directory, num_logs_to_read, output_excel_file, start_time, end_time)
 
     #---------------------
     # バックテスト集約使用例
-    #log_directory = "."  # ログファイルのディレクトリ
-    #output_bt_excel_file = "backtest_logs.xlsx"  # 出力エクセルファイルの名前
+    log_directory = "."  # ログファイルのディレクトリ
+    output_bt_excel_file = "backtest_logs.xlsx"  # 出力エクセルファイルの名前
 
     # パラメータと計算結果を抽出してエクセルファイルに出力
-    #util.extract_parameters_and_results(log_directory, output_bt_excel_file)
+    util.extract_parameters_and_results(log_directory, output_bt_excel_file)
 
     # 1分足の指定ログ取得
     # exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
