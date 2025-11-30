@@ -265,9 +265,12 @@ def main():
     end_time = args.period[1] if args.period else None
     
     # 高速サマリモード
-    # NOTE: デフォルトでは fast_summary_mode=0（グラフ出力ON）
-    # ユーザーが --fast-summary を指定した場合のみ fast_summary_mode=1（グラフ出力OFF）
-    fast_summary = 1 if args.fast_summary else 0
+    # NOTE: 引数 --fast-summary が指定された場合は1、未指定の場合は config.ini の設定を読み込む
+    if args.fast_summary:
+        fast_summary = 1
+    else:
+        # config.ini から読み込む（デフォルト: 0）
+        fast_summary = Config.get_fast_summary_mode()
     
     # ログファイル指定
     log_file = args.log_file if hasattr(args, 'log_file') else None
