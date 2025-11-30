@@ -109,3 +109,18 @@ Adopt internal `Side` enum (BUY, SELL, NONE) for all decision & portfolio intera
 
 ---
 This document complements `Readme.md` and analysis files; update incrementally.
+
+## 現在の gen2 状態（8e6e543 コミット時）
+- `src/` 以下にボット、戦略、管理、出力のロジックが集約されており、`bot.py` を中心にループ／注文／ログ／可視化が実行される。
+- `output_configs/` には複数のバックテスト設定が並んでおり、`backtest.sh` で順次読み込まれる。（`bot_run.sh` は単独設定の実行用）
+- `docs/` 以下のルール・アクション・分析資料に従って、ソース変更前に参照および更新を行う。
+- ローカル OHLCV キャッシュは `ohlcv_data/` 以下で管理されており、クリーンアップ対象として README やこのドキュメントに記録している。
+
+## ドキュメントとの連携
+- ルールの根幹は `docs/DEVELOPMENT_RULES.md` に記述。作業ごとにこのファイルを確認し、`docs/ACTION_LIST.md` に進捗を記録する。
+- `docs/analysis/project_structure.json` には gen2 の現行構成（ディレクトリ、主要コンポーネント）が JSON 形式で記録されており、実装変更前には必ず参照する。
+- 議論や一時的な調査レポートが必要であれば `report_tmp/` 内でカテゴリ別に管理し、必要分のみ `ARCHITECTURE_OVERVIEW.md` に要約・言及する。
+
+## 次のステップ
+- `nextarch`（および master）にある `8e6e543` 以降のコミットを一覧化し、移植対象となる変更点ごとに検討を進める。
+- レグレッションテストの整備と自動化を進め、変更取り込み前に `report_tmp/` にテスト結果を保存して参照可能とする。

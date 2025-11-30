@@ -1,0 +1,20 @@
+{
+  "project": "satosystem",
+  "commit": "8e6e543dbfe4c3d5f8105e57be6b615e730a6f88",
+  "description": "Pythonベースのトレーディングボット／バックテストシステム。src 以下にエンジン、docs は分析/ドキュメント整備用。",
+  "root_directories": [
+    {"name": "src", "purpose": "トレーディングロジック、ボット処理、指標、エクスチェンジラッパーを収録。"},
+    {"name": "docs", "purpose": "アーキテクチャ資料、ルール、分析成果物、テンプレート重視の文書。"},
+    {"name": "logs", "purpose": "バックテストログや圧縮アーカイブを配置。"},
+    {"name": "report", "purpose": "安定版出力やレポート出力先。"},
+    {"name": "output_configs", "purpose": "複数の config シナリオを格納し、バックテスト用に sequential に読み込む。"},
+    {"name": "ohlcv_data", "purpose": "ローカル OHLCV キャッシュ。クリーンアップ対象として README などに記録中。"}
+  ],
+  "key_components": [
+    {"name": "Bot", "file": "src/bot.py", "role": "主要ループ、ログ、注文オーケストレーション"},
+    {"name": "TradingStrategy", "file": "src/trading_strategy.py", "role": "ENTRY/ADD/EXIT の判定"},
+    {"name": "RiskManagement", "file": "src/risk_management.py", "role": "ポジションサイズ計算とストップ管理"},
+    {"name": "Portfolio", "file": "src/portfolio.py", "role": "保有ポジション/累積損益の追跡"},
+    {"name": "Visualizer", "file": "src/visualizer.py", "role": "ログからグラフ／Excel を生成"}
+  ]
+}
