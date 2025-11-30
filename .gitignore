@@ -29,3 +29,6 @@ src/logs/*.json
 src/logs/*.zip
 src/ohlcv_data
 src/output_configs
+ohlcv_data/
+ohlcv_data/*.db
+ohlcv_data/*.json
