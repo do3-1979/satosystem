@@ -11,10 +11,22 @@
     {"name": "ohlcv_data", "purpose": "ローカル OHLCV キャッシュ。クリーンアップ対象として README などに記録中。"}
   ],
   "key_components": [
-    {"name": "Bot", "file": "src/bot.py", "role": "主要ループ、ログ、注文オーケストレーション"},
-    {"name": "TradingStrategy", "file": "src/trading_strategy.py", "role": "ENTRY/ADD/EXIT の判定"},
-    {"name": "RiskManagement", "file": "src/risk_management.py", "role": "ポジションサイズ計算とストップ管理"},
-    {"name": "Portfolio", "file": "src/portfolio.py", "role": "保有ポジション/累積損益の追跡"},
-    {"name": "Visualizer", "file": "src/visualizer.py", "role": "ログからグラフ／Excel を生成"}
+    {"name": "Bot", "file": "src/bot.py", "role": "主要ループ、ログ、注文オーケストレーション", "methods": ["__init__", "show_trade_data", "main_loop", "execute_trade"]},
+    {"name": "TradingStrategy", "file": "src/trading_strategy.py", "role": "ENTRY/ADD/EXIT の判定", "methods": ["__init__", "initialize_trade_decision", "evaluate_entry", "evaluate_exit"]},
+    {"name": "RiskManagement", "file": "src/risk_management.py", "role": "ポジションサイズ計算とストップ管理", "methods": ["__init__", "get_entry_range", "get_stop_price", "update_risk_status"]},
+    {"name": "Portfolio", "file": "src/portfolio.py", "role": "保有ポジション/累積損益の追跡", "methods": ["__init__", "get_position_quantity", "get_profit_and_loss", "add_position_quantity"]},
+    {"name": "Visualizer", "file": "src/visualizer.py", "role": "ログからグラフ／Excel を生成", "methods": ["plot_trade_log", "export_to_excel"]},
+    {"name": "Order", "file": "src/order.py", "role": "注文DTO・注文情報管理", "methods": ["__init__", "to_dict", "__str__"]},
+    {"name": "Logger", "file": "src/logger.py", "role": "構造化ログ・圧縮・ローテーション", "methods": ["__new__", "log", "log_error", "compress_logs"]},
+    {"name": "Config", "file": "src/config.py", "role": "設定値の集中管理・キャッシュ", "methods": ["__init__", "to_dict", "get_market", "get_bot_operation_cycle"]},
+    {"name": "BybitExchange", "file": "src/bybit_exchange.py", "role": "Bybit用取引所ラッパー", "methods": ["__init__", "fetch_ohlcv", "place_order"]},
+    {"name": "PriceDataManagement", "file": "src/price_data_management.py", "role": "OHLCV取得・シグナル生成・仮想時刻進行", "methods": ["__init__", "get_signals", "update_price_data_backtest"]},
+    {"name": "Util", "file": "src/util.py", "role": "ログ抽出・Excel/グラフ生成・分析補助", "methods": ["extract_and_export_logs", "generate_line_chart", "extract_parameters_and_results"]},
+    {"name": "Metrics", "file": "src/metrics.py", "role": "バックテスト指標計算", "methods": ["compute_metrics", "_max_drawdown", "_sharpe"]},
+    {"name": "EventBus", "file": "src/event.py", "role": "イベント通知・購読管理", "methods": ["__init__", "publish", "subscribe"]},
+    {"name": "Exchange", "file": "src/exchange.py", "role": "取引所基底クラス", "methods": ["__init__", "get_account_balance", "execute_order"]},
+    {"name": "Side", "file": "src/side.py", "role": "売買サイドEnum・変換", "methods": ["normalize_side", "to_exchange_side"]},
+    {"name": "Satostrategy", "file": "src/satostrategy.py", "role": "独自戦略クラス（TradingStrategy拡張）", "methods": ["__init__"]},
+    {"name": "ConfigGenerator", "file": "src/config_generator.py", "role": "設定ファイル自動生成", "methods": ["generate_configs"]}
   ]
 }

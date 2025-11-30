@@ -32,3 +32,6 @@ src/output_configs
 ohlcv_data/
 ohlcv_data/*.db
 ohlcv_data/*.json
+# Ignore report output
+report/
+output_configs/

@@ -1,3 +1,24 @@
+## 主要クラス・メソッド一覧（src/ 配下）
+
+| クラス名              | ファイル                | 主な役割・概要                                 | 主なメソッド例                                      |
+|----------------------|------------------------|-----------------------------------------------|----------------------------------------------------|
+| Bot                  | src/bot.py             | メインループ・注文・損益管理                   | __init__, show_trade_data, main_loop, execute_trade|
+| TradingStrategy      | src/trading_strategy.py| ENTRY/ADD/EXIT判定・戦略ロジック               | __init__, initialize_trade_decision, evaluate_entry, evaluate_exit |
+| RiskManagement       | src/risk_management.py | ポジションサイズ計算・ストップ管理             | __init__, get_entry_range, get_stop_price, update_risk_status |
+| Portfolio            | src/portfolio.py        | 保有ポジション・損益・ドローダウン管理         | __init__, get_position_quantity, get_profit_and_loss, add_position_quantity |
+| Visualizer           | src/visualizer.py       | ログからグラフ/Excel生成                       | plot_trade_log, export_to_excel                    |
+| Order                | src/order.py            | 注文DTO・注文情報管理                          | __init__, to_dict, __str__                         |
+| Logger               | src/logger.py           | 構造化ログ・圧縮・ローテーション               | __new__, log, log_error, compress_logs              |
+| Config               | src/config.py           | 設定値の集中管理・キャッシュ                   | __init__, to_dict, get_market, get_bot_operation_cycle |
+| BybitExchange        | src/bybit_exchange.py   | Bybit用取引所ラッパー                           | __init__, fetch_ohlcv, place_order                 |
+| PriceDataManagement  | src/price_data_management.py | OHLCV取得・シグナル生成・仮想時刻進行      | __init__, get_signals, update_price_data_backtest   |
+| Util                 | src/util.py             | ログ抽出・Excel/グラフ生成・分析補助            | extract_and_export_logs, generate_line_chart, extract_parameters_and_results |
+| Metrics              | src/metrics.py          | バックテスト指標計算                            | compute_metrics, _max_drawdown, _sharpe             |
+| EventBus             | src/event.py            | イベント通知・購読管理                          | __init__, publish, subscribe                        |
+| Exchange             | src/exchange.py         | 取引所基底クラス                                | __init__, get_account_balance, execute_order        |
+| Side                 | src/side.py             | 売買サイドEnum・変換                            | normalize_side, to_exchange_side                   |
+| Satostrategy         | src/satostrategy.py     | 独自戦略クラス（TradingStrategy拡張）           | __init__                                           |
+| ConfigGenerator      | src/config_generator.py | 設定ファイル自動生成                            | generate_configs                                   |
 # Architecture Overview
 
 ## Component Responsibilities
