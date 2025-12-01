@@ -55,8 +55,8 @@ def extract_entry_count(log_content):
 def main():
     workspace_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     
-    before_log = os.path.join(workspace_root, 'logs', 'regression_test_before_optimization.log')
-    after_log = os.path.join(workspace_root, 'logs', 'regression_test_after_optimization.log')
+    before_log = os.path.join(workspace_root, 'logs', 'regression_test_BASELINE.log')
+    after_log = os.path.join(workspace_root, 'logs', 'regression_test_AFTER_OPTIMIZATION.log')
     
     print("=" * 80)
     print("バックテスト高速化 No.2 検証レポート")
