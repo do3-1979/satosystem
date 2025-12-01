@@ -260,61 +260,29 @@ class PriceDataManagement:
             return False
 
         # --------------------------------------------
-        # 最新値の更新
+        # 最新値の更新（性能改善: 1分刻み→時間足刻み）
         # --------------------------------------------
-        # 処理時間を1分ずつ進め、価格データ更新タイミングごとに過去データを取得する
-        pdiff = self.progress_diff
-        
-        # 秒を切り捨て
-        target_ptime = datetime.fromtimestamp(self.progress_time)
-        target_ptime = target_ptime.replace(second=0)
-        ptime = int(target_ptime.timestamp())
-
-        # progress timeを60秒進め、累積が経過したらフラグを立てる(120分と15分)
-        pdiff += 60
-        ptime += 60
-        # ptm = datetime.fromtimestamp(ptime).strftime('%Y/%m/%d %H:%M:%S')
-        # print(f"progress_time_diff : {pdiff} progress_time : {ptm}")
-        # progress time が2時間更新か判断 progress timeが2h単位である前提
-        if pdiff % (self.time_frame * 60) == 0:
-            pdiff = 0
-            is_update_ohlcv_1 = True
-
-        if pdiff % (self.psar_time_frame * 60) == 0:
+        # 2時間足単位で progress_time を直接進め、不要な 1 分ステップを排除し大幅高速化
+        # 進行時間が初期化済みの場合のみ進める
+        ptime = self.progress_time
+        # 2時間( time_frame 分 )進行
+        ptime += self.time_frame * 60
+        self.progress_time = ptime
+        # フラグは毎ステップで再計算対象（時間足更新）
+        is_update_ohlcv_1 = True
+        # PSAR側も時間足が一致する場合は同時更新
+        if (self.psar_time_frame == self.time_frame):
             is_update_ohlcv_2 = True
 
-        # 該当時刻の60秒データ取得
-        ohlcv_by_minutes = self.get_back_test_ohlcv_data(ptime, 1)
-        #pprint.pprint(ohlcv_by_minutes)
-        
-        # 管理領域の処理時間情報を更新
-        self.progress_time = ptime
-        self.progress_diff = pdiff
+        # 2時間足終値をそのままtickerとして採用
+        ohlcv_by_timeframe = self.get_back_test_ohlcv_data(ptime, self.time_frame)
+        self.ticker = ohlcv_by_timeframe['close_price']
+        self.close_time = ohlcv_by_timeframe['close_time']
 
-        self.ticker = ohlcv_by_minutes['close_price']
-        self.close_time = ohlcv_by_minutes['close_time']
-
-        # 管理領域の最新値を更新
+        # 管理領域の最新値を更新（既存メソッド参照）
         latest_ohlcv_data_tmp  = self.get_back_test_ohlcv_data(self.progress_time, self.time_frame)
-        # 最新値はticker
-        latest_ohlcv_data_tmp['close_price'] = ohlcv_by_minutes['close_price']
-        """
-        # TODO 最高値、最安値を更新を1分足で行うとボラティリティが小さくなりポジションサイズが変わる不具合
-        if is_update_ohlcv == True:
-            # 初回はclose_priceで初期化
-            self.prev_high_price = ohlcv_by_minutes['high_price']
-            self.prev_low_price = ohlcv_by_minutes['low_price']
-            latest_ohlcv_data_tmp['high_price'] = ohlcv_by_minutes['high_price']
-            latest_ohlcv_data_tmp['low_price'] = ohlcv_by_minutes['low_price']
-        else:
-            # 上回ったら更新
-            # 最高値
-            latest_ohlcv_data_tmp['high_price'] = max(self.prev_high_price, ohlcv_by_minutes['high_price'])
-            self.prev_high_price = latest_ohlcv_data_tmp['high_price']
-            # 最安値
-            latest_ohlcv_data_tmp['low_price'] = min(self.prev_low_price, ohlcv_by_minutes['low_price'])
-            self.prev_low_price = latest_ohlcv_data_tmp['low_price']
-        """
+        # close_price は2h足終値
+        latest_ohlcv_data_tmp['close_price'] = ohlcv_by_timeframe['close_price']
         self.latest_ohlcv_data = []
         self.latest_ohlcv_data.append(latest_ohlcv_data_tmp)
 
