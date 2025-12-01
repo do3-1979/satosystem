@@ -6,7 +6,6 @@
 
 | ジャンル                | No. | タスク内容                                                                                       | 関連コミット/備考                | 優先度 |
 |------------------------|-----|--------------------------------------------------------------------------------------------------|----------------------------------|--------|
-| バックテスト高速化      | 2   | バックテスト時に1分足を使わず、2時間足等の長い足で進行・集計するよう修正                         | 3161b0a                          | ★★★★★ |
 | ログ制御・出力          | 3   | drawdown計算の統一・修正                                                                         | 71efcfe, 7e9c659, 68a51dc        | ★★★★☆ |
 | ログ制御・出力          | 4   | PnL時系列エクスポート機能の実装                                                                  | 6efcedc                          | ★★★★☆ |
 | ログ制御・出力          | 5   | full-loggingオプションのBot反映                                                                  | bff567b                          | ★★★☆☆ |
@@ -35,6 +34,10 @@
 	- `docs/DEVELOPMENT_RULES.md`、`docs/ACTION_LIST.md`、および `docs/analysis/project_structure.json` を整備し、gen2 で今後の設計・テストルールを明文化。
 2. Update architecture overview
 	- `docs/ARCHITECTURE_OVERVIEW.md` を gen2 現況（ルール、ドキュメント参照、ローカルキャッシュの扱いなど）に合わせて更新。
+3. Backtest optimization No.2 (コミット 9f6f0da)
+	- `price_data_management.py`: 1分刻みループから2時間足刻み進行に変更（progress_time を直接進行）
+	- `trading_strategy.py`: ストップ判定を close_price から low_price/high_price ベースに変更、スリッページ (±0.5%) を考慮
+	- 検証: レグレッションテスト実行、変更前後で[OK][OK][OK][FAIL]一致→回帰なし確認
 4. Cleanup local assets and verify deletions
 	- 非追跡のキャッシュ/バックアップ（`.api_key.secure_backup_*`、`cache.db`、`output_configs/`、`ohlcv_data/` など）の削除は意図的であることを確認。`ohlcv_data/` を `.gitignore` に追加し、リポジトリに含めずローカルキャッシュとして扱う方針を明記。
 
