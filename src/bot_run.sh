@@ -30,22 +30,34 @@ rm -f err.log
 # APIキーとシークレットを置換
 ./replace_api_key.sh
 
+
 # 4: python bot.py の実行
-if [ "$#" -eq 1 ] && [ "$1" == "bg" ]; then
-    python bot.py &> err.log &
+# レグレッションテスト用: backtest=1ならlogs/latest_backtest.log, backtest=0ならlogs/latest_hot_test.logに出力
+if grep -q '^backtest *= *0' config.ini 2>/dev/null; then
+    # ホットテスト
+    if [ "$#" -eq 1 ] && [ "$1" == "bg" ]; then
+        python bot.py &> logs/latest_hot_test.log &
+    else
+        python bot.py &> logs/latest_hot_test.log
+        end_time=$(date +%s)
+        total_time=$((end_time - start_time))
+        total_hours=$((total_time / 3600))
+        total_minutes=$((total_time % 3600 / 60))
+        total_seconds=$((total_time % 60))
+        echo "実行時間: ${total_hours}h ${total_minutes}m ${total_seconds}s"
+    fi
 else
-    python bot.py
-
-    # 終了時間の取得
-    end_time=$(date +%s)
-
-    # 実行にかかった時間の計算
-    total_time=$((end_time - start_time))
-    total_hours=$((total_time / 3600))
-    total_minutes=$((total_time % 3600 / 60))
-    total_seconds=$((total_time % 60))
-
-    echo "実行時間: ${total_hours}h ${total_minutes}m ${total_seconds}s"
-
+    # バックテスト
+    if [ "$#" -eq 1 ] && [ "$1" == "bg" ]; then
+        python bot.py &> logs/latest_backtest.log &
+    else
+        python bot.py &> logs/latest_backtest.log
+        end_time=$(date +%s)
+        total_time=$((end_time - start_time))
+        total_hours=$((total_time / 3600))
+        total_minutes=$((total_time % 3600 / 60))
+        total_seconds=$((total_time % 60))
+        echo "実行時間: ${total_hours}h ${total_minutes}m ${total_seconds}s"
+    fi
 fi
 
