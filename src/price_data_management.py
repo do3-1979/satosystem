@@ -257,6 +257,10 @@ class PriceDataManagement:
             tmp_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch, self.psar_time_frame)
             self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data, self.psar_time_frame)
 
+            # 初期化時に close_time を設定（1970/01/01 対策）
+            self.close_time = last_ohlcv_data['close_time']
+            self.ticker = last_ohlcv_data['close_price']
+
             return False
 
         # --------------------------------------------

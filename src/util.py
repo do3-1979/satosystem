@@ -410,7 +410,7 @@ class Util:
                             data["side"].append(side)
                             data["position_price"].append(position_price)
 
-        if not data or all(len(lst) == 0 for lst in data.values()):
+        if not data or (len(data) == 1 and "File Name" in data) or all(len(lst) == 0 for lst in data.values()):
             print("[ERROR] ログから抽出できるデータがありません。Excel出力をスキップします。")
             return
 

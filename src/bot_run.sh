@@ -61,3 +61,6 @@ else
     fi
 fi
 
+# 実行終了後、APIキーをプレースホルダに戻す
+./replace_api_key.sh restore
+
