@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# スクリプトディレクトリを取得（シンボリックリンク対応）
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# スクリプトディレクトリに移動
+cd "$SCRIPT_DIR" || exit 1
+
 # 開始時間の取得
 start_time=$(date +%s)
 
