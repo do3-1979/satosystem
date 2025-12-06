@@ -410,7 +410,12 @@ class Util:
                             data["side"].append(side)
                             data["position_price"].append(position_price)
 
-        if not data or (len(data) == 1 and "File Name" in data) or all(len(lst) == 0 for lst in data.values()):
+        # データ判定: ファイル名以外の実質的なデータが存在するかチェック
+        has_data = any(
+            len(lst) > 0 for key, lst in data.items() 
+            if key != "File Name"
+        )
+        if not has_data:
             print("[ERROR] ログから抽出できるデータがありません。Excel出力をスキップします。")
             return
 
@@ -436,9 +441,7 @@ if __name__ == "__main__":
     
     #----------------
     # グラフ化機能使用
-    
-    #start_time = "2025/5/1 1:00"  # 開始時刻 (例: "2023/01/01 00:00")
-    #end_time = "2025/5/24 18:00"    # 終了時刻 (例: "2023/01/02 00:00")
+    # グラフ化期間はconfig.iniから取得
     start_time = Config.get_start_time()
     end_time = Config.get_end_time()
 
