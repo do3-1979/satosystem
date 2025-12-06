@@ -39,12 +39,13 @@ rm -f err.log
 
 # 4: python bot.py の実行
 # レグレッションテスト用: backtest=1ならlogs/latest_backtest.log, backtest=0ならlogs/latest_hot_test.logに出力
+BOT_SCRIPT="$SCRIPT_DIR/bot.py"
 if grep -q '^backtest *= *0' config.ini 2>/dev/null; then
     # ホットテスト
     if [ "$#" -eq 1 ] && [ "$1" == "bg" ]; then
-        python bot.py &> logs/latest_hot_test.log &
+        python "$BOT_SCRIPT" &> logs/latest_hot_test.log &
     else
-        python bot.py &> logs/latest_hot_test.log
+        python "$BOT_SCRIPT" &> logs/latest_hot_test.log
         end_time=$(date +%s)
         total_time=$((end_time - start_time))
         total_hours=$((total_time / 3600))
@@ -55,9 +56,9 @@ if grep -q '^backtest *= *0' config.ini 2>/dev/null; then
 else
     # バックテスト
     if [ "$#" -eq 1 ] && [ "$1" == "bg" ]; then
-        python bot.py &> logs/latest_backtest.log &
+        python "$BOT_SCRIPT" &> logs/latest_backtest.log &
     else
-        python bot.py &> logs/latest_backtest.log
+        python "$BOT_SCRIPT" &> logs/latest_backtest.log
         end_time=$(date +%s)
         total_time=$((end_time - start_time))
         total_hours=$((total_time / 3600))

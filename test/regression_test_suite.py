@@ -23,13 +23,19 @@ from datetime import datetime
 
 # ワークスペースルートを基準とする
 WORKSPACE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-os.chdir(WORKSPACE_ROOT)  # 実行ディレクトリを明示的に設定
 
-REGRESSION_POLICY = "docs/REGRESSION_TEST_POLICY.md"
-PROJECT_STRUCTURE = "docs/analysis/project_structure.json"
+# **重要**: src/ ディレクトリで実行する
+# bot.py や他のソースモジュールが相対パスで import される前提
+SRC_DIR = os.path.join(WORKSPACE_ROOT, "src")
+os.chdir(SRC_DIR)  # src/ を実行ディレクトリに固定
+sys.path.insert(0, SRC_DIR)  # src/ を sys.path の先頭に追加
 
-RESULTS_DIR = "docs/regression_test_results"
-LOGS_DIR = "logs"
+# パスを WORKSPACE_ROOT ベースで定義（ファイル参照は絶対パスで）
+REGRESSION_POLICY = os.path.join(WORKSPACE_ROOT, "docs/REGRESSION_TEST_POLICY.md")
+PROJECT_STRUCTURE = os.path.join(WORKSPACE_ROOT, "docs/analysis/project_structure.json")
+
+RESULTS_DIR = os.path.join(WORKSPACE_ROOT, "docs/regression_test_results")
+LOGS_DIR = os.path.join(SRC_DIR, "logs")
 
 # 必要なディレクトリを自動生成
 for directory in [RESULTS_DIR, LOGS_DIR]:
@@ -113,6 +119,9 @@ def test_class_methods():
     """
     test_name = "class_methods"
     try:
+        if not os.path.exists(PROJECT_STRUCTURE):
+            log_result(test_name, False, f"project_structure.json が見つかりません: {PROJECT_STRUCTURE}")
+            return
         with open(PROJECT_STRUCTURE, encoding="utf-8") as f:
             structure = json.load(f)
         errors = []

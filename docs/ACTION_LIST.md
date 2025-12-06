@@ -6,6 +6,7 @@
 
 | ジャンル                | No. | タスク内容                                                                                       | 関連コミット/備考                | 優先度 |
 |------------------------|-----|--------------------------------------------------------------------------------------------------|----------------------------------|--------|
+| 実行パス・環境管理      | 0   | **[抜本解決]** 実行ディレクトリ統一（src/ 固定）・パス管理の一元化                               | regression_test_suite.py改修     | ★★★★★ |
 | ログ制御・出力          | 3   | drawdown計算の統一・修正                                                                         | 71efcfe, 7e9c659, 68a51dc        | ★★★★☆ |
 | ログ制御・出力          | 4   | PnL時系列エクスポート機能の実装                                                                  | 6efcedc                          | ★★★★☆ |
 | ログ制御・出力          | 5   | full-loggingオプションのBot反映                                                                  | bff567b                          | ★★★☆☆ |
@@ -40,5 +41,11 @@
 	- 検証: レグレッションテスト実行、変更前後で[OK][OK][OK][FAIL]一致→回帰なし確認
 4. Cleanup local assets and verify deletions
 	- 非追跡のキャッシュ/バックアップ（`.api_key.secure_backup_*`、`cache.db`、`output_configs/`、`ohlcv_data/` など）の削除は意図的であることを確認。`ohlcv_data/` を `.gitignore` に追加し、リポジトリに含めずローカルキャッシュとして扱う方針を明記。
+5. **[実行パス抜本解決]** 実行ディレクトリ統一（src/ 固定）
+	- `regression_test_suite.py`: 実行ディレクトリを WORKSPACE_ROOT から **src/** に変更、sys.path に src/ を追加
+	- `bot.py`: sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))) で src/ を明示的に追加
+	- `bot_run.sh`: BOT_SCRIPT に絶対パス指定、どのディレクトリから呼び出されても bot.py を正しく参照
+	- 効果: ENTRY=0 エラー解消、すべてのレグレッションテスト項目が [OK] に
+	- 根本原因: test フォルダからの相対実行で WORKSPACE_ROOT ベースの参照が失敗 → src/ 実行により一貫性確保
 
 ```
