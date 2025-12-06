@@ -33,6 +33,9 @@ class Util:
         log_files = []
         for root, _, files in os.walk(log_directory):
             for file in files:
+                # backtest_summary_*.json は除外（スカラー値で DataFrame でない）
+                if file.startswith("backtest_summary_"):
+                    continue
                 if file.endswith(".zip") or file.endswith(".json"):
                     log_files.append(os.path.join(root, file))
 
@@ -336,6 +339,11 @@ class Util:
         # ファイル名でソート
         log_files.sort()
 
+        # ログファイルが見つからない場合は処理をスキップ（正常な状態）
+        if not log_files:
+            print(f"[INFO] log_*.txt ファイルが見つかりません。パラメータ抽出をスキップします。（ディレクトリ: {log_directory}）")
+            return
+
         # 抽出するキーワード
         keywords = [
             "Entry Times:",
@@ -416,7 +424,7 @@ class Util:
             if key != "File Name"
         )
         if not has_data:
-            print("[ERROR] ログから抽出できるデータがありません。Excel出力をスキップします。")
+            print(f"[INFO] ファイルは見つかりましたが、抽出可能なデータがありません。Excel出力をスキップします。（処理ファイル数: {len(log_files)}）")
             return
 
         max_length = max(len(lst) for lst in data.values())
@@ -449,11 +457,11 @@ if __name__ == "__main__":
 
     #---------------------
     # バックテスト集約使用例
-    log_directory = "."  # ログファイルのディレクトリ
-    output_bt_excel_file = "backtest_logs.xlsx"  # 出力エクセルファイルの名前
+    #log_directory = "."  # ログファイルのディレクトリ
+    #output_bt_excel_file = "backtest_logs.xlsx"  # 出力エクセルファイルの名前
 
     # パラメータと計算結果を抽出してエクセルファイルに出力
-    util.extract_parameters_and_results(log_directory, output_bt_excel_file)
+    # util.extract_parameters_and_results(log_directory, output_bt_excel_file)
 
     # 1分足の指定ログ取得
     # exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())

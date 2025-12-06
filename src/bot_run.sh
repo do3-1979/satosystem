@@ -39,13 +39,14 @@ rm -f err.log
 
 # 4: python bot.py の実行
 # レグレッションテスト用: backtest=1ならlogs/latest_backtest.log, backtest=0ならlogs/latest_hot_test.logに出力
+# stderr のみをログに出力し、stdout（進捗メッセージなど）は破棄
 BOT_SCRIPT="$SCRIPT_DIR/bot.py"
 if grep -q '^backtest *= *0' config.ini 2>/dev/null; then
     # ホットテスト
     if [ "$#" -eq 1 ] && [ "$1" == "bg" ]; then
-        python "$BOT_SCRIPT" &> logs/latest_hot_test.log &
+        python "$BOT_SCRIPT" 2> logs/latest_hot_test.log > /dev/null &
     else
-        python "$BOT_SCRIPT" &> logs/latest_hot_test.log
+        python "$BOT_SCRIPT" 2> logs/latest_hot_test.log > /dev/null
         end_time=$(date +%s)
         total_time=$((end_time - start_time))
         total_hours=$((total_time / 3600))
@@ -56,9 +57,9 @@ if grep -q '^backtest *= *0' config.ini 2>/dev/null; then
 else
     # バックテスト
     if [ "$#" -eq 1 ] && [ "$1" == "bg" ]; then
-        python "$BOT_SCRIPT" &> logs/latest_backtest.log &
+        python "$BOT_SCRIPT" 2> logs/latest_backtest.log > /dev/null &
     else
-        python "$BOT_SCRIPT" &> logs/latest_backtest.log
+        python "$BOT_SCRIPT" 2> logs/latest_backtest.log > /dev/null
         end_time=$(date +%s)
         total_time=$((end_time - start_time))
         total_hours=$((total_time / 3600))
