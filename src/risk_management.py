@@ -134,6 +134,11 @@ class RiskManagement:
         iaf = self.stop_AF_add
         maxaf = self.stop_AF_max
 
+        # 【修正】毎回計算開始時に前回のpsar値をクリア
+        self.psar = []
+        self.psarbull = []
+        self.psarbear = []
+
         # データ成型
         high = []
         low = []
@@ -153,23 +158,46 @@ class RiskManagement:
         psar = [None] * length
 
         # 初回のpsarの初期設定
-        if not self.psar:
-            psar[0] = close[0]
-            psar[1] = close[0]
-        else:
-            for i in range(min(length, len(self.psar))):
-                psar[i] = self.psar[i]
-
+        # 【重要】毎回新しいデータセットで正しく初期化
+        
         length = len(close)
         #print(f"length {length}")
 
         psarbull = [None] * length
         psarbear = [None] * length
-        bull = True
+        
+        # 【修正】初期トレンド判定と初期値設定
+        # 最初の2本のバーで初期トレンド、EP、SAR、AFを決定
+        if close[1] > close[0]:
+            # UPトレンド
+            bull = True
+            hp = max(high[0], high[1])           # HP（Highest Point） = 直近2本の高値の最大値
+            lp = min(low[0], low[1])             # LP（Lowest Point） = 直近2本の安値の最小値
+            ep = hp                              # EP = HPから開始
+            psar[0] = lp                         # 初期SAR = LPの最小値
+            psar[1] = lp
+        else:
+            # DOWNトレンド
+            bull = False
+            hp = max(high[0], high[1])           # HP = 直近2本の高値の最大値
+            lp = min(low[0], low[1])             # LP = 直近2本の安値の最小値
+            ep = lp                              # EP = LPから開始
+            psar[0] = hp                         # 初期SAR = HPの最大値
+            psar[1] = hp
+        
         af = iaf
-        ep = low[0]
-        hp = high[0]
-        lp = low[0]
+        
+        # 最初の2本のバーをpsarbull/psarbearに設定
+        if bull:
+            psarbull[0] = psar[0]
+            psarbull[1] = psar[1]
+        else:
+            psarbear[0] = psar[0]
+            psarbear[1] = psar[1]
+
+        #print(f"psar[0] {psar[0]} af {af} ep {ep} hp {hp} lp {lp}")
+
+        # 過去データからPSARを計算
 
         #print(f"psar[0] {psar[0]} af {af} ep {ep} hp {hp} lp {lp}")
 
