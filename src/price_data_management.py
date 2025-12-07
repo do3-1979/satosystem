@@ -3,6 +3,7 @@ from datetime import timedelta
 from config import Config
 from logger import Logger
 from bybit_exchange import BybitExchange
+from ohlcv_cache import OHLCVCache
 import pprint
 import json
 import os
@@ -43,6 +44,7 @@ class PriceDataManagement:
     def initialize(self):
         self.exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
         self.logger = Logger()
+        self.cache = OHLCVCache()  # OHLCVキャッシュを初期化
         
         main_time_frame = Config.get_time_frame()
         psar_time_frame = Config.get_psar_time_frame()
@@ -461,20 +463,18 @@ class PriceDataManagement:
             end_epoch = Config.get_end_epoch() + time_frame * 60
             self.logger.log(f"時間足データ {time_frame} 分 初期化")
 
-            # ローカルにohlcvデータがあるか確認
-            file_name = f"ohlcv_data/ohlcv_data_{start_epoch}_{end_epoch}_{time_frame}.json"
-            if os.path.exists(file_name):
-                self.logger.log(f"既存ファイル {file_name} を流用")
-                with open(file_name, "r") as file:
-                    data_dict["data"] = json.load(file)
+            # SQLiteキャッシュから取得を試みる
+            cached_data = self.cache.get_ohlcv_data(start_epoch, end_epoch, time_frame)
+            if cached_data is not None:
+                self.logger.log(f"SQLiteキャッシュから {len(cached_data)} 件のデータを取得")
+                data_dict["data"] = cached_data
             else:
                 # サーバからデータを取得
+                self.logger.log(f"Bybitサーバからデータを取得 (start_epoch={start_epoch}, end_epoch={end_epoch}, time_frame={time_frame})")
                 data_dict["data"] = self.exchange.fetch_ohlcv(start_epoch, end_epoch, time_frame)
-                # ローカルにデータを保存
-                self.logger.log(f"新規にファイル {file_name} を保存")
-                os.makedirs("ohlcv_data", exist_ok=True)
-                with open(file_name, "w") as file:
-                    json.dump(data_dict["data"], file)
+                # SQLiteキャッシュに保存
+                if data_dict["data"]:
+                    self.cache.save_ohlcv_data(data_dict["data"], start_epoch, end_epoch, time_frame)
 
         self.logger.log("時間足データ初期化 done")
 
