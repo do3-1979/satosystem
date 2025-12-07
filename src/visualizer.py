@@ -297,7 +297,7 @@ class Visualizer:
             subplot_titles=("価格チャート (2h足ローソク + Donchian + PSAR)", 
                            "ボリューム (Volume)", 
                            "テクニカル指標 (Volatility / PVO)", 
-                           "累積損益 (PnL)"))
+                           "累積損益 (PnL)")
         )
         
         # === Row 1: 価格チャート (ローソク足 + Donchian + PSAR) ===
