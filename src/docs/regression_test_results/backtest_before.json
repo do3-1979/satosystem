@@ -1,10 +1,10 @@
 {
-  "total_pnl": 183.791273,
-  "profit_factor": 1.318045,
-  "max_drawdown": 184.99866,
-  "max_drawdown_rate": 52.317458,
-  "sharpe": 0.532716,
-  "win_rate": 100.0,
-  "trades": 35,
-  "samples": 731
+    "total_pnl": 319.095517,
+    "profit_factor": 2.40922,
+    "max_drawdown": 98.780572,
+    "max_drawdown_rate": 27.935059,
+    "sharpe": 1.020994,
+    "win_rate": 100.0,
+    "trades": 15,
+    "samples": 359
 }
