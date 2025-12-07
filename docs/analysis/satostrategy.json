@@ -1,0 +1,66 @@
+{
+  "metadata": {
+    "source_file": "src/satostrategy.py",
+    "analyzed_at": "2025-12-07T23:53:30.050764",
+    "python_version": "3.10"
+  },
+  "file_info": {
+    "path": "src/satostrategy.py",
+    "description": "Source code structure analysis"
+  },
+  "imports": [
+    {
+      "module": "typing.Callable",
+      "type": "local",
+      "used_for": "From typing"
+    },
+    {
+      "module": "trading_strategy.TradingStrategy",
+      "type": "local",
+      "used_for": "From trading_strategy"
+    }
+  ],
+  "classes": [
+    {
+      "name": "Satostrategy",
+      "line": 4,
+      "docstring": "Satostrategyクラス:\n\nこのクラスはトレーディング戦略を表現します。トレーディングアルゴリズムを実装し、エントリーポイントと出口ポイントを決定します。\n異なる戦略をサポートするために、複数の戦略クラスを作成し、戦略の切り替えが可能になるようにします。\n\nArgs:\n    entry_condition (Callable[[dict], bool]): エントリー条件の関数\n    add_condition (Callable[[dict], bool]): ピラミッディング条件の関数\n    exit_condition (Callable[[dict], bool]): エグジット条件の関数\n\nAttributes:\n    position (dict or None): ポジション情報を格納する属性\n\nMethods:\n    evaluate_entry(price_data: dict) -> bool:\n        エントリー条件を評価し、エントリーするかどうかを決定します。\n\n    evaluate_add(price_data: dict) -> bool:\n        ピラミッディング条件を評価し、ピラミッディングを行うかどうかを決定します。\n\n    evaluate_exit(price_data: dict) -> bool:\n        エグジット条件を評価し、ポジションをクローズするかどうかを決定します.",
+      "inheritance": [
+        "TradingStrategy"
+      ],
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 29,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def __init__self",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "__init__",
+          "calls": [
+            "super",
+            "super().__init__"
+          ]
+        }
+      ]
+    }
+  ],
+  "functions": [],
+  "constants": [],
+  "summary": {
+    "total_classes": 1,
+    "total_methods": 1,
+    "total_functions": 0,
+    "total_constants": 0,
+    "lines_of_code": 34
+  }
+}

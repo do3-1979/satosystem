@@ -1,0 +1,344 @@
+{
+  "metadata": {
+    "source_file": "src/ohlcv_cache_inspector.py",
+    "analyzed_at": "2025-12-07T23:53:29.933301",
+    "python_version": "3.10"
+  },
+  "file_info": {
+    "path": "src/ohlcv_cache_inspector.py",
+    "description": "Source code structure analysis"
+  },
+  "imports": [
+    {
+      "module": "sqlite3",
+      "type": "standard",
+      "used_for": "Module: sqlite3"
+    },
+    {
+      "module": "os",
+      "type": "standard",
+      "used_for": "Module: os"
+    },
+    {
+      "module": "datetime.datetime",
+      "type": "local",
+      "used_for": "From datetime"
+    },
+    {
+      "module": "typing.List",
+      "type": "local",
+      "used_for": "From typing"
+    },
+    {
+      "module": "typing.Dict",
+      "type": "local",
+      "used_for": "From typing"
+    },
+    {
+      "module": "typing.Tuple",
+      "type": "local",
+      "used_for": "From typing"
+    },
+    {
+      "module": "typing.Optional",
+      "type": "local",
+      "used_for": "From typing"
+    },
+    {
+      "module": "tabulate.tabulate",
+      "type": "local",
+      "used_for": "From tabulate"
+    },
+    {
+      "module": "logger.Logger",
+      "type": "local",
+      "used_for": "From logger"
+    },
+    {
+      "module": "argparse",
+      "type": "standard",
+      "used_for": "Module: argparse"
+    }
+  ],
+  "classes": [
+    {
+      "name": "OHLCVCacheInspector",
+      "line": 24,
+      "docstring": "OHLCVキャッシュを検査・分析するクラス",
+      "inheritance": [],
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 27,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def __init__self, cache_path: str='ohlcv_data/ohlcv_cache.db'",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "cache_path",
+              "type": "str",
+              "description": "Parameter: cache_path",
+              "default": "ohlcv_data/ohlcv_cache.db"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "OHLCVCacheInspectorの初期化\n\nArgs:\n    cache_path: SQLiteデータベースのパス",
+          "summary": "OHLCVCacheInspectorの初期化",
+          "calls": [
+            "FileNotFoundError",
+            "os.path.exists",
+            "print",
+            "Logger"
+          ]
+        },
+        {
+          "name": "_get_connection",
+          "line": 44,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def _get_connectionself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "sqlite3.Connection",
+          "docstring": "データベース接続を取得",
+          "summary": "データベース接続を取得",
+          "calls": [
+            "sqlite3.connect"
+          ]
+        },
+        {
+          "name": "get_total_records",
+          "line": 50,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_total_recordsself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "int",
+          "docstring": "キャッシュ内の総レコード数を取得\n\nReturns:\n    総レコード数",
+          "summary": "キャッシュ内の総レコード数を取得",
+          "calls": [
+            "self._get_connection",
+            "cursor.execute",
+            "conn.close",
+            "cursor.fetchone",
+            "conn.cursor"
+          ]
+        },
+        {
+          "name": "get_cache_parameters",
+          "line": 64,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_cache_parametersself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "List[Dict]",
+          "docstring": "キャッシュされているパラメータ（start_epoch, end_epoch, time_frame）の一覧を取得\n\nReturns:\n    パラメータの辞書リスト",
+          "summary": "キャッシュされているパラメータ（start_epoch, end_epoch, time_frame）の一覧を取得",
+          "calls": [
+            "self._get_connection",
+            "datetime.fromtimestamp(row['start_epoch']).strftime",
+            "datetime.fromtimestamp(row['end_epoch']).strftime",
+            "params.append",
+            "cursor.execute",
+            "conn.close",
+            "datetime.fromtimestamp",
+            "cursor.fetchall",
+            "conn.cursor"
+          ]
+        },
+        {
+          "name": "get_data_coverage",
+          "line": 99,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_data_coverageself, start_epoch: int, end_epoch: int, time_frame: int",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "start_epoch",
+              "type": "int",
+              "description": "Parameter: start_epoch"
+            },
+            {
+              "name": "end_epoch",
+              "type": "int",
+              "description": "Parameter: end_epoch"
+            },
+            {
+              "name": "time_frame",
+              "type": "int",
+              "description": "Parameter: time_frame"
+            }
+          ],
+          "return_type": "Dict",
+          "docstring": "指定されたパラメータでのデータ範囲とギャップ（断絶）を分析\n\nArgs:\n    start_epoch: 開始時刻（エポック秒）\n    end_epoch: 終了時刻（エポック秒）\n    time_frame: タイムフレーム（分）\n\nReturns:\n    データ範囲と断絶情報の辞書",
+          "summary": "指定されたパラメータでのデータ範囲とギャップ（断絶）を分析",
+          "calls": [
+            "len",
+            "self._get_connection",
+            "range",
+            "cursor.execute",
+            "conn.close",
+            "segments.append",
+            "cursor.fetchall",
+            "conn.cursor"
+          ]
+        },
+        {
+          "name": "print_summary",
+          "line": 180,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def print_summaryself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "キャッシュの概要を表示",
+          "summary": "キャッシュの概要を表示",
+          "calls": [
+            "len",
+            "os.path.exists",
+            "print",
+            "os.path.getsize",
+            "self.get_cache_parameters",
+            "tabulate",
+            "table_data.append",
+            "self.get_total_records"
+          ]
+        },
+        {
+          "name": "print_data_coverage",
+          "line": 213,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def print_data_coverageself, start_epoch: int=None, end_epoch: int=None, time_frame: int=None",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "start_epoch",
+              "type": "int",
+              "description": "Parameter: start_epoch",
+              "default": null
+            },
+            {
+              "name": "end_epoch",
+              "type": "int",
+              "description": "Parameter: end_epoch",
+              "default": null
+            },
+            {
+              "name": "time_frame",
+              "type": "int",
+              "description": "Parameter: time_frame",
+              "default": null
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "データ範囲と断絶を表示\n\nArgs:\n    start_epoch: 開始時刻（エポック秒）。Noneの場合は最初のパラメータを使用\n    end_epoch: 終了時刻（エポック秒）。Noneの場合は最初のパラメータを使用\n    time_frame: タイムフレーム（分）。Noneの場合は最初のパラメータを使用",
+          "summary": "データ範囲と断絶を表示",
+          "calls": [
+            "len",
+            "datetime.fromtimestamp(curr_start).strftime",
+            "gap_data.append",
+            "print",
+            "enumerate",
+            "datetime.fromtimestamp(start_epoch).strftime",
+            "self.get_cache_parameters",
+            "tabulate",
+            "table_data.append",
+            "datetime.fromtimestamp(prev_end).strftime",
+            "self.get_data_coverage",
+            "range",
+            "datetime.fromtimestamp",
+            "datetime.fromtimestamp(end_epoch).strftime"
+          ]
+        },
+        {
+          "name": "print_detailed_analysis",
+          "line": 291,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def print_detailed_analysisself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "すべてのパラメータについて詳細分析を表示",
+          "summary": "すべてのパラメータについて詳細分析を表示",
+          "calls": [
+            "self.get_cache_parameters",
+            "print",
+            "self.print_data_coverage"
+          ]
+        }
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "main",
+      "line": 304,
+      "visibility": "public",
+      "signature": "def main",
+      "parameters": [],
+      "return_type": "Any",
+      "docstring": "メイン処理",
+      "summary": "メイン処理"
+    }
+  ],
+  "constants": [],
+  "summary": {
+    "total_classes": 1,
+    "total_methods": 8,
+    "total_functions": 1,
+    "total_constants": 0,
+    "lines_of_code": 306
+  }
+}

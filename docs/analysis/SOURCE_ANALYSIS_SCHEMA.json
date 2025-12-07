@@ -1,0 +1,133 @@
+{
+  "metadata": {
+    "description": "ソースコード解析情報",
+    "version": "1.0",
+    "schema_example": "このファイルは、Pythonソースコードから抽出したクラス・関数の構造情報を格納します"
+  },
+  "file_info": {
+    "path": "src/example.py",
+    "description": "ファイルの概要・目的",
+    "imports": [
+      {
+        "module": "datetime",
+        "type": "standard",
+        "used_for": "日時計算に使用"
+      },
+      {
+        "module": "config",
+        "type": "local",
+        "used_for": "設定情報取得"
+      }
+    ]
+  },
+  "classes": [
+    {
+      "name": "ExampleClass",
+      "line": 10,
+      "docstring": "クラスの説明文（docstringから抽出）",
+      "inheritance": ["BaseClass"],
+      "attributes": [
+        {
+          "name": "instance_var",
+          "type": "inferred",
+          "description": "インスタンス変数の説明"
+        }
+      ],
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 15,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def __init__(self, param1: str, param2: int) -> None",
+          "parameters": [
+            {
+              "name": "param1",
+              "type": "str",
+              "description": "パラメータの説明"
+            },
+            {
+              "name": "param2",
+              "type": "int",
+              "default": null
+            }
+          ],
+          "return_type": "None",
+          "docstring": "メソッドの説明文",
+          "summary": "初期化処理"
+        },
+        {
+          "name": "process_data",
+          "line": 25,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def process_data(self, data: List[Dict]) -> Dict",
+          "parameters": [
+            {
+              "name": "data",
+              "type": "List[Dict]",
+              "description": "処理対象データ"
+            }
+          ],
+          "return_type": "Dict",
+          "docstring": "データを処理するメソッド",
+          "summary": "データ処理実行",
+          "calls": ["self._validate_data", "self._transform_data"]
+        },
+        {
+          "name": "_validate_data",
+          "line": 40,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def _validate_data(self, data: List[Dict]) -> bool",
+          "parameters": [],
+          "return_type": "bool",
+          "docstring": "データ検証",
+          "summary": "データの妥当性を検証"
+        }
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "standalone_function",
+      "line": 100,
+      "visibility": "public",
+      "signature": "def standalone_function(param1: str, param2: int = 10) -> str",
+      "parameters": [
+        {
+          "name": "param1",
+          "type": "str",
+          "description": "入力文字列"
+        },
+        {
+          "name": "param2",
+          "type": "int",
+          "default": 10
+        }
+      ],
+      "return_type": "str",
+      "docstring": "独立した関数の説明",
+      "summary": "テキスト処理関数"
+    }
+  ],
+  "constants": [
+    {
+      "name": "DEFAULT_TIMEOUT",
+      "value": 30,
+      "type": "int",
+      "description": "デフォルトタイムアウト（秒）"
+    }
+  ],
+  "summary": {
+    "total_classes": 1,
+    "total_methods": 3,
+    "total_functions": 1,
+    "total_constants": 1,
+    "lines_of_code": 150,
+    "complexity_estimate": "low"
+  }
+}

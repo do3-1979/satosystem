@@ -1,0 +1,230 @@
+{
+  "metadata": {
+    "source_file": "src/trading_strategy.py",
+    "analyzed_at": "2025-12-07T23:53:30.087927",
+    "python_version": "3.10"
+  },
+  "file_info": {
+    "path": "src/trading_strategy.py",
+    "description": "Source code structure analysis"
+  },
+  "imports": [
+    {
+      "module": "logger.Logger",
+      "type": "local",
+      "used_for": "From logger"
+    },
+    {
+      "module": "config.Config",
+      "type": "local",
+      "used_for": "From config"
+    },
+    {
+      "module": "price_data_management.PriceDataManagement",
+      "type": "local",
+      "used_for": "From price_data_management"
+    },
+    {
+      "module": "risk_management.RiskManagement",
+      "type": "local",
+      "used_for": "From risk_management"
+    },
+    {
+      "module": "portfolio.Portfolio",
+      "type": "local",
+      "used_for": "From portfolio"
+    }
+  ],
+  "classes": [
+    {
+      "name": "TradingStrategy",
+      "line": 20,
+      "docstring": "トレーディング戦略を表現するクラス。\n\nこのクラスはトレーディングアルゴリズムを実装し、エントリーポイントと出口ポイントを決定します。\n異なる戦略をサポートするために、複数の戦略クラスを作成し、戦略の切り替えが可能になるようにします。\n\nTradingStrategyクラスはエントリー条件、ピラミッディング条件、エグジット条件を評価してポジションの管理を行います。\nエントリー条件とエグジット条件は価格データに対して評価され、条件を満たす場合にポジションの開始やクローズなどの操作を行います。\n\nAttributes:\n    position (dict): ポジション情報を格納する辞書",
+      "inheritance": [],
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 35,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def __init__self, price_data_management, risk_manager, portfolio",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "price_data_management",
+              "type": "Any",
+              "description": "Parameter: price_data_management"
+            },
+            {
+              "name": "risk_manager",
+              "type": "Any",
+              "description": "Parameter: risk_manager"
+            },
+            {
+              "name": "portfolio",
+              "type": "Any",
+              "description": "Parameter: portfolio"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "__init__",
+          "calls": [
+            "self.initialize_trade_decision",
+            "Logger"
+          ]
+        },
+        {
+          "name": "initialize_trade_decision",
+          "line": 43,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def initialize_trade_decisionself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "trade_decision 辞書を初期化します。",
+          "summary": "trade_decision 辞書を初期化します。"
+        },
+        {
+          "name": "evaluate_entry",
+          "line": 49,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def evaluate_entryself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "エントリー条件を評価し、エントリーするかどうかを決定します。\n\n条件:\n1. ポジションを保有していない\n2. ドンチャンチャネルブレイクが発生\n3. PVOが閾値範囲内",
+          "summary": "エントリー条件を評価し、エントリーするかどうかを決定します。",
+          "calls": [
+            "self.price_data_management.get_signals",
+            "self.logger.log"
+          ]
+        },
+        {
+          "name": "evaluate_add",
+          "line": 83,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def evaluate_addself, price",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "price",
+              "type": "Any",
+              "description": "Parameter: price"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "ピラミッド条件を評価し、買い増しするかどうかを決定します。\n\n条件:\n1. ポジションを保有している\n2. 追加レンジ幅が前回取得値を超過",
+          "summary": "ピラミッド条件を評価し、買い増しするかどうかを決定します。",
+          "calls": [
+            "self.risk_manager.get_add_range",
+            "self.portfolio.get_position_side",
+            "self.risk_manager.get_last_entry_price",
+            "self.logger.log"
+          ]
+        },
+        {
+          "name": "evaluate_exit",
+          "line": 121,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def evaluate_exitself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "エグジット条件を評価し、ポジションをクローズするかどうかを決定します。",
+          "summary": "エグジット条件を評価し、ポジションをクローズするかどうかを決定します。",
+          "calls": [
+            "self.portfolio.get_position_side",
+            "self.price_data_management.get_latest_ohlcv",
+            "self.risk_manager.get_stop_price",
+            "self.logger.log"
+          ]
+        },
+        {
+          "name": "make_trade_decision",
+          "line": 174,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def make_trade_decisionself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "トレードの実行判断を行います。",
+          "summary": "トレードの実行判断を行います。",
+          "calls": [
+            "self.portfolio.get_position_quantity",
+            "self.evaluate_entry",
+            "self.price_data_management.get_ticker",
+            "self.evaluate_exit",
+            "self.evaluate_add"
+          ]
+        },
+        {
+          "name": "__str__",
+          "line": 192,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def __str__self",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "__str__"
+        }
+      ]
+    }
+  ],
+  "functions": [],
+  "constants": [],
+  "summary": {
+    "total_classes": 1,
+    "total_methods": 7,
+    "total_functions": 0,
+    "total_constants": 0,
+    "lines_of_code": 140
+  }
+}

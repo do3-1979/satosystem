@@ -1,0 +1,307 @@
+{
+  "metadata": {
+    "source_file": "src/bot.py",
+    "analyzed_at": "2025-12-07T23:53:29.730767",
+    "python_version": "3.10"
+  },
+  "file_info": {
+    "path": "src/bot.py",
+    "description": "Source code structure analysis"
+  },
+  "imports": [
+    {
+      "module": "os",
+      "type": "standard",
+      "used_for": "Module: os"
+    },
+    {
+      "module": "sys",
+      "type": "standard",
+      "used_for": "Module: sys"
+    },
+    {
+      "module": "time",
+      "type": "standard",
+      "used_for": "Module: time"
+    },
+    {
+      "module": "datetime.datetime",
+      "type": "local",
+      "used_for": "From datetime"
+    },
+    {
+      "module": "logger.Logger",
+      "type": "local",
+      "used_for": "From logger"
+    },
+    {
+      "module": "config.Config",
+      "type": "local",
+      "used_for": "From config"
+    },
+    {
+      "module": "price_data_management.PriceDataManagement",
+      "type": "local",
+      "used_for": "From price_data_management"
+    },
+    {
+      "module": "bybit_exchange.BybitExchange",
+      "type": "local",
+      "used_for": "From bybit_exchange"
+    },
+    {
+      "module": "trading_strategy.TradingStrategy",
+      "type": "local",
+      "used_for": "From trading_strategy"
+    },
+    {
+      "module": "risk_management.RiskManagement",
+      "type": "local",
+      "used_for": "From risk_management"
+    },
+    {
+      "module": "portfolio.Portfolio",
+      "type": "local",
+      "used_for": "From portfolio"
+    },
+    {
+      "module": "order.Order",
+      "type": "local",
+      "used_for": "From order"
+    },
+    {
+      "module": "event.EventBus",
+      "type": "local",
+      "used_for": "From event"
+    },
+    {
+      "module": "event.EventType",
+      "type": "local",
+      "used_for": "From event"
+    },
+    {
+      "module": "metrics.compute_metrics",
+      "type": "local",
+      "used_for": "From metrics"
+    },
+    {
+      "module": "json",
+      "type": "standard",
+      "used_for": "Module: json"
+    },
+    {
+      "module": "os",
+      "type": "standard",
+      "used_for": "Module: os"
+    },
+    {
+      "module": "time",
+      "type": "standard",
+      "used_for": "Module: time"
+    }
+  ],
+  "classes": [
+    {
+      "name": "Bot",
+      "line": 42,
+      "docstring": "No description",
+      "inheritance": [],
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 43,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def __init__self, exchange, strategy, risk_management, price_data_management, portfolio",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "exchange",
+              "type": "Any",
+              "description": "Parameter: exchange"
+            },
+            {
+              "name": "strategy",
+              "type": "Any",
+              "description": "Parameter: strategy"
+            },
+            {
+              "name": "risk_management",
+              "type": "Any",
+              "description": "Parameter: risk_management"
+            },
+            {
+              "name": "price_data_management",
+              "type": "Any",
+              "description": "Parameter: price_data_management"
+            },
+            {
+              "name": "portfolio",
+              "type": "Any",
+              "description": "Parameter: portfolio"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "Bot クラスの初期化\n\nArgs:\n    exchange (Exchange): 取引所クラスのインスタンス\n    strategy (TradingStrategy): 取引戦略クラスのインスタンス",
+          "summary": "Bot クラスの初期化",
+          "calls": [
+            "Config.get_market",
+            "EventBus",
+            "Config.get_bot_operation_cycle",
+            "Logger"
+          ]
+        },
+        {
+          "name": "show_trade_data",
+          "line": 67,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def show_trade_dataself, trade_data",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "trade_data",
+              "type": "Any",
+              "description": "Parameter: trade_data"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "show_trade_data",
+          "calls": [
+            "self.logger.log"
+          ]
+        },
+        {
+          "name": "run",
+          "line": 94,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def runself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "ボットのメインループを実行します。口座残高を取得し、取引戦略に基づいてトレードを実行します。",
+          "summary": "ボットのメインループを実行します。口座残高を取得し、取引戦略に基づいてトレードを実行します。",
+          "calls": [
+            "order.to_dict",
+            "self.portfolio.get_drawdown",
+            "self.portfolio.get_position_quantity",
+            "self.portfolio.get_drawdown_rate",
+            "Order",
+            "self.price_data_management.get_ticker",
+            "self.portfolio.calc_position_quantity",
+            "self.risk_management.calculate_position_size",
+            "self.logger.log_error",
+            "open",
+            "self.price_data_management.get_latest_ohlcv",
+            "self.strategy.initialize_trade_decision",
+            "self.risk_management.get_adx_bear",
+            "self.price_data_management.update_price_data",
+            "Config.get_log_dir_name",
+            "json.dump",
+            "self.price_data_management.initialise_back_test_ohlcv_data",
+            "time.sleep",
+            "str",
+            "self.logger.compress_logs",
+            "self.price_data_management.get_volatility",
+            "self.show_trade_data",
+            "self.events.emit",
+            "self.risk_management.update_last_entry_price",
+            "self.portfolio.get_profit_factor",
+            "self.risk_management.get_psar",
+            "config_instance.get_account_balance",
+            "self.price_data_management.get_latest_close_time",
+            "self.trade_results.append",
+            "self.logger.open_log_file",
+            "_t.strftime",
+            "current_time.strftime",
+            "self.risk_management.get_psarbear",
+            "compute_metrics",
+            "self.price_data_management.get_latest_close_time_dt",
+            "self.risk_management.get_stop_offset",
+            "int",
+            "self.risk_management.get_adx",
+            "self.risk_management.update_risk_status",
+            "self.price_data_management.get_signals",
+            "self.pnl_history.append",
+            "self.logger.log",
+            "self.risk_management.get_psar_stop_offset",
+            "Config",
+            "self.risk_management.get_price_surge_stop_offset",
+            "config_instance.get_market",
+            "self.execute_order",
+            "os.path.join",
+            "datetime.fromtimestamp",
+            "self.logger.log_trade_data",
+            "self.portfolio.get_position_price",
+            "self.risk_management.get_stop_price",
+            "self.portfolio.add_position_quantity",
+            "self.risk_management.get_psarbull",
+            "self.portfolio.clear_position_quantity",
+            "trade_data.update",
+            "config_instance.get_back_test_mode",
+            "self.price_data_management.update_price_data_backtest",
+            "self.exchange.get_account_balance_total",
+            "datetime.now",
+            "self.logger.close_log_file",
+            "self.risk_management.get_position_size",
+            "dt_now.strftime",
+            "self.portfolio.get_profit_and_loss",
+            "trade_decision.get",
+            "self.strategy.make_trade_decision",
+            "self.risk_management.get_adx_bull"
+          ]
+        },
+        {
+          "name": "execute_order",
+          "line": 342,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def execute_orderself, order",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "order",
+              "type": "Any",
+              "description": "Parameter: order"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "注文を実行します。\n\nArgs:\n    trade_decision (dict): トレード判断に基づいた注文情報\n\nReturns:\n    dict: 注文の実行結果",
+          "summary": "注文を実行します。"
+        }
+      ]
+    }
+  ],
+  "functions": [],
+  "constants": [],
+  "summary": {
+    "total_classes": 1,
+    "total_methods": 4,
+    "total_functions": 0,
+    "total_constants": 0,
+    "lines_of_code": 271
+  }
+}

@@ -1,0 +1,429 @@
+{
+  "metadata": {
+    "source_file": "src/ohlcv_cache.py",
+    "analyzed_at": "2025-12-07T23:53:29.906308",
+    "python_version": "3.10"
+  },
+  "file_info": {
+    "path": "src/ohlcv_cache.py",
+    "description": "Source code structure analysis"
+  },
+  "imports": [
+    {
+      "module": "sqlite3",
+      "type": "standard",
+      "used_for": "Module: sqlite3"
+    },
+    {
+      "module": "os",
+      "type": "standard",
+      "used_for": "Module: os"
+    },
+    {
+      "module": "json",
+      "type": "standard",
+      "used_for": "Module: json"
+    },
+    {
+      "module": "datetime.datetime",
+      "type": "local",
+      "used_for": "From datetime"
+    },
+    {
+      "module": "typing.List",
+      "type": "local",
+      "used_for": "From typing"
+    },
+    {
+      "module": "typing.Dict",
+      "type": "local",
+      "used_for": "From typing"
+    },
+    {
+      "module": "typing.Optional",
+      "type": "local",
+      "used_for": "From typing"
+    },
+    {
+      "module": "typing.Tuple",
+      "type": "local",
+      "used_for": "From typing"
+    },
+    {
+      "module": "logger.Logger",
+      "type": "local",
+      "used_for": "From logger"
+    },
+    {
+      "module": "glob",
+      "type": "standard",
+      "used_for": "Module: glob"
+    }
+  ],
+  "classes": [
+    {
+      "name": "OHLCVCache",
+      "line": 21,
+      "docstring": "OHLCVデータをSQLiteで管理するクラス",
+      "inheritance": [],
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 24,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def __init__self, cache_path: str='ohlcv_data/ohlcv_cache.db'",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "cache_path",
+              "type": "str",
+              "description": "Parameter: cache_path",
+              "default": "ohlcv_data/ohlcv_cache.db"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "OHLCVCacheの初期化\n\nArgs:\n    cache_path: SQLiteデータベースのパス",
+          "summary": "OHLCVCacheの初期化",
+          "calls": [
+            "os.path.exists",
+            "os.makedirs",
+            "os.path.dirname",
+            "self.logger.log",
+            "self._initialize_database",
+            "Logger"
+          ]
+        },
+        {
+          "name": "_get_connection",
+          "line": 43,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def _get_connectionself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "sqlite3.Connection",
+          "docstring": "データベース接続を取得",
+          "summary": "データベース接続を取得",
+          "calls": [
+            "sqlite3.connect"
+          ]
+        },
+        {
+          "name": "_initialize_database",
+          "line": 49,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def _initialize_databaseself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "None",
+          "docstring": "データベースとテーブルを初期化",
+          "summary": "データベースとテーブルを初期化",
+          "calls": [
+            "self._get_connection",
+            "self.logger.log",
+            "conn.cursor",
+            "cursor.execute",
+            "conn.close",
+            "conn.commit"
+          ]
+        },
+        {
+          "name": "get_ohlcv_data",
+          "line": 88,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_ohlcv_dataself, start_epoch: int, end_epoch: int, time_frame: int",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "start_epoch",
+              "type": "int",
+              "description": "Parameter: start_epoch"
+            },
+            {
+              "name": "end_epoch",
+              "type": "int",
+              "description": "Parameter: end_epoch"
+            },
+            {
+              "name": "time_frame",
+              "type": "int",
+              "description": "Parameter: time_frame"
+            }
+          ],
+          "return_type": "Optional[List[Dict]]",
+          "docstring": "指定されたパラメータでOHLCVデータをキャッシュから取得\n\nArgs:\n    start_epoch: 開始時刻（エポック秒）\n    end_epoch: 終了時刻（エポック秒）\n    time_frame: タイムフレーム（分）\n\nReturns:\n    キャッシュされたOHLCVデータのリスト、またはNone（キャッシュなし）",
+          "summary": "指定されたパラメータでOHLCVデータをキャッシュから取得",
+          "calls": [
+            "len",
+            "self._get_connection",
+            "self.logger.log",
+            "data.append",
+            "cursor.execute",
+            "conn.close",
+            "cursor.fetchall",
+            "conn.cursor"
+          ]
+        },
+        {
+          "name": "get_ohlcv_data_partial",
+          "line": 144,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_ohlcv_data_partialself, start_epoch: int, end_epoch: int, time_frame: int",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "start_epoch",
+              "type": "int",
+              "description": "Parameter: start_epoch"
+            },
+            {
+              "name": "end_epoch",
+              "type": "int",
+              "description": "Parameter: end_epoch"
+            },
+            {
+              "name": "time_frame",
+              "type": "int",
+              "description": "Parameter: time_frame"
+            }
+          ],
+          "return_type": "Optional[List[Dict]]",
+          "docstring": "指定期間がキャッシュに含まれているか確認し、含まれていれば取得\nキャッシュの期間が要求期間を完全に含んでいる場合に取得する（部分一致）\n\nArgs:\n    start_epoch: 開始時刻（エポック秒）\n    end_epoch: 終了時刻（エポック秒）\n    time_frame: タイムフレーム（分）\n\nReturns:\n    キャッシュされたOHLCVデータのリスト、またはNone（キャッシュに期間が含まれない場合）",
+          "summary": "指定期間がキャッシュに含まれているか確認し、含まれていれば取得",
+          "calls": [
+            "len",
+            "self._get_connection",
+            "self.logger.log",
+            "data.append",
+            "cursor.execute",
+            "conn.close",
+            "cursor.fetchone",
+            "cursor.fetchall",
+            "conn.cursor"
+          ]
+        },
+        {
+          "name": "save_ohlcv_data",
+          "line": 218,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def save_ohlcv_dataself, ohlcv_list: List[Dict], start_epoch: int, end_epoch: int, time_frame: int",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "ohlcv_list",
+              "type": "List[Dict]",
+              "description": "Parameter: ohlcv_list"
+            },
+            {
+              "name": "start_epoch",
+              "type": "int",
+              "description": "Parameter: start_epoch"
+            },
+            {
+              "name": "end_epoch",
+              "type": "int",
+              "description": "Parameter: end_epoch"
+            },
+            {
+              "name": "time_frame",
+              "type": "int",
+              "description": "Parameter: time_frame"
+            }
+          ],
+          "return_type": "bool",
+          "docstring": "OHLCVデータをキャッシュに保存\n\nArgs:\n    ohlcv_list: OHLCVデータのリスト\n    start_epoch: 開始時刻（エポック秒）\n    end_epoch: 終了時刻（エポック秒）\n    time_frame: タイムフレーム（分）\n\nReturns:\n    保存成功の可否",
+          "summary": "OHLCVデータをキャッシュに保存",
+          "calls": [
+            "len",
+            "conn.rollback",
+            "self._get_connection",
+            "str",
+            "self.logger.log_error",
+            "self.logger.log",
+            "conn.cursor",
+            "cursor.execute",
+            "conn.close",
+            "conn.commit"
+          ]
+        },
+        {
+          "name": "clear_cache",
+          "line": 290,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def clear_cacheself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "bool",
+          "docstring": "キャッシュを全削除\n\nReturns:\n    削除成功の可否",
+          "summary": "キャッシュを全削除",
+          "calls": [
+            "self._get_connection",
+            "str",
+            "self.logger.log_error",
+            "self.logger.log",
+            "conn.cursor",
+            "cursor.execute",
+            "conn.close",
+            "conn.commit"
+          ]
+        },
+        {
+          "name": "get_cache_stats",
+          "line": 309,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_cache_statsself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Dict",
+          "docstring": "キャッシュ統計情報を取得\n\nReturns:\n    キャッシュ統計情報の辞書",
+          "summary": "キャッシュ統計情報を取得",
+          "calls": [
+            "self._get_connection",
+            "cursor.execute",
+            "conn.close",
+            "cursor.fetchone",
+            "cursor.fetchall",
+            "conn.cursor"
+          ]
+        },
+        {
+          "name": "migrate_from_json",
+          "line": 347,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def migrate_from_jsonself, json_cache_dir: str='ohlcv_data'",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "json_cache_dir",
+              "type": "str",
+              "description": "Parameter: json_cache_dir",
+              "default": "ohlcv_data"
+            }
+          ],
+          "return_type": "bool",
+          "docstring": "JSONキャッシュファイルからSQLiteに移行\n\nArgs:\n    json_cache_dir: JSONキャッシュファイルのディレクトリ\n\nReturns:\n    移行成功の可否",
+          "summary": "JSONキャッシュファイルからSQLiteに移行",
+          "calls": [
+            "len",
+            "filename.replace('ohlcv_data_', '').replace('.json', '').split",
+            "os.path.exists",
+            "filename.replace",
+            "int",
+            "str",
+            "self.logger.log_error",
+            "self.logger.log",
+            "open",
+            "json.load",
+            "os.path.join",
+            "glob.glob",
+            "filename.replace('ohlcv_data_', '').replace",
+            "os.path.basename",
+            "self.save_ohlcv_data"
+          ]
+        },
+        {
+          "name": "dump_to_json",
+          "line": 401,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def dump_to_jsonself, output_file: str",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "output_file",
+              "type": "str",
+              "description": "Parameter: output_file"
+            }
+          ],
+          "return_type": "bool",
+          "docstring": "SQLiteキャッシュをJSONにダンプ（デバッグ用）\n\nArgs:\n    output_file: 出力JSONファイルパス\n\nReturns:\n    ダンプ成功の可否",
+          "summary": "SQLiteキャッシュをJSONにダンプ（デバッグ用）",
+          "calls": [
+            "len",
+            "self._get_connection",
+            "str",
+            "self.logger.log_error",
+            "self.logger.log",
+            "open",
+            "cursor.execute",
+            "conn.close",
+            "cursor.fetchall",
+            "json.dump",
+            "conn.cursor"
+          ]
+        }
+      ]
+    }
+  ],
+  "functions": [],
+  "constants": [],
+  "summary": {
+    "total_classes": 1,
+    "total_methods": 10,
+    "total_functions": 0,
+    "total_constants": 0,
+    "lines_of_code": 362
+  }
+}

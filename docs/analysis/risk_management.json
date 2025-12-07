@@ -1,0 +1,637 @@
+{
+  "metadata": {
+    "source_file": "src/risk_management.py",
+    "analyzed_at": "2025-12-07T23:53:30.034053",
+    "python_version": "3.10"
+  },
+  "file_info": {
+    "path": "src/risk_management.py",
+    "description": "Source code structure analysis"
+  },
+  "imports": [
+    {
+      "module": "config.Config",
+      "type": "local",
+      "used_for": "From config"
+    },
+    {
+      "module": "logger.Logger",
+      "type": "local",
+      "used_for": "From logger"
+    },
+    {
+      "module": "price_data_management.PriceDataManagement",
+      "type": "local",
+      "used_for": "From price_data_management"
+    },
+    {
+      "module": "bybit_exchange.BybitExchange",
+      "type": "local",
+      "used_for": "From bybit_exchange"
+    },
+    {
+      "module": "portfolio.Portfolio",
+      "type": "local",
+      "used_for": "From portfolio"
+    },
+    {
+      "module": "numpy",
+      "type": "standard",
+      "used_for": "Module: numpy"
+    }
+  ],
+  "classes": [
+    {
+      "name": "RiskManagement",
+      "line": 19,
+      "docstring": "No description",
+      "inheritance": [],
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 20,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def __init__self, price_data_management, portfolio",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "price_data_management",
+              "type": "Any",
+              "description": "Parameter: price_data_management"
+            },
+            {
+              "name": "portfolio",
+              "type": "Any",
+              "description": "Parameter: portfolio"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "リスク管理クラスを初期化します。",
+          "summary": "リスク管理クラスを初期化します。",
+          "calls": [
+            "Config.get_stop_range",
+            "Config.get_stop_AF_max",
+            "Config.get_stop_AF_add",
+            "Config.get_balance_tether_limit",
+            "Config.get_account_balance",
+            "Config.get_entry_times",
+            "Config.get_entry_range",
+            "Config.get_stop_AF",
+            "Config.get_risk_percentage",
+            "Config.get_surge_follow_price_ratio",
+            "Config.get_lot_limit_lower",
+            "Config.get_leverage",
+            "Logger"
+          ]
+        },
+        {
+          "name": "get_entry_range",
+          "line": 71,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_entry_rangeself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "get_entry_range"
+        },
+        {
+          "name": "get_add_range",
+          "line": 74,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_add_rangeself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "get_add_range"
+        },
+        {
+          "name": "get_last_entry_price",
+          "line": 77,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_last_entry_priceself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "get_last_entry_price"
+        },
+        {
+          "name": "update_last_entry_price",
+          "line": 80,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def update_last_entry_priceself, price",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "price",
+              "type": "Any",
+              "description": "Parameter: price"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "update_last_entry_price"
+        },
+        {
+          "name": "update_risk_status",
+          "line": 84,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def update_risk_statusself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "update_risk_status",
+          "calls": [
+            "self.__update_stop_price"
+          ]
+        },
+        {
+          "name": "get_stop_price",
+          "line": 88,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_stop_priceself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "get_stop_price"
+        },
+        {
+          "name": "get_position_size",
+          "line": 91,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_position_sizeself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "get_position_size"
+        },
+        {
+          "name": "get_total_size",
+          "line": 94,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_total_sizeself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "get_total_size"
+        },
+        {
+          "name": "get_stop_offset",
+          "line": 97,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_stop_offsetself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "get_stop_offset"
+        },
+        {
+          "name": "get_psar",
+          "line": 100,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_psarself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "get_psar",
+          "calls": [
+            "len"
+          ]
+        },
+        {
+          "name": "get_psarbull",
+          "line": 105,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_psarbullself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "get_psarbull",
+          "calls": [
+            "len"
+          ]
+        },
+        {
+          "name": "get_psarbear",
+          "line": 110,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_psarbearself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "get_psarbear",
+          "calls": [
+            "len"
+          ]
+        },
+        {
+          "name": "get_adx",
+          "line": 115,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_adxself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "get_adx",
+          "calls": [
+            "len"
+          ]
+        },
+        {
+          "name": "get_adx_bull",
+          "line": 120,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_adx_bullself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "get_adx_bull"
+        },
+        {
+          "name": "get_adx_bear",
+          "line": 123,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_adx_bearself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "get_adx_bear"
+        },
+        {
+          "name": "get_psar_stop_offset",
+          "line": 126,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_psar_stop_offsetself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "get_psar_stop_offset"
+        },
+        {
+          "name": "get_price_surge_stop_offset",
+          "line": 129,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_price_surge_stop_offsetself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "get_price_surge_stop_offset"
+        },
+        {
+          "name": "__calc_parabolic_sar",
+          "line": 133,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def __calc_parabolic_sarself, data",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "data",
+              "type": "Any",
+              "description": "Parameter: data"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "__calc_parabolic_sar",
+          "calls": [
+            "len",
+            "min",
+            "high.append",
+            "range",
+            "low.append",
+            "close.append"
+          ]
+        },
+        {
+          "name": "__calc_adx",
+          "line": 244,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def __calc_adxself, data",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "data",
+              "type": "Any",
+              "description": "Parameter: data"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "__calc_adx",
+          "calls": [
+            "len",
+            "np.abs",
+            "max",
+            "abs",
+            "range",
+            "np.where",
+            "adx.tolist",
+            "np.zeros",
+            "np.errstate",
+            "all",
+            "sum"
+          ]
+        },
+        {
+          "name": "__calc_stop_psar",
+          "line": 309,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def __calc_stop_psarself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "ストップ値をパラボリックASRにする関数\n\nポジションのBUY/SELLに応じてパラボリックSARの値をストップポジションとする",
+          "summary": "ストップ値をパラボリックASRにする関数",
+          "calls": [
+            "min",
+            "self.portfolio.get_position_side",
+            "round",
+            "self.get_psarbull",
+            "self.portfolio.get_position_price",
+            "self.get_psarbear"
+          ]
+        },
+        {
+          "name": "__follow_price_surge",
+          "line": 347,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def __follow_price_surgeself, price",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "price",
+              "type": "Any",
+              "description": "Parameter: price"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "__follow_price_surge",
+          "calls": [
+            "self.portfolio.get_position_price",
+            "self.portfolio.get_position_side"
+          ]
+        },
+        {
+          "name": "__follow_price_range",
+          "line": 373,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def __follow_price_rangeself, price",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "price",
+              "type": "Any",
+              "description": "Parameter: price"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "__follow_price_range"
+        },
+        {
+          "name": "__update_stop_price",
+          "line": 383,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def __update_stop_priceself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "__update_stop_price",
+          "calls": [
+            "min",
+            "self.__calc_stop_psar",
+            "self.portfolio.get_position_quantity",
+            "Config.get_time_frame",
+            "Config.get_psar_time_frame",
+            "self.price_data_management.get_ticker",
+            "self.price_data_management.get_volatility",
+            "self.__calc_adx",
+            "self.__follow_price_surge",
+            "max",
+            "self.price_data_management.get_ohlcv_data",
+            "self.__calc_parabolic_sar"
+          ]
+        },
+        {
+          "name": "calculate_position_size",
+          "line": 455,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def calculate_position_sizeself, balance_tether",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "balance_tether",
+              "type": "Any",
+              "description": "Parameter: balance_tether"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "ポジションサイズ[通貨単位]を計算します。\n\nArgs:\n    entry_price (float): エントリー価格\n    stop_loss_price (float): ストップロス価格\n\nReturns:\n    float: ポジションサイズ",
+          "summary": "ポジションサイズ[通貨単位]を計算します。",
+          "calls": [
+            "min",
+            "round",
+            "self.price_data_management.get_ticker",
+            "self.price_data_management.get_volatility",
+            "self.logger.log_error",
+            "self.get_entry_range"
+          ]
+        }
+      ]
+    }
+  ],
+  "functions": [],
+  "constants": [],
+  "summary": {
+    "total_classes": 1,
+    "total_methods": 25,
+    "total_functions": 0,
+    "total_constants": 0,
+    "lines_of_code": 351
+  }
+}

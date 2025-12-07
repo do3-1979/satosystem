@@ -1,0 +1,518 @@
+{
+  "metadata": {
+    "source_file": "src/source_analyzer.py",
+    "analyzed_at": "2025-12-07T23:53:30.079674",
+    "python_version": "3.10"
+  },
+  "file_info": {
+    "path": "src/source_analyzer.py",
+    "description": "Source code structure analysis"
+  },
+  "imports": [
+    {
+      "module": "os",
+      "type": "standard",
+      "used_for": "Module: os"
+    },
+    {
+      "module": "ast",
+      "type": "standard",
+      "used_for": "Module: ast"
+    },
+    {
+      "module": "json",
+      "type": "standard",
+      "used_for": "Module: json"
+    },
+    {
+      "module": "sys",
+      "type": "standard",
+      "used_for": "Module: sys"
+    },
+    {
+      "module": "datetime.datetime",
+      "type": "local",
+      "used_for": "From datetime"
+    },
+    {
+      "module": "pathlib.Path",
+      "type": "local",
+      "used_for": "From pathlib"
+    },
+    {
+      "module": "typing.Dict",
+      "type": "local",
+      "used_for": "From typing"
+    },
+    {
+      "module": "typing.List",
+      "type": "local",
+      "used_for": "From typing"
+    },
+    {
+      "module": "typing.Any",
+      "type": "local",
+      "used_for": "From typing"
+    },
+    {
+      "module": "typing.Optional",
+      "type": "local",
+      "used_for": "From typing"
+    },
+    {
+      "module": "argparse",
+      "type": "standard",
+      "used_for": "Module: argparse"
+    }
+  ],
+  "classes": [
+    {
+      "name": "SourceAnalyzer",
+      "line": 20,
+      "docstring": "Pythonソースコードを解析するクラス",
+      "inheritance": [],
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 23,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def __init__self, source_file: str",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "source_file",
+              "type": "str",
+              "description": "Parameter: source_file"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "SourceAnalyzerの初期化\n\nArgs:\n    source_file: 解析対象のPythonファイルパス",
+          "summary": "SourceAnalyzerの初期化",
+          "calls": [
+            "print",
+            "self.source_code.split",
+            "open",
+            "f.read",
+            "ast.parse"
+          ]
+        },
+        {
+          "name": "extract_docstring",
+          "line": 44,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def extract_docstringself, node: ast.AST",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "node",
+              "type": "ast.AST",
+              "description": "Parameter: node"
+            }
+          ],
+          "return_type": "Optional[str]",
+          "docstring": "ノードからdocstringを抽出",
+          "summary": "ノードからdocstringを抽出",
+          "calls": [
+            "ast.get_docstring"
+          ]
+        },
+        {
+          "name": "get_line_count",
+          "line": 48,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_line_countself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "int",
+          "docstring": "コード行数を取得",
+          "summary": "コード行数を取得",
+          "calls": [
+            "len",
+            "line.strip",
+            "line.strip().startswith"
+          ]
+        },
+        {
+          "name": "analyze_imports",
+          "line": 52,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def analyze_importsself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "List[Dict[str, Any]]",
+          "docstring": "インポート情報を抽出",
+          "summary": "インポート情報を抽出",
+          "calls": [
+            "ast.walk",
+            "isinstance",
+            "imports.append"
+          ]
+        },
+        {
+          "name": "analyze_parameters",
+          "line": 75,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def analyze_parametersself, node: ast.arguments",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "node",
+              "type": "ast.arguments",
+              "description": "Parameter: node"
+            }
+          ],
+          "return_type": "List[Dict[str, Any]]",
+          "docstring": "関数・メソッドのパラメータを抽出",
+          "summary": "関数・メソッドのパラメータを抽出",
+          "calls": [
+            "len",
+            "self._extract_value",
+            "enumerate",
+            "self._extract_annotation",
+            "params.append"
+          ]
+        },
+        {
+          "name": "_extract_annotation",
+          "line": 111,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def _extract_annotationself, annotation: Optional[ast.expr]",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "annotation",
+              "type": "Optional[ast.expr]",
+              "description": "Parameter: annotation"
+            }
+          ],
+          "return_type": "str",
+          "docstring": "型アノテーションを文字列で取得",
+          "summary": "型アノテーションを文字列で取得",
+          "calls": [
+            "ast.unparse"
+          ]
+        },
+        {
+          "name": "_extract_value",
+          "line": 121,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def _extract_valueself, value: ast.expr",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "value",
+              "type": "ast.expr",
+              "description": "Parameter: value"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "デフォルト値を取得",
+          "summary": "デフォルト値を取得",
+          "calls": [
+            "isinstance"
+          ]
+        },
+        {
+          "name": "analyze_methods",
+          "line": 132,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def analyze_methodsself, class_node: ast.ClassDef",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "class_node",
+              "type": "ast.ClassDef",
+              "description": "Parameter: class_node"
+            }
+          ],
+          "return_type": "List[Dict[str, Any]]",
+          "docstring": "クラスのメソッドを解析",
+          "summary": "クラスのメソッドを解析",
+          "calls": [
+            "self._generate_signature",
+            "methods.append",
+            "any",
+            "isinstance",
+            "self.analyze_parameters",
+            "self._extract_annotation",
+            "self.extract_docstring",
+            "self.extract_docstring(item) or ''.split",
+            "item.name.startswith",
+            "self._extract_method_calls"
+          ]
+        },
+        {
+          "name": "_generate_signature",
+          "line": 160,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def _generate_signatureself, node: ast.FunctionDef",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "node",
+              "type": "ast.FunctionDef",
+              "description": "Parameter: node"
+            }
+          ],
+          "return_type": "str",
+          "docstring": "関数/メソッドのシグネチャを生成",
+          "summary": "関数/メソッドのシグネチャを生成",
+          "calls": [
+            "ast.unparse"
+          ]
+        },
+        {
+          "name": "_extract_method_calls",
+          "line": 167,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def _extract_method_callsself, node: ast.FunctionDef",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "node",
+              "type": "ast.FunctionDef",
+              "description": "Parameter: node"
+            }
+          ],
+          "return_type": "List[str]",
+          "docstring": "メソッド内で呼び出されている関数を抽出",
+          "summary": "メソッド内で呼び出されている関数を抽出",
+          "calls": [
+            "ast.unparse",
+            "calls.append",
+            "list",
+            "ast.walk",
+            "isinstance",
+            "set"
+          ]
+        },
+        {
+          "name": "analyze_classes",
+          "line": 180,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def analyze_classesself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "List[Dict[str, Any]]",
+          "docstring": "クラスを解析",
+          "summary": "クラスを解析",
+          "calls": [
+            "self.analyze_methods",
+            "classes.append",
+            "ast.unparse",
+            "ast.walk",
+            "isinstance",
+            "self.extract_docstring",
+            "hasattr"
+          ]
+        },
+        {
+          "name": "analyze_functions",
+          "line": 202,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def analyze_functionsself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "List[Dict[str, Any]]",
+          "docstring": "トップレベルの関数を解析",
+          "summary": "トップレベルの関数を解析",
+          "calls": [
+            "self._generate_signature",
+            "functions.append",
+            "self.extract_docstring(node) or ''.split",
+            "isinstance",
+            "self._extract_annotation",
+            "self.analyze_parameters",
+            "self.extract_docstring",
+            "node.name.startswith"
+          ]
+        },
+        {
+          "name": "analyze_constants",
+          "line": 222,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def analyze_constantsself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "List[Dict[str, Any]]",
+          "docstring": "定数を解析（UPPERCASE変数）",
+          "summary": "定数を解析（UPPERCASE変数）",
+          "calls": [
+            "target.id.isupper",
+            "self._extract_value",
+            "isinstance",
+            "constants.append",
+            "type"
+          ]
+        },
+        {
+          "name": "generate_report",
+          "line": 239,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def generate_reportself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Dict[str, Any]",
+          "docstring": "解析結果をまとめたレポートを生成",
+          "summary": "解析結果をまとめたレポートを生成",
+          "calls": [
+            "len",
+            "self.analyze_constants",
+            "self.get_line_count",
+            "datetime.now",
+            "self.analyze_classes",
+            "self.analyze_imports",
+            "datetime.now().isoformat",
+            "self.analyze_functions",
+            "sum"
+          ]
+        }
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "analyze_single_file",
+      "line": 273,
+      "visibility": "public",
+      "signature": "def analyze_single_filesource_file: str, output_dir: str='docs/analysis'",
+      "parameters": [
+        {
+          "name": "source_file",
+          "type": "str",
+          "description": "Parameter: source_file"
+        },
+        {
+          "name": "output_dir",
+          "type": "str",
+          "description": "Parameter: output_dir",
+          "default": "docs/analysis"
+        }
+      ],
+      "return_type": "bool",
+      "docstring": "単一のPythonファイルを解析してJSONで保存\n\nArgs:\n    source_file: 解析対象ファイル\n    output_dir: 出力ディレクトリ\n\nReturns:\n    成功したかどうか",
+      "summary": "単一のPythonファイルを解析してJSONで保存"
+    },
+    {
+      "name": "analyze_all_files",
+      "line": 307,
+      "visibility": "public",
+      "signature": "def analyze_all_filessrc_dir: str='src', output_dir: str='docs/analysis'",
+      "parameters": [
+        {
+          "name": "src_dir",
+          "type": "str",
+          "description": "Parameter: src_dir",
+          "default": "src"
+        },
+        {
+          "name": "output_dir",
+          "type": "str",
+          "description": "Parameter: output_dir",
+          "default": "docs/analysis"
+        }
+      ],
+      "return_type": "None",
+      "docstring": "指定ディレクトリのすべてのPythonファイルを解析\n\nArgs:\n    src_dir: ソースディレクトリ\n    output_dir: 出力ディレクトリ",
+      "summary": "指定ディレクトリのすべてのPythonファイルを解析"
+    }
+  ],
+  "constants": [],
+  "summary": {
+    "total_classes": 1,
+    "total_methods": 14,
+    "total_functions": 2,
+    "total_constants": 0,
+    "lines_of_code": 296
+  }
+}

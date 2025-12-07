@@ -1,0 +1,60 @@
+{
+  "metadata": {
+    "source_file": "src/config_generator.py",
+    "analyzed_at": "2025-12-07T23:53:29.845712",
+    "python_version": "3.10"
+  },
+  "file_info": {
+    "path": "src/config_generator.py",
+    "description": "Source code structure analysis"
+  },
+  "imports": [
+    {
+      "module": "itertools",
+      "type": "standard",
+      "used_for": "Module: itertools"
+    },
+    {
+      "module": "os",
+      "type": "standard",
+      "used_for": "Module: os"
+    },
+    {
+      "module": "numpy",
+      "type": "standard",
+      "used_for": "Module: numpy"
+    }
+  ],
+  "classes": [],
+  "functions": [
+    {
+      "name": "generate_configs",
+      "line": 5,
+      "visibility": "public",
+      "signature": "def generate_configsbase_config, output_directory",
+      "parameters": [
+        {
+          "name": "base_config",
+          "type": "Any",
+          "description": "Parameter: base_config"
+        },
+        {
+          "name": "output_directory",
+          "type": "Any",
+          "description": "Parameter: output_directory"
+        }
+      ],
+      "return_type": "Any",
+      "docstring": "No description",
+      "summary": "generate_configs"
+    }
+  ],
+  "constants": [],
+  "summary": {
+    "total_classes": 0,
+    "total_methods": 0,
+    "total_functions": 1,
+    "total_constants": 0,
+    "lines_of_code": 236
+  }
+}

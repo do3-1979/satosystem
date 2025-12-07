@@ -1,0 +1,71 @@
+{
+  "metadata": {
+    "source_file": "src/side.py",
+    "analyzed_at": "2025-12-07T23:53:30.054196",
+    "python_version": "3.10"
+  },
+  "file_info": {
+    "path": "src/side.py",
+    "description": "Source code structure analysis"
+  },
+  "imports": [
+    {
+      "module": "enum.Enum",
+      "type": "local",
+      "used_for": "From enum"
+    }
+  ],
+  "classes": [
+    {
+      "name": "Side",
+      "line": 4,
+      "docstring": "No description",
+      "inheritance": [
+        "Enum"
+      ],
+      "methods": []
+    }
+  ],
+  "functions": [
+    {
+      "name": "normalize_side",
+      "line": 10,
+      "visibility": "public",
+      "signature": "def normalize_sidevalue",
+      "parameters": [
+        {
+          "name": "value",
+          "type": "Any",
+          "description": "Parameter: value"
+        }
+      ],
+      "return_type": "Any",
+      "docstring": "任意の表記 ('buy'/'sell'/'BUY'/'SELL'/Side) を内部表記 ('BUY'/'SELL'/'NONE') に正規化。",
+      "summary": "任意の表記 ('buy'/'sell'/'BUY'/'SELL'/Side) を内部表記 ('BUY'/'SELL'/'NONE') に正規化。"
+    },
+    {
+      "name": "to_exchange_side",
+      "line": 25,
+      "visibility": "public",
+      "signature": "def to_exchange_sidevalue",
+      "parameters": [
+        {
+          "name": "value",
+          "type": "Any",
+          "description": "Parameter: value"
+        }
+      ],
+      "return_type": "Any",
+      "docstring": "取引所API向けに 'buy'/'sell' の lower-case へ変換。\n内部 'NONE' はそのまま 'none' を返す（未使用想定）。",
+      "summary": "取引所API向けに 'buy'/'sell' の lower-case へ変換。"
+    }
+  ],
+  "constants": [],
+  "summary": {
+    "total_classes": 1,
+    "total_methods": 0,
+    "total_functions": 2,
+    "total_constants": 0,
+    "lines_of_code": 28
+  }
+}

@@ -1,0 +1,208 @@
+{
+  "metadata": {
+    "source_file": "src/event.py",
+    "analyzed_at": "2025-12-07T23:53:29.856919",
+    "python_version": "3.10"
+  },
+  "file_info": {
+    "path": "src/event.py",
+    "description": "Source code structure analysis"
+  },
+  "imports": [
+    {
+      "module": "typing.Callable",
+      "type": "local",
+      "used_for": "From typing"
+    },
+    {
+      "module": "typing.Dict",
+      "type": "local",
+      "used_for": "From typing"
+    },
+    {
+      "module": "typing.List",
+      "type": "local",
+      "used_for": "From typing"
+    },
+    {
+      "module": "typing.Any",
+      "type": "local",
+      "used_for": "From typing"
+    }
+  ],
+  "classes": [
+    {
+      "name": "Event",
+      "line": 17,
+      "docstring": "No description",
+      "inheritance": [],
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 18,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def __init__self, event_type, data=None",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "event_type",
+              "type": "Any",
+              "description": "Parameter: event_type"
+            },
+            {
+              "name": "data",
+              "type": "Any",
+              "description": "Parameter: data",
+              "default": null
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "イベントクラスを初期化\n:param event_type: イベントのタイプ（例: \"ENTRY_SIGNAL\", \"EXIT_SIGNAL\", \"ORDER_EXECUTED\"）\n:param data: イベントに関連するデータ",
+          "summary": "イベントクラスを初期化"
+        }
+      ]
+    },
+    {
+      "name": "EventType",
+      "line": 28,
+      "docstring": "No description",
+      "inheritance": [],
+      "methods": []
+    },
+    {
+      "name": "EventBus",
+      "line": 40,
+      "docstring": "シンプルなPub/Sub。副作用を避けるため同期呼び出しのみ。",
+      "inheritance": [],
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 44,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def __init__self",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "__init__"
+        },
+        {
+          "name": "subscribe",
+          "line": 47,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def subscribeself, event_type: str, handler: Callable[[Event], None]",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "event_type",
+              "type": "str",
+              "description": "Parameter: event_type"
+            },
+            {
+              "name": "handler",
+              "type": "Callable[[Event], None]",
+              "description": "Parameter: handler"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "subscribe",
+          "calls": [
+            "self._handlers.setdefault",
+            "self._handlers.setdefault(event_type, []).append"
+          ]
+        },
+        {
+          "name": "unsubscribe",
+          "line": 50,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def unsubscribeself, event_type: str, handler: Callable[[Event], None]",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "event_type",
+              "type": "str",
+              "description": "Parameter: event_type"
+            },
+            {
+              "name": "handler",
+              "type": "Callable[[Event], None]",
+              "description": "Parameter: handler"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "unsubscribe"
+        },
+        {
+          "name": "emit",
+          "line": 56,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def emitself, event_type: str, data: Any=None",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "event_type",
+              "type": "str",
+              "description": "Parameter: event_type"
+            },
+            {
+              "name": "data",
+              "type": "Any",
+              "description": "Parameter: data",
+              "default": null
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "emit",
+          "calls": [
+            "h",
+            "Event",
+            "list"
+          ]
+        }
+      ]
+    }
+  ],
+  "functions": [],
+  "constants": [],
+  "summary": {
+    "total_classes": 3,
+    "total_methods": 5,
+    "total_functions": 0,
+    "total_constants": 0,
+    "lines_of_code": 62
+  }
+}

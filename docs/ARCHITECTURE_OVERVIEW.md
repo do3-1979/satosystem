@@ -2,23 +2,24 @@
 
 | クラス名              | ファイル                | 主な役割・概要                                 | 主なメソッド例                                      |
 |----------------------|------------------------|-----------------------------------------------|----------------------------------------------------|
-| Bot                  | src/bot.py             | メインループ・注文・損益管理                   | __init__, show_trade_data, main_loop, execute_trade|
-| TradingStrategy      | src/trading_strategy.py| ENTRY/ADD/EXIT判定・戦略ロジック               | __init__, initialize_trade_decision, evaluate_entry, evaluate_exit |
-| RiskManagement       | src/risk_management.py | ポジションサイズ計算・ストップ管理             | __init__, get_entry_range, get_stop_price, update_risk_status |
-| Portfolio            | src/portfolio.py        | 保有ポジション・損益・ドローダウン管理         | __init__, get_position_quantity, get_profit_and_loss, add_position_quantity |
-| Visualizer           | src/visualizer.py       | ログからグラフ/Excel生成                       | plot_trade_log, export_to_excel                    |
+| Bot                  | src/bot.py             | メインループ・注文・損益管理                   | __init__, show_trade_data, run, execute_order      |
+| TradingStrategy      | src/trading_strategy.py| ENTRY/ADD/EXIT判定・戦略ロジック               | __init__, initialize_trade_decision, evaluate_entry, evaluate_exit, evaluate_add, make_trade_decision |
+| RiskManagement       | src/risk_management.py | ポジションサイズ計算・ストップ管理             | __init__, get_entry_range, get_stop_price, update_risk_status, get_psar, get_adx, calculate_position_size |
+| Portfolio            | src/portfolio.py        | 保有ポジション・損益・ドローダウン管理         | __init__, get_position_quantity, get_profit_and_loss, add_position_quantity, get_drawdown, get_drawdown_rate |
+| Visualizer           | src/visualizer.py       | ログからグラフ/HTML生成                        | __init__, detect_period_log_files, create_interactive_chart, visualize_backtest |
 | Order                | src/order.py            | 注文DTO・注文情報管理                          | __init__, to_dict, __str__                         |
-| Logger               | src/logger.py           | 構造化ログ・圧縮・ローテーション               | __new__, log, log_error, compress_logs              |
-| Config               | src/config.py           | 設定値の集中管理・キャッシュ                   | __init__, to_dict, get_market, get_bot_operation_cycle |
-| BybitExchange        | src/bybit_exchange.py   | Bybit用取引所ラッパー                           | __init__, fetch_ohlcv, place_order                 |
-| PriceDataManagement  | src/price_data_management.py | OHLCV取得・シグナル生成・仮想時刻進行      | __init__, get_signals, update_price_data_backtest   |
-| Util                 | src/util.py             | ログ抽出・Excel/グラフ生成・分析補助            | extract_and_export_logs, generate_line_chart, extract_parameters_and_results |
-| Metrics              | src/metrics.py          | バックテスト指標計算                            | compute_metrics, _max_drawdown, _sharpe             |
-| EventBus             | src/event.py            | イベント通知・購読管理                          | __init__, publish, subscribe                        |
+| Logger               | src/logger.py           | 構造化ログ・圧縮・ローテーション               | __new__, _initialize, log, log_error, log_trade_data, compress_logs |
+| Config               | src/config.py           | 設定値の集中管理・キャッシュ                   | (36メソッド) get_api_key, get_market, get_bot_operation_cycle, to_dict |
+| BybitExchange        | src/bybit_exchange.py   | Bybit用取引所ラッパー                           | __init__, fetch_ohlcv, fetch_ticker, get_account_balance, execute_order |
+| PriceDataManagement  | src/price_data_management.py | OHLCV取得・シグナル生成・仮想時刻進行      | initialize, get_signals, update_price_data_backtest, get_ohlcv_data, get_volatility |
+| Util                 | src/util.py             | ログ抽出・グラフ生成・分析補助                  | extract_and_export_logs, generate_line_chart, generate_line_profit_and_loss |
+| Metrics              | src/metrics.py          | バックテスト指標計算（関数ベース）              | compute_metrics, _max_drawdown, _sharpe, _incremental_returns |
+| EventBus             | src/event.py            | イベント通知・購読管理                          | __init__, subscribe, unsubscribe, emit              |
 | Exchange             | src/exchange.py         | 取引所基底クラス                                | __init__, get_account_balance, execute_order        |
-| Side                 | src/side.py             | 売買サイドEnum・変換                            | normalize_side, to_exchange_side                   |
+| Side                 | src/side.py             | 売買サイドEnum・変換関数                        | normalize_side, to_exchange_side                   |
 | Satostrategy         | src/satostrategy.py     | 独自戦略クラス（TradingStrategy拡張）           | __init__                                           |
-| ConfigGenerator      | src/config_generator.py | 設定ファイル自動生成                            | generate_configs                                   |
+| OHLCVCache           | src/ohlcv_cache.py      | OHLCV SQLiteキャッシュ管理                      | __init__, get_ohlcv_data, save_ohlcv_data, get_ohlcv_data_partial, migrate_from_json |
+| OHLCVCacheInspector  | src/ohlcv_cache_inspector.py | キャッシュ分析・検査ツール            | __init__, get_cache_parameters, get_data_coverage, print_summary, print_detailed_analysis |
 # Architecture Overview
 
 ## Component Responsibilities
@@ -32,8 +33,11 @@
 | Portfolio | Tracks positions, average price, cumulative PnL & drawdown | Bot, RiskManagement |
 | Order | DTO encapsulating order intent | Bot, Exchange |
 | Logger | Structured logging, rotation, compression | Bot, Util, Metrics |
-| Util | Log extraction & visualization (Excel, charts) | Logger outputs |
+| Util | Log extraction & visualization (HTML, charts) | Logger outputs |
+| Visualizer | Interactive backtest visualization & reporting | Logger outputs |
 | Metrics | Post-backtest performance metrics (Sharpe, MaxDD, PF, WinRate) | Bot (backtest summary) |
+| OHLCVCache | SQLite-based OHLCV caching for fast data retrieval | PriceDataManagement, Bot |
+| OHLCVCacheInspector | Cache analysis & inspection tool | OHLCVCache |
 
 ## Data Flow (Backtest & Live)
 ```
@@ -220,6 +224,21 @@ python3 visualizer.py # 2. グラフ生成
 ### 推奨ブラウザ
 
 Chrome/Chromium（推奨）、Firefox、Safari、Edge
+
+## 自動ソースコード解析
+
+全ソースファイルの構造（クラス・メソッド・関数など）は `docs/analysis/` フォルダに JSON 形式で自動生成されます。
+
+- **生成ツール**: `src/source_analyzer.py`
+- **スキーマ定義**: `docs/analysis/SOURCE_ANALYSIS_SCHEMA.json`
+- **生成物**: 21ファイル、統計: クラス 20、メソッド 187、関数 14
+
+実行方法:
+```bash
+cd /workspace
+python src/source_analyzer.py  # 全ファイルを解析して docs/analysis/ に JSON 生成
+python src/source_analyzer.py --file src/config.py  # 特定ファイルのみ解析
+```
 
 ## 次のステップ
 - `nextarch`（および master）にある `8e6e543` 以降のコミットを一覧化し、移植対象となる変更点ごとに検討を進める。

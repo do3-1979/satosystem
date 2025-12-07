@@ -1,0 +1,113 @@
+{
+  "metadata": {
+    "source_file": "src/metrics.py",
+    "analyzed_at": "2025-12-07T23:53:29.879861",
+    "python_version": "3.10"
+  },
+  "file_info": {
+    "path": "src/metrics.py",
+    "description": "Source code structure analysis"
+  },
+  "imports": [
+    {
+      "module": "__future__.annotations",
+      "type": "local",
+      "used_for": "From __future__"
+    },
+    {
+      "module": "typing.List",
+      "type": "local",
+      "used_for": "From typing"
+    },
+    {
+      "module": "typing.Dict",
+      "type": "local",
+      "used_for": "From typing"
+    },
+    {
+      "module": "math",
+      "type": "standard",
+      "used_for": "Module: math"
+    }
+  ],
+  "classes": [],
+  "functions": [
+    {
+      "name": "_incremental_returns",
+      "line": 17,
+      "visibility": "private",
+      "signature": "def _incremental_returnspnl_history: List[float]",
+      "parameters": [
+        {
+          "name": "pnl_history",
+          "type": "List[float]",
+          "description": "Parameter: pnl_history"
+        }
+      ],
+      "return_type": "List[float]",
+      "docstring": "No description",
+      "summary": "_incremental_returns"
+    },
+    {
+      "name": "_sharpe",
+      "line": 28,
+      "visibility": "private",
+      "signature": "def _sharpereturns: List[float]",
+      "parameters": [
+        {
+          "name": "returns",
+          "type": "List[float]",
+          "description": "Parameter: returns"
+        }
+      ],
+      "return_type": "float",
+      "docstring": "No description",
+      "summary": "_sharpe"
+    },
+    {
+      "name": "_max_drawdown",
+      "line": 41,
+      "visibility": "private",
+      "signature": "def _max_drawdownpnl_history: List[float]",
+      "parameters": [
+        {
+          "name": "pnl_history",
+          "type": "List[float]",
+          "description": "Parameter: pnl_history"
+        }
+      ],
+      "return_type": "float",
+      "docstring": "No description",
+      "summary": "_max_drawdown"
+    },
+    {
+      "name": "compute_metrics",
+      "line": 53,
+      "visibility": "public",
+      "signature": "def compute_metricspnl_history: List[float], trade_results: List[bool]",
+      "parameters": [
+        {
+          "name": "pnl_history",
+          "type": "List[float]",
+          "description": "Parameter: pnl_history"
+        },
+        {
+          "name": "trade_results",
+          "type": "List[bool]",
+          "description": "Parameter: trade_results"
+        }
+      ],
+      "return_type": "Dict[str, float]",
+      "docstring": "No description",
+      "summary": "compute_metrics"
+    }
+  ],
+  "constants": [],
+  "summary": {
+    "total_classes": 0,
+    "total_methods": 0,
+    "total_functions": 4,
+    "total_constants": 0,
+    "lines_of_code": 66
+  }
+}
