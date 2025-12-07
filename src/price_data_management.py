@@ -46,12 +46,10 @@ class PriceDataManagement:
         
         main_time_frame = Config.get_time_frame()
         psar_time_frame = Config.get_psar_time_frame()
-        min_time_frame = 1
         
         self.ohlcv_data = [
                 {"time_frame": main_time_frame, "data": []},
-                {"time_frame": psar_time_frame, "data": []},
-                {"time_frame": min_time_frame, "data": []}
+                {"time_frame": psar_time_frame, "data": []}
             ]
         self.latest_ohlcv_data = [] # 未確定の最新値
         self.ticker = 0
@@ -65,8 +63,7 @@ class PriceDataManagement:
         if Config.get_back_test_mode() == 1:
             self.back_test_ohlcv_data = [
                 {"time_frame": main_time_frame, "data": [], "prev_index": 0},
-                {"time_frame": psar_time_frame, "data": [], "prev_index": 0},
-                {"time_frame": min_time_frame, "data": [], "prev_index": 0}
+                {"time_frame": psar_time_frame, "data": [], "prev_index": 0}
             ]
             self.progress_time = 0 # 処理中の時刻
             self.progress_diff = 0
