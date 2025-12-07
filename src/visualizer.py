@@ -4,7 +4,7 @@
 機能:
 - 2時間足ローソク足チャート + 1分足ティック価格の重ね表示
 - インタラクティブな拡大縮小・範囲変更
-- 指標(Donchian/PSAR/ADX/PVO等)の表示切替
+- 指標(Donchian/PSAR/PVO等)の表示切替
 - ポジション開始・終了・損切値の可視化
 """
 
@@ -285,19 +285,19 @@ class Visualizer:
             output_html: 出力HTMLファイルパス
         """
         # サブプロット: 4行
-        # Row 1: 価格系 (ローソク足 + Donchian + PSAR + Keltner Channel)
+        # Row 1: 価格系 (ローソク足 + Donchian + PSAR)
         # Row 2: ボリューム (Volume Bar)
-        # Row 3: テクニカル指標系 (Volatility + PVO + ADX)
+        # Row 3: テクニカル指標系 (Volatility + PVO)
         # Row 4: 累積損益 (PnL)
         fig = make_subplots(
             rows=4, cols=1,
             shared_xaxes=True,
             vertical_spacing=0.06,
             row_heights=[0.4, 0.15, 0.25, 0.2],
-            subplot_titles=("価格チャート (2h足ローソク + Donchian + PSAR + Keltner Channel)", 
+            subplot_titles=("価格チャート (2h足ローソク + Donchian + PSAR)", 
                            "ボリューム (Volume)", 
-                           "テクニカル指標 (Volatility / PVO / ADX)", 
-                           "累積損益 (PnL)")
+                           "テクニカル指標 (Volatility / PVO)", 
+                           "累積損益 (PnL)"))
         )
         
         # === Row 1: 価格チャート (ローソク足 + Donchian + PSAR) ===
@@ -422,64 +422,6 @@ class Visualizer:
                 ),
                 row=1, col=1
             )
-        
-        # Keltner Channel (Upper Band)
-        if 'keltner' in df.columns and df['keltner'].notna().any():
-            # keltner がスカラー値でなく、upper/lower の辞書または配列の場合に対応
-            df_keltner = df.copy()
-            try:
-                # keltner が JSON/dict 文字列の場合、パース
-                if isinstance(df_keltner['keltner'].iloc[0], str):
-                    df_keltner['keltner_dict'] = df_keltner['keltner'].apply(
-                        lambda x: json.loads(x) if isinstance(x, str) else x
-                    )
-                    df_keltner['keltner_upper'] = df_keltner['keltner_dict'].apply(
-                        lambda x: x.get('upper', None) if isinstance(x, dict) else None
-                    )
-                    df_keltner['keltner_lower'] = df_keltner['keltner_dict'].apply(
-                        lambda x: x.get('lower', None) if isinstance(x, dict) else None
-                    )
-                elif isinstance(df_keltner['keltner'].iloc[0], dict):
-                    df_keltner['keltner_upper'] = df_keltner['keltner'].apply(
-                        lambda x: x.get('upper', None) if isinstance(x, dict) else None
-                    )
-                    df_keltner['keltner_lower'] = df_keltner['keltner'].apply(
-                        lambda x: x.get('lower', None) if isinstance(x, dict) else None
-                    )
-                else:
-                    # スカラー値の場合はスキップ
-                    df_keltner['keltner_upper'] = None
-                    df_keltner['keltner_lower'] = None
-                
-                # Upper Band
-                if df_keltner['keltner_upper'].notna().any():
-                    fig.add_trace(
-                        go.Scatter(
-                            x=df_keltner['real_time_dt'],
-                            y=df_keltner['keltner_upper'],
-                            mode='lines',
-                            name="Keltner Upper",
-                            line=dict(color='blue', width=1, dash='dot'),
-                            visible=True
-                        ),
-                        row=1, col=1
-                    )
-                
-                # Lower Band
-                if df_keltner['keltner_lower'].notna().any():
-                    fig.add_trace(
-                        go.Scatter(
-                            x=df_keltner['real_time_dt'],
-                            y=df_keltner['keltner_lower'],
-                            mode='lines',
-                            name="Keltner Lower",
-                            line=dict(color='blue', width=1, dash='dot'),
-                            visible=True
-                        ),
-                        row=1, col=1
-                    )
-            except Exception as e:
-                print(f"[WARN] Keltner Channel parsing error: {e}")
         
         # ストップ価格 (ポジション保有時のみ表示)
         # stop_price が 0 の場合は PSAR から推定、またはエントリー価格から計算
@@ -675,34 +617,6 @@ class Visualizer:
                     name="PVO",
                     line=dict(color='cyan', width=1),
                     visible=True
-                ),
-                row=3, col=1
-            )
-        
-        # ADX (Average Directional Index)
-        if 'adx' in df.columns:
-            fig.add_trace(
-                go.Scatter(
-                    x=df['real_time_dt'],
-                    y=df['adx'],
-                    mode='lines',
-                    name="ADX",
-                    line=dict(color='navy', width=1),
-                    visible=True
-                ),
-                row=3, col=1
-            )
-        
-        # ATR (Average True Range) - オプション表示
-        if 'atr' in df.columns:
-            fig.add_trace(
-                go.Scatter(
-                    x=df['real_time_dt'],
-                    y=df['atr'],
-                    mode='lines',
-                    name="ATR",
-                    line=dict(color='brown', width=1),
-                    visible='legendonly'
                 ),
                 row=3, col=1
             )
