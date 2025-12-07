@@ -142,6 +142,85 @@ This document complements `Readme.md` and analysis files; update incrementally.
 - `docs/analysis/project_structure.json` には gen2 の現行構成（ディレクトリ、主要コンポーネント）が JSON 形式で記録されており、実装変更前には必ず参照する。
 - 議論や一時的な調査レポートが必要であれば `report_tmp/` 内でカテゴリ別に管理し、必要分のみ `ARCHITECTURE_OVERVIEW.md` に要約・言及する。
 
+## バックテスト結果の可視化
+
+### 概要
+
+`visualizer.py` は、`bot_run.sh` で実行したバックテスト結果を、インタラクティブなHTMLグラフとして可視化します。
+
+### 実行方法
+
+**1. バックテスト実行**
+```bash
+cd src
+./bot_run.sh
+```
+`src/logs/` ディレクトリにバックテストログが保存されます（JSON形式: `YYYYMMDDHHMMSS.json`）。
+
+**2. グラフ生成**
+```bash
+cd src
+python3 visualizer.py
+```
+最新のバックテストログを自動検出し、インタラクティブなHTMLグラフを生成します。
+
+**3. グラフ表示**
+ブラウザで `report/backtest_visualization.html` を開きます。
+
+### 出力ファイル
+
+- **ファイル名**: `report/backtest_visualization.html`
+- **ファイルサイズ**: 約 150-200 KB
+- **オープン方法**: ブラウザで直接開く（ダブルクリック）
+
+### グラフの構成
+
+| Row | 内容 | コンポーネント |
+|-----|------|--------------|
+| 1 | 価格チャート | 2時間足ローソク足、Donchian High/Low、PSAR、ポジション区間、ENTRY/ADD/EXIT、損切値 |
+| 2 | ボリューム | Volume Bar（スチールブルー） |
+| 3 | テクニカル指標 | Volatility（紫）、PVO（シアン） |
+| 4 | 累積損益 | Total PnL（濃青面積グラフ）、ゼロライン |
+
+### 対話機能
+
+- **ズーム/パン**: マウスホイール、ドラッグ、手のひらツール、ホームアイコン
+- **表示切替**: 凡例クリック（指標表示/非表示）、Shift+クリック（特定指標のみ）
+- **ホバー情報**: マウスカーソル移動で詳細表示（日時、価格、ポジション）
+- **ダウンロード**: カメラアイコンで現在表示状態をPNG出力
+
+### 設定
+
+`src/config.ini` で表示期間を指定：
+```ini
+[Period]
+start_time = 2025/11/1 0:00
+end_time = 2025/11/30 23:59
+```
+
+計算用ルックバック期間はデフォルト20日（グラフには指定期間のみ表示）。
+
+### トラブルシューティング
+
+| 問題 | 対処方法 |
+|------|--------|
+| 「No log files」エラー | `bot_run.sh` 実行確認、`src/logs/*.json` 確認 |
+| グラフが空またはデータ少ない | `config.ini` 期間設定確認、バックテスト期間と表示期間確認 |
+| ブラウザで開けない | ファイルコピー別場所試行、別ブラウザ試行 |
+
+### ワークフロー例
+
+```bash
+cd src
+./bot_run.sh          # 1. バックテスト実行
+python3 visualizer.py # 2. グラフ生成
+# 3. report/backtest_visualization.html をブラウザで確認
+```
+
+### 推奨ブラウザ
+
+Chrome/Chromium（推奨）、Firefox、Safari、Edge
+
 ## 次のステップ
 - `nextarch`（および master）にある `8e6e543` 以降のコミットを一覧化し、移植対象となる変更点ごとに検討を進める。
 - レグレッションテストの整備と自動化を進め、変更取り込み前に `report_tmp/` にテスト結果を保存して参照可能とする。
