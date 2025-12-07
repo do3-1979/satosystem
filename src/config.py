@@ -338,6 +338,7 @@ class Config:
     def get_test_initial_max_term(cls):
         """
         テストに必要な初期化期間を取得します
+        PSAR の正しいトレンド形成のため、十分な履歴データが必要
 
         Returns:
             int: 期間
@@ -347,7 +348,18 @@ class Config:
         d_s_term = int(cls.config['Strategy']['donchian_sell_term'])
         pv_s_term = int(cls.config['Strategy']['pvo_s_term'])
         
-        max_term = max(v_term, d_b_term, d_s_term, pv_s_term)
+        # PSAR用初期化期間を取得（設定があれば）
+        psar_term = None
+        try:
+            psar_term = int(cls.config['Strategy']['psar_lookback_term'])
+        except (KeyError, ValueError):
+            psar_term = None
+        
+        # PSAR期間がある場合はそれを優先、なければ他の指標から最大値を取得
+        if psar_term is not None:
+            max_term = max(v_term, d_b_term, d_s_term, pv_s_term, psar_term)
+        else:
+            max_term = max(v_term, d_b_term, d_s_term, pv_s_term)
 
         return max_term
 

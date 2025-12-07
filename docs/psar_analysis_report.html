@@ -1,0 +1,4079 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PSAR vs Close Price 分析レポート</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .summary {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stat {
+            display: inline-block;
+            margin-right: 30px;
+            font-size: 16px;
+        }
+        .stat-value {
+            font-weight: bold;
+            font-size: 20px;
+            color: #0066cc;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            margin-top: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th {
+            background-color: #0066cc;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+        .high {
+            background-color: #e8f4f8;
+            color: #006699;
+        }
+        .low {
+            background-color: #ffe8e8;
+            color: #cc0000;
+        }
+        .chart-info {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .chart-info img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>PSAR vs Close Price 分析レポート</h1>
+    <p>生成日時: 2025-12-07 21:17:45</p>
+    
+    <div class="summary">
+        <h2>【サマリー】</h2>
+        <div class="stat">
+            データ件数: <span class="stat-value">360</span> 件
+        </div>
+        <div class="stat">
+            Close > PSAR: <span class="stat-value" style="color: #0066cc;">234</span> 件 (65.0%)
+        </div>
+        <div class="stat">
+            Close < PSAR: <span class="stat-value" style="color: #cc0000;">126</span> 件 (35.0%)
+        </div>
+    </div>
+    
+    <div class="chart-info">
+        <h2>【グラフ】</h2>
+        <img src="psar_vs_close_price.png" alt="PSAR vs Close Price Chart">
+    </div>
+    
+    <div>
+        <h2>【詳細データ】</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>No.</th>
+                    <th>時刻</th>
+                    <th>Close Price</th>
+                    <th>PSAR</th>
+                    <th>PSAR Bull</th>
+                    <th>PSAR Bear</th>
+                    <th>関係</th>
+                    <th>差分 (Close - PSAR)</th>
+                </tr>
+            </thead>
+            <tbody>
+
+                <tr class="low">
+                    <td>0</td>
+                    <td>2025-09-30 21:00</td>
+                    <td>113419.20</td>
+                    <td>114705.07</td>
+                    <td>-</td>
+                    <td>114705.06752</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1285.87</td>
+                </tr>
+
+                <tr class="low">
+                    <td>1</td>
+                    <td>2025-10-01 01:00</td>
+                    <td>113261.60</td>
+                    <td>114547.40</td>
+                    <td>-</td>
+                    <td>114547.399826432</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1285.80</td>
+                </tr>
+
+                <tr class="high">
+                    <td>2</td>
+                    <td>2025-10-01 03:00</td>
+                    <td>114344.50</td>
+                    <td>112731.12</td>
+                    <td>112731.12</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1613.38</td>
+                </tr>
+
+                <tr class="high">
+                    <td>3</td>
+                    <td>2025-10-01 05:00</td>
+                    <td>114151.40</td>
+                    <td>112846.86</td>
+                    <td>112846.857696</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1304.54</td>
+                </tr>
+
+                <tr class="high">
+                    <td>4</td>
+                    <td>2025-10-01 07:00</td>
+                    <td>114022.30</td>
+                    <td>112815.00</td>
+                    <td>112814.99746</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1207.30</td>
+                </tr>
+
+                <tr class="high">
+                    <td>5</td>
+                    <td>2025-10-01 09:00</td>
+                    <td>114535.90</td>
+                    <td>113249.22</td>
+                    <td>113249.22064370893</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1286.68</td>
+                </tr>
+
+                <tr class="high">
+                    <td>6</td>
+                    <td>2025-10-01 11:00</td>
+                    <td>114178.50</td>
+                    <td>112719.55</td>
+                    <td>112719.5549490827</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1458.95</td>
+                </tr>
+
+                <tr class="high">
+                    <td>7</td>
+                    <td>2025-10-01 13:00</td>
+                    <td>114561.90</td>
+                    <td>113365.78</td>
+                    <td>113365.78269387099</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1196.12</td>
+                </tr>
+
+                <tr class="high">
+                    <td>8</td>
+                    <td>2025-10-01 15:00</td>
+                    <td>114526.00</td>
+                    <td>113461.98</td>
+                    <td>113461.98128950228</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1064.02</td>
+                </tr>
+
+                <tr class="high">
+                    <td>9</td>
+                    <td>2025-10-01 17:00</td>
+                    <td>116414.70</td>
+                    <td>113753.95</td>
+                    <td>113753.95444361647</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2660.75</td>
+                </tr>
+
+                <tr class="high">
+                    <td>10</td>
+                    <td>2025-10-01 19:00</td>
+                    <td>116785.30</td>
+                    <td>114213.01</td>
+                    <td>114213.01477861212</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2572.29</td>
+                </tr>
+
+                <tr class="high">
+                    <td>11</td>
+                    <td>2025-10-01 21:00</td>
+                    <td>116815.30</td>
+                    <td>114191.84</td>
+                    <td>114191.84455142639</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2623.46</td>
+                </tr>
+
+                <tr class="high">
+                    <td>12</td>
+                    <td>2025-10-01 23:00</td>
+                    <td>117440.10</td>
+                    <td>114151.54</td>
+                    <td>114151.53857371412</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3288.56</td>
+                </tr>
+
+                <tr class="high">
+                    <td>13</td>
+                    <td>2025-10-02 01:00</td>
+                    <td>116792.70</td>
+                    <td>115886.87</td>
+                    <td>115886.87409456962</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>905.83</td>
+                </tr>
+
+                <tr class="high">
+                    <td>14</td>
+                    <td>2025-10-02 03:00</td>
+                    <td>117425.90</td>
+                    <td>116121.12</td>
+                    <td>116121.11630969423</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1304.78</td>
+                </tr>
+
+                <tr class="high">
+                    <td>15</td>
+                    <td>2025-10-02 05:00</td>
+                    <td>117564.90</td>
+                    <td>116633.45</td>
+                    <td>116633.45086482362</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>931.45</td>
+                </tr>
+
+                <tr class="high">
+                    <td>16</td>
+                    <td>2025-10-02 07:00</td>
+                    <td>118618.00</td>
+                    <td>116701.73</td>
+                    <td>116701.72936726046</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1916.27</td>
+                </tr>
+
+                <tr class="high">
+                    <td>17</td>
+                    <td>2025-10-02 09:00</td>
+                    <td>118636.10</td>
+                    <td>117339.49</td>
+                    <td>117339.48784532692</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1296.61</td>
+                </tr>
+
+                <tr class="high">
+                    <td>18</td>
+                    <td>2025-10-02 11:00</td>
+                    <td>118733.60</td>
+                    <td>117502.09</td>
+                    <td>117502.09411906451</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1231.51</td>
+                </tr>
+
+                <tr class="high">
+                    <td>19</td>
+                    <td>2025-10-02 13:00</td>
+                    <td>118389.60</td>
+                    <td>117461.04</td>
+                    <td>117461.04495363272</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>928.56</td>
+                </tr>
+
+                <tr class="high">
+                    <td>20</td>
+                    <td>2025-10-02 15:00</td>
+                    <td>118531.80</td>
+                    <td>117233.33</td>
+                    <td>117233.32983306587</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1298.47</td>
+                </tr>
+
+                <tr class="high">
+                    <td>21</td>
+                    <td>2025-10-02 17:00</td>
+                    <td>118904.00</td>
+                    <td>116793.23</td>
+                    <td>116793.22559520119</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2110.77</td>
+                </tr>
+
+                <tr class="high">
+                    <td>22</td>
+                    <td>2025-10-02 19:00</td>
+                    <td>118805.00</td>
+                    <td>116129.31</td>
+                    <td>116129.30529111634</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2675.69</td>
+                </tr>
+
+                <tr class="high">
+                    <td>23</td>
+                    <td>2025-10-02 21:00</td>
+                    <td>119650.50</td>
+                    <td>116504.36</td>
+                    <td>116504.3622822082</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3146.14</td>
+                </tr>
+
+                <tr class="high">
+                    <td>24</td>
+                    <td>2025-10-02 23:00</td>
+                    <td>119938.30</td>
+                    <td>116956.56</td>
+                    <td>116956.55642717375</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2981.74</td>
+                </tr>
+
+                <tr class="high">
+                    <td>25</td>
+                    <td>2025-10-03 01:00</td>
+                    <td>119957.10</td>
+                    <td>116450.04</td>
+                    <td>116450.0400872188</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3507.06</td>
+                </tr>
+
+                <tr class="high">
+                    <td>26</td>
+                    <td>2025-10-03 03:00</td>
+                    <td>120859.60</td>
+                    <td>115956.49</td>
+                    <td>115956.49148400305</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>4903.11</td>
+                </tr>
+
+                <tr class="high">
+                    <td>27</td>
+                    <td>2025-10-03 05:00</td>
+                    <td>120159.10</td>
+                    <td>116765.37</td>
+                    <td>116765.36775246746</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3393.73</td>
+                </tr>
+
+                <tr class="high">
+                    <td>28</td>
+                    <td>2025-10-03 07:00</td>
+                    <td>120546.70</td>
+                    <td>118265.08</td>
+                    <td>118265.07867707641</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2281.62</td>
+                </tr>
+
+                <tr class="high">
+                    <td>29</td>
+                    <td>2025-10-03 09:00</td>
+                    <td>119904.30</td>
+                    <td>119431.64</td>
+                    <td>119431.64002726586</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>472.66</td>
+                </tr>
+
+                <tr class="high">
+                    <td>30</td>
+                    <td>2025-10-03 11:00</td>
+                    <td>120252.60</td>
+                    <td>119263.76</td>
+                    <td>119263.75834833781</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>988.84</td>
+                </tr>
+
+                <tr class="high">
+                    <td>31</td>
+                    <td>2025-10-03 13:00</td>
+                    <td>119968.40</td>
+                    <td>118943.51</td>
+                    <td>118943.51344737917</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1024.89</td>
+                </tr>
+
+                <tr class="high">
+                    <td>32</td>
+                    <td>2025-10-03 15:00</td>
+                    <td>119672.10</td>
+                    <td>118428.66</td>
+                    <td>118428.66163292537</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1243.44</td>
+                </tr>
+
+                <tr class="high">
+                    <td>33</td>
+                    <td>2025-10-03 17:00</td>
+                    <td>120341.70</td>
+                    <td>117621.85</td>
+                    <td>117621.84673087997</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2719.85</td>
+                </tr>
+
+                <tr class="high">
+                    <td>34</td>
+                    <td>2025-10-03 19:00</td>
+                    <td>120399.90</td>
+                    <td>116361.82</td>
+                    <td>116361.81837444085</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>4038.08</td>
+                </tr>
+
+                <tr class="high">
+                    <td>35</td>
+                    <td>2025-10-03 21:00</td>
+                    <td>120418.10</td>
+                    <td>114532.81</td>
+                    <td>114532.80577164784</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>5885.29</td>
+                </tr>
+
+                <tr class="high">
+                    <td>36</td>
+                    <td>2025-10-03 23:00</td>
+                    <td>122305.90</td>
+                    <td>114688.50</td>
+                    <td>114688.49841683339</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>7617.40</td>
+                </tr>
+
+                <tr class="high">
+                    <td>37</td>
+                    <td>2025-10-04 01:00</td>
+                    <td>122110.30</td>
+                    <td>115948.16</td>
+                    <td>115948.15781430349</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>6162.14</td>
+                </tr>
+
+                <tr class="high">
+                    <td>38</td>
+                    <td>2025-10-04 03:00</td>
+                    <td>122690.10</td>
+                    <td>117983.65</td>
+                    <td>117983.64772376737</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>4706.45</td>
+                </tr>
+
+                <tr class="high">
+                    <td>39</td>
+                    <td>2025-10-04 05:00</td>
+                    <td>122327.80</td>
+                    <td>118989.21</td>
+                    <td>118989.21384139861</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3338.59</td>
+                </tr>
+
+                <tr class="high">
+                    <td>40</td>
+                    <td>2025-10-04 07:00</td>
+                    <td>122271.00</td>
+                    <td>120807.84</td>
+                    <td>120807.83794113832</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1463.16</td>
+                </tr>
+
+                <tr class="high">
+                    <td>41</td>
+                    <td>2025-10-04 09:00</td>
+                    <td>121901.10</td>
+                    <td>121423.80</td>
+                    <td>121423.79764796863</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>477.30</td>
+                </tr>
+
+                <tr class="high">
+                    <td>42</td>
+                    <td>2025-10-04 11:00</td>
+                    <td>122289.80</td>
+                    <td>121058.60</td>
+                    <td>121058.5965200948</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1231.20</td>
+                </tr>
+
+                <tr class="high">
+                    <td>43</td>
+                    <td>2025-10-04 13:00</td>
+                    <td>122562.50</td>
+                    <td>120430.38</td>
+                    <td>120430.37937890895</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2132.12</td>
+                </tr>
+
+                <tr class="high">
+                    <td>44</td>
+                    <td>2025-10-04 15:00</td>
+                    <td>122362.80</td>
+                    <td>119402.10</td>
+                    <td>119402.10427249112</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2960.70</td>
+                </tr>
+
+                <tr class="high">
+                    <td>45</td>
+                    <td>2025-10-04 17:00</td>
+                    <td>122259.00</td>
+                    <td>117764.41</td>
+                    <td>117764.40821621</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>4494.59</td>
+                </tr>
+
+                <tr class="high">
+                    <td>46</td>
+                    <td>2025-10-04 19:00</td>
+                    <td>122017.10</td>
+                    <td>115369.67</td>
+                    <td>115369.66840681377</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>6647.43</td>
+                </tr>
+
+                <tr class="high">
+                    <td>47</td>
+                    <td>2025-10-04 21:00</td>
+                    <td>122416.60</td>
+                    <td>115096.34</td>
+                    <td>115096.34366355342</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>7320.26</td>
+                </tr>
+
+                <tr class="high">
+                    <td>48</td>
+                    <td>2025-10-04 23:00</td>
+                    <td>121825.20</td>
+                    <td>116625.66</td>
+                    <td>116625.6590405151</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>5199.54</td>
+                </tr>
+
+                <tr class="high">
+                    <td>49</td>
+                    <td>2025-10-05 01:00</td>
+                    <td>121787.40</td>
+                    <td>116875.98</td>
+                    <td>116875.98289883735</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>4911.42</td>
+                </tr>
+
+                <tr class="high">
+                    <td>50</td>
+                    <td>2025-10-05 03:00</td>
+                    <td>122003.40</td>
+                    <td>118748.03</td>
+                    <td>118748.03186150505</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3255.37</td>
+                </tr>
+
+                <tr class="high">
+                    <td>51</td>
+                    <td>2025-10-05 05:00</td>
+                    <td>122219.30</td>
+                    <td>117236.30</td>
+                    <td>117236.29755935432</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>4983.00</td>
+                </tr>
+
+                <tr class="high">
+                    <td>52</td>
+                    <td>2025-10-05 07:00</td>
+                    <td>122397.60</td>
+                    <td>115049.86</td>
+                    <td>115049.86421396572</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>7347.74</td>
+                </tr>
+
+                <tr class="high">
+                    <td>53</td>
+                    <td>2025-10-05 09:00</td>
+                    <td>122390.50</td>
+                    <td>114991.32</td>
+                    <td>114991.3216176745</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>7399.18</td>
+                </tr>
+
+                <tr class="high">
+                    <td>54</td>
+                    <td>2025-10-05 11:00</td>
+                    <td>123787.30</td>
+                    <td>115197.60</td>
+                    <td>115197.60382734203</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>8589.70</td>
+                </tr>
+
+                <tr class="high">
+                    <td>55</td>
+                    <td>2025-10-05 13:00</td>
+                    <td>125110.80</td>
+                    <td>117997.82</td>
+                    <td>117997.82355624501</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>7112.98</td>
+                </tr>
+
+                <tr class="high">
+                    <td>56</td>
+                    <td>2025-10-05 15:00</td>
+                    <td>124720.50</td>
+                    <td>116805.30</td>
+                    <td>116805.29895191774</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>7915.20</td>
+                </tr>
+
+                <tr class="high">
+                    <td>57</td>
+                    <td>2025-10-05 17:00</td>
+                    <td>123025.60</td>
+                    <td>117617.66</td>
+                    <td>117617.66238693877</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>5407.94</td>
+                </tr>
+
+                <tr class="high">
+                    <td>58</td>
+                    <td>2025-10-05 19:00</td>
+                    <td>123489.20</td>
+                    <td>122285.57</td>
+                    <td>122285.57068148792</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1203.63</td>
+                </tr>
+
+                <tr class="high">
+                    <td>59</td>
+                    <td>2025-10-05 21:00</td>
+                    <td>123192.50</td>
+                    <td>122478.40</td>
+                    <td>122478.4</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>714.10</td>
+                </tr>
+
+                <tr class="high">
+                    <td>60</td>
+                    <td>2025-10-05 23:00</td>
+                    <td>122845.20</td>
+                    <td>122539.77</td>
+                    <td>122539.77026424212</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>305.43</td>
+                </tr>
+
+                <tr class="high">
+                    <td>61</td>
+                    <td>2025-10-06 01:00</td>
+                    <td>123114.00</td>
+                    <td>121800.36</td>
+                    <td>121800.35844668822</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1313.64</td>
+                </tr>
+
+                <tr class="high">
+                    <td>62</td>
+                    <td>2025-10-06 03:00</td>
+                    <td>122643.60</td>
+                    <td>120599.57</td>
+                    <td>120599.57286486204</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2044.03</td>
+                </tr>
+
+                <tr class="high">
+                    <td>63</td>
+                    <td>2025-10-06 05:00</td>
+                    <td>122773.10</td>
+                    <td>118699.92</td>
+                    <td>118699.9160719903</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>4073.18</td>
+                </tr>
+
+                <tr class="high">
+                    <td>64</td>
+                    <td>2025-10-06 07:00</td>
+                    <td>123521.60</td>
+                    <td>115924.43</td>
+                    <td>115924.42781605801</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>7597.17</td>
+                </tr>
+
+                <tr class="high">
+                    <td>65</td>
+                    <td>2025-10-06 09:00</td>
+                    <td>124076.90</td>
+                    <td>115735.40</td>
+                    <td>115735.3997606053</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>8341.50</td>
+                </tr>
+
+                <tr class="high">
+                    <td>66</td>
+                    <td>2025-10-06 11:00</td>
+                    <td>123891.50</td>
+                    <td>115635.96</td>
+                    <td>115635.9587368157</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>8255.54</td>
+                </tr>
+
+                <tr class="high">
+                    <td>67</td>
+                    <td>2025-10-06 13:00</td>
+                    <td>123581.10</td>
+                    <td>117328.06</td>
+                    <td>117328.05932177386</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>6253.04</td>
+                </tr>
+
+                <tr class="high">
+                    <td>68</td>
+                    <td>2025-10-06 15:00</td>
+                    <td>123403.30</td>
+                    <td>119607.74</td>
+                    <td>119607.73516595236</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3795.56</td>
+                </tr>
+
+                <tr class="high">
+                    <td>69</td>
+                    <td>2025-10-06 17:00</td>
+                    <td>123956.20</td>
+                    <td>120117.84</td>
+                    <td>120117.84180423808</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3838.36</td>
+                </tr>
+
+                <tr class="high">
+                    <td>70</td>
+                    <td>2025-10-06 19:00</td>
+                    <td>124219.70</td>
+                    <td>119079.49</td>
+                    <td>119079.49213771187</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>5140.21</td>
+                </tr>
+
+                <tr class="high">
+                    <td>71</td>
+                    <td>2025-10-06 21:00</td>
+                    <td>125049.60</td>
+                    <td>119901.84</td>
+                    <td>119901.84175205836</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>5147.76</td>
+                </tr>
+
+                <tr class="high">
+                    <td>72</td>
+                    <td>2025-10-06 23:00</td>
+                    <td>125023.20</td>
+                    <td>120810.48</td>
+                    <td>120810.47895469713</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>4212.72</td>
+                </tr>
+
+                <tr class="high">
+                    <td>73</td>
+                    <td>2025-10-07 01:00</td>
+                    <td>125331.10</td>
+                    <td>120299.36</td>
+                    <td>120299.36052482456</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>5031.74</td>
+                </tr>
+
+                <tr class="high">
+                    <td>74</td>
+                    <td>2025-10-07 03:00</td>
+                    <td>125398.00</td>
+                    <td>119793.05</td>
+                    <td>119793.04692939101</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>5604.95</td>
+                </tr>
+
+                <tr class="high">
+                    <td>75</td>
+                    <td>2025-10-07 05:00</td>
+                    <td>125095.60</td>
+                    <td>121063.32</td>
+                    <td>121063.3211406003</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>4032.28</td>
+                </tr>
+
+                <tr class="high">
+                    <td>76</td>
+                    <td>2025-10-07 07:00</td>
+                    <td>124659.40</td>
+                    <td>123211.17</td>
+                    <td>123211.16728039822</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1448.23</td>
+                </tr>
+
+                <tr class="high">
+                    <td>77</td>
+                    <td>2025-10-07 09:00</td>
+                    <td>124707.40</td>
+                    <td>122906.65</td>
+                    <td>122906.65098397425</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1800.75</td>
+                </tr>
+
+                <tr class="high">
+                    <td>78</td>
+                    <td>2025-10-07 11:00</td>
+                    <td>124329.30</td>
+                    <td>123514.41</td>
+                    <td>123514.40846330539</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>814.89</td>
+                </tr>
+
+                <tr class="high">
+                    <td>79</td>
+                    <td>2025-10-07 13:00</td>
+                    <td>124418.90</td>
+                    <td>122975.17</td>
+                    <td>122975.17285348289</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1443.73</td>
+                </tr>
+
+                <tr class="high">
+                    <td>80</td>
+                    <td>2025-10-07 15:00</td>
+                    <td>123716.10</td>
+                    <td>122137.59</td>
+                    <td>122137.59249498697</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1578.51</td>
+                </tr>
+
+                <tr class="high">
+                    <td>81</td>
+                    <td>2025-10-07 17:00</td>
+                    <td>124150.30</td>
+                    <td>120853.31</td>
+                    <td>120853.3138476419</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3296.99</td>
+                </tr>
+
+                <tr class="high">
+                    <td>82</td>
+                    <td>2025-10-07 19:00</td>
+                    <td>124487.10</td>
+                    <td>118879.84</td>
+                    <td>118879.8410748802</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>5607.26</td>
+                </tr>
+
+                <tr class="high">
+                    <td>83</td>
+                    <td>2025-10-07 21:00</td>
+                    <td>123955.90</td>
+                    <td>116023.96</td>
+                    <td>116023.95604331775</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>7931.94</td>
+                </tr>
+
+                <tr class="high">
+                    <td>84</td>
+                    <td>2025-10-07 23:00</td>
+                    <td>121908.80</td>
+                    <td>115828.16</td>
+                    <td>115828.15518501705</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>6080.64</td>
+                </tr>
+
+                <tr class="high">
+                    <td>85</td>
+                    <td>2025-10-08 01:00</td>
+                    <td>121198.60</td>
+                    <td>115754.82</td>
+                    <td>115754.81706662443</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>5443.78</td>
+                </tr>
+
+                <tr class="high">
+                    <td>86</td>
+                    <td>2025-10-08 03:00</td>
+                    <td>121670.70</td>
+                    <td>116988.31</td>
+                    <td>116988.31208338948</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>4682.39</td>
+                </tr>
+
+                <tr class="high">
+                    <td>87</td>
+                    <td>2025-10-08 05:00</td>
+                    <td>122040.40</td>
+                    <td>117282.28</td>
+                    <td>117282.27714881228</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>4758.12</td>
+                </tr>
+
+                <tr class="high">
+                    <td>88</td>
+                    <td>2025-10-08 07:00</td>
+                    <td>121351.60</td>
+                    <td>117610.98</td>
+                    <td>117610.98386126358</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3740.62</td>
+                </tr>
+
+                <tr class="high">
+                    <td>89</td>
+                    <td>2025-10-08 09:00</td>
+                    <td>121986.60</td>
+                    <td>119874.07</td>
+                    <td>119874.07190830527</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2112.53</td>
+                </tr>
+
+                <tr class="high">
+                    <td>90</td>
+                    <td>2025-10-08 11:00</td>
+                    <td>121404.60</td>
+                    <td>120211.95</td>
+                    <td>120211.94640890037</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1192.65</td>
+                </tr>
+
+                <tr class="high">
+                    <td>91</td>
+                    <td>2025-10-08 13:00</td>
+                    <td>121402.00</td>
+                    <td>118381.00</td>
+                    <td>118380.99985905258</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3021.00</td>
+                </tr>
+
+                <tr class="high">
+                    <td>92</td>
+                    <td>2025-10-08 15:00</td>
+                    <td>121619.70</td>
+                    <td>115730.11</td>
+                    <td>115730.10941674976</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>5889.59</td>
+                </tr>
+
+                <tr class="high">
+                    <td>93</td>
+                    <td>2025-10-08 17:00</td>
+                    <td>122541.50</td>
+                    <td>115403.74</td>
+                    <td>115403.7358958174</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>7137.76</td>
+                </tr>
+
+                <tr class="high">
+                    <td>94</td>
+                    <td>2025-10-08 19:00</td>
+                    <td>122875.20</td>
+                    <td>117443.38</td>
+                    <td>117443.37538447423</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>5431.82</td>
+                </tr>
+
+                <tr class="high">
+                    <td>95</td>
+                    <td>2025-10-08 21:00</td>
+                    <td>122575.30</td>
+                    <td>118061.75</td>
+                    <td>118061.74597371076</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>4513.55</td>
+                </tr>
+
+                <tr class="high">
+                    <td>96</td>
+                    <td>2025-10-08 23:00</td>
+                    <td>122178.00</td>
+                    <td>116950.25</td>
+                    <td>116950.24636638357</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>5227.75</td>
+                </tr>
+
+                <tr class="high">
+                    <td>97</td>
+                    <td>2025-10-09 01:00</td>
+                    <td>124021.00</td>
+                    <td>119364.73</td>
+                    <td>119364.73354216348</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>4656.27</td>
+                </tr>
+
+                <tr class="high">
+                    <td>98</td>
+                    <td>2025-10-09 03:00</td>
+                    <td>123417.40</td>
+                    <td>120367.64</td>
+                    <td>120367.63965407126</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3049.76</td>
+                </tr>
+
+                <tr class="high">
+                    <td>99</td>
+                    <td>2025-10-09 05:00</td>
+                    <td>123245.00</td>
+                    <td>120099.33</td>
+                    <td>120099.32504054926</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3145.67</td>
+                </tr>
+
+                <tr class="high">
+                    <td>100</td>
+                    <td>2025-10-09 07:00</td>
+                    <td>123282.90</td>
+                    <td>120914.88</td>
+                    <td>120914.88121608277</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2368.02</td>
+                </tr>
+
+                <tr class="high">
+                    <td>101</td>
+                    <td>2025-10-09 09:00</td>
+                    <td>122535.60</td>
+                    <td>121522.00</td>
+                    <td>121522.00087670052</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1013.60</td>
+                </tr>
+
+                <tr class="high">
+                    <td>102</td>
+                    <td>2025-10-09 11:00</td>
+                    <td>122030.00</td>
+                    <td>121014.98</td>
+                    <td>121014.98023136213</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1015.02</td>
+                </tr>
+
+                <tr class="high">
+                    <td>103</td>
+                    <td>2025-10-09 13:00</td>
+                    <td>122111.50</td>
+                    <td>120294.79</td>
+                    <td>120294.79127949418</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1816.71</td>
+                </tr>
+
+                <tr class="high">
+                    <td>104</td>
+                    <td>2025-10-09 15:00</td>
+                    <td>121888.60</td>
+                    <td>120701.31</td>
+                    <td>120701.31371165329</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1187.29</td>
+                </tr>
+
+                <tr class="high">
+                    <td>105</td>
+                    <td>2025-10-09 17:00</td>
+                    <td>121806.10</td>
+                    <td>119593.45</td>
+                    <td>119593.45220798058</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2212.65</td>
+                </tr>
+
+                <tr class="high">
+                    <td>106</td>
+                    <td>2025-10-09 19:00</td>
+                    <td>122726.60</td>
+                    <td>117897.06</td>
+                    <td>117897.06092141377</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>4829.54</td>
+                </tr>
+
+                <tr class="high">
+                    <td>107</td>
+                    <td>2025-10-09 21:00</td>
+                    <td>122393.00</td>
+                    <td>115439.20</td>
+                    <td>115439.19864034335</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>6953.80</td>
+                </tr>
+
+                <tr class="high">
+                    <td>108</td>
+                    <td>2025-10-09 23:00</td>
+                    <td>121164.60</td>
+                    <td>115804.07</td>
+                    <td>115804.07115378525</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>5360.53</td>
+                </tr>
+
+                <tr class="high">
+                    <td>109</td>
+                    <td>2025-10-10 01:00</td>
+                    <td>121007.00</td>
+                    <td>116094.92</td>
+                    <td>116094.91607537282</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>4912.08</td>
+                </tr>
+
+                <tr class="high">
+                    <td>110</td>
+                    <td>2025-10-10 03:00</td>
+                    <td>121004.10</td>
+                    <td>116386.47</td>
+                    <td>116386.4737544878</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>4617.63</td>
+                </tr>
+
+                <tr class="high">
+                    <td>111</td>
+                    <td>2025-10-10 05:00</td>
+                    <td>121504.90</td>
+                    <td>118068.42</td>
+                    <td>118068.41791349453</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3436.48</td>
+                </tr>
+
+                <tr class="high">
+                    <td>112</td>
+                    <td>2025-10-10 07:00</td>
+                    <td>121671.80</td>
+                    <td>118537.22</td>
+                    <td>118537.22141875785</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3134.58</td>
+                </tr>
+
+                <tr class="high">
+                    <td>113</td>
+                    <td>2025-10-10 09:00</td>
+                    <td>121659.30</td>
+                    <td>118978.75</td>
+                    <td>118978.74706436264</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2680.55</td>
+                </tr>
+
+                <tr class="high">
+                    <td>114</td>
+                    <td>2025-10-10 11:00</td>
+                    <td>121068.60</td>
+                    <td>119294.84</td>
+                    <td>119294.83787410126</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1773.76</td>
+                </tr>
+
+                <tr class="high">
+                    <td>115</td>
+                    <td>2025-10-10 13:00</td>
+                    <td>121586.20</td>
+                    <td>117671.35</td>
+                    <td>117671.34824101535</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3914.85</td>
+                </tr>
+
+                <tr class="high">
+                    <td>116</td>
+                    <td>2025-10-10 15:00</td>
+                    <td>120941.00</td>
+                    <td>115310.92</td>
+                    <td>115310.92233575889</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>5630.08</td>
+                </tr>
+
+                <tr class="high">
+                    <td>117</td>
+                    <td>2025-10-10 17:00</td>
+                    <td>121300.70</td>
+                    <td>114972.92</td>
+                    <td>114972.92168547375</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>6327.78</td>
+                </tr>
+
+                <tr class="high">
+                    <td>118</td>
+                    <td>2025-10-10 19:00</td>
+                    <td>121551.00</td>
+                    <td>118741.65</td>
+                    <td>118741.65250154729</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2809.35</td>
+                </tr>
+
+                <tr class="high">
+                    <td>119</td>
+                    <td>2025-10-10 21:00</td>
+                    <td>121674.50</td>
+                    <td>119187.02</td>
+                    <td>119187.01562066142</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2487.48</td>
+                </tr>
+
+                <tr class="low">
+                    <td>120</td>
+                    <td>2025-10-10 23:00</td>
+                    <td>119035.20</td>
+                    <td>122514.80</td>
+                    <td>-</td>
+                    <td>122514.8</td>
+                    <td><strong>Low</strong></td>
+                    <td>-3479.60</td>
+                </tr>
+
+                <tr class="high">
+                    <td>121</td>
+                    <td>2025-10-11 01:00</td>
+                    <td>117630.00</td>
+                    <td>117451.92</td>
+                    <td>117451.92150806494</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>178.08</td>
+                </tr>
+
+                <tr class="high">
+                    <td>122</td>
+                    <td>2025-10-11 03:00</td>
+                    <td>116646.00</td>
+                    <td>115885.34</td>
+                    <td>115885.34340038225</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>760.66</td>
+                </tr>
+
+                <tr class="low">
+                    <td>123</td>
+                    <td>2025-10-11 05:00</td>
+                    <td>113592.40</td>
+                    <td>121451.39</td>
+                    <td>-</td>
+                    <td>121451.38875520001</td>
+                    <td><strong>Low</strong></td>
+                    <td>-7858.99</td>
+                </tr>
+
+                <tr class="low">
+                    <td>124</td>
+                    <td>2025-10-11 07:00</td>
+                    <td>113000.00</td>
+                    <td>119938.73</td>
+                    <td>-</td>
+                    <td>119938.73219679233</td>
+                    <td><strong>Low</strong></td>
+                    <td>-6938.73</td>
+                </tr>
+
+                <tr class="low">
+                    <td>125</td>
+                    <td>2025-10-11 09:00</td>
+                    <td>111216.20</td>
+                    <td>118544.67</td>
+                    <td>-</td>
+                    <td>118544.66791256382</td>
+                    <td><strong>Low</strong></td>
+                    <td>-7328.47</td>
+                </tr>
+
+                <tr class="low">
+                    <td>126</td>
+                    <td>2025-10-11 11:00</td>
+                    <td>112409.50</td>
+                    <td>119830.17</td>
+                    <td>-</td>
+                    <td>119830.1655430701</td>
+                    <td><strong>Low</strong></td>
+                    <td>-7420.67</td>
+                </tr>
+
+                <tr class="low">
+                    <td>127</td>
+                    <td>2025-10-11 13:00</td>
+                    <td>112467.10</td>
+                    <td>119130.32</td>
+                    <td>-</td>
+                    <td>119130.32006756453</td>
+                    <td><strong>Low</strong></td>
+                    <td>-6663.22</td>
+                </tr>
+
+                <tr class="low">
+                    <td>128</td>
+                    <td>2025-10-11 15:00</td>
+                    <td>110412.00</td>
+                    <td>118458.19</td>
+                    <td>-</td>
+                    <td>118458.18847288899</td>
+                    <td><strong>Low</strong></td>
+                    <td>-8046.19</td>
+                </tr>
+
+                <tr class="low">
+                    <td>129</td>
+                    <td>2025-10-11 17:00</td>
+                    <td>111702.00</td>
+                    <td>117459.38</td>
+                    <td>-</td>
+                    <td>117459.38440373646</td>
+                    <td><strong>Low</strong></td>
+                    <td>-5757.38</td>
+                </tr>
+
+                <tr class="low">
+                    <td>130</td>
+                    <td>2025-10-11 19:00</td>
+                    <td>112327.00</td>
+                    <td>114930.56</td>
+                    <td>-</td>
+                    <td>114930.55720261119</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2603.56</td>
+                </tr>
+
+                <tr class="low">
+                    <td>131</td>
+                    <td>2025-10-11 21:00</td>
+                    <td>112326.50</td>
+                    <td>113524.91</td>
+                    <td>-</td>
+                    <td>113524.90510076543</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1198.41</td>
+                </tr>
+
+                <tr class="low">
+                    <td>132</td>
+                    <td>2025-10-11 23:00</td>
+                    <td>111852.00</td>
+                    <td>114429.56</td>
+                    <td>-</td>
+                    <td>114429.56119933019</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2577.56</td>
+                </tr>
+
+                <tr class="low">
+                    <td>133</td>
+                    <td>2025-10-12 01:00</td>
+                    <td>112088.40</td>
+                    <td>112974.67</td>
+                    <td>-</td>
+                    <td>112974.66929017054</td>
+                    <td><strong>Low</strong></td>
+                    <td>-886.27</td>
+                </tr>
+
+                <tr class="high">
+                    <td>134</td>
+                    <td>2025-10-12 03:00</td>
+                    <td>111244.50</td>
+                    <td>110384.60</td>
+                    <td>110384.59718617116</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>859.90</td>
+                </tr>
+
+                <tr class="low">
+                    <td>135</td>
+                    <td>2025-10-12 05:00</td>
+                    <td>110981.30</td>
+                    <td>112518.25</td>
+                    <td>-</td>
+                    <td>112518.25</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1536.95</td>
+                </tr>
+
+                <tr class="low">
+                    <td>136</td>
+                    <td>2025-10-12 07:00</td>
+                    <td>110725.10</td>
+                    <td>112036.12</td>
+                    <td>-</td>
+                    <td>112036.11925166799</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1311.02</td>
+                </tr>
+
+                <tr class="low">
+                    <td>137</td>
+                    <td>2025-10-12 09:00</td>
+                    <td>110039.10</td>
+                    <td>111843.67</td>
+                    <td>-</td>
+                    <td>111843.66852405133</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1804.57</td>
+                </tr>
+
+                <tr class="high">
+                    <td>138</td>
+                    <td>2025-10-12 11:00</td>
+                    <td>110733.20</td>
+                    <td>109615.00</td>
+                    <td>109615.0</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1118.20</td>
+                </tr>
+
+                <tr class="high">
+                    <td>139</td>
+                    <td>2025-10-12 13:00</td>
+                    <td>111738.60</td>
+                    <td>109655.00</td>
+                    <td>109655.0</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2083.60</td>
+                </tr>
+
+                <tr class="high">
+                    <td>140</td>
+                    <td>2025-10-12 15:00</td>
+                    <td>111591.30</td>
+                    <td>109893.63</td>
+                    <td>109893.63208</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1697.67</td>
+                </tr>
+
+                <tr class="high">
+                    <td>141</td>
+                    <td>2025-10-12 17:00</td>
+                    <td>111859.20</td>
+                    <td>110158.05</td>
+                    <td>110158.05422588799</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1701.15</td>
+                </tr>
+
+                <tr class="high">
+                    <td>142</td>
+                    <td>2025-10-12 19:00</td>
+                    <td>111853.60</td>
+                    <td>110156.64</td>
+                    <td>110156.64240542556</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1696.96</td>
+                </tr>
+
+                <tr class="high">
+                    <td>143</td>
+                    <td>2025-10-12 21:00</td>
+                    <td>111284.90</td>
+                    <td>110359.21</td>
+                    <td>110359.20938665603</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>925.69</td>
+                </tr>
+
+                <tr class="high">
+                    <td>144</td>
+                    <td>2025-10-12 23:00</td>
+                    <td>113234.10</td>
+                    <td>110737.38</td>
+                    <td>110737.37707758014</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2496.72</td>
+                </tr>
+
+                <tr class="high">
+                    <td>145</td>
+                    <td>2025-10-13 01:00</td>
+                    <td>113853.20</td>
+                    <td>111154.30</td>
+                    <td>111154.3</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2698.90</td>
+                </tr>
+
+                <tr class="high">
+                    <td>146</td>
+                    <td>2025-10-13 03:00</td>
+                    <td>114372.40</td>
+                    <td>111841.51</td>
+                    <td>111841.511</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2530.89</td>
+                </tr>
+
+                <tr class="high">
+                    <td>147</td>
+                    <td>2025-10-13 05:00</td>
+                    <td>114923.20</td>
+                    <td>112324.81</td>
+                    <td>112324.80703552</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2598.39</td>
+                </tr>
+
+                <tr class="high">
+                    <td>148</td>
+                    <td>2025-10-13 07:00</td>
+                    <td>115007.10</td>
+                    <td>111949.99</td>
+                    <td>111949.98948741038</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3057.11</td>
+                </tr>
+
+                <tr class="high">
+                    <td>149</td>
+                    <td>2025-10-13 09:00</td>
+                    <td>115760.30</td>
+                    <td>112483.58</td>
+                    <td>112483.5761887125</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3276.72</td>
+                </tr>
+
+                <tr class="high">
+                    <td>150</td>
+                    <td>2025-10-13 11:00</td>
+                    <td>114873.10</td>
+                    <td>113085.00</td>
+                    <td>113084.99508425395</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1788.10</td>
+                </tr>
+
+                <tr class="high">
+                    <td>151</td>
+                    <td>2025-10-13 13:00</td>
+                    <td>114634.10</td>
+                    <td>113638.94</td>
+                    <td>113638.94101824569</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>995.16</td>
+                </tr>
+
+                <tr class="high">
+                    <td>152</td>
+                    <td>2025-10-13 15:00</td>
+                    <td>115421.50</td>
+                    <td>114087.64</td>
+                    <td>114087.63722477901</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1333.86</td>
+                </tr>
+
+                <tr class="low">
+                    <td>153</td>
+                    <td>2025-10-13 17:00</td>
+                    <td>115153.40</td>
+                    <td>115938.60</td>
+                    <td>-</td>
+                    <td>115938.59728</td>
+                    <td><strong>Low</strong></td>
+                    <td>-785.20</td>
+                </tr>
+
+                <tr class="low">
+                    <td>154</td>
+                    <td>2025-10-13 19:00</td>
+                    <td>114221.70</td>
+                    <td>115953.58</td>
+                    <td>-</td>
+                    <td>115953.584</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1731.88</td>
+                </tr>
+
+                <tr class="low">
+                    <td>155</td>
+                    <td>2025-10-13 21:00</td>
+                    <td>115394.50</td>
+                    <td>115862.55</td>
+                    <td>-</td>
+                    <td>115862.5481936</td>
+                    <td><strong>Low</strong></td>
+                    <td>-468.05</td>
+                </tr>
+
+                <tr class="low">
+                    <td>156</td>
+                    <td>2025-10-13 23:00</td>
+                    <td>114384.80</td>
+                    <td>115775.12</td>
+                    <td>-</td>
+                    <td>115775.11740513344</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1390.32</td>
+                </tr>
+
+                <tr class="low">
+                    <td>157</td>
+                    <td>2025-10-14 01:00</td>
+                    <td>115087.50</td>
+                    <td>115732.71</td>
+                    <td>-</td>
+                    <td>115732.70905703076</td>
+                    <td><strong>Low</strong></td>
+                    <td>-645.21</td>
+                </tr>
+
+                <tr class="high">
+                    <td>158</td>
+                    <td>2025-10-14 03:00</td>
+                    <td>115851.50</td>
+                    <td>113885.66</td>
+                    <td>113885.65849298246</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1965.84</td>
+                </tr>
+
+                <tr class="high">
+                    <td>159</td>
+                    <td>2025-10-14 05:00</td>
+                    <td>115757.50</td>
+                    <td>113059.79</td>
+                    <td>113059.79382176827</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2697.71</td>
+                </tr>
+
+                <tr class="high">
+                    <td>160</td>
+                    <td>2025-10-14 07:00</td>
+                    <td>115211.40</td>
+                    <td>113960.89</td>
+                    <td>113960.89009376719</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1250.51</td>
+                </tr>
+
+                <tr class="high">
+                    <td>161</td>
+                    <td>2025-10-14 09:00</td>
+                    <td>114291.00</td>
+                    <td>113382.84</td>
+                    <td>113382.83522996448</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>908.16</td>
+                </tr>
+
+                <tr class="low">
+                    <td>162</td>
+                    <td>2025-10-14 11:00</td>
+                    <td>113524.20</td>
+                    <td>115891.90</td>
+                    <td>-</td>
+                    <td>115891.90400000001</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2367.70</td>
+                </tr>
+
+                <tr class="low">
+                    <td>163</td>
+                    <td>2025-10-14 13:00</td>
+                    <td>112515.80</td>
+                    <td>115702.63</td>
+                    <td>-</td>
+                    <td>115702.62728320001</td>
+                    <td><strong>Low</strong></td>
+                    <td>-3186.83</td>
+                </tr>
+
+                <tr class="low">
+                    <td>164</td>
+                    <td>2025-10-14 15:00</td>
+                    <td>111736.50</td>
+                    <td>115361.76</td>
+                    <td>-</td>
+                    <td>115361.75855641601</td>
+                    <td><strong>Low</strong></td>
+                    <td>-3625.26</td>
+                </tr>
+
+                <tr class="low">
+                    <td>165</td>
+                    <td>2025-10-14 17:00</td>
+                    <td>111349.50</td>
+                    <td>115192.28</td>
+                    <td>-</td>
+                    <td>115192.28405491714</td>
+                    <td><strong>Low</strong></td>
+                    <td>-3842.78</td>
+                </tr>
+
+                <tr class="low">
+                    <td>166</td>
+                    <td>2025-10-14 19:00</td>
+                    <td>111333.90</td>
+                    <td>114559.37</td>
+                    <td>-</td>
+                    <td>114559.37037069234</td>
+                    <td><strong>Low</strong></td>
+                    <td>-3225.47</td>
+                </tr>
+
+                <tr class="low">
+                    <td>167</td>
+                    <td>2025-10-14 21:00</td>
+                    <td>111057.00</td>
+                    <td>113773.74</td>
+                    <td>-</td>
+                    <td>113773.73506693327</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2716.74</td>
+                </tr>
+
+                <tr class="low">
+                    <td>168</td>
+                    <td>2025-10-14 23:00</td>
+                    <td>112931.00</td>
+                    <td>113694.72</td>
+                    <td>-</td>
+                    <td>113694.71921333892</td>
+                    <td><strong>Low</strong></td>
+                    <td>-763.72</td>
+                </tr>
+
+                <tr class="high">
+                    <td>169</td>
+                    <td>2025-10-15 01:00</td>
+                    <td>112819.90</td>
+                    <td>109902.10</td>
+                    <td>109902.1</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2917.80</td>
+                </tr>
+
+                <tr class="high">
+                    <td>170</td>
+                    <td>2025-10-15 03:00</td>
+                    <td>112597.40</td>
+                    <td>110174.54</td>
+                    <td>110174.5416384</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2422.86</td>
+                </tr>
+
+                <tr class="high">
+                    <td>171</td>
+                    <td>2025-10-15 05:00</td>
+                    <td>113156.00</td>
+                    <td>110782.24</td>
+                    <td>110782.23791370695</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2373.76</td>
+                </tr>
+
+                <tr class="high">
+                    <td>172</td>
+                    <td>2025-10-15 07:00</td>
+                    <td>113049.20</td>
+                    <td>111161.25</td>
+                    <td>111161.25062777377</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1887.95</td>
+                </tr>
+
+                <tr class="high">
+                    <td>173</td>
+                    <td>2025-10-15 09:00</td>
+                    <td>112755.10</td>
+                    <td>111538.58</td>
+                    <td>111538.57661134771</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1216.52</td>
+                </tr>
+
+                <tr class="low">
+                    <td>174</td>
+                    <td>2025-10-15 11:00</td>
+                    <td>112034.40</td>
+                    <td>113651.80</td>
+                    <td>-</td>
+                    <td>113651.8</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1617.40</td>
+                </tr>
+
+                <tr class="low">
+                    <td>175</td>
+                    <td>2025-10-15 13:00</td>
+                    <td>112463.40</td>
+                    <td>113651.80</td>
+                    <td>-</td>
+                    <td>113651.8</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1188.40</td>
+                </tr>
+
+                <tr class="low">
+                    <td>176</td>
+                    <td>2025-10-15 15:00</td>
+                    <td>112599.10</td>
+                    <td>113576.75</td>
+                    <td>-</td>
+                    <td>113576.74612</td>
+                    <td><strong>Low</strong></td>
+                    <td>-977.65</td>
+                </tr>
+
+                <tr class="high">
+                    <td>177</td>
+                    <td>2025-10-15 17:00</td>
+                    <td>112593.10</td>
+                    <td>111792.40</td>
+                    <td>111792.404</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>800.70</td>
+                </tr>
+
+                <tr class="low">
+                    <td>178</td>
+                    <td>2025-10-15 19:00</td>
+                    <td>111950.70</td>
+                    <td>113551.70</td>
+                    <td>-</td>
+                    <td>113551.7</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1601.00</td>
+                </tr>
+
+                <tr class="low">
+                    <td>179</td>
+                    <td>2025-10-15 21:00</td>
+                    <td>111405.80</td>
+                    <td>113403.66</td>
+                    <td>-</td>
+                    <td>113403.65712</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1997.86</td>
+                </tr>
+
+                <tr class="low">
+                    <td>180</td>
+                    <td>2025-10-15 23:00</td>
+                    <td>110833.90</td>
+                    <td>113123.77</td>
+                    <td>-</td>
+                    <td>113123.773385088</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2289.87</td>
+                </tr>
+
+                <tr class="low">
+                    <td>181</td>
+                    <td>2025-10-16 01:00</td>
+                    <td>111205.40</td>
+                    <td>112737.65</td>
+                    <td>-</td>
+                    <td>112737.64754342411</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1532.25</td>
+                </tr>
+
+                <tr class="low">
+                    <td>182</td>
+                    <td>2025-10-16 03:00</td>
+                    <td>111252.60</td>
+                    <td>112343.04</td>
+                    <td>-</td>
+                    <td>112343.04184075417</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1090.44</td>
+                </tr>
+
+                <tr class="low">
+                    <td>183</td>
+                    <td>2025-10-16 05:00</td>
+                    <td>110854.80</td>
+                    <td>112009.05</td>
+                    <td>-</td>
+                    <td>112009.04757401433</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1154.25</td>
+                </tr>
+
+                <tr class="low">
+                    <td>184</td>
+                    <td>2025-10-16 07:00</td>
+                    <td>110759.90</td>
+                    <td>111726.35</td>
+                    <td>-</td>
+                    <td>111726.35482664574</td>
+                    <td><strong>Low</strong></td>
+                    <td>-966.45</td>
+                </tr>
+
+                <tr class="low">
+                    <td>185</td>
+                    <td>2025-10-16 09:00</td>
+                    <td>111314.40</td>
+                    <td>111487.08</td>
+                    <td>-</td>
+                    <td>111487.08368527296</td>
+                    <td><strong>Low</strong></td>
+                    <td>-172.68</td>
+                </tr>
+
+                <tr class="high">
+                    <td>186</td>
+                    <td>2025-10-16 11:00</td>
+                    <td>111338.40</td>
+                    <td>110202.74</td>
+                    <td>110202.744</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1135.66</td>
+                </tr>
+
+                <tr class="high">
+                    <td>187</td>
+                    <td>2025-10-16 13:00</td>
+                    <td>110947.60</td>
+                    <td>110269.00</td>
+                    <td>110268.99701759999</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>678.60</td>
+                </tr>
+
+                <tr class="high">
+                    <td>188</td>
+                    <td>2025-10-16 15:00</td>
+                    <td>110569.50</td>
+                    <td>110332.63</td>
+                    <td>110332.62641570302</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>236.87</td>
+                </tr>
+
+                <tr class="low">
+                    <td>189</td>
+                    <td>2025-10-16 17:00</td>
+                    <td>111149.50</td>
+                    <td>111770.40</td>
+                    <td>-</td>
+                    <td>111770.4</td>
+                    <td><strong>Low</strong></td>
+                    <td>-620.90</td>
+                </tr>
+
+                <tr class="low">
+                    <td>190</td>
+                    <td>2025-10-16 19:00</td>
+                    <td>111410.90</td>
+                    <td>111742.91</td>
+                    <td>-</td>
+                    <td>111742.90568160001</td>
+                    <td><strong>Low</strong></td>
+                    <td>-332.01</td>
+                </tr>
+
+                <tr class="high">
+                    <td>191</td>
+                    <td>2025-10-16 21:00</td>
+                    <td>110849.10</td>
+                    <td>109663.34</td>
+                    <td>109663.344</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1185.76</td>
+                </tr>
+
+                <tr class="low">
+                    <td>192</td>
+                    <td>2025-10-16 23:00</td>
+                    <td>108537.80</td>
+                    <td>111983.20</td>
+                    <td>-</td>
+                    <td>111983.2</td>
+                    <td><strong>Low</strong></td>
+                    <td>-3445.40</td>
+                </tr>
+
+                <tr class="low">
+                    <td>193</td>
+                    <td>2025-10-17 01:00</td>
+                    <td>108275.80</td>
+                    <td>111737.00</td>
+                    <td>-</td>
+                    <td>111737.00016</td>
+                    <td><strong>Low</strong></td>
+                    <td>-3461.20</td>
+                </tr>
+
+                <tr class="low">
+                    <td>194</td>
+                    <td>2025-10-17 03:00</td>
+                    <td>108214.70</td>
+                    <td>111411.11</td>
+                    <td>-</td>
+                    <td>111411.114867456</td>
+                    <td><strong>Low</strong></td>
+                    <td>-3196.41</td>
+                </tr>
+
+                <tr class="low">
+                    <td>195</td>
+                    <td>2025-10-17 05:00</td>
+                    <td>108424.10</td>
+                    <td>111027.21</td>
+                    <td>-</td>
+                    <td>111027.20733639228</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2603.11</td>
+                </tr>
+
+                <tr class="low">
+                    <td>196</td>
+                    <td>2025-10-17 07:00</td>
+                    <td>108160.20</td>
+                    <td>110606.55</td>
+                    <td>-</td>
+                    <td>110606.54852243622</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2446.35</td>
+                </tr>
+
+                <tr class="low">
+                    <td>197</td>
+                    <td>2025-10-17 09:00</td>
+                    <td>108806.00</td>
+                    <td>110234.85</td>
+                    <td>-</td>
+                    <td>110234.85439442465</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1428.85</td>
+                </tr>
+
+                <tr class="low">
+                    <td>198</td>
+                    <td>2025-10-17 11:00</td>
+                    <td>109161.80</td>
+                    <td>109360.50</td>
+                    <td>-</td>
+                    <td>109360.49926482057</td>
+                    <td><strong>Low</strong></td>
+                    <td>-198.70</td>
+                </tr>
+
+                <tr class="high">
+                    <td>199</td>
+                    <td>2025-10-17 13:00</td>
+                    <td>108351.10</td>
+                    <td>107449.38</td>
+                    <td>107449.382</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>901.72</td>
+                </tr>
+
+                <tr class="low">
+                    <td>200</td>
+                    <td>2025-10-17 15:00</td>
+                    <td>105578.50</td>
+                    <td>109217.40</td>
+                    <td>-</td>
+                    <td>109217.4</td>
+                    <td><strong>Low</strong></td>
+                    <td>-3638.90</td>
+                </tr>
+
+                <tr class="low">
+                    <td>201</td>
+                    <td>2025-10-17 17:00</td>
+                    <td>104487.00</td>
+                    <td>109013.79</td>
+                    <td>-</td>
+                    <td>109013.79347168442</td>
+                    <td><strong>Low</strong></td>
+                    <td>-4526.79</td>
+                </tr>
+
+                <tr class="low">
+                    <td>202</td>
+                    <td>2025-10-17 19:00</td>
+                    <td>105623.40</td>
+                    <td>108455.40</td>
+                    <td>-</td>
+                    <td>108455.401898496</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2832.00</td>
+                </tr>
+
+                <tr class="low">
+                    <td>203</td>
+                    <td>2025-10-17 21:00</td>
+                    <td>105813.30</td>
+                    <td>107872.61</td>
+                    <td>-</td>
+                    <td>107872.61015751107</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2059.31</td>
+                </tr>
+
+                <tr class="low">
+                    <td>204</td>
+                    <td>2025-10-17 23:00</td>
+                    <td>106761.50</td>
+                    <td>107357.66</td>
+                    <td>-</td>
+                    <td>107357.65537517678</td>
+                    <td><strong>Low</strong></td>
+                    <td>-596.16</td>
+                </tr>
+
+                <tr class="high">
+                    <td>205</td>
+                    <td>2025-10-18 01:00</td>
+                    <td>106413.30</td>
+                    <td>103530.43</td>
+                    <td>103530.432</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2882.87</td>
+                </tr>
+
+                <tr class="high">
+                    <td>206</td>
+                    <td>2025-10-18 03:00</td>
+                    <td>106444.90</td>
+                    <td>103979.64</td>
+                    <td>103979.64189952</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2465.26</td>
+                </tr>
+
+                <tr class="high">
+                    <td>207</td>
+                    <td>2025-10-18 05:00</td>
+                    <td>107290.40</td>
+                    <td>104258.79</td>
+                    <td>104258.78965459763</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3031.61</td>
+                </tr>
+
+                <tr class="high">
+                    <td>208</td>
+                    <td>2025-10-18 07:00</td>
+                    <td>106424.80</td>
+                    <td>103988.18</td>
+                    <td>103988.1775681677</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2436.62</td>
+                </tr>
+
+                <tr class="high">
+                    <td>209</td>
+                    <td>2025-10-18 09:00</td>
+                    <td>107152.20</td>
+                    <td>104128.84</td>
+                    <td>104128.83765646825</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3023.36</td>
+                </tr>
+
+                <tr class="high">
+                    <td>210</td>
+                    <td>2025-10-18 11:00</td>
+                    <td>107069.40</td>
+                    <td>105627.16</td>
+                    <td>105627.15525035703</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1442.24</td>
+                </tr>
+
+                <tr class="high">
+                    <td>211</td>
+                    <td>2025-10-18 13:00</td>
+                    <td>106822.00</td>
+                    <td>105120.76</td>
+                    <td>105120.76139738086</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1701.24</td>
+                </tr>
+
+                <tr class="high">
+                    <td>212</td>
+                    <td>2025-10-18 15:00</td>
+                    <td>106701.80</td>
+                    <td>105216.57</td>
+                    <td>105216.57116604458</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1485.23</td>
+                </tr>
+
+                <tr class="high">
+                    <td>213</td>
+                    <td>2025-10-18 17:00</td>
+                    <td>106899.00</td>
+                    <td>106376.31</td>
+                    <td>106376.3108712</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>522.69</td>
+                </tr>
+
+                <tr class="high">
+                    <td>214</td>
+                    <td>2025-10-18 19:00</td>
+                    <td>107214.10</td>
+                    <td>106335.39</td>
+                    <td>106335.38844540289</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>878.71</td>
+                </tr>
+
+                <tr class="high">
+                    <td>215</td>
+                    <td>2025-10-18 21:00</td>
+                    <td>106883.50</td>
+                    <td>106463.54</td>
+                    <td>106463.54492585672</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>419.96</td>
+                </tr>
+
+                <tr class="high">
+                    <td>216</td>
+                    <td>2025-10-18 23:00</td>
+                    <td>106938.90</td>
+                    <td>106504.59</td>
+                    <td>106504.5885467928</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>434.31</td>
+                </tr>
+
+                <tr class="low">
+                    <td>217</td>
+                    <td>2025-10-19 01:00</td>
+                    <td>106867.90</td>
+                    <td>107479.34</td>
+                    <td>-</td>
+                    <td>107479.34</td>
+                    <td><strong>Low</strong></td>
+                    <td>-611.44</td>
+                </tr>
+
+                <tr class="low">
+                    <td>218</td>
+                    <td>2025-10-19 03:00</td>
+                    <td>107064.30</td>
+                    <td>107439.25</td>
+                    <td>-</td>
+                    <td>107439.251336</td>
+                    <td><strong>Low</strong></td>
+                    <td>-374.95</td>
+                </tr>
+
+                <tr class="low">
+                    <td>219</td>
+                    <td>2025-10-19 05:00</td>
+                    <td>107158.30</td>
+                    <td>107400.75</td>
+                    <td>-</td>
+                    <td>107400.7501830944</td>
+                    <td><strong>Low</strong></td>
+                    <td>-242.45</td>
+                </tr>
+
+                <tr class="high">
+                    <td>220</td>
+                    <td>2025-10-19 07:00</td>
+                    <td>107168.30</td>
+                    <td>106518.02</td>
+                    <td>106518.01594</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>650.28</td>
+                </tr>
+
+                <tr class="high">
+                    <td>221</td>
+                    <td>2025-10-19 09:00</td>
+                    <td>106954.50</td>
+                    <td>106550.35</td>
+                    <td>106550.348708776</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>404.15</td>
+                </tr>
+
+                <tr class="high">
+                    <td>222</td>
+                    <td>2025-10-19 11:00</td>
+                    <td>107249.20</td>
+                    <td>106597.27</td>
+                    <td>106597.27446521645</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>651.93</td>
+                </tr>
+
+                <tr class="high">
+                    <td>223</td>
+                    <td>2025-10-19 13:00</td>
+                    <td>106872.00</td>
+                    <td>106656.06</td>
+                    <td>106656.06078714349</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>215.94</td>
+                </tr>
+
+                <tr class="low">
+                    <td>224</td>
+                    <td>2025-10-19 15:00</td>
+                    <td>106758.60</td>
+                    <td>107330.84</td>
+                    <td>-</td>
+                    <td>107330.83600000001</td>
+                    <td><strong>Low</strong></td>
+                    <td>-572.24</td>
+                </tr>
+
+                <tr class="low">
+                    <td>225</td>
+                    <td>2025-10-19 17:00</td>
+                    <td>107372.30</td>
+                    <td>108232.00</td>
+                    <td>-</td>
+                    <td>108232.0</td>
+                    <td><strong>Low</strong></td>
+                    <td>-859.70</td>
+                </tr>
+
+                <tr class="high">
+                    <td>226</td>
+                    <td>2025-10-19 19:00</td>
+                    <td>107762.20</td>
+                    <td>106075.20</td>
+                    <td>106075.2</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1687.00</td>
+                </tr>
+
+                <tr class="high">
+                    <td>227</td>
+                    <td>2025-10-19 21:00</td>
+                    <td>108070.60</td>
+                    <td>106202.91</td>
+                    <td>106202.90544</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1867.69</td>
+                </tr>
+
+                <tr class="high">
+                    <td>228</td>
+                    <td>2025-10-19 23:00</td>
+                    <td>108468.20</td>
+                    <td>106424.36</td>
+                    <td>106424.362909056</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2043.84</td>
+                </tr>
+
+                <tr class="high">
+                    <td>229</td>
+                    <td>2025-10-20 01:00</td>
+                    <td>109109.40</td>
+                    <td>106787.09</td>
+                    <td>106787.08776375164</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2322.31</td>
+                </tr>
+
+                <tr class="high">
+                    <td>230</td>
+                    <td>2025-10-20 03:00</td>
+                    <td>108915.10</td>
+                    <td>107195.25</td>
+                    <td>107195.2509232394</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1719.85</td>
+                </tr>
+
+                <tr class="high">
+                    <td>231</td>
+                    <td>2025-10-20 05:00</td>
+                    <td>108740.20</td>
+                    <td>107540.72</td>
+                    <td>107540.72022142983</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1199.48</td>
+                </tr>
+
+                <tr class="high">
+                    <td>232</td>
+                    <td>2025-10-20 07:00</td>
+                    <td>108635.00</td>
+                    <td>107833.13</td>
+                    <td>107833.12543541822</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>801.87</td>
+                </tr>
+
+                <tr class="low">
+                    <td>233</td>
+                    <td>2025-10-20 09:00</td>
+                    <td>108043.80</td>
+                    <td>109403.51</td>
+                    <td>-</td>
+                    <td>109403.51199999999</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1359.71</td>
+                </tr>
+
+                <tr class="high">
+                    <td>234</td>
+                    <td>2025-10-20 11:00</td>
+                    <td>110128.20</td>
+                    <td>107400.00</td>
+                    <td>107400.0</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2728.20</td>
+                </tr>
+
+                <tr class="high">
+                    <td>235</td>
+                    <td>2025-10-20 13:00</td>
+                    <td>111013.20</td>
+                    <td>107606.40</td>
+                    <td>107606.40288</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3406.80</td>
+                </tr>
+
+                <tr class="high">
+                    <td>236</td>
+                    <td>2025-10-20 15:00</td>
+                    <td>111172.20</td>
+                    <td>107965.79</td>
+                    <td>107965.791558912</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3206.41</td>
+                </tr>
+
+                <tr class="high">
+                    <td>237</td>
+                    <td>2025-10-20 17:00</td>
+                    <td>110970.00</td>
+                    <td>108450.98</td>
+                    <td>108450.9765401471</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2519.02</td>
+                </tr>
+
+                <tr class="high">
+                    <td>238</td>
+                    <td>2025-10-20 19:00</td>
+                    <td>111010.80</td>
+                    <td>108944.04</td>
+                    <td>108944.0361435805</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2066.76</td>
+                </tr>
+
+                <tr class="high">
+                    <td>239</td>
+                    <td>2025-10-20 21:00</td>
+                    <td>111141.90</td>
+                    <td>109361.36</td>
+                    <td>109361.36179192654</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1780.54</td>
+                </tr>
+
+                <tr class="high">
+                    <td>240</td>
+                    <td>2025-10-20 23:00</td>
+                    <td>111118.10</td>
+                    <td>109760.07</td>
+                    <td>109760.06956371518</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1358.03</td>
+                </tr>
+
+                <tr class="low">
+                    <td>241</td>
+                    <td>2025-10-21 01:00</td>
+                    <td>110281.70</td>
+                    <td>111692.70</td>
+                    <td>-</td>
+                    <td>111692.7</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1411.00</td>
+                </tr>
+
+                <tr class="high">
+                    <td>242</td>
+                    <td>2025-10-21 03:00</td>
+                    <td>110804.50</td>
+                    <td>109841.90</td>
+                    <td>109841.9</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>962.60</td>
+                </tr>
+
+                <tr class="low">
+                    <td>243</td>
+                    <td>2025-10-21 05:00</td>
+                    <td>110543.90</td>
+                    <td>111549.02</td>
+                    <td>-</td>
+                    <td>111549.01899052798</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1005.12</td>
+                </tr>
+
+                <tr class="low">
+                    <td>244</td>
+                    <td>2025-10-21 07:00</td>
+                    <td>110514.30</td>
+                    <td>111481.42</td>
+                    <td>-</td>
+                    <td>111481.41707850309</td>
+                    <td><strong>Low</strong></td>
+                    <td>-967.12</td>
+                </tr>
+
+                <tr class="low">
+                    <td>245</td>
+                    <td>2025-10-21 09:00</td>
+                    <td>109833.80</td>
+                    <td>111369.03</td>
+                    <td>-</td>
+                    <td>111369.02566745572</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1535.23</td>
+                </tr>
+
+                <tr class="low">
+                    <td>246</td>
+                    <td>2025-10-21 11:00</td>
+                    <td>109051.70</td>
+                    <td>111158.15</td>
+                    <td>-</td>
+                    <td>111158.14812231204</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2106.45</td>
+                </tr>
+
+                <tr class="low">
+                    <td>247</td>
+                    <td>2025-10-21 13:00</td>
+                    <td>107542.30</td>
+                    <td>110745.97</td>
+                    <td>-</td>
+                    <td>110745.96681617545</td>
+                    <td><strong>Low</strong></td>
+                    <td>-3203.67</td>
+                </tr>
+
+                <tr class="low">
+                    <td>248</td>
+                    <td>2025-10-21 15:00</td>
+                    <td>108072.10</td>
+                    <td>110099.83</td>
+                    <td>-</td>
+                    <td>110099.82781734868</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2027.73</td>
+                </tr>
+
+                <tr class="low">
+                    <td>249</td>
+                    <td>2025-10-21 17:00</td>
+                    <td>107767.10</td>
+                    <td>109813.87</td>
+                    <td>-</td>
+                    <td>109813.87332967772</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2046.77</td>
+                </tr>
+
+                <tr class="low">
+                    <td>250</td>
+                    <td>2025-10-21 19:00</td>
+                    <td>108583.80</td>
+                    <td>109354.30</td>
+                    <td>-</td>
+                    <td>109354.29642824575</td>
+                    <td><strong>Low</strong></td>
+                    <td>-770.50</td>
+                </tr>
+
+                <tr class="high">
+                    <td>251</td>
+                    <td>2025-10-21 21:00</td>
+                    <td>108416.20</td>
+                    <td>107499.31</td>
+                    <td>107499.306</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>916.89</td>
+                </tr>
+
+                <tr class="high">
+                    <td>252</td>
+                    <td>2025-10-21 23:00</td>
+                    <td>113408.30</td>
+                    <td>107778.71</td>
+                    <td>107778.71332479999</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>5629.59</td>
+                </tr>
+
+                <tr class="high">
+                    <td>253</td>
+                    <td>2025-10-22 01:00</td>
+                    <td>112023.20</td>
+                    <td>108370.53</td>
+                    <td>108370.5287442995</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3652.67</td>
+                </tr>
+
+                <tr class="high">
+                    <td>254</td>
+                    <td>2025-10-22 03:00</td>
+                    <td>111782.60</td>
+                    <td>108429.79</td>
+                    <td>108429.7900114944</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3352.81</td>
+                </tr>
+
+                <tr class="high">
+                    <td>255</td>
+                    <td>2025-10-22 05:00</td>
+                    <td>110838.30</td>
+                    <td>108868.71</td>
+                    <td>108868.70535459324</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1969.59</td>
+                </tr>
+
+                <tr class="low">
+                    <td>256</td>
+                    <td>2025-10-22 07:00</td>
+                    <td>108306.30</td>
+                    <td>113908.53</td>
+                    <td>-</td>
+                    <td>113908.52799999999</td>
+                    <td><strong>Low</strong></td>
+                    <td>-5602.23</td>
+                </tr>
+
+                <tr class="low">
+                    <td>257</td>
+                    <td>2025-10-22 09:00</td>
+                    <td>108372.60</td>
+                    <td>113552.00</td>
+                    <td>-</td>
+                    <td>113551.99546239998</td>
+                    <td><strong>Low</strong></td>
+                    <td>-5179.40</td>
+                </tr>
+
+                <tr class="low">
+                    <td>258</td>
+                    <td>2025-10-22 11:00</td>
+                    <td>108216.50</td>
+                    <td>113101.82</td>
+                    <td>-</td>
+                    <td>113101.81517814782</td>
+                    <td><strong>Low</strong></td>
+                    <td>-4885.32</td>
+                </tr>
+
+                <tr class="low">
+                    <td>259</td>
+                    <td>2025-10-22 13:00</td>
+                    <td>108186.90</td>
+                    <td>112686.93</td>
+                    <td>-</td>
+                    <td>112686.92902818102</td>
+                    <td><strong>Low</strong></td>
+                    <td>-4500.03</td>
+                </tr>
+
+                <tr class="low">
+                    <td>260</td>
+                    <td>2025-10-22 15:00</td>
+                    <td>108328.20</td>
+                    <td>112199.11</td>
+                    <td>-</td>
+                    <td>112199.11099503055</td>
+                    <td><strong>Low</strong></td>
+                    <td>-3870.91</td>
+                </tr>
+
+                <tr class="low">
+                    <td>261</td>
+                    <td>2025-10-22 17:00</td>
+                    <td>107965.00</td>
+                    <td>109498.24</td>
+                    <td>-</td>
+                    <td>109498.23951760105</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1533.24</td>
+                </tr>
+
+                <tr class="low">
+                    <td>262</td>
+                    <td>2025-10-22 19:00</td>
+                    <td>107547.00</td>
+                    <td>109437.65</td>
+                    <td>-</td>
+                    <td>109437.6525810278</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1890.65</td>
+                </tr>
+
+                <tr class="high">
+                    <td>263</td>
+                    <td>2025-10-22 21:00</td>
+                    <td>108798.50</td>
+                    <td>106677.00</td>
+                    <td>106677.0</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2121.50</td>
+                </tr>
+
+                <tr class="high">
+                    <td>264</td>
+                    <td>2025-10-22 23:00</td>
+                    <td>108387.00</td>
+                    <td>106677.00</td>
+                    <td>106677.0</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1710.00</td>
+                </tr>
+
+                <tr class="low">
+                    <td>265</td>
+                    <td>2025-10-23 01:00</td>
+                    <td>107759.70</td>
+                    <td>109162.10</td>
+                    <td>-</td>
+                    <td>109162.1</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1402.40</td>
+                </tr>
+
+                <tr class="high">
+                    <td>266</td>
+                    <td>2025-10-23 03:00</td>
+                    <td>107825.10</td>
+                    <td>106976.36</td>
+                    <td>106976.3555246603</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>848.74</td>
+                </tr>
+
+                <tr class="low">
+                    <td>267</td>
+                    <td>2025-10-23 05:00</td>
+                    <td>107173.40</td>
+                    <td>109245.99</td>
+                    <td>-</td>
+                    <td>109245.986</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2072.59</td>
+                </tr>
+
+                <tr class="low">
+                    <td>268</td>
+                    <td>2025-10-23 07:00</td>
+                    <td>107542.20</td>
+                    <td>109142.54</td>
+                    <td>-</td>
+                    <td>109142.5355144</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1600.34</td>
+                </tr>
+
+                <tr class="low">
+                    <td>269</td>
+                    <td>2025-10-23 09:00</td>
+                    <td>108136.70</td>
+                    <td>109043.18</td>
+                    <td>-</td>
+                    <td>109043.18166802976</td>
+                    <td><strong>Low</strong></td>
+                    <td>-906.48</td>
+                </tr>
+
+                <tr class="low">
+                    <td>270</td>
+                    <td>2025-10-23 11:00</td>
+                    <td>108351.40</td>
+                    <td>108947.76</td>
+                    <td>-</td>
+                    <td>108947.7622339758</td>
+                    <td><strong>Low</strong></td>
+                    <td>-596.36</td>
+                </tr>
+
+                <tr class="high">
+                    <td>271</td>
+                    <td>2025-10-23 13:00</td>
+                    <td>108940.20</td>
+                    <td>106994.94</td>
+                    <td>106994.94067315201</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1945.26</td>
+                </tr>
+
+                <tr class="high">
+                    <td>272</td>
+                    <td>2025-10-23 15:00</td>
+                    <td>109258.60</td>
+                    <td>107368.85</td>
+                    <td>107368.85325414187</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1889.75</td>
+                </tr>
+
+                <tr class="high">
+                    <td>273</td>
+                    <td>2025-10-23 17:00</td>
+                    <td>109408.20</td>
+                    <td>107818.39</td>
+                    <td>107818.38619430568</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1589.81</td>
+                </tr>
+
+                <tr class="high">
+                    <td>274</td>
+                    <td>2025-10-23 19:00</td>
+                    <td>109237.10</td>
+                    <td>108198.87</td>
+                    <td>108198.87087486034</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1038.23</td>
+                </tr>
+
+                <tr class="high">
+                    <td>275</td>
+                    <td>2025-10-23 21:00</td>
+                    <td>109464.30</td>
+                    <td>108520.91</td>
+                    <td>108520.91310848178</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>943.39</td>
+                </tr>
+
+                <tr class="low">
+                    <td>276</td>
+                    <td>2025-10-23 23:00</td>
+                    <td>109889.10</td>
+                    <td>110263.48</td>
+                    <td>-</td>
+                    <td>110263.476</td>
+                    <td><strong>Low</strong></td>
+                    <td>-374.38</td>
+                </tr>
+
+                <tr class="high">
+                    <td>277</td>
+                    <td>2025-10-24 01:00</td>
+                    <td>111229.80</td>
+                    <td>108694.30</td>
+                    <td>108694.3</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2535.50</td>
+                </tr>
+
+                <tr class="high">
+                    <td>278</td>
+                    <td>2025-10-24 03:00</td>
+                    <td>110192.90</td>
+                    <td>108848.67</td>
+                    <td>108848.67184000001</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1344.23</td>
+                </tr>
+
+                <tr class="low">
+                    <td>279</td>
+                    <td>2025-10-24 05:00</td>
+                    <td>109518.20</td>
+                    <td>111305.50</td>
+                    <td>-</td>
+                    <td>111305.5</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1787.30</td>
+                </tr>
+
+                <tr class="low">
+                    <td>280</td>
+                    <td>2025-10-24 07:00</td>
+                    <td>110047.00</td>
+                    <td>111222.61</td>
+                    <td>-</td>
+                    <td>111222.60928</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1175.61</td>
+                </tr>
+
+                <tr class="low">
+                    <td>281</td>
+                    <td>2025-10-24 09:00</td>
+                    <td>110571.80</td>
+                    <td>111143.00</td>
+                    <td>-</td>
+                    <td>111143.00103251201</td>
+                    <td><strong>Low</strong></td>
+                    <td>-571.20</td>
+                </tr>
+
+                <tr class="low">
+                    <td>282</td>
+                    <td>2025-10-24 11:00</td>
+                    <td>110441.70</td>
+                    <td>111066.55</td>
+                    <td>-</td>
+                    <td>111066.54527162453</td>
+                    <td><strong>Low</strong></td>
+                    <td>-624.85</td>
+                </tr>
+
+                <tr class="high">
+                    <td>283</td>
+                    <td>2025-10-24 13:00</td>
+                    <td>111250.10</td>
+                    <td>109257.74</td>
+                    <td>109257.744</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1992.36</td>
+                </tr>
+
+                <tr class="high">
+                    <td>284</td>
+                    <td>2025-10-24 15:00</td>
+                    <td>111056.40</td>
+                    <td>109955.05</td>
+                    <td>109955.04884476443</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1101.35</td>
+                </tr>
+
+                <tr class="high">
+                    <td>285</td>
+                    <td>2025-10-24 17:00</td>
+                    <td>111338.70</td>
+                    <td>109558.84</td>
+                    <td>109558.83613791234</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1779.86</td>
+                </tr>
+
+                <tr class="high">
+                    <td>286</td>
+                    <td>2025-10-24 19:00</td>
+                    <td>111068.00</td>
+                    <td>109981.45</td>
+                    <td>109981.44653008149</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1086.55</td>
+                </tr>
+
+                <tr class="high">
+                    <td>287</td>
+                    <td>2025-10-24 21:00</td>
+                    <td>110934.30</td>
+                    <td>109931.40</td>
+                    <td>109931.39808564929</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1002.90</td>
+                </tr>
+
+                <tr class="low">
+                    <td>288</td>
+                    <td>2025-10-24 23:00</td>
+                    <td>110009.30</td>
+                    <td>112212.10</td>
+                    <td>-</td>
+                    <td>112212.1</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2202.80</td>
+                </tr>
+
+                <tr class="low">
+                    <td>289</td>
+                    <td>2025-10-25 01:00</td>
+                    <td>110176.00</td>
+                    <td>112110.97</td>
+                    <td>-</td>
+                    <td>112110.96952</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1934.97</td>
+                </tr>
+
+                <tr class="low">
+                    <td>290</td>
+                    <td>2025-10-25 03:00</td>
+                    <td>110577.00</td>
+                    <td>112013.84</td>
+                    <td>-</td>
+                    <td>112013.843807008</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1436.84</td>
+                </tr>
+
+                <tr class="low">
+                    <td>291</td>
+                    <td>2025-10-25 05:00</td>
+                    <td>111067.60</td>
+                    <td>111920.56</td>
+                    <td>-</td>
+                    <td>111920.56427225049</td>
+                    <td><strong>Low</strong></td>
+                    <td>-852.96</td>
+                </tr>
+
+                <tr class="low">
+                    <td>292</td>
+                    <td>2025-10-25 07:00</td>
+                    <td>110986.60</td>
+                    <td>111500.58</td>
+                    <td>-</td>
+                    <td>111500.5847068089</td>
+                    <td><strong>Low</strong></td>
+                    <td>-513.98</td>
+                </tr>
+
+                <tr class="low">
+                    <td>293</td>
+                    <td>2025-10-25 09:00</td>
+                    <td>111048.80</td>
+                    <td>111356.15</td>
+                    <td>-</td>
+                    <td>111356.14958579508</td>
+                    <td><strong>Low</strong></td>
+                    <td>-307.35</td>
+                </tr>
+
+                <tr class="low">
+                    <td>294</td>
+                    <td>2025-10-25 11:00</td>
+                    <td>110989.70</td>
+                    <td>111223.04</td>
+                    <td>-</td>
+                    <td>111223.03817826875</td>
+                    <td><strong>Low</strong></td>
+                    <td>-233.34</td>
+                </tr>
+
+                <tr class="high">
+                    <td>295</td>
+                    <td>2025-10-25 13:00</td>
+                    <td>111356.40</td>
+                    <td>109694.05</td>
+                    <td>109694.046</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1662.35</td>
+                </tr>
+
+                <tr class="high">
+                    <td>296</td>
+                    <td>2025-10-25 15:00</td>
+                    <td>111467.20</td>
+                    <td>109701.20</td>
+                    <td>109701.202</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1766.00</td>
+                </tr>
+
+                <tr class="high">
+                    <td>297</td>
+                    <td>2025-10-25 17:00</td>
+                    <td>111494.40</td>
+                    <td>110988.45</td>
+                    <td>110988.4547778585</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>505.95</td>
+                </tr>
+
+                <tr class="high">
+                    <td>298</td>
+                    <td>2025-10-25 19:00</td>
+                    <td>111543.00</td>
+                    <td>111141.86</td>
+                    <td>111141.85929949132</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>401.14</td>
+                </tr>
+
+                <tr class="high">
+                    <td>299</td>
+                    <td>2025-10-25 21:00</td>
+                    <td>111657.10</td>
+                    <td>111277.53</td>
+                    <td>111277.5285356673</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>379.57</td>
+                </tr>
+
+                <tr class="high">
+                    <td>300</td>
+                    <td>2025-10-25 23:00</td>
+                    <td>111354.00</td>
+                    <td>111204.25</td>
+                    <td>111204.24803904167</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>149.75</td>
+                </tr>
+
+                <tr class="low">
+                    <td>301</td>
+                    <td>2025-10-26 01:00</td>
+                    <td>111351.20</td>
+                    <td>111884.31</td>
+                    <td>-</td>
+                    <td>111884.308</td>
+                    <td><strong>Low</strong></td>
+                    <td>-533.11</td>
+                </tr>
+
+                <tr class="low">
+                    <td>302</td>
+                    <td>2025-10-26 03:00</td>
+                    <td>111596.50</td>
+                    <td>111824.86</td>
+                    <td>-</td>
+                    <td>111824.8644928</td>
+                    <td><strong>Low</strong></td>
+                    <td>-228.36</td>
+                </tr>
+
+                <tr class="low">
+                    <td>303</td>
+                    <td>2025-10-26 05:00</td>
+                    <td>111449.60</td>
+                    <td>111851.68</td>
+                    <td>-</td>
+                    <td>111851.67722359137</td>
+                    <td><strong>Low</strong></td>
+                    <td>-402.08</td>
+                </tr>
+
+                <tr class="low">
+                    <td>304</td>
+                    <td>2025-10-26 07:00</td>
+                    <td>111615.90</td>
+                    <td>111719.59</td>
+                    <td>-</td>
+                    <td>111719.59321820983</td>
+                    <td><strong>Low</strong></td>
+                    <td>-103.69</td>
+                </tr>
+
+                <tr class="high">
+                    <td>305</td>
+                    <td>2025-10-26 09:00</td>
+                    <td>111607.70</td>
+                    <td>111141.45</td>
+                    <td>111141.45000000001</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>466.25</td>
+                </tr>
+
+                <tr class="high">
+                    <td>306</td>
+                    <td>2025-10-26 11:00</td>
+                    <td>111229.80</td>
+                    <td>111171.24</td>
+                    <td>111171.23514000002</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>58.56</td>
+                </tr>
+
+                <tr class="low">
+                    <td>307</td>
+                    <td>2025-10-26 13:00</td>
+                    <td>111580.70</td>
+                    <td>111866.67</td>
+                    <td>-</td>
+                    <td>111866.66804</td>
+                    <td><strong>Low</strong></td>
+                    <td>-285.97</td>
+                </tr>
+
+                <tr class="high">
+                    <td>308</td>
+                    <td>2025-10-26 15:00</td>
+                    <td>111695.00</td>
+                    <td>111226.00</td>
+                    <td>111226.0</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>469.00</td>
+                </tr>
+
+                <tr class="high">
+                    <td>309</td>
+                    <td>2025-10-26 17:00</td>
+                    <td>112506.80</td>
+                    <td>111302.61</td>
+                    <td>111302.60992</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1204.19</td>
+                </tr>
+
+                <tr class="high">
+                    <td>310</td>
+                    <td>2025-10-26 19:00</td>
+                    <td>113249.40</td>
+                    <td>111363.70</td>
+                    <td>111363.7031168</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1885.70</td>
+                </tr>
+
+                <tr class="high">
+                    <td>311</td>
+                    <td>2025-10-26 21:00</td>
+                    <td>113676.00</td>
+                    <td>111599.99</td>
+                    <td>111599.98729260032</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2076.01</td>
+                </tr>
+
+                <tr class="high">
+                    <td>312</td>
+                    <td>2025-10-26 23:00</td>
+                    <td>113664.40</td>
+                    <td>111879.35</td>
+                    <td>111879.34877174163</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1785.05</td>
+                </tr>
+
+                <tr class="high">
+                    <td>313</td>
+                    <td>2025-10-27 01:00</td>
+                    <td>113416.70</td>
+                    <td>112126.19</td>
+                    <td>112126.1925747109</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1290.51</td>
+                </tr>
+
+                <tr class="high">
+                    <td>314</td>
+                    <td>2025-10-27 03:00</td>
+                    <td>113557.00</td>
+                    <td>112344.30</td>
+                    <td>112344.30375901455</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1212.70</td>
+                </tr>
+
+                <tr class="low">
+                    <td>315</td>
+                    <td>2025-10-27 05:00</td>
+                    <td>113440.90</td>
+                    <td>114000.00</td>
+                    <td>-</td>
+                    <td>114000.0</td>
+                    <td><strong>Low</strong></td>
+                    <td>-559.10</td>
+                </tr>
+
+                <tr class="high">
+                    <td>316</td>
+                    <td>2025-10-27 07:00</td>
+                    <td>114507.90</td>
+                    <td>112816.50</td>
+                    <td>112816.5</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1691.40</td>
+                </tr>
+
+                <tr class="high">
+                    <td>317</td>
+                    <td>2025-10-27 09:00</td>
+                    <td>115244.70</td>
+                    <td>112994.38</td>
+                    <td>112994.38497136325</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2250.32</td>
+                </tr>
+
+                <tr class="high">
+                    <td>318</td>
+                    <td>2025-10-27 11:00</td>
+                    <td>114943.20</td>
+                    <td>113571.89</td>
+                    <td>113571.88735103999</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1371.31</td>
+                </tr>
+
+                <tr class="high">
+                    <td>319</td>
+                    <td>2025-10-27 13:00</td>
+                    <td>115520.40</td>
+                    <td>113622.57</td>
+                    <td>113622.57403316832</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1897.83</td>
+                </tr>
+
+                <tr class="high">
+                    <td>320</td>
+                    <td>2025-10-27 15:00</td>
+                    <td>115495.80</td>
+                    <td>113462.50</td>
+                    <td>113462.4959577868</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2033.30</td>
+                </tr>
+
+                <tr class="high">
+                    <td>321</td>
+                    <td>2025-10-27 17:00</td>
+                    <td>115204.20</td>
+                    <td>113859.23</td>
+                    <td>113859.22795305998</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1344.97</td>
+                </tr>
+
+                <tr class="high">
+                    <td>322</td>
+                    <td>2025-10-27 19:00</td>
+                    <td>115314.80</td>
+                    <td>114693.02</td>
+                    <td>114693.0228246261</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>621.78</td>
+                </tr>
+
+                <tr class="high">
+                    <td>323</td>
+                    <td>2025-10-27 21:00</td>
+                    <td>115206.50</td>
+                    <td>114511.65</td>
+                    <td>114511.649924817</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>694.85</td>
+                </tr>
+
+                <tr class="low">
+                    <td>324</td>
+                    <td>2025-10-27 23:00</td>
+                    <td>114900.00</td>
+                    <td>116328.67</td>
+                    <td>-</td>
+                    <td>116328.674</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1428.67</td>
+                </tr>
+
+                <tr class="high">
+                    <td>325</td>
+                    <td>2025-10-28 01:00</td>
+                    <td>115647.10</td>
+                    <td>114363.40</td>
+                    <td>114363.40489011077</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1283.70</td>
+                </tr>
+
+                <tr class="low">
+                    <td>326</td>
+                    <td>2025-10-28 03:00</td>
+                    <td>114909.70</td>
+                    <td>116216.22</td>
+                    <td>-</td>
+                    <td>116216.216990608</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1306.52</td>
+                </tr>
+
+                <tr class="low">
+                    <td>327</td>
+                    <td>2025-10-28 05:00</td>
+                    <td>114267.50</td>
+                    <td>116322.35</td>
+                    <td>-</td>
+                    <td>116322.34599999999</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2054.85</td>
+                </tr>
+
+                <tr class="low">
+                    <td>328</td>
+                    <td>2025-10-28 07:00</td>
+                    <td>114062.90</td>
+                    <td>116315.64</td>
+                    <td>-</td>
+                    <td>116315.636</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2252.74</td>
+                </tr>
+
+                <tr class="high">
+                    <td>329</td>
+                    <td>2025-10-28 09:00</td>
+                    <td>114372.10</td>
+                    <td>113166.53</td>
+                    <td>113166.53086922676</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1205.57</td>
+                </tr>
+
+                <tr class="low">
+                    <td>330</td>
+                    <td>2025-10-28 11:00</td>
+                    <td>113854.50</td>
+                    <td>115689.73</td>
+                    <td>-</td>
+                    <td>115689.732</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1835.23</td>
+                </tr>
+
+                <tr class="low">
+                    <td>331</td>
+                    <td>2025-10-28 13:00</td>
+                    <td>113565.50</td>
+                    <td>115554.32</td>
+                    <td>-</td>
+                    <td>115554.3165056</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1988.82</td>
+                </tr>
+
+                <tr class="low">
+                    <td>332</td>
+                    <td>2025-10-28 15:00</td>
+                    <td>114134.90</td>
+                    <td>115383.18</td>
+                    <td>-</td>
+                    <td>115383.17585156097</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1248.28</td>
+                </tr>
+
+                <tr class="low">
+                    <td>333</td>
+                    <td>2025-10-28 17:00</td>
+                    <td>114469.80</td>
+                    <td>115225.45</td>
+                    <td>-</td>
+                    <td>115225.45262479858</td>
+                    <td><strong>Low</strong></td>
+                    <td>-755.65</td>
+                </tr>
+
+                <tr class="high">
+                    <td>334</td>
+                    <td>2025-10-28 19:00</td>
+                    <td>114318.90</td>
+                    <td>113727.50</td>
+                    <td>113727.49953612799</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>591.40</td>
+                </tr>
+
+                <tr class="high">
+                    <td>335</td>
+                    <td>2025-10-28 21:00</td>
+                    <td>115487.40</td>
+                    <td>112982.65</td>
+                    <td>112982.64781851262</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2504.75</td>
+                </tr>
+
+                <tr class="high">
+                    <td>336</td>
+                    <td>2025-10-28 23:00</td>
+                    <td>114599.30</td>
+                    <td>113027.90</td>
+                    <td>113027.89826803186</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1571.40</td>
+                </tr>
+
+                <tr class="high">
+                    <td>337</td>
+                    <td>2025-10-29 01:00</td>
+                    <td>115254.80</td>
+                    <td>113925.82</td>
+                    <td>113925.82437527903</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1328.98</td>
+                </tr>
+
+                <tr class="low">
+                    <td>338</td>
+                    <td>2025-10-29 03:00</td>
+                    <td>113644.50</td>
+                    <td>116022.50</td>
+                    <td>-</td>
+                    <td>116022.502</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2378.00</td>
+                </tr>
+
+                <tr class="low">
+                    <td>339</td>
+                    <td>2025-10-29 05:00</td>
+                    <td>112969.30</td>
+                    <td>115820.06</td>
+                    <td>-</td>
+                    <td>115820.05500159999</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2850.76</td>
+                </tr>
+
+                <tr class="low">
+                    <td>340</td>
+                    <td>2025-10-29 07:00</td>
+                    <td>112882.20</td>
+                    <td>115533.17</td>
+                    <td>-</td>
+                    <td>115533.16940947455</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2650.97</td>
+                </tr>
+
+                <tr class="low">
+                    <td>341</td>
+                    <td>2025-10-29 09:00</td>
+                    <td>112466.30</td>
+                    <td>115195.27</td>
+                    <td>-</td>
+                    <td>115195.27215510984</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2728.97</td>
+                </tr>
+
+                <tr class="low">
+                    <td>342</td>
+                    <td>2025-10-29 11:00</td>
+                    <td>112488.10</td>
+                    <td>114860.33</td>
+                    <td>-</td>
+                    <td>114860.33402765215</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2372.23</td>
+                </tr>
+
+                <tr class="low">
+                    <td>343</td>
+                    <td>2025-10-29 13:00</td>
+                    <td>113011.70</td>
+                    <td>115076.50</td>
+                    <td>-</td>
+                    <td>115076.50209174604</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2064.80</td>
+                </tr>
+
+                <tr class="low">
+                    <td>344</td>
+                    <td>2025-10-29 15:00</td>
+                    <td>113537.90</td>
+                    <td>114836.47</td>
+                    <td>-</td>
+                    <td>114836.47248775316</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1298.57</td>
+                </tr>
+
+                <tr class="low">
+                    <td>345</td>
+                    <td>2025-10-29 17:00</td>
+                    <td>112960.30</td>
+                    <td>114615.26</td>
+                    <td>-</td>
+                    <td>114615.2612047133</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1654.96</td>
+                </tr>
+
+                <tr class="low">
+                    <td>346</td>
+                    <td>2025-10-29 19:00</td>
+                    <td>113111.60</td>
+                    <td>114845.33</td>
+                    <td>-</td>
+                    <td>114845.32517863039</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1733.73</td>
+                </tr>
+
+                <tr class="low">
+                    <td>347</td>
+                    <td>2025-10-29 21:00</td>
+                    <td>112858.80</td>
+                    <td>114558.83</td>
+                    <td>-</td>
+                    <td>114558.8260636724</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1700.03</td>
+                </tr>
+
+                <tr class="low">
+                    <td>348</td>
+                    <td>2025-10-29 23:00</td>
+                    <td>111479.50</td>
+                    <td>113622.38</td>
+                    <td>-</td>
+                    <td>113622.378</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2142.88</td>
+                </tr>
+
+                <tr class="low">
+                    <td>349</td>
+                    <td>2025-10-30 01:00</td>
+                    <td>111839.10</td>
+                    <td>113374.12</td>
+                    <td>-</td>
+                    <td>113374.12263999999</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1535.02</td>
+                </tr>
+
+                <tr class="low">
+                    <td>350</td>
+                    <td>2025-10-30 03:00</td>
+                    <td>110616.80</td>
+                    <td>112899.81</td>
+                    <td>-</td>
+                    <td>112899.808299072</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2283.01</td>
+                </tr>
+
+                <tr class="low">
+                    <td>351</td>
+                    <td>2025-10-30 05:00</td>
+                    <td>111586.10</td>
+                    <td>112651.13</td>
+                    <td>-</td>
+                    <td>112651.12808321463</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1065.03</td>
+                </tr>
+
+                <tr class="low">
+                    <td>352</td>
+                    <td>2025-10-30 07:00</td>
+                    <td>109986.80</td>
+                    <td>112242.25</td>
+                    <td>-</td>
+                    <td>112242.24653432844</td>
+                    <td><strong>Low</strong></td>
+                    <td>-2255.45</td>
+                </tr>
+
+                <tr class="low">
+                    <td>353</td>
+                    <td>2025-10-30 09:00</td>
+                    <td>110424.30</td>
+                    <td>111880.96</td>
+                    <td>-</td>
+                    <td>111880.95879773262</td>
+                    <td><strong>Low</strong></td>
+                    <td>-1456.66</td>
+                </tr>
+
+                <tr class="low">
+                    <td>354</td>
+                    <td>2025-10-30 11:00</td>
+                    <td>110710.80</td>
+                    <td>111561.72</td>
+                    <td>-</td>
+                    <td>111561.72495367654</td>
+                    <td><strong>Low</strong></td>
+                    <td>-850.92</td>
+                </tr>
+
+                <tr class="low">
+                    <td>355</td>
+                    <td>2025-10-30 13:00</td>
+                    <td>110222.60</td>
+                    <td>111133.39</td>
+                    <td>-</td>
+                    <td>111133.38741993948</td>
+                    <td><strong>Low</strong></td>
+                    <td>-910.79</td>
+                </tr>
+
+                <tr class="high">
+                    <td>356</td>
+                    <td>2025-10-30 15:00</td>
+                    <td>111328.30</td>
+                    <td>107879.60</td>
+                    <td>107879.6</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>3448.70</td>
+                </tr>
+
+                <tr class="high">
+                    <td>357</td>
+                    <td>2025-10-30 17:00</td>
+                    <td>110134.50</td>
+                    <td>108026.25</td>
+                    <td>108026.24672000001</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>2108.25</td>
+                </tr>
+
+                <tr class="high">
+                    <td>358</td>
+                    <td>2025-10-30 19:00</td>
+                    <td>109684.10</td>
+                    <td>108167.09</td>
+                    <td>108167.08622988801</td>
+                    <td>-</td>
+                    <td><strong>High</strong></td>
+                    <td>1517.01</td>
+                </tr>
+
+                <tr class="low">
+                    <td>359</td>
+                    <td>2025-10-30 21:00</td>
+                    <td>107603.50</td>
+                    <td>111498.46</td>
+                    <td>-</td>
+                    <td>111498.46</td>
+                    <td><strong>Low</strong></td>
+                    <td>-3894.96</td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
