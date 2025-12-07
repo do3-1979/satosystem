@@ -107,7 +107,7 @@ class Visualizer:
             log_directory: ログディレクトリパス
             start_time: 表示開始時刻 (datetime or str)
             end_time: 表示終了時刻 (datetime or str)
-            log_file: 特定のログファイルを指定（Noneの場合は期間から自動検出）
+            log_file: 特定のログファイルを指定（Noneの場合は自動検出）
             lookback_days: 計算用に遡る日数（デフォルト: 20日）
         
         Returns:
@@ -126,8 +126,8 @@ class Visualizer:
         log_files = []
         for root, _, files in os.walk(log_directory):
             for file in files:
-                # zipファイルのみを対象とする（完全なログ）
-                if file.endswith(".zip"):
+                # zipファイル + JSONファイルを対象とする
+                if file.endswith(".zip") or (file.endswith(".json") and file[0].isdigit()):
                     log_files.append(os.path.join(root, file))
         
         if not log_files:
@@ -144,18 +144,24 @@ class Visualizer:
             files_to_process = [target_file]
             print(f"[INFO] Using specified log file: {os.path.basename(target_file)}")
         else:
-            # デフォルト: 指定期間に含まれるZIPファイルを自動検出して結合
-            files_to_process = self.detect_period_log_files(log_directory, calc_start_time, display_end_time)
-            if not files_to_process:
-                # フォールバック: 最新のZIPファイルを使用
-                log_files_zip = [f for f in log_files if f.endswith('.zip')]
-                if log_files_zip:
-                    log_files_zip.sort()
-                    files_to_process = [log_files_zip[-1]]
-                    print(f"[INFO] No files in period, using latest: {os.path.basename(files_to_process[0])}")
-                else:
-                    print(f"No ZIP log files in {log_directory}")
-                    return None, None, display_start_time, display_end_time
+            # デフォルト: 最新のJSONファイルを使用（または最新のZIP）
+            json_files = [f for f in log_files if f.endswith('.json')]
+            zip_files = [f for f in log_files if f.endswith('.zip')]
+            
+            if json_files:
+                json_files.sort()
+                files_to_process = [json_files[-1]]  # 最新のJSONを使用
+                print(f"[INFO] Using latest JSON log: {os.path.basename(files_to_process[0])}")
+            elif zip_files:
+                # ZIPファイルから期間検出
+                files_to_process = self.detect_period_log_files(log_directory, calc_start_time, display_end_time)
+                if not files_to_process:
+                    zip_files.sort()
+                    files_to_process = [zip_files[-1]]
+                    print(f"[INFO] Using latest ZIP: {os.path.basename(files_to_process[0])}")
+            else:
+                print(f"No usable log files in {log_directory}")
+                return None, None, display_start_time, display_end_time
         
         print(f"[INFO] Processing {len(files_to_process)} log file(s)")
         print(f"[INFO] Calculation period: {calc_start_time} to {display_end_time}")
@@ -814,12 +820,28 @@ if __name__ == "__main__":
     
     # config.iniの期間で可視化
     log_directory = "logs"
-    output_html = "report/backtest_visualization.html"
+    output_html = "../report/backtest_visualization.html"
     
-    visualizer.visualize_backtest(
-        log_directory=log_directory,
-        output_html=output_html
-    )
+    # 出力ディレクトリを確保
+    output_dir = os.path.dirname(output_html)
+    if output_dir and not os.path.exists(output_dir):
+        os.makedirs(output_dir)
     
-    print(f"\n可視化完了: {output_html}")
-    print("ブラウザで開いて確認してください。")
+    print("\n🎬 バックテスト可視化を開始します")
+    print(f"📂 ログディレクトリ: {log_directory}")
+    
+    try:
+        visualizer.visualize_backtest(
+            log_directory=log_directory,
+            output_html=output_html
+        )
+        
+        abs_path = os.path.abspath(output_html)
+        print(f"\n✅ 可視化完了!")
+        print(f"📊 ファイル: {output_html}")
+        print(f"🌐 ブラウザで開く: {abs_path}")
+        
+    except Exception as e:
+        print(f"\n❌ エラー: {e}")
+        import traceback
+        traceback.print_exc()
