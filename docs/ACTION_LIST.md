@@ -16,7 +16,6 @@
 | doc/test整備           | 12  | ドキュメント構造テスト追加                                                                       | 5ce4761                          | ★★★☆☆ |
 | doc/test整備           | 13  | analysis/project_structure.json・ARCHITECTURE_OVERVIEW.mdにクラス・メソッド一覧を反映             | 本分析                           | ★★★☆☆ |
 | config/キャッシュ管理   | 13  | config.iniのプレースホルダ化・コメント整形                                                       | 38b761d, d6c7da3, 26c9f48        | ★★★☆☆ |
-| config/キャッシュ管理   | 14  | OHLCV SQLiteキャッシュ統合                                                                       | 53bab64, 631825e                 | ★★★☆☆ |
 | config/キャッシュ管理   | 15  | path_utils.pyによるパス管理の一元化                                                              | bbd8514                          | ★★★☆☆ |
 | スクリプト統合・運用    | 16  | backtest.pyへの機能統合                                                                          | 7bbbcf9, 604848c                 | ★★★☆☆ |
 | スクリプト統合・運用    | 17  | bot_run.sh, replace_api_key.shの整理                                                             | d683227                          | ★★★☆☆ |
@@ -77,3 +76,12 @@
     - REGRESSION_TEST_POLICY.md 削除（regression_test_suite.py実装済み、ACTION_LISTで管理）
     - BACKTEST_OPTIMIZATION_NO2_REPORT.md 削除（完了レポート、参考資料として不要）
     - docs/ ディレクトリ整理完了（206行削除）
+
+11. OHLCV SQLiteキャッシュ統合 ✅ **完了**
+    - ohlcv_cache.py を新規作成: SQLiteベースのOHLCVキャッシュマネージャー
+    - 機能: キャッシュの読み書き、JSON→SQLite移行ツール、キャッシュ統計情報取得
+    - price_data_management.py を更新: JSONファイルベース→SQLiteに切り替え
+    - JSONからSQLiteへの自動移行機能を実装（migrate_from_json）
+    - レグレッションテストで動作を検証: すべてのテスト項目が [OK]
+    - 効果: OHLCVキャッシュを効率的なSQLiteデータベースで管理、将来の拡張性向上
+
