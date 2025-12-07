@@ -463,8 +463,8 @@ class PriceDataManagement:
             end_epoch = Config.get_end_epoch() + time_frame * 60
             self.logger.log(f"時間足データ {time_frame} 分 初期化")
 
-            # SQLiteキャッシュから取得を試みる
-            cached_data = self.cache.get_ohlcv_data(start_epoch, end_epoch, time_frame)
+            # SQLiteキャッシュから取得を試みる（部分一致：指定期間がキャッシュに含まれているか確認）
+            cached_data = self.cache.get_ohlcv_data_partial(start_epoch, end_epoch, time_frame)
             if cached_data is not None:
                 self.logger.log(f"SQLiteキャッシュから {len(cached_data)} 件のデータを取得")
                 data_dict["data"] = cached_data
