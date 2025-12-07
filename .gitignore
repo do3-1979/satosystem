@@ -35,3 +35,7 @@ ohlcv_data/*.json
 # Ignore report output
 report/
 output_configs/
+
+# Ignore regression test results
+docs/regression_test_results/
+
