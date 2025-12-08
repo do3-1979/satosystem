@@ -56,6 +56,12 @@ class BybitExchange(Exchange):
         self.api_key = api_key
         self.api_secret = api_secret
         self.logger = Logger()
+        
+        # ダミー取引モード（back_test = 0 の場合）
+        self.is_dummy_mode = (Config.get_back_test_mode() == 0)
+        self.dummy_balance = 100000.0  # ダミー口座残高
+        self.dummy_orders = {}  # ダミー注文履歴
+        self.dummy_order_id = 0  # 注文ID カウンタ
 
         # 設定可能なパラメタ：1,3,5,15,30,60,120,240,360,720,D,M,W
         time_frame = Config.get_time_frame()
@@ -71,11 +77,16 @@ class BybitExchange(Exchange):
         elif market_type == 'ETH/USD':
             self.market = "ETHUSD"
 
-        self.exchange = ccxt.bybit({
-            'apiKey': api_key,
-            'secret': api_secret,
-            'enableRateLimit': True,
-        })
+        # ダミーモード以外の場合のみ実際の exchange を初期化
+        if not self.is_dummy_mode:
+            self.exchange = ccxt.bybit({
+                'apiKey': api_key,
+                'secret': api_secret,
+                'enableRateLimit': True,
+            })
+        else:
+            self.exchange = None
+            self.logger.log_info(f"🎭 ダミー取引モード ON（balance: {self.dummy_balance} USD）")
 
     def get_account_balance(self):
         """
@@ -84,6 +95,16 @@ class BybitExchange(Exchange):
         Returns:
             dict: 口座の残高情報
         """
+        # ダミーモード対応
+        if self.is_dummy_mode:
+            return {
+                'USDT': {
+                    'total': self.dummy_balance,
+                    'used': 0,
+                    'free': self.dummy_balance
+                }
+            }
+        
         server_retry_wait = Config.get_server_retry_wait()
         err_occuerd = False
         
@@ -109,6 +130,10 @@ class BybitExchange(Exchange):
         Returns:
             int: 口座上の使用可能な証拠金残高
         """
+        # ダミーモード対応
+        if self.is_dummy_mode:
+            return self.dummy_balance
+        
         server_retry_wait = Config.get_server_retry_wait()
         err_occuerd = False
         
@@ -143,6 +168,24 @@ class BybitExchange(Exchange):
         Returns:
             dict: 注文の実行結果
         """
+        # ダミーモード対応
+        if self.is_dummy_mode:
+            self.dummy_order_id += 1
+            order_result = {
+                'id': str(self.dummy_order_id),
+                'symbol': self.market,
+                'side': side,
+                'type': order_type,
+                'amount': quantity,
+                'price': price if price else 0,
+                'timestamp': int(time.time() * 1000),
+                'status': 'closed',
+                'info': {}
+            }
+            self.dummy_orders[str(self.dummy_order_id)] = order_result
+            self.logger.log_info(f"🎭 ダミー注文: {side.upper()} {quantity} @ {price or 'MARKET'} (ID: {self.dummy_order_id})")
+            return True
+        
         server_retry_wait = Config.get_server_retry_wait()
         err_occuerd = False
         
@@ -332,6 +375,22 @@ class BybitExchange(Exchange):
         Returns:
             list: 価格データのリスト
         """
+        # ダミーモード対応
+        if self.is_dummy_mode:
+            import random
+            base_price = 100000  # ダミー基準価格
+            random_price = base_price + random.uniform(-1000, 1000)
+            tmp_time = int(time.time())
+            return [{
+                "close_time": tmp_time,
+                "close_time_dt": datetime.fromtimestamp(tmp_time).strftime('%Y/%m/%d %H:%M'),
+                "open_price": random_price - 100,
+                "high_price": random_price + 200,
+                "low_price": random_price - 200,
+                "close_price": random_price,
+                "Volume": random.uniform(1000, 10000)
+            }]
+        
         err_occuerd = False
         ohlcv_data = []
 
@@ -374,7 +433,12 @@ class BybitExchange(Exchange):
 
         Returns:
             dict: 最新の価格情報
-        """        
+        """
+        # ダミーモード対応
+        if self.is_dummy_mode:
+            import random
+            return 100000 + random.uniform(-1000, 1000)
+        
         # マーケット変換
         market_type = Config.get_market()
         if market_type == 'BTC/USD':
