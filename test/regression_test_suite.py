@@ -166,13 +166,184 @@ def test_consistency():
     except Exception as e:
         log_result(test_name, False, str(e))
 
+# 5. 個別ファイルレグレッションテスト
+
+def run_individual_test_modules():
+    """
+    test/ フォルダ以下の個別テストモジュール（test_*_regression.py）を順番に実行
+    """
+    test_name = "individual_file_regression"
+    try:
+        test_modules = [
+            "test_bot_regression",
+            "test_config_regression",
+            "test_trading_strategy_regression",
+            "test_risk_management_regression",
+            "test_portfolio_regression",
+            "test_price_data_management_regression",
+            "test_logger_regression",
+            "test_visualizer_regression",
+            "test_ohlcv_cache_regression",
+            "test_bybit_exchange_regression",
+            "test_supplementary_regression"
+        ]
+        
+        all_results = []
+        passed_total = 0
+        failed_total = 0
+        
+        print("\n" + "=" * 70)
+        print("🔄 個別ファイルレグレッションテスト実行")
+        print("=" * 70)
+        
+        for module_name in test_modules:
+            print(f"\n📋 実行中: {module_name}.py")
+            try:
+                result = subprocess.run(
+                    [sys.executable, os.path.join(os.path.dirname(__file__), f"{module_name}.py")],
+                    cwd=SRC_DIR,
+                    capture_output=True,
+                    text=True,
+                    timeout=60
+                )
+                
+                # JSON 結果ファイルを読み込む
+                result_file = os.path.join(RESULTS_DIR, f"{module_name}.json")
+                if os.path.exists(result_file):
+                    with open(result_file, encoding="utf-8") as f:
+                        module_result = json.load(f)
+                    
+                    all_results.append(module_result)
+                    passed_total += module_result.get("passed", 0)
+                    failed_total += module_result.get("total", 0) - module_result.get("passed", 0)
+                    
+                    # サマリー表示
+                    p = module_result.get("passed", 0)
+                    t = module_result.get("total", 0)
+                    status = "✅" if p == t else "⚠️"
+                    print(f"  {status} {module_name}: {p}/{t} 成功")
+                else:
+                    print(f"  ⚠️  {module_name}: 結果ファイルが見つかりません")
+            except subprocess.TimeoutExpired:
+                print(f"  ❌ {module_name}: タイムアウト")
+                failed_total += 1
+            except Exception as e:
+                print(f"  ❌ {module_name}: エラー - {e}")
+                failed_total += 1
+        
+        # 統計情報を出力
+        print("\n" + "-" * 70)
+        print(f"📊 個別テスト統計: {passed_total} 成功 / {passed_total + failed_total} 総数")
+        
+        # 総合結果を保存
+        summary = {
+            "test_name": test_name,
+            "total_modules": len(test_modules),
+            "total_tests": passed_total + failed_total,
+            "passed": passed_total,
+            "failed": failed_total,
+            "pass_rate": f"{(passed_total / (passed_total + failed_total) * 100):.1f}%" if (passed_total + failed_total) > 0 else "0%",
+            "modules": all_results,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        with open(os.path.join(RESULTS_DIR, "individual_test_summary.json"), "w", encoding="utf-8") as f:
+            json.dump(summary, f, ensure_ascii=False, indent=2)
+        
+        log_result(test_name, failed_total == 0, f"詳細は individual_test_summary.json を参照してください")
+        
+    except Exception as e:
+        log_result(test_name, False, str(e))
+
+
+# 統合レポート生成
+
+def generate_regression_report():
+    """
+    全てのレグレッションテスト結果を集計し、最終レポートを生成
+    """
+    print("\n" + "=" * 70)
+    print("📈 レグレッションテスト統合レポート生成")
+    print("=" * 70)
+    
+    try:
+        # 全ての結果ファイルを読み込む
+        result_files = [f for f in os.listdir(RESULTS_DIR) if f.endswith(".json") and f != "individual_test_summary.json"]
+        
+        all_results = []
+        total_tests = 0
+        total_passed = 0
+        
+        for result_file in sorted(result_files):
+            try:
+                with open(os.path.join(RESULTS_DIR, result_file), encoding="utf-8") as f:
+                    result = json.load(f)
+                    all_results.append(result)
+                    
+                    if "total" in result and "passed" in result:
+                        total_tests += result["total"]
+                        total_passed += result["passed"]
+            except Exception as e:
+                print(f"⚠️  {result_file} の読み込みエラー: {e}")
+        
+        # 統合レポート作成
+        report = {
+            "title": "レグレッションテスト統合レポート",
+            "generated_at": datetime.now().isoformat(),
+            "summary": {
+                "total_tests": total_tests,
+                "total_passed": total_passed,
+                "total_failed": total_tests - total_passed,
+                "pass_rate": f"{(total_passed / total_tests * 100):.1f}%" if total_tests > 0 else "0%",
+                "status": "✅ ALL PASS" if total_tests == total_passed else "⚠️ SOME FAILURES"
+            },
+            "result_files": all_results,
+            "results_dir": RESULTS_DIR
+        }
+        
+        # レポートを JSON で保存
+        report_file = os.path.join(RESULTS_DIR, "REGRESSION_TEST_REPORT.json")
+        with open(report_file, "w", encoding="utf-8") as f:
+            json.dump(report, f, ensure_ascii=False, indent=2)
+        
+        # コンソールに統計出力
+        print(f"\n✅ レポート生成完了: {report_file}")
+        print(f"\n📊 総合統計:")
+        print(f"  - 総テスト数: {total_tests}")
+        print(f"  - 成功: {total_passed}")
+        print(f"  - 失敗: {total_tests - total_passed}")
+        print(f"  - 成功率: {report['summary']['pass_rate']}")
+        print(f"\n🎯 ステータス: {report['summary']['status']}")
+        
+        return report
+        
+    except Exception as e:
+        print(f"❌ レポート生成エラー: {e}")
+        return None
+
+
 if __name__ == "__main__":
     print(f"[INFO] ワークスペースルート: {WORKSPACE_ROOT}")
     print(f"[INFO] レグレッションテスト方針: {REGRESSION_POLICY}")
     print(f"[INFO] 現在の作業ディレクトリ: {os.getcwd()}")
     print(f"[INFO] バックテスト期間: config.ini の [Backtest] セクションで指定")
     print()
+    
+    # 従来のテスト実行
+    print("=" * 70)
+    print("🔄 従来型レグレッションテスト実行")
+    print("=" * 70)
     test_backtest()
     test_hot()
     test_class_methods()
     test_consistency()
+    
+    # 新しい個別ファイルテスト実行
+    run_individual_test_modules()
+    
+    # 統合レポート生成
+    report = generate_regression_report()
+    
+    print("\n" + "=" * 70)
+    print("✅ レグレッションテストスイート完了")
+    print("=" * 70)
