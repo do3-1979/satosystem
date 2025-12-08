@@ -333,6 +333,7 @@ if __name__ == "__main__":
     print("=" * 70)
     print("📊 OHLCV キャッシュ状態確認")
     print("=" * 70)
+    cache_check_passed = True
     try:
         from ohlcv_cache_inspector import OHLCVCacheInspector
         cache_inspector = OHLCVCacheInspector()
@@ -356,16 +357,26 @@ if __name__ == "__main__":
                     if start_epoch and end_epoch and time_frame:
                         coverage = cache_inspector.get_data_coverage(start_epoch, end_epoch, time_frame)
                         if coverage.get('gaps'):
-                            print(f"     ⚠️  データギャップ: {len(coverage['gaps'])} 件")
-                            for gap in coverage['gaps'][:2]:
+                            gap_count = len(coverage['gaps'])
+                            print(f"     ❌ データギャップ検出: {gap_count} 件")
+                            for gap in coverage['gaps'][:3]:
                                 print(f"        {gap.get('gap_start', 'N/A')} ～ {gap.get('gap_end', 'N/A')}")
+                            cache_check_passed = False
+                        else:
+                            print(f"     ✅ データギャップなし")
                 except Exception as e:
-                    pass  # ギャップ検査スキップ
+                    print(f"     ⚠️  ギャップ検査スキップ: {e}")
         else:
             print("⚠️  キャッシュが未生成です（バックテスト実行で蓄積されます）")
         
     except Exception as e:
         print(f"⚠️  キャッシュ検査スキップ: {e}")
+    
+    # キャッシュ検査結果をレグレッションテストに記録
+    if not cache_check_passed:
+        log_result("ohlcv_cache_gap_check", False, "キャッシュにデータギャップが検出されました")
+    else:
+        log_result("ohlcv_cache_gap_check", True, "キャッシュのデータ整合性が確認されました")
     
     print()
     
