@@ -26,7 +26,6 @@
     {"name": "EventBus", "file": "src/event.py", "role": "イベント通知・購読管理", "methods": ["__init__", "publish", "subscribe"]},
     {"name": "Exchange", "file": "src/exchange.py", "role": "取引所基底クラス", "methods": ["__init__", "get_account_balance", "execute_order"]},
     {"name": "Side", "file": "src/side.py", "role": "売買サイドEnum・変換", "methods": ["normalize_side", "to_exchange_side"]},
-    {"name": "Satostrategy", "file": "src/satostrategy.py", "role": "独自戦略クラス（TradingStrategy拡張）", "methods": ["__init__"]},
     {"name": "ConfigGenerator", "file": "src/config_generator.py", "role": "設定ファイル自動生成", "methods": ["generate_configs"]}
   ]
 }

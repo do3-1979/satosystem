@@ -41,7 +41,10 @@ def test_logger_methods():
         analysis = load_analysis()
         
         expected_methods = {m["name"] for m in analysis["classes"][0]["methods"]}
-        actual_methods = {m for m in dir(Logger) if not m.startswith("_") or m in ["__new__", "__init__"]}
+        # _ (単一アンダースコア) で始まるメソッドを含める（_initialize など）
+        # ただし __ (二重アンダースコア) は除外（name mangling 対象）
+        actual_methods = {m for m in dir(Logger) 
+                         if not m.startswith("__") or m in ["__new__", "__init__", "__repr__", "__str__"]}
         
         missing = expected_methods - actual_methods
         if missing:

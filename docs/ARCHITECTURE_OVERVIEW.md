@@ -17,7 +17,6 @@
 | EventBus             | src/event.py            | イベント通知・購読管理                          | __init__, subscribe, unsubscribe, emit              |
 | Exchange             | src/exchange.py         | 取引所基底クラス                                | __init__, get_account_balance, execute_order        |
 | Side                 | src/side.py             | 売買サイドEnum・変換関数                        | normalize_side, to_exchange_side                   |
-| Satostrategy         | src/satostrategy.py     | 独自戦略クラス（TradingStrategy拡張）           | __init__                                           |
 | OHLCVCache           | src/ohlcv_cache.py      | OHLCV SQLiteキャッシュ管理                      | __init__, get_ohlcv_data, save_ohlcv_data, get_ohlcv_data_partial, migrate_from_json |
 | OHLCVCacheInspector  | src/ohlcv_cache_inspector.py | キャッシュ分析・検査ツール            | __init__, get_cache_parameters, get_data_coverage, print_summary, print_detailed_analysis |
 # Architecture Overview

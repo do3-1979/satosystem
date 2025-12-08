@@ -105,19 +105,6 @@ def test_side_functions():
         return False, f"❌ Side のインポート失敗: {e}"
 
 
-def test_satostrategy():
-    """SatoStrategy クラスが存在することを確認"""
-    try:
-        from satostrategy import SatoStrategy
-        
-        if hasattr(SatoStrategy, "__init__"):
-            return True, f"✅ SatoStrategy クラスが存在"
-        else:
-            return False, f"❌ SatoStrategy が不完全"
-    except ImportError as e:
-        return False, f"❌ SatoStrategy のインポート失敗: {e}"
-
-
 def run_all_tests():
     """全テストを実行"""
     tests = [
@@ -127,7 +114,6 @@ def run_all_tests():
         ("Util クラス確認", test_util_class),
         ("EventBus クラス確認", test_event_bus),
         ("Side 関数確認", test_side_functions),
-        ("SatoStrategy クラス確認", test_satostrategy),
     ]
     
     results = []
@@ -171,7 +157,7 @@ if __name__ == "__main__":
     
     with open(os.path.join(RESULTS_DIR, "test_supplementary_regression.json"), "w", encoding="utf-8") as f:
         json.dump({
-            "file": "exchange, order, metrics, util, event, side, satostrategy",
+            "file": "exchange, order, metrics, util, event, side",
             "total": total_count,
             "passed": passed_count,
             "results": results,

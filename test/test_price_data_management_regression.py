@@ -41,6 +41,9 @@ def test_price_data_management_methods():
         analysis = load_analysis()
         
         expected_methods = {m["name"] for m in analysis["classes"][0]["methods"]}
+        # __ で始まるプライベートメソッドは Python の name mangling の対象
+        # 例: __evaluate_pvo → _PriceDataManagement__evaluate_pvo のため、テスト比較から除外
+        expected_methods = {m for m in expected_methods if not m.startswith("__")}
         actual_methods = {m for m in dir(PriceDataManagement) if not m.startswith("_") or m in ["__new__", "__init__"]}
         
         missing = expected_methods - actual_methods
