@@ -64,6 +64,8 @@ class BybitExchange(Exchange):
         hot_test_dummy_mode = Config.get_hot_test_dummy_mode()
         
         self.is_dummy_mode = (back_test_mode == 1) or (back_test_mode == 0 and hot_test_dummy_mode == 1)
+        self.is_backtest_mode = (back_test_mode == 1)  # バックテストモードのみ
+        self.is_papertrading_mode = (back_test_mode == 0 and hot_test_dummy_mode == 1)  # ペーパートレード識別
         self.dummy_balance = 100000.0  # ダミー口座残高
         self.dummy_orders = {}  # ダミー注文履歴
         self.dummy_order_id = 0  # 注文ID カウンタ
@@ -82,16 +84,25 @@ class BybitExchange(Exchange):
         elif market_type == 'ETH/USD':
             self.market = "ETHUSD"
 
-        # ダミーモード以外の場合のみ実際の exchange を初期化
-        if not self.is_dummy_mode:
+        # バックテスト時のみ exchange を初期化しない
+        # ペーパートレード時は本番と同等の exchange を初期化
+        if self.is_backtest_mode:
+            # バックテストでもキャッシュからデータ取得のため exchange を初期化する
+            # (実際の API 呼び出しは行わない、キャッシュ機構が優先的に使用される)
+            self.exchange = ccxt.bybit({
+                'apiKey': api_key if api_key != 'YOUR_API_KEY' else '',
+                'secret': api_secret if api_secret != 'YOUR_API_SECRET' else '',
+                'enableRateLimit': True,
+            })
+            self.logger.log(f"🎭 バックテストモード ON（balance: {self.dummy_balance} USD）")
+        else:
             self.exchange = ccxt.bybit({
                 'apiKey': api_key,
                 'secret': api_secret,
                 'enableRateLimit': True,
             })
-        else:
-            self.exchange = None
-            self.logger.log_info(f"🎭 ダミー取引モード ON（balance: {self.dummy_balance} USD）")
+            if self.is_papertrading_mode:
+                self.logger.log(f"🎭 ペーパートレード（ダミー取引）モード ON（balance: {self.dummy_balance} USD）")
 
     def get_account_balance(self):
         """
@@ -188,7 +199,7 @@ class BybitExchange(Exchange):
                 'info': {}
             }
             self.dummy_orders[str(self.dummy_order_id)] = order_result
-            self.logger.log_info(f"🎭 ダミー注文: {side.upper()} {quantity} @ {price or 'MARKET'} (ID: {self.dummy_order_id})")
+            self.logger.log(f"🎭 ダミー注文: {side.upper()} {quantity} @ {price or 'MARKET'} (ID: {self.dummy_order_id})")
             return True
         
         server_retry_wait = Config.get_server_retry_wait()

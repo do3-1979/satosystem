@@ -67,10 +67,12 @@ def test_backtest():
     # 変更前の結果を保存（仮実装: 直近のresultファイルをコピー）
     before_file = os.path.join(RESULTS_DIR, "backtest_before.json")
     after_file = os.path.join(RESULTS_DIR, "backtest_after.json")
+    
     # バックテスト実行
     try:
         # WORKSPACE_ROOT で実行し、bot_run.sh は src/ 内を参照するのでフルパスで指定
-        result = subprocess.run(["bash", "src/bot_run.sh"], cwd=WORKSPACE_ROOT, capture_output=True, text=True, timeout=300)
+        # timeout: バックテスト期間が長い場合は時間がかかるため余裕を持たせる（デフォルト: 600秒）
+        result = subprocess.run(["bash", "src/bot_run.sh"], cwd=WORKSPACE_ROOT, capture_output=True, text=True, timeout=600)
         if result.returncode != 0:
             log_result(test_name, False, f"bot_run.sh実行エラー\nstdout: {result.stdout[:500]}\nstderr: {result.stderr[:500]}")
             return

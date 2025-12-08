@@ -27,3 +27,76 @@
 ## コミュニケーション
 - ドキュメント更新や課題追加は必ず `ACTION_LIST.md` を通じて記録し、レビューで明示的に取り上げる。進捗は `TODO → PROGRESS → DONE` のステータスで明示する。
 - 設計・修正のレビュー依頼時には、`docs/analysis` の JSON を根拠資料として提示する。
+
+---
+
+## 実行モード管理
+
+### 概要
+
+satosystem は 3つの異なる実行モードをサポートしています：
+
+| モード | back_test | hot_test_dummy_mode | 用途 | 取引 | データ |
+|--------|-----------|-------------------|------|------|--------|
+| **バックテスト** | 1 | 1 | 過去データで戦略検証 | ✅ ダミー | 過去 |
+| **ペーパートレード** | 0 | 1 | ライブ市場で検証 | ✅ ダミー | ライブ |
+| **本番取引** | 0 | 0 | 実際の取引実行 | 🚀 実取引 | ライブ |
+
+### 設定方法
+
+`src/config.ini` の `[Backtest]` セクションで設定：
+
+```ini
+[Backtest]
+# 実行モード: 1=バックテスト, 0=ホットテスト
+back_test = 1
+
+# ホットテスト時の取引モード: 1=ダミー取引（ペーパーテスト）, 0=本番取引
+hot_test_dummy_mode = 1
+
+# バックテスト後にインタラクティブグラフを自動生成
+generate_interactive_graph = 1
+```
+
+### 実行方法
+
+```bash
+# config.ini を設定後、以下いずれかで実行
+bash src/bot_run.sh      # 推奨: モードに応じて自動分岐
+python src/bot.py        # 直接実行
+```
+
+### ロジック
+
+**bot_run.sh の分岐ロジック:**
+- `back_test == 1` → バックテストモード（ダミー取引）
+- `back_test == 0 && hot_test_dummy_mode == 1` → ペーパートレード（ダミー取引）
+- `back_test == 0 && hot_test_dummy_mode == 0` → 本番取引（実取引、確認プロンプト有）
+
+**bybit_exchange.py のダミーモード判定:**
+```python
+is_dummy_mode = (back_test == 1) or (back_test == 0 and hot_test_dummy_mode == 1)
+```
+
+### ログファイル
+
+| モード | ログファイル |
+|--------|------------|
+| バックテスト | `src/logs/latest_backtest.log` |
+| ペーパートレード | `src/logs/latest_hot_test_dummy.log` |
+| 本番取引 | `src/logs/latest_hot_test_live.log` |
+
+### 推奨フロー
+
+1. **バックテストモード** (`back_test=1`) → 戦略開発フェーズ
+2. **ペーパートレード** (`back_test=0, hot_test_dummy_mode=1`) → ライブ検証フェーズ
+3. **本番取引** (`back_test=0, hot_test_dummy_mode=0`) → 運用開始フェーズ
+
+本番取引では確認プロンプトが表示されます：
+```
+⚠️  WARNING: 本番取引モードで実行します。注意してください！
+本当に実行しますか？ (yes/no): yes
+```
+
+---
+

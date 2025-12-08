@@ -330,3 +330,60 @@ python test/regression_test_suite.py
 | supplementary | 6 | Exchange, Order, Metrics, Util, EventBus, Side |
 
 **合計**: 54 テスト
+
+---
+
+## OHLCV キャッシュ検査ツール
+
+### 概要
+
+`ohlcv_cache.db` の内容を確認・管理するツール。キャッシュサマリー、データ範囲分析、データギャップ検出機能を提供。
+
+### 使用方法
+
+```bash
+# キャッシュサマリー表示（デフォルト）
+./ohlcv_cache_info.sh
+
+# データ範囲と断絶検出
+./ohlcv_cache_info.sh coverage
+
+# 詳細分析
+./ohlcv_cache_info.sh all
+
+# またはPython直接実行
+cd src
+python ohlcv_cache_inspector.py --help
+```
+
+### 出力例
+
+```
+🗄️ OHLCV キャッシュ検査ツール
+📊 総レコード数: 460 件
+📁 キャッシュファイル: ohlcv_data/ohlcv_cache.db
+💾 ファイルサイズ: 0.10 MB
+
+📋 キャッシュされているパラメータ数: 1
+タイムフレーム: 120分 | レコード数: 460 | 取得期間: 2025-10-23 16:00 ～ 2025-12-01 01:59
+```
+
+### 機能
+
+| 機能 | コマンド | 説明 |
+|------|--------|------|
+| サマリー | `./ohlcv_cache_info.sh` | 総レコード数、ファイルサイズ、パラメータ一覧 |
+| データ範囲 | `./ohlcv_cache_info.sh coverage` | データセグメント、ギャップ検出 |
+| 詳細分析 | `./ohlcv_cache_info.sh all` | すべてのパラメータの詳細情報 |
+
+### キャッシュクリア
+
+```bash
+# Pythonで実行
+cd src
+python -c "from ohlcv_cache import OHLCVCache; OHLCVCache().clear_cache()"
+# またはファイル削除
+rm src/ohlcv_data/ohlcv_cache.db
+```
+
+
