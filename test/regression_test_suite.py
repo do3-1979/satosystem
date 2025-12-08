@@ -329,6 +329,46 @@ if __name__ == "__main__":
     print(f"[INFO] バックテスト期間: config.ini の [Backtest] セクションで指定")
     print()
     
+    # OHLCVキャッシュ検査
+    print("=" * 70)
+    print("📊 OHLCV キャッシュ状態確認")
+    print("=" * 70)
+    try:
+        from ohlcv_cache_inspector import OHLCVCacheInspector
+        cache_inspector = OHLCVCacheInspector()
+        
+        # キャッシュサマリー取得
+        params = cache_inspector.get_cache_parameters()
+        
+        if params:
+            print(f"✅ キャッシュファイル検出: {len(params)} パラメータ")
+            for param_info in params:
+                print(f"   - タイムフレーム: {param_info.get('time_frame', 'N/A')}分")
+                print(f"     レコード数: {param_info.get('record_count', 0)}")
+                print(f"     期間: {param_info.get('start_time', 'N/A')} ～ {param_info.get('end_time', 'N/A')}")
+                
+                # データ範囲を取得（パラメータごと）
+                try:
+                    start_epoch = param_info.get('start_epoch', 0)
+                    end_epoch = param_info.get('end_epoch', 0)
+                    time_frame = param_info.get('time_frame', 0)
+                    
+                    if start_epoch and end_epoch and time_frame:
+                        coverage = cache_inspector.get_data_coverage(start_epoch, end_epoch, time_frame)
+                        if coverage.get('gaps'):
+                            print(f"     ⚠️  データギャップ: {len(coverage['gaps'])} 件")
+                            for gap in coverage['gaps'][:2]:
+                                print(f"        {gap.get('gap_start', 'N/A')} ～ {gap.get('gap_end', 'N/A')}")
+                except Exception as e:
+                    pass  # ギャップ検査スキップ
+        else:
+            print("⚠️  キャッシュが未生成です（バックテスト実行で蓄積されます）")
+        
+    except Exception as e:
+        print(f"⚠️  キャッシュ検査スキップ: {e}")
+    
+    print()
+    
     # 従来のテスト実行
     print("=" * 70)
     print("🔄 従来型レグレッションテスト実行")
