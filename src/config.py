@@ -378,8 +378,22 @@ class Config:
     @classmethod
     def get_back_test_mode(cls):
         """
+        バックテストモードを取得します.
+
+        Returns:
+            int: 1=バックテスト, 0=ホットテスト
         """
         return int(cls.config['Backtest']['back_test'])
+
+    @classmethod
+    def get_hot_test_dummy_mode(cls):
+        """
+        ホットテスト時の取引モードを取得します.
+
+        Returns:
+            int: 1=ダミー取引（ペーパーテスト）, 0=本番取引
+        """
+        return int(cls.config['Backtest']['hot_test_dummy_mode'])
 
     def __str__(self):
         """

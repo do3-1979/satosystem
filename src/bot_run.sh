@@ -38,15 +38,47 @@ rm -f err.log
 
 
 # 4: python bot.py の実行
-# レグレッションテスト用: backtest=1ならlogs/latest_backtest.log, backtest=0ならlogs/latest_hot_test.logに出力
-# stderr のみをログに出力し、stdout（進捗メッセージなど）は破棄
+# 実行モード判定: back_test と hot_test_dummy_mode の値で分岐
 BOT_SCRIPT="$SCRIPT_DIR/bot.py"
-if grep -q '^backtest *= *0' config.ini 2>/dev/null; then
-    # ホットテスト
+
+# config.ini から設定値を読み込む
+back_test=$(grep '^back_test *= *' config.ini | awk -F' *= *' '{print $2}' | tr -d '\n\r')
+hot_test_dummy_mode=$(grep '^hot_test_dummy_mode *= *' config.ini | awk -F' *= *' '{print $2}' | tr -d '\n\r')
+
+# デフォルト値設定
+back_test=${back_test:-1}
+hot_test_dummy_mode=${hot_test_dummy_mode:-1}
+
+# 背景実行フラグ
+bg_flag=""
+if [ "$#" -eq 1 ] && [ "$1" == "bg" ]; then
+    bg_flag=" (background)"
+fi
+
+# 実行モード判定
+if [ "$back_test" = "1" ]; then
+    # バックテストモード
+    echo "📊 バックテストモード$bg_flag"
+    log_file="logs/latest_backtest.log"
     if [ "$#" -eq 1 ] && [ "$1" == "bg" ]; then
-        python "$BOT_SCRIPT" 2> logs/latest_hot_test.log > /dev/null &
+        python "$BOT_SCRIPT" 2> "$log_file" > /dev/null &
     else
-        python "$BOT_SCRIPT" 2> logs/latest_hot_test.log > /dev/null
+        python "$BOT_SCRIPT" 2> "$log_file" > /dev/null
+        end_time=$(date +%s)
+        total_time=$((end_time - start_time))
+        total_hours=$((total_time / 3600))
+        total_minutes=$((total_time % 3600 / 60))
+        total_seconds=$((total_time % 60))
+        echo "実行時間: ${total_hours}h ${total_minutes}m ${total_seconds}s"
+    fi
+elif [ "$hot_test_dummy_mode" = "1" ]; then
+    # ホットテスト（ダミー取引）モード
+    echo "🎭 ホットテスト（ペーパートレード）モード$bg_flag"
+    log_file="logs/latest_hot_test_dummy.log"
+    if [ "$#" -eq 1 ] && [ "$1" == "bg" ]; then
+        python "$BOT_SCRIPT" 2> "$log_file" > /dev/null &
+    else
+        python "$BOT_SCRIPT" 2> "$log_file" > /dev/null
         end_time=$(date +%s)
         total_time=$((end_time - start_time))
         total_hours=$((total_time / 3600))
@@ -55,11 +87,19 @@ if grep -q '^backtest *= *0' config.ini 2>/dev/null; then
         echo "実行時間: ${total_hours}h ${total_minutes}m ${total_seconds}s"
     fi
 else
-    # バックテスト
+    # ホットテスト（本番取引）モード
+    echo "🚀 ホットテスト（本番取引）モード$bg_flag"
+    log_file="logs/latest_hot_test_live.log"
+    echo "⚠️  WARNING: 本番取引モードで実行します。注意してください！"
+    read -p "本当に実行しますか？ (yes/no): " confirm
+    if [ "$confirm" != "yes" ]; then
+        echo "キャンセルしました。"
+        exit 1
+    fi
     if [ "$#" -eq 1 ] && [ "$1" == "bg" ]; then
-        python "$BOT_SCRIPT" 2> logs/latest_backtest.log > /dev/null &
+        python "$BOT_SCRIPT" 2> "$log_file" > /dev/null &
     else
-        python "$BOT_SCRIPT" 2> logs/latest_backtest.log > /dev/null
+        python "$BOT_SCRIPT" 2> "$log_file" > /dev/null
         end_time=$(date +%s)
         total_time=$((end_time - start_time))
         total_hours=$((total_time / 3600))
@@ -71,4 +111,3 @@ fi
 
 # 実行終了後、APIキーをプレースホルダに戻す
 ./replace_api_key.sh restore
-

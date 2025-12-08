@@ -57,8 +57,13 @@ class BybitExchange(Exchange):
         self.api_secret = api_secret
         self.logger = Logger()
         
-        # ダミー取引モード（back_test = 0 の場合）
-        self.is_dummy_mode = (Config.get_back_test_mode() == 0)
+        # ダミー取引モード判定
+        # back_test = 1 の場合は常にダミーモード（バックテスト）
+        # back_test = 0 かつ hot_test_dummy_mode = 1 の場合もダミーモード（ペーパーテスト）
+        back_test_mode = Config.get_back_test_mode()
+        hot_test_dummy_mode = Config.get_hot_test_dummy_mode()
+        
+        self.is_dummy_mode = (back_test_mode == 1) or (back_test_mode == 0 and hot_test_dummy_mode == 1)
         self.dummy_balance = 100000.0  # ダミー口座残高
         self.dummy_orders = {}  # ダミー注文履歴
         self.dummy_order_id = 0  # 注文ID カウンタ
