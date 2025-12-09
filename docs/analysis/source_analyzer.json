@@ -1,7 +1,7 @@
 {
   "metadata": {
     "source_file": "src/source_analyzer.py",
-    "analyzed_at": "2025-12-07T23:53:30.079674",
+    "analyzed_at": "2025-12-10T01:33:38.384662",
     "python_version": "3.10"
   },
   "file_info": {
@@ -95,11 +95,11 @@
           "docstring": "SourceAnalyzerの初期化\n\nArgs:\n    source_file: 解析対象のPythonファイルパス",
           "summary": "SourceAnalyzerの初期化",
           "calls": [
-            "print",
-            "self.source_code.split",
             "open",
             "f.read",
-            "ast.parse"
+            "ast.parse",
+            "print",
+            "self.source_code.split"
           ]
         },
         {
@@ -169,8 +169,8 @@
           "docstring": "インポート情報を抽出",
           "summary": "インポート情報を抽出",
           "calls": [
-            "ast.walk",
             "isinstance",
+            "ast.walk",
             "imports.append"
           ]
         },
@@ -197,10 +197,10 @@
           "docstring": "関数・メソッドのパラメータを抽出",
           "summary": "関数・メソッドのパラメータを抽出",
           "calls": [
-            "len",
-            "self._extract_value",
-            "enumerate",
             "self._extract_annotation",
+            "len",
+            "enumerate",
+            "self._extract_value",
             "params.append"
           ]
         },
@@ -280,15 +280,15 @@
           "summary": "クラスのメソッドを解析",
           "calls": [
             "self._generate_signature",
-            "methods.append",
-            "any",
-            "isinstance",
-            "self.analyze_parameters",
-            "self._extract_annotation",
-            "self.extract_docstring",
             "self.extract_docstring(item) or ''.split",
+            "self._extract_annotation",
+            "isinstance",
+            "self._extract_method_calls",
             "item.name.startswith",
-            "self._extract_method_calls"
+            "self.extract_docstring",
+            "any",
+            "methods.append",
+            "self.analyze_parameters"
           ]
         },
         {
@@ -340,12 +340,12 @@
           "docstring": "メソッド内で呼び出されている関数を抽出",
           "summary": "メソッド内で呼び出されている関数を抽出",
           "calls": [
-            "ast.unparse",
-            "calls.append",
             "list",
             "ast.walk",
             "isinstance",
-            "set"
+            "set",
+            "calls.append",
+            "ast.unparse"
           ]
         },
         {
@@ -366,12 +366,12 @@
           "docstring": "クラスを解析",
           "summary": "クラスを解析",
           "calls": [
-            "self.analyze_methods",
-            "classes.append",
-            "ast.unparse",
             "ast.walk",
             "isinstance",
             "self.extract_docstring",
+            "classes.append",
+            "self.analyze_methods",
+            "ast.unparse",
             "hasattr"
           ]
         },
@@ -394,12 +394,12 @@
           "summary": "トップレベルの関数を解析",
           "calls": [
             "self._generate_signature",
-            "functions.append",
-            "self.extract_docstring(node) or ''.split",
-            "isinstance",
             "self._extract_annotation",
-            "self.analyze_parameters",
+            "isinstance",
             "self.extract_docstring",
+            "self.extract_docstring(node) or ''.split",
+            "self.analyze_parameters",
+            "functions.append",
             "node.name.startswith"
           ]
         },
@@ -422,8 +422,8 @@
           "summary": "定数を解析（UPPERCASE変数）",
           "calls": [
             "target.id.isupper",
-            "self._extract_value",
             "isinstance",
+            "self._extract_value",
             "constants.append",
             "type"
           ]
@@ -446,15 +446,15 @@
           "docstring": "解析結果をまとめたレポートを生成",
           "summary": "解析結果をまとめたレポートを生成",
           "calls": [
-            "len",
-            "self.analyze_constants",
-            "self.get_line_count",
-            "datetime.now",
-            "self.analyze_classes",
-            "self.analyze_imports",
             "datetime.now().isoformat",
+            "self.get_line_count",
+            "len",
+            "datetime.now",
+            "sum",
+            "self.analyze_constants",
+            "self.analyze_imports",
             "self.analyze_functions",
-            "sum"
+            "self.analyze_classes"
           ]
         }
       ]

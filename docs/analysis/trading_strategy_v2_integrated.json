@@ -1,11 +1,11 @@
 {
   "metadata": {
-    "source_file": "src/trading_strategy.py",
-    "analyzed_at": "2025-12-10T01:33:38.410960",
+    "source_file": "src/trading_strategy_v2_integrated.py",
+    "analyzed_at": "2025-12-10T01:33:38.442055",
     "python_version": "3.10"
   },
   "file_info": {
-    "path": "src/trading_strategy.py",
+    "path": "src/trading_strategy_v2_integrated.py",
     "description": "Source code structure analysis"
   },
   "imports": [

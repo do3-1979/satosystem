@@ -1,7 +1,7 @@
 {
   "metadata": {
     "source_file": "src/risk_management.py",
-    "analyzed_at": "2025-12-07T23:53:30.034053",
+    "analyzed_at": "2025-12-10T01:33:38.285263",
     "python_version": "3.10"
   },
   "file_info": {
@@ -75,19 +75,19 @@
           "docstring": "リスク管理クラスを初期化します。",
           "summary": "リスク管理クラスを初期化します。",
           "calls": [
-            "Config.get_stop_range",
+            "Config.get_entry_range",
+            "Config.get_lot_limit_lower",
+            "Config.get_account_balance",
+            "Config.get_surge_follow_price_ratio",
+            "Config.get_leverage",
             "Config.get_stop_AF_max",
             "Config.get_stop_AF_add",
-            "Config.get_balance_tether_limit",
-            "Config.get_account_balance",
-            "Config.get_entry_times",
-            "Config.get_entry_range",
             "Config.get_stop_AF",
+            "Logger",
             "Config.get_risk_percentage",
-            "Config.get_surge_follow_price_ratio",
-            "Config.get_lot_limit_lower",
-            "Config.get_leverage",
-            "Logger"
+            "Config.get_balance_tether_limit",
+            "Config.get_stop_range",
+            "Config.get_entry_times"
           ]
         },
         {
@@ -440,11 +440,11 @@
           "summary": "__calc_parabolic_sar",
           "calls": [
             "len",
-            "min",
-            "high.append",
-            "range",
             "low.append",
-            "close.append"
+            "min",
+            "close.append",
+            "range",
+            "high.append"
           ]
         },
         {
@@ -470,17 +470,17 @@
           "docstring": "No description",
           "summary": "__calc_adx",
           "calls": [
-            "len",
             "np.abs",
+            "len",
+            "np.errstate",
             "max",
             "abs",
+            "sum",
             "range",
-            "np.where",
             "adx.tolist",
-            "np.zeros",
-            "np.errstate",
+            "np.where",
             "all",
-            "sum"
+            "np.zeros"
           ]
         },
         {
@@ -501,12 +501,12 @@
           "docstring": "ストップ値をパラボリックASRにする関数\n\nポジションのBUY/SELLに応じてパラボリックSARの値をストップポジションとする",
           "summary": "ストップ値をパラボリックASRにする関数",
           "calls": [
-            "min",
-            "self.portfolio.get_position_side",
+            "self.get_psarbear",
             "round",
-            "self.get_psarbull",
+            "min",
             "self.portfolio.get_position_price",
-            "self.get_psarbear"
+            "self.portfolio.get_position_side",
+            "self.get_psarbull"
           ]
         },
         {
@@ -532,8 +532,8 @@
           "docstring": "No description",
           "summary": "__follow_price_surge",
           "calls": [
-            "self.portfolio.get_position_price",
-            "self.portfolio.get_position_side"
+            "self.portfolio.get_position_side",
+            "self.portfolio.get_position_price"
           ]
         },
         {
@@ -577,18 +577,18 @@
           "docstring": "No description",
           "summary": "__update_stop_price",
           "calls": [
+            "self.__follow_price_surge",
+            "self.price_data_management.get_volatility",
+            "self.__calc_parabolic_sar",
+            "Config.get_psar_time_frame",
+            "self.__calc_adx",
             "min",
+            "max",
+            "Config.get_time_frame",
+            "self.price_data_management.get_ohlcv_data",
             "self.__calc_stop_psar",
             "self.portfolio.get_position_quantity",
-            "Config.get_time_frame",
-            "Config.get_psar_time_frame",
-            "self.price_data_management.get_ticker",
-            "self.price_data_management.get_volatility",
-            "self.__calc_adx",
-            "self.__follow_price_surge",
-            "max",
-            "self.price_data_management.get_ohlcv_data",
-            "self.__calc_parabolic_sar"
+            "self.price_data_management.get_ticker"
           ]
         },
         {
@@ -614,12 +614,12 @@
           "docstring": "ポジションサイズ[通貨単位]を計算します。\n\nArgs:\n    entry_price (float): エントリー価格\n    stop_loss_price (float): ストップロス価格\n\nReturns:\n    float: ポジションサイズ",
           "summary": "ポジションサイズ[通貨単位]を計算します。",
           "calls": [
-            "min",
-            "round",
-            "self.price_data_management.get_ticker",
             "self.price_data_management.get_volatility",
+            "self.get_entry_range",
+            "round",
             "self.logger.log_error",
-            "self.get_entry_range"
+            "min",
+            "self.price_data_management.get_ticker"
           ]
         }
       ]

@@ -41,7 +41,8 @@ def test_visualizer_methods():
         analysis = load_analysis()
         
         expected_methods = {m["name"] for m in analysis["classes"][0]["methods"]}
-        actual_methods = {m for m in dir(Visualizer) if not m.startswith("_") or m == "__init__"}
+        # 全メソッド（public、private共通。dunder は除外）
+        actual_methods = {m for m in dir(Visualizer) if not m.startswith("__") or m == "__init__"}
         
         missing = expected_methods - actual_methods
         if missing:

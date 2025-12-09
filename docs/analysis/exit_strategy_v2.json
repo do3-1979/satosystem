@@ -1,0 +1,332 @@
+{
+  "metadata": {
+    "source_file": "src/exit_strategy_v2.py",
+    "analyzed_at": "2025-12-10T01:33:37.900095",
+    "python_version": "3.10"
+  },
+  "file_info": {
+    "path": "src/exit_strategy_v2.py",
+    "description": "Source code structure analysis"
+  },
+  "imports": [
+    {
+      "module": "json",
+      "type": "standard",
+      "used_for": "Module: json"
+    }
+  ],
+  "classes": [
+    {
+      "name": "ExitStrategyV2",
+      "line": 22,
+      "docstring": "複合シグナルベースの出口戦略",
+      "inheritance": [],
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 25,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def __init__self",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "__init__"
+        },
+        {
+          "name": "evaluate_exit_condition",
+          "line": 38,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def evaluate_exit_conditionself, current_ohlcv, position_info, entry_info",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "current_ohlcv",
+              "type": "Any",
+              "description": "Parameter: current_ohlcv"
+            },
+            {
+              "name": "position_info",
+              "type": "Any",
+              "description": "Parameter: position_info"
+            },
+            {
+              "name": "entry_info",
+              "type": "Any",
+              "description": "Parameter: entry_info"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "複合シグナルベースの出口判定\n\nArgs:\n    current_ohlcv: 現在のOHLCV + 指標 {\n        'close_price', 'high_price', 'low_price',\n        'psar', 'adx', 'pvo_val', 'volatility', ...\n    }\n    position_info: ポジション情報 {\n        'entry_price', 'quantity', 'side', ...\n    }\n    entry_info: エントリー時の指標記録 {\n        'entry_adx', 'entry_pvo', 'entry_price', ...\n    }\n\nReturns:\n    {\n        'should_exit': bool,\n        'exit_reason': str,\n        'close_ratio': float (0.0-1.0),\n        'stage': str,\n        'confidence': float (0.0-1.0),\n    }",
+          "summary": "複合シグナルベースの出口判定",
+          "calls": [
+            "self._identify_stage",
+            "entry_info.get",
+            "print",
+            "position_info.get",
+            "self._check_stop_loss",
+            "current_ohlcv.get"
+          ]
+        },
+        {
+          "name": "_identify_stage",
+          "line": 147,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def _identify_stageself, entry_adx, entry_pvo, curr_adx, curr_pvo",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "entry_adx",
+              "type": "Any",
+              "description": "Parameter: entry_adx"
+            },
+            {
+              "name": "entry_pvo",
+              "type": "Any",
+              "description": "Parameter: entry_pvo"
+            },
+            {
+              "name": "curr_adx",
+              "type": "Any",
+              "description": "Parameter: curr_adx"
+            },
+            {
+              "name": "curr_pvo",
+              "type": "Any",
+              "description": "Parameter: curr_pvo"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "トレンドステージを特定\n\nStage 1: トレンド加速中\n    - ADX > 50 かつ PVO > 0 かつ ADX上昇\n    \nStage 2: トレンド減衰\n    - 30 < ADX < 50 かつ PVO > 0\n    \nStage 3: モメンタム消失\n    - PVO < 0 または ADX < 30\n    \nStage 4: PSAR (別途判定)",
+          "summary": "トレンドステージを特定"
+        },
+        {
+          "name": "_check_stop_loss",
+          "line": 186,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def _check_stop_lossself, current_price, psar_price, position_info",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "current_price",
+              "type": "Any",
+              "description": "Parameter: current_price"
+            },
+            {
+              "name": "psar_price",
+              "type": "Any",
+              "description": "Parameter: psar_price"
+            },
+            {
+              "name": "position_info",
+              "type": "Any",
+              "description": "Parameter: position_info"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "PSAR Stop Loss チェック\n\nArgs:\n    current_price: 現在の価格\n    psar_price: PSAR値\n    position_info: ポジション情報 {'side': 'BUY' or 'SELL', ...}\n\nReturns:\n    bool: Stop Loss に触れたか",
+          "summary": "PSAR Stop Loss チェック",
+          "calls": [
+            "position_info.get"
+          ]
+        },
+        {
+          "name": "get_stage_description",
+          "line": 213,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_stage_descriptionself, stage",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "stage",
+              "type": "Any",
+              "description": "Parameter: stage"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "Stage の説明を取得",
+          "summary": "Stage の説明を取得",
+          "calls": [
+            "descriptions.get"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "PortfolioExitExecutor",
+      "line": 255,
+      "docstring": "Portfolio との統合実行器",
+      "inheritance": [],
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 258,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def __init__self, portfolio, exit_strategy=None",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "portfolio",
+              "type": "Any",
+              "description": "Parameter: portfolio"
+            },
+            {
+              "name": "exit_strategy",
+              "type": "Any",
+              "description": "Parameter: exit_strategy",
+              "default": null
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "No description",
+          "summary": "__init__",
+          "calls": [
+            "ExitStrategyV2"
+          ]
+        },
+        {
+          "name": "execute_exit_decision",
+          "line": 263,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def execute_exit_decisionself, current_ohlcv, position_info, entry_info",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "current_ohlcv",
+              "type": "Any",
+              "description": "Parameter: current_ohlcv"
+            },
+            {
+              "name": "position_info",
+              "type": "Any",
+              "description": "Parameter: position_info"
+            },
+            {
+              "name": "entry_info",
+              "type": "Any",
+              "description": "Parameter: entry_info"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "出口判定と実行を統合\n\nReturns:\n    {\n        'executed': bool,\n        'decision': exit_strategy_decision,\n        'result': execution_result,\n    }",
+          "summary": "出口判定と実行を統合",
+          "calls": [
+            "print",
+            "self._close_partial_position",
+            "self._close_full_position",
+            "self.exit_strategy.evaluate_exit_condition"
+          ]
+        },
+        {
+          "name": "_close_full_position",
+          "line": 305,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def _close_full_positionself, position_info",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "position_info",
+              "type": "Any",
+              "description": "Parameter: position_info"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "全ポジションを出口",
+          "summary": "全ポジションを出口",
+          "calls": [
+            "position_info.get"
+          ]
+        },
+        {
+          "name": "_close_partial_position",
+          "line": 314,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def _close_partial_positionself, position_info, close_ratio",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "position_info",
+              "type": "Any",
+              "description": "Parameter: position_info"
+            },
+            {
+              "name": "close_ratio",
+              "type": "Any",
+              "description": "Parameter: close_ratio"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "部分ポジションを出口",
+          "summary": "部分ポジションを出口",
+          "calls": [
+            "position_info.get"
+          ]
+        }
+      ]
+    }
+  ],
+  "functions": [],
+  "constants": [],
+  "summary": {
+    "total_classes": 2,
+    "total_methods": 9,
+    "total_functions": 0,
+    "total_constants": 0,
+    "lines_of_code": 353
+  }
+}

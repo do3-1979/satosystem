@@ -1,7 +1,7 @@
 {
   "metadata": {
     "source_file": "src/logger.py",
-    "analyzed_at": "2025-12-07T23:53:29.873520",
+    "analyzed_at": "2025-12-10T01:33:37.940302",
     "python_version": "3.10"
   },
   "file_info": {
@@ -66,8 +66,8 @@
           "summary": "シングルトンインスタンスを生成または既存のインスタンスを返します。",
           "calls": [
             "cls._instance._initialize",
-            "super(Logger, cls).__new__",
-            "super"
+            "super",
+            "super(Logger, cls).__new__"
           ]
         },
         {
@@ -88,21 +88,21 @@
           "docstring": "Loggerクラスを初期化します。\n\nArgs:\n    log_file (str): ログを保存するファイル名",
           "summary": "Loggerクラスを初期化します。",
           "calls": [
-            "self.open_log_file",
             "logging.StreamHandler",
-            "file_handler.setLevel",
-            "Config.get_log_file_name",
-            "os.path.exists",
-            "console_handler.setLevel",
             "os.makedirs",
-            "self.logger.addHandler",
-            "file_handler.setFormatter",
-            "logging.FileHandler",
-            "Config.get_log_dir_name",
+            "self.open_log_file",
+            "self.logger.setLevel",
+            "console_handler.setLevel",
             "logging.Formatter",
+            "self.logger.addHandler",
+            "file_handler.setLevel",
+            "Config.get_log_dir_name",
+            "os.path.exists",
+            "Config.get_log_file_name",
             "console_handler.setFormatter",
+            "logging.FileHandler",
             "logging.getLogger",
-            "self.logger.setLevel"
+            "file_handler.setFormatter"
           ]
         },
         {
@@ -175,11 +175,11 @@
           "docstring": "No description",
           "summary": "open_log_file",
           "calls": [
-            "datetime.now",
-            "open",
             "os.path.join",
-            "self.current_log_file.write",
-            "current_time.strftime"
+            "open",
+            "datetime.now",
+            "current_time.strftime",
+            "self.current_log_file.write"
           ]
         },
         {
@@ -200,9 +200,9 @@
           "docstring": "No description",
           "summary": "close_log_file",
           "calls": [
-            "self.current_log_file.write",
             "self.current_log_file.seek",
             "self.current_log_file.tell",
+            "self.current_log_file.write",
             "self.current_log_file.close"
           ]
         },
@@ -229,8 +229,8 @@
           "docstring": "No description",
           "summary": "log_trade_data",
           "calls": [
-            "self.current_log_file.write",
-            "json.dump"
+            "json.dump",
+            "self.current_log_file.write"
           ]
         },
         {
@@ -251,16 +251,16 @@
           "docstring": "No description",
           "summary": "compress_logs",
           "calls": [
-            "os.path.exists",
-            "zipfile.ZipFile",
-            "file.endswith",
-            "datetime.now",
-            "os.path.relpath",
             "os.path.join",
-            "log_zip.write",
-            "os.remove",
+            "datetime.now",
+            "os.walk",
+            "os.path.exists",
+            "os.path.relpath",
             "current_time.strftime",
-            "os.walk"
+            "os.remove",
+            "zipfile.ZipFile",
+            "log_zip.write",
+            "file.endswith"
           ]
         }
       ]

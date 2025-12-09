@@ -30,10 +30,10 @@ echo ""
 
 # Step 2: グラフ生成
 echo "📈 Step 2: グラフ生成中..."
-echo "実行中: python3 visualizer.py"
+echo "実行中: python3 visualizer.py True"
 echo ""
 
-if ! python3 visualizer.py; then
+if ! python3 visualizer.py True; then
     echo "❌ グラフ生成に失敗しました"
     exit 1
 fi

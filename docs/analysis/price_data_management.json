@@ -1,7 +1,7 @@
 {
   "metadata": {
     "source_file": "src/price_data_management.py",
-    "analyzed_at": "2025-12-07T23:53:29.985022",
+    "analyzed_at": "2025-12-10T01:33:38.197770",
     "python_version": "3.10"
   },
   "file_info": {
@@ -80,9 +80,9 @@
           "docstring": "No description",
           "summary": "__new__",
           "calls": [
+            "cls._instance.initialize",
             "super",
-            "super(PriceDataManagement, cls).__new__",
-            "cls._instance.initialize"
+            "super(PriceDataManagement, cls).__new__"
           ]
         },
         {
@@ -103,14 +103,14 @@
           "docstring": "No description",
           "summary": "initialize",
           "calls": [
-            "OHLCVCache",
             "BybitExchange",
-            "Config.get_psar_time_frame",
-            "Config.get_time_frame",
-            "Config.get_api_key",
-            "Config.get_back_test_mode",
             "Config.get_api_secret",
-            "Logger"
+            "Config.get_psar_time_frame",
+            "Logger",
+            "Config.get_time_frame",
+            "Config.get_back_test_mode",
+            "OHLCVCache",
+            "Config.get_api_key"
           ]
         },
         {
@@ -193,8 +193,8 @@
           "docstring": "close_timeデータを取得するメソッドです。\n\nReturns:\n    int: close_time",
           "summary": "close_timeデータを取得するメソッドです。",
           "calls": [
-            "datetime.fromtimestamp(self.close_time).strftime",
-            "datetime.fromtimestamp"
+            "datetime.fromtimestamp",
+            "datetime.fromtimestamp(self.close_time).strftime"
           ]
         },
         {
@@ -274,8 +274,8 @@
           "docstring": "ボラティリティを計算するメソッドです。\n\nArgs:\n    ohlcv_data (list): OHLCVデータのリスト\n\nReturns:\n    int: ボラティリティ",
           "summary": "ボラティリティを計算するメソッドです。",
           "calls": [
-            "Config.get_volatility_term",
-            "sum"
+            "sum",
+            "Config.get_volatility_term"
           ]
         },
         {
@@ -339,9 +339,9 @@
           "summary": "最新の未確定のOHLCVデータを表示するメソッドです。",
           "calls": [
             "datetime.fromtimestamp(latest_ohlcv_data['close_time']).strftime",
+            "round",
             "datetime.fromtimestamp",
-            "self.logger.log",
-            "round"
+            "self.logger.log"
           ]
         },
         {
@@ -402,25 +402,25 @@
           "docstring": "バックテスト用に価格データとトレードシグナルを更新するメソッドです。",
           "summary": "バックテスト用に価格データとトレードシグナルを更新するメソッドです。",
           "calls": [
+            "self.exchange.fetch_ohlcv",
+            "self.latest_ohlcv_data.append",
+            "start_time.replace",
+            "Config.get_test_initial_max_term",
             "self.get_ohlcv_data_by_time_frame",
             "self.get_back_test_ohlcv_data_by_time_frame",
+            "self.del_ohlcv_data_by_time_frame",
+            "self.__evaluate_pvo",
+            "datetime.strptime",
+            "self.set_ohlcv_data_by_time_frame",
+            "timedelta",
+            "self.calcurate_volatility",
+            "start_time.timestamp",
+            "self.append_ohlcv_data_by_time_frame",
             "self.__evaluate_donchian",
             "Config.get_start_time",
-            "self.__evaluate_pvo",
-            "self.set_ohlcv_data_by_time_frame",
-            "self.latest_ohlcv_data.append",
-            "self.append_ohlcv_data_by_time_frame",
-            "start_time.replace",
             "self.get_back_test_ohlcv_data",
-            "datetime.strptime",
             "Config.get_start_epoch",
-            "start_time.timestamp",
-            "int",
-            "self.calcurate_volatility",
-            "self.exchange.fetch_ohlcv",
-            "Config.get_test_initial_max_term",
-            "self.del_ohlcv_data_by_time_frame",
-            "timedelta"
+            "int"
           ]
         },
         {
@@ -441,18 +441,18 @@
           "docstring": "価格データとトレードシグナルを更新するメソッドです。",
           "summary": "価格データとトレードシグナルを更新するメソッドです。",
           "calls": [
-            "self.exchange.fetch_latest_ohlcv",
-            "self.__evaluate_pvo",
-            "self.del_ohlcv_data_by_time_frame",
             "self.get_ohlcv_data_by_time_frame",
-            "self.set_ohlcv_data_by_time_frame",
-            "self.append_ohlcv_data_by_time_frame",
-            "self.exchange.fetch_ticker",
-            "Config.get_end_epoch",
-            "self.calcurate_volatility",
-            "self.__evaluate_donchian",
             "Config.get_start_epoch",
-            "self.exchange.fetch_ohlcv"
+            "Config.get_end_epoch",
+            "self.set_ohlcv_data_by_time_frame",
+            "self.exchange.fetch_latest_ohlcv",
+            "self.exchange.fetch_ohlcv",
+            "self.exchange.fetch_ticker",
+            "self.calcurate_volatility",
+            "self.del_ohlcv_data_by_time_frame",
+            "self.append_ohlcv_data_by_time_frame",
+            "self.__evaluate_pvo",
+            "self.__evaluate_donchian"
           ]
         },
         {
@@ -473,20 +473,20 @@
           "docstring": "バックテスト用取引データ初期化",
           "summary": "バックテスト用取引データ初期化",
           "calls": [
-            "Config.get_test_initial_max_term",
-            "len",
-            "start_time.timestamp",
-            "Config.get_start_time",
-            "int",
-            "self.cache.get_ohlcv_data_partial",
-            "self.logger.log",
-            "start_time.replace",
-            "Config.get_end_epoch",
-            "timedelta",
-            "self.cache.save_ohlcv_data",
-            "datetime.strptime",
             "Config.get_start_epoch",
-            "self.exchange.fetch_ohlcv"
+            "self.logger.log",
+            "Config.get_end_epoch",
+            "len",
+            "self.cache.get_ohlcv_data_partial",
+            "self.exchange.fetch_ohlcv",
+            "Config.get_start_time",
+            "timedelta",
+            "start_time.timestamp",
+            "int",
+            "self.cache.save_ohlcv_data",
+            "start_time.replace",
+            "Config.get_test_initial_max_term",
+            "datetime.strptime"
           ]
         },
         {
@@ -648,14 +648,14 @@
           "docstring": "（バックテスト用）指定されたtime_frameのデータで、指定されたunix_timeのデータを取得",
           "summary": "（バックテスト用）指定されたtime_frameのデータで、指定されたunix_timeのデータを取得",
           "calls": [
-            "len",
-            "int",
-            "next",
             "target_time.timestamp",
-            "range",
             "datetime.fromtimestamp",
-            "target_time.replace",
-            "float"
+            "len",
+            "next",
+            "float",
+            "range",
+            "int",
+            "target_time.replace"
           ]
         },
         {
@@ -686,10 +686,10 @@
           "docstring": "ドンチャンチャネルに基づくトレードシグナルを評価するメソッドです。\n\n\n\nArgs:\n    ohlcv_data (list): OHLCVデータのリスト\n    price (float): 現在の価格\n\nReturns:\n    str: トレードシグナル ('BUY', 'SELL', 'None')",
           "summary": "ドンチャンチャネルに基づくトレードシグナルを評価するメソッドです。",
           "calls": [
-            "min",
-            "Config.get_donchian_sell_term",
             "Config.get_donchian_buy_term",
-            "max"
+            "min",
+            "max",
+            "Config.get_donchian_sell_term"
           ]
         },
         {
@@ -753,11 +753,11 @@
           "docstring": "Price Volume Oscillator（PVO）を計算するメソッドです。\n\nArgs:\n    ohlcv_data (list): OHLCVデータのリスト\n    volume (float): 出来高\n\nReturns:\n    float: PVOの値",
           "summary": "Price Volume Oscillator（PVO）を計算するメソッドです。",
           "calls": [
+            "Config.get_pvo_s_term",
             "Config.get_pvo_l_term",
-            "max",
-            "self.__calc_ema",
             "volume_data.append",
-            "Config.get_pvo_s_term"
+            "self.__calc_ema",
+            "max"
           ]
         },
         {

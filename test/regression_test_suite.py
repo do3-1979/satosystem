@@ -168,6 +168,80 @@ def test_consistency():
     except Exception as e:
         log_result(test_name, False, str(e))
 
+# ===== 新規テスト項目（修正分） =====
+
+def test_visualizer_dual_pnl():
+    """
+    修正: visualizer.py - PnLグラフに実績PnLとトータルPnL(含む未決済)の両方を表示
+    """
+    test_name = "visualizer_dual_pnl"
+    try:
+        # visualizer.py内で、PnLグラフトレースが2つ生成されるか確認
+        viz_file = os.path.join(WORKSPACE_ROOT, "src/visualizer.py")
+        with open(viz_file, encoding="utf-8") as f:
+            viz_content = f.read()
+        
+        # 必要な実装が含まれているか確認
+        checks = [
+            ("実績PnL ラインの実装", "実績PnL (確定損益)" in viz_content),
+            ("トータルPnL ラインの実装", "トータルPnL (含む未決済)" in viz_content),
+            ("未決済益の計算", "total_pnl_with_unrealized" in viz_content),
+            ("複数トレース追加", "fig.add_trace" in viz_content and viz_content.count("fig.add_trace") >= 2)
+        ]
+        
+        all_passed = all(check[1] for check in checks)
+        details = "; ".join([f"{check[0]}: {'✓' if check[1] else '✗'}" for check in checks])
+        log_result(test_name, all_passed, details)
+    except Exception as e:
+        log_result(test_name, False, str(e))
+
+def test_exit_strategy_v2_integration():
+    """
+    修正: trading_strategy.py - ExitStrategyV2の統合確認
+    """
+    test_name = "exit_strategy_v2_integration"
+    try:
+        ts_file = os.path.join(SRC_DIR, "trading_strategy.py")
+        with open(ts_file, encoding="utf-8") as f:
+            ts_content = f.read()
+        
+        # ExitStrategyV2統合の確認
+        checks = [
+            ("ExitStrategyV2 インポート", "from exit_strategy_v2 import ExitStrategyV2" in ts_content),
+            ("exit_strategy_v2 初期化", "self.exit_strategy_v2 = ExitStrategyV2" in ts_content),
+            ("evaluate_exit_condition 呼び出し", "evaluate_exit_condition" in ts_content),
+            ("エントリー記録実装", "self.entry_record" in ts_content)
+        ]
+        
+        all_passed = all(check[1] for check in checks)
+        details = "; ".join([f"{check[0]}: {'✓' if check[1] else '✗'}" for check in checks])
+        log_result(test_name, all_passed, details)
+    except Exception as e:
+        log_result(test_name, False, str(e))
+
+def test_backtest_script_normalize_option():
+    """
+    修正: backtest_and_visualize.sh - 標準化オプション機能の確認
+    """
+    test_name = "backtest_script_normalize_option"
+    try:
+        script_file = os.path.join(WORKSPACE_ROOT, "backtest_and_visualize.sh")
+        with open(script_file, encoding="utf-8") as f:
+            script_content = f.read()
+        
+        # 標準化オプション機能の確認
+        checks = [
+            ("visualizer.py 呼び出し", "visualizer.py" in script_content),
+            ("True引数の記述", "visualizer.py True" in script_content or "normalize" in script_content),
+            ("python3実行", "python3" in script_content)
+        ]
+        
+        all_passed = all(check[1] for check in checks)
+        details = "; ".join([f"{check[0]}: {'✓' if check[1] else '✗'}" for check in checks])
+        log_result(test_name, all_passed, details)
+    except Exception as e:
+        log_result(test_name, False, str(e))
+
 # 5. 個別ファイルレグレッションテスト
 
 def run_individual_test_modules():
@@ -390,6 +464,11 @@ if __name__ == "__main__":
     test_hot()
     test_class_methods()
     test_consistency()
+    
+    # === 新規テスト項目（修正分） ===
+    test_visualizer_dual_pnl()
+    test_exit_strategy_v2_integration()
+    test_backtest_script_normalize_option()
     
     # 新しい個別ファイルテスト実行
     run_individual_test_modules()

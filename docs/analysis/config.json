@@ -1,7 +1,7 @@
 {
   "metadata": {
     "source_file": "src/config.py",
-    "analyzed_at": "2025-12-07T23:53:29.807642",
+    "analyzed_at": "2025-12-10T01:33:37.816823",
     "python_version": "3.10"
   },
   "file_info": {
@@ -413,9 +413,9 @@
           "docstring": "開始時刻をepoch時間で取得します.\n\nReturns:\n    datetime: 開始時刻 (epoch)",
           "summary": "開始時刻をepoch時間で取得します.",
           "calls": [
-            "datetime.strptime",
             "start_time.timestamp",
-            "int"
+            "int",
+            "datetime.strptime"
           ]
         },
         {
@@ -436,9 +436,9 @@
           "docstring": "終了時刻をepoch時間で取得します.\n\nReturns:\n    datetime: 終了時刻 (epoch)",
           "summary": "終了時刻をepoch時間で取得します.",
           "calls": [
-            "datetime.strptime",
             "end_time.timestamp",
-            "int"
+            "int",
+            "datetime.strptime"
           ]
         },
         {
@@ -724,15 +724,36 @@
             }
           ],
           "return_type": "Any",
-          "docstring": "        ",
-          "summary": "        ",
+          "docstring": "バックテストモードを取得します.\n\nReturns:\n    int: 1=バックテスト, 0=ホットテスト",
+          "summary": "バックテストモードを取得します.",
+          "calls": [
+            "int"
+          ]
+        },
+        {
+          "name": "get_hot_test_dummy_mode",
+          "line": 389,
+          "visibility": "public",
+          "is_classmethod": true,
+          "is_staticmethod": false,
+          "signature": "def get_hot_test_dummy_modecls",
+          "parameters": [
+            {
+              "name": "cls",
+              "type": "Any",
+              "description": "Parameter: cls"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "ホットテスト時の取引モードを取得します.\n\nReturns:\n    int: 1=ダミー取引（ペーパーテスト）, 0=本番取引",
+          "summary": "ホットテスト時の取引モードを取得します.",
           "calls": [
             "int"
           ]
         },
         {
           "name": "__str__",
-          "line": 384,
+          "line": 398,
           "visibility": "private",
           "is_classmethod": false,
           "is_staticmethod": false,
@@ -748,40 +769,40 @@
           "docstring": "コンフィグ内容を可読性よく文字列として表現するメソッドです。",
           "summary": "コンフィグ内容を可読性よく文字列として表現するメソッドです。",
           "calls": [
-            "self.get_volatility_term",
-            "self.get_back_test_mode",
-            "self.get_stop_AF_add",
-            "self.get_pvo_threshold",
-            "self.get_lot_limit_lower",
-            "self.get_stop_AF_max",
-            "self.get_pvo_l_term",
-            "self.get_market",
-            "self.get_start_time",
-            "self.get_end_time",
-            "self.get_bot_operation_cycle",
-            "self.get_risk_percentage",
-            "self.get_leverage",
-            "self.get_market_unit_pair",
-            "self.get_donchian_buy_term",
-            "self.get_account_balance",
-            "self.get_surge_follow_price_ratio",
-            "self.get_pvo_s_term",
-            "self.get_stop_range",
-            "self.get_server_retry_wait",
-            "self.get_start_epoch",
-            "self.get_end_epoch",
-            "self.get_entry_times",
-            "self.get_donchian_sell_term",
-            "self.get_balance_tether_limit",
-            "self.get_stop_AF",
-            "self.get_psar_time_frame",
             "self.get_entry_range",
-            "self.get_time_frame"
+            "self.get_end_epoch",
+            "self.get_pvo_threshold",
+            "self.get_start_time",
+            "self.get_bot_operation_cycle",
+            "self.get_stop_range",
+            "self.get_leverage",
+            "self.get_account_balance",
+            "self.get_balance_tether_limit",
+            "self.get_start_epoch",
+            "self.get_market",
+            "self.get_stop_AF_max",
+            "self.get_end_time",
+            "self.get_pvo_l_term",
+            "self.get_donchian_sell_term",
+            "self.get_psar_time_frame",
+            "self.get_back_test_mode",
+            "self.get_entry_times",
+            "self.get_risk_percentage",
+            "self.get_market_unit_pair",
+            "self.get_stop_AF_add",
+            "self.get_donchian_buy_term",
+            "self.get_surge_follow_price_ratio",
+            "self.get_time_frame",
+            "self.get_pvo_s_term",
+            "self.get_volatility_term",
+            "self.get_stop_AF",
+            "self.get_server_retry_wait",
+            "self.get_lot_limit_lower"
           ]
         },
         {
           "name": "to_dict",
-          "line": 420,
+          "line": 434,
           "visibility": "public",
           "is_classmethod": false,
           "is_staticmethod": false,
@@ -797,35 +818,35 @@
           "docstring": "Convert Config parameters to a dictionary.",
           "summary": "Convert Config parameters to a dictionary.",
           "calls": [
-            "self.get_volatility_term",
-            "self.get_back_test_mode",
-            "self.get_stop_AF_add",
-            "self.get_pvo_threshold",
-            "self.get_lot_limit_lower",
-            "self.get_stop_AF_max",
-            "self.get_pvo_l_term",
-            "self.get_market",
-            "self.get_start_time",
-            "self.get_end_time",
-            "self.get_bot_operation_cycle",
-            "self.get_risk_percentage",
-            "self.get_leverage",
-            "self.get_market_unit_pair",
-            "self.get_donchian_buy_term",
-            "self.get_account_balance",
-            "self.get_surge_follow_price_ratio",
-            "self.get_pvo_s_term",
-            "self.get_stop_range",
-            "self.get_server_retry_wait",
-            "self.get_start_epoch",
-            "self.get_end_epoch",
-            "self.get_entry_times",
-            "self.get_donchian_sell_term",
-            "self.get_balance_tether_limit",
-            "self.get_stop_AF",
-            "self.get_psar_time_frame",
             "self.get_entry_range",
-            "self.get_time_frame"
+            "self.get_end_epoch",
+            "self.get_pvo_threshold",
+            "self.get_start_time",
+            "self.get_bot_operation_cycle",
+            "self.get_stop_range",
+            "self.get_leverage",
+            "self.get_account_balance",
+            "self.get_balance_tether_limit",
+            "self.get_start_epoch",
+            "self.get_market",
+            "self.get_stop_AF_max",
+            "self.get_end_time",
+            "self.get_pvo_l_term",
+            "self.get_donchian_sell_term",
+            "self.get_psar_time_frame",
+            "self.get_back_test_mode",
+            "self.get_entry_times",
+            "self.get_risk_percentage",
+            "self.get_market_unit_pair",
+            "self.get_stop_AF_add",
+            "self.get_donchian_buy_term",
+            "self.get_surge_follow_price_ratio",
+            "self.get_time_frame",
+            "self.get_pvo_s_term",
+            "self.get_volatility_term",
+            "self.get_stop_AF",
+            "self.get_server_retry_wait",
+            "self.get_lot_limit_lower"
           ]
         }
       ]
@@ -835,9 +856,9 @@
   "constants": [],
   "summary": {
     "total_classes": 1,
-    "total_methods": 36,
+    "total_methods": 37,
     "total_functions": 0,
     "total_constants": 0,
-    "lines_of_code": 438
+    "lines_of_code": 449
   }
 }

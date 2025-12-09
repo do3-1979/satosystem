@@ -16,6 +16,7 @@ import zipfile
 import os
 from datetime import datetime, timedelta
 from config import Config
+import sys
 
 
 class Visualizer:
@@ -275,7 +276,23 @@ class Visualizer:
         candles_2h.reset_index(inplace=True)
         return candles_2h
     
-    def create_interactive_chart(self, df, candles_2h, output_html="backtest_visualization.html"):
+    def _normalize_series(self, series):
+        """
+        時系列データを標準化（Z-score正規化）
+        
+        Args:
+            series: pd.Series
+        
+        Returns:
+            pd.Series: 標準化されたシリーズ (平均0、標準偏差1)
+        """
+        mean = series.mean()
+        std = series.std()
+        if std == 0:
+            return series - mean  # 標準偏差0の場合は平均のみ引く
+        return (series - mean) / std
+    
+    def create_interactive_chart(self, df, candles_2h, output_html="backtest_visualization.html", normalize_indicators=True):
         """
         インタラクティブなチャートを生成（3つのサブプロット）
         
@@ -283,11 +300,12 @@ class Visualizer:
             df: 1分足データ (全指標含む)
             candles_2h: 2時間足ローソク足データ
             output_html: 出力HTMLファイルパス
+            normalize_indicators: True=標準化, False=元の値 (デフォルト: True)
         """
         # サブプロット: 4行
         # Row 1: 価格系 (ローソク足 + Donchian + PSAR)
         # Row 2: ボリューム (Volume Bar)
-        # Row 3: テクニカル指標系 (Volatility + PVO)
+        # Row 3: テクニカル指標系 (Volatility / PVO / ADX)
         # Row 4: 累積損益 (PnL)
         fig = make_subplots(
             rows=4, cols=1,
@@ -296,7 +314,7 @@ class Visualizer:
             row_heights=[0.4, 0.15, 0.25, 0.2],
             subplot_titles=("価格チャート (2h足ローソク + Donchian + PSAR)", 
                            "ボリューム (Volume)", 
-                           "テクニカル指標 (Volatility / PVO)", 
+                           "テクニカル指標 (Volatility / PVO / ADX)", 
                            "累積損益 (PnL)")
         )
         
@@ -583,12 +601,15 @@ class Visualizer:
         
         # Volatility (ボラティリティ)
         if 'volatility' in df.columns:
+            vol_data = df['volatility'].copy()
+            if normalize_indicators:
+                vol_data = self._normalize_series(vol_data)
             fig.add_trace(
                 go.Scatter(
                     x=df['real_time_dt'],
-                    y=df['volatility'],
+                    y=vol_data,
                     mode='lines',
-                    name="Volatility",
+                    name="Volatility (標準化)" if normalize_indicators else "Volatility",
                     line=dict(color='purple', width=1),
                     visible=True
                 ),
@@ -597,47 +618,88 @@ class Visualizer:
         
         # PVO (Percentage Volume Oscillator)
         if 'pvo_val' in df.columns:
+            pvo_data = df['pvo_val'].copy()
+            if normalize_indicators:
+                pvo_data = self._normalize_series(pvo_data)
             fig.add_trace(
                 go.Scatter(
                     x=df['real_time_dt'],
-                    y=df['pvo_val'],
+                    y=pvo_data,
                     mode='lines',
-                    name="PVO",
+                    name="PVO (標準化)" if normalize_indicators else "PVO",
                     line=dict(color='cyan', width=1),
                     visible=True
                 ),
                 row=3, col=1
             )
         elif 'pvo' in df.columns:
+            pvo_data = df['pvo'].copy()
+            if normalize_indicators:
+                pvo_data = self._normalize_series(pvo_data)
             fig.add_trace(
                 go.Scatter(
                     x=df['real_time_dt'],
-                    y=df['pvo'],
+                    y=pvo_data,
                     mode='lines',
-                    name="PVO",
+                    name="PVO (標準化)" if normalize_indicators else "PVO",
                     line=dict(color='cyan', width=1),
                     visible=True
                 ),
                 row=3, col=1
             )
         
+        # Row 3: ADX (テクニカル指標系)
+        if 'adx' in df.columns:
+            adx_data = df['adx'].copy()
+            if normalize_indicators:
+                adx_data = self._normalize_series(adx_data)
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=adx_data,
+                    mode='lines',
+                    name="ADX (標準化)" if normalize_indicators else "ADX",
+                    line=dict(color='orange', width=1.5),
+                    visible=True
+                ),
+                row=3, col=1
+            )
+        
         # === Row 4: 累積損益 (PnL) ===
+        # 実績PnL (確定損益)
         if 'total_profit_and_loss' in df.columns:
             fig.add_trace(
                 go.Scatter(
                     x=df['real_time_dt'],
                     y=df['total_profit_and_loss'],
                     mode='lines',
-                    name="累積損益 (PnL)",
-                    line=dict(color='darkblue', width=2),
+                    name="実績PnL (確定損益)",
+                    line=dict(color='darkblue', width=2.5),
                     fill='tozeroy',
                     fillcolor='rgba(0,100,255,0.1)',
                     visible=True
                 ),
                 row=4, col=1
             )
-            # PnLゼロライン
-            fig.add_hline(y=0, line_dash="dash", line_color="gray", row=4, col=1)
+        
+        # 未決済益 (みなし損益) を合算したPnL
+        if 'total_profit_and_loss' in df.columns and 'profit_and_loss' in df.columns:
+            # 実績PnL + みなし損益 = トータルPnL
+            df['total_pnl_with_unrealized'] = df['total_profit_and_loss'] + df['profit_and_loss']
+            fig.add_trace(
+                go.Scatter(
+                    x=df['real_time_dt'],
+                    y=df['total_pnl_with_unrealized'],
+                    mode='lines',
+                    name="トータルPnL (含む未決済)",
+                    line=dict(color='orange', width=2, dash='dash'),
+                    visible=True
+                ),
+                row=4, col=1
+            )
+        
+        # PnLゼロライン
+        fig.add_hline(y=0, line_dash="dash", line_color="gray", row=4, col=1)
         
         # レイアウト設定
         fig.update_layout(
@@ -658,7 +720,8 @@ class Visualizer:
         # Y軸ラベル
         fig.update_yaxes(title_text="価格 (USD)", row=1, col=1)
         fig.update_yaxes(title_text="ボリューム", row=2, col=1)
-        fig.update_yaxes(title_text="テクニカル指標値", row=3, col=1)
+        y_label_row3 = "テクニカル指標値 (標準化)" if normalize_indicators else "テクニカル指標値"
+        fig.update_yaxes(title_text=y_label_row3, row=3, col=1)
         fig.update_yaxes(title_text="累積損益 (USD)", row=4, col=1)
         
         # HTML出力
@@ -668,7 +731,7 @@ class Visualizer:
         return fig
     
     def visualize_backtest(self, log_directory="logs", output_html="report/backtest_visualization.html", 
-                          start_time=None, end_time=None):
+                          start_time=None, end_time=None, normalize_indicators=True):
         """
         バックテスト結果を可視化 (メインエントリポイント)
         
@@ -679,6 +742,7 @@ class Visualizer:
             output_html: 出力HTMLファイル名（デフォルト: report/backtest_visualization.html）
             start_time: 表示開始時刻 (datetime or str "%Y/%m/%d %H:%M")
             end_time: 表示終了時刻 (datetime or str "%Y/%m/%d %H:%M")
+            normalize_indicators: True=標準化, False=元の値 (デフォルト: True)
         """
         # デフォルト期間はConfigから取得
         if start_time is None:
@@ -724,7 +788,7 @@ class Visualizer:
         
         # チャート生成（表示用データ + 計算用データ for 指標）
         print("Generating interactive chart...")
-        self.create_interactive_chart(df_display, candles_2h_display, output_html)
+        self.create_interactive_chart(df_display, candles_2h_display, output_html, normalize_indicators=normalize_indicators)
         
         print("Done!")
 
@@ -736,6 +800,15 @@ if __name__ == "__main__":
     log_directory = "logs"
     output_html = "../report/backtest_visualization.html"
     
+    # コマンドライン引数で標準化の ON/OFF を制御
+    # デフォルト: True (標準化ON)
+    # 使用方法: python3 visualizer.py False
+    normalize_indicators = True
+    if len(sys.argv) > 1:
+        arg = sys.argv[1].lower()
+        if arg in ['false', '0', 'no', 'off']:
+            normalize_indicators = False
+    
     # 出力ディレクトリを確保
     output_dir = os.path.dirname(output_html)
     if output_dir and not os.path.exists(output_dir):
@@ -743,11 +816,15 @@ if __name__ == "__main__":
     
     print("\n🎬 バックテスト可視化を開始します")
     print(f"📂 ログディレクトリ: {log_directory}")
+    print(f"📊 指標標準化: {'ON (Volatility/PVO/ADXを正規化)' if normalize_indicators else 'OFF (元の値)'}")
+    if not normalize_indicators:
+        print(f"   - 標準化ON: python3 visualizer.py True")
     
     try:
         visualizer.visualize_backtest(
             log_directory=log_directory,
-            output_html=output_html
+            output_html=output_html,
+            normalize_indicators=normalize_indicators
         )
         
         abs_path = os.path.abspath(output_html)

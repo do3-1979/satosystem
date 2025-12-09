@@ -1,11 +1,11 @@
 {
   "metadata": {
-    "source_file": "src/trading_strategy.py",
-    "analyzed_at": "2025-12-10T01:33:38.410960",
+    "source_file": "src/trading_strategy_backup_broken.py",
+    "analyzed_at": "2025-12-10T01:33:38.427911",
     "python_version": "3.10"
   },
   "file_info": {
-    "path": "src/trading_strategy.py",
+    "path": "src/trading_strategy_backup_broken.py",
     "description": "Source code structure analysis"
   },
   "imports": [
@@ -176,6 +176,7 @@
           "summary": "エグジット条件を評価し、ポジションをクローズするかどうかを決定します。",
           "calls": [
             "self.price_data_management.get_latest_ohlcv",
+            "self.trade_decision.get",
             "self.logger.log",
             "self.exit_strategy_v2.evaluate_exit_condition",
             "self.risk_manager.get_stop_price",
@@ -188,7 +189,7 @@
         },
         {
           "name": "make_trade_decision",
-          "line": 228,
+          "line": 239,
           "visibility": "public",
           "is_classmethod": false,
           "is_staticmethod": false,
@@ -213,7 +214,7 @@
         },
         {
           "name": "__str__",
-          "line": 246,
+          "line": 257,
           "visibility": "private",
           "is_classmethod": false,
           "is_staticmethod": false,
@@ -239,6 +240,6 @@
     "total_methods": 7,
     "total_functions": 0,
     "total_constants": 0,
-    "lines_of_code": 188
+    "lines_of_code": 194
   }
 }

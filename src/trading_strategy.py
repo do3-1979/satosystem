@@ -16,6 +16,7 @@ from config import Config
 from price_data_management import PriceDataManagement
 from risk_management import RiskManagement
 from portfolio import Portfolio
+from exit_strategy_v2 import ExitStrategyV2
 
 class TradingStrategy:
     """
@@ -38,6 +39,8 @@ class TradingStrategy:
         self.price_data_management = price_data_management
         self.risk_manager = risk_manager
         self.portfolio = portfolio
+        self.exit_strategy_v2 = ExitStrategyV2()  # ExitStrategyV2を初期化
+        self.entry_record = {}  # エントリー時の指標情報を記録
         self.initialize_trade_decision()
  
     def initialize_trade_decision(self):
@@ -77,6 +80,16 @@ class TradingStrategy:
         # エントリ条件がない場合はNONEで初期化する
         self.trade_decision["side"] = side
         self.trade_decision["decision"] = decision
+        
+        # エントリー時の指標を記録（ExitStrategyV2用）
+        if decision == "ENTRY":
+            current_price = self.price_data_management.get_latest_ohlcv()
+            self.entry_record = {
+                'entry_price': current_price.get('close_price', 0),
+                'entry_adx': self.risk_manager.get_adx(),
+                'entry_pvo': current_price.get('pvo_val', 0) or current_price.get('pvo', 0),
+                'entry_time': current_price.get('real_time_dt'),
+            }
             
         return
     
@@ -121,54 +134,95 @@ class TradingStrategy:
     def evaluate_exit(self):
         """
         エグジット条件を評価し、ポジションをクローズするかどうかを決定します。
-
+        ハイブリッド方式：
+        1. 従来のストップロス判定（優先度最高）
+        2. ExitStrategyV2（複合シグナル）で補助的に判定
         """
         side = 'NONE'
         decision = 'NONE'
-        position_side = 'NONE'
-
-        # ストップ値取得
-        stop_price = self.risk_manager.get_stop_price()
+        exit_reason = 'NONE'
         
-        # 現在値取得
-        price = self.price_data_management.get_latest_ohlcv()
-        high_price = price['high_price']
-        low_price = price['low_price']
-        close_price = price['close_price']
-        
-        #-------------------------------------------------------
-        # 現在値とストップ値比較
-        #-------------------------------------------------------
-        # 2時間足ベースのストップ判定（高速化＆正確性向上）
-        # BUY: 2h足の安値 <= stop でストップ成立（スリッページ -0.5%）
-        # SELL: 2h足の高値 >= stop でストップ成立（スリッページ +0.5%）
         position_side = self.portfolio.get_position_side()
-        executed_price = None
-
+        
+        # ポジションがない場合はスキップ
+        if position_side == 'NONE':
+            self.trade_decision["side"] = side
+            self.trade_decision["decision"] = decision
+            return
+        
+        # 現在のOHLCVと指標を取得
+        current_ohlcv = self.price_data_management.get_latest_ohlcv()
+        
+        #-------------------------------------------------------
+        # 優先度1：従来のストップロス判定
+        #-------------------------------------------------------
+        stop_price = self.risk_manager.get_stop_price()
+        high_price = current_ohlcv.get('high_price', 0)
+        low_price = current_ohlcv.get('low_price', 0)
+        close_price = current_ohlcv.get('close_price', 0)
+        
         if position_side == "BUY":
             if low_price <= stop_price:
                 executed_price = stop_price * 0.995  # スリッページ考慮
-                self.logger.log(f"[条件判定:EXIT] 2h安値 {low_price:.2f} がストップ値 {stop_price:.2f} を割り込みました (実行価格 {executed_price:.2f})")
+                self.logger.log(f"[条件判定:EXIT] 従来型ストップロス: 2h安値 {low_price:.2f} がストップ値 {stop_price:.2f} を割り込みました")
                 side = "SELL"
                 decision = "EXIT"
+                exit_reason = "STOP_LOSS"
                 self.trade_decision["side"] = side
                 self.trade_decision["decision"] = decision
+                self.trade_decision["exit_reason"] = exit_reason
                 self.trade_decision["exec_price"] = executed_price
-
+                return
+        
         elif position_side == "SELL":
             if high_price >= stop_price:
                 executed_price = stop_price * 1.005  # スリッページ考慮
-                self.logger.log(f"[条件判定:EXIT] 2h高値 {high_price:.2f} がストップ値 {stop_price:.2f} を超過しました (実行価格 {executed_price:.2f})")
+                self.logger.log(f"[条件判定:EXIT] 従来型ストップロス: 2h高値 {high_price:.2f} がストップ値 {stop_price:.2f} を超過しました")
                 side = "BUY"
                 decision = "EXIT"
+                exit_reason = "STOP_LOSS"
                 self.trade_decision["side"] = side
                 self.trade_decision["decision"] = decision
+                self.trade_decision["exit_reason"] = exit_reason
                 self.trade_decision["exec_price"] = executed_price
-
+                return
+        
         #-------------------------------------------------------
-        # ADXと利益からの判定
+        # 優先度2：ExitStrategyV2で補助判定
         #-------------------------------------------------------
-
+        try:
+            position_info = {
+                'entry_price': self.portfolio.entry_price if hasattr(self.portfolio, 'entry_price') else 0,
+                'quantity': self.portfolio.get_position_quantity(),
+                'side': position_side,
+            }
+            
+            exit_decision = self.exit_strategy_v2.evaluate_exit_condition(
+                current_ohlcv=current_ohlcv,
+                position_info=position_info,
+                entry_info=self.entry_record
+            )
+            
+            if exit_decision.get('should_exit', False):
+                decision = "EXIT"
+                exit_reason = exit_decision.get('exit_reason', 'UNKNOWN')
+                stage = exit_decision.get('stage', 'N/A')
+                
+                if position_side == "BUY":
+                    side = "SELL"
+                elif position_side == "SELL":
+                    side = "BUY"
+                
+                self.logger.log(f"[条件判定:EXIT] ExitStrategyV2: {exit_reason} (Stage: {stage})")
+        
+        except Exception as e:
+            # ExitStrategyV2でエラーが発生しても、従来の判定は完了している
+            self.logger.log(f"[WARNING] ExitStrategyV2エラー: {e}")
+        
+        self.trade_decision["side"] = side
+        self.trade_decision["decision"] = decision
+        self.trade_decision["exit_reason"] = exit_reason
+        
         return
 
     def make_trade_decision(self):
