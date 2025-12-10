@@ -126,6 +126,73 @@ Adopt internal `Side` enum (BUY, SELL, NONE) for all decision & portfolio intera
 - Network/API retry: basic loop with sleep; needs max-attempt & exponential backoff.
 - API keys sourced from config; avoid logging secrets.
 
+## Regime-Adaptive Trading Strategy (NO.20)
+
+**背景**: 2h / 4h でのトレンド検出精度は 65-75% であり、通常の PSAR ベーストレードでは box 相場で損失が増加する傾向が確認された（31.8% の取引が box 相場で、win rate 17.9%）。
+
+**設計方針**:
+
+### 1. レジーム判定（2024年12月実装予定）
+- **指標**: ADX (14/21/50-period multi-timeframe) + 移動平均 (50/200) + 4h timeframe 検証
+- **精度目標**: 65-75% → 80-85% (4h MA 併用時)
+- **レジーム分類**:
+  - **Strong Trend**: ADX ≥ 25 & MA order confirmed
+  - **Weak Trend**: 20 ≤ ADX < 25
+  - **Box**: ADX < 20 & Donchian 範囲内収束
+
+**実装箇所**: `src/risk_management.py` の `get_adx()` メソッド拡張、`src/trading_strategy.py` へレジーム判定フラグ追加。
+
+### 2. Pattern A: Box 相場回避（実装: 1日, 2024年12月中旬）
+**効果**: 267 trades avoidable → $256.35 loss prevented, +2.2% win rate improvement
+
+**ロジック**:
+```python
+if regime == 'BOX':
+    return None  # Skip entry signal
+```
+- 実装: `evaluate_entry()` / `evaluate_add()` 最初の判定
+- リスク低: PSAR ロジック全体を削除しない、flag ベースで soft block
+- 検証期間: 回帰テスト suite で即座に 100% PASS 確認可能
+
+**実装チェックリスト**:
+- [ ] `RiskManagement.get_regime_state()` メソッド追加
+- [ ] `TradingStrategy.is_regime_suitable()` メソッド追加
+- [ ] `trading_strategy.py` ENTRY/ADD 評価の冒頭で regime check
+- [ ] 回帰テスト (54 tests) pass 確認
+
+### 3. Pattern B: Donchian Reversal（バリデーション: 2-4週, 2025年1月）
+**目的**: Box 相場での利益確保 (Expected win rate: 60%, Avg PnL: $15.00)
+
+**ロジック**:
+- Donchian 20-period の Upper/Lower band 到達時に reverse entry
+- 例: Upper band 到達 → SELL signal, Lower band 到達 → BUY signal
+- PSAR stop は Donchian band の外側に配置
+
+**制約**:
+- regime == 'BOX' のみ適用
+- 複数ポジション（averaging）は Pattern C より回避（リスク HIGH）
+
+### 4. Composite Trend Analyzer（実装: 2-3週, 2025年1月中旬）
+**多時間軸統合**:
+- 2h: 短期トレンド確認（現行）
+- 4h: 中期トレンド確認（新規）
+- 指標加重: ADX (40%) + MA order (30%) + 4h confirmation (30%)
+- 目標精度: 80-85%
+
+**実装**: `src/price_data_management.py` へ `MultiTimeframeAnalyzer` class 追加
+
+### 5. Box Market Exit Strategy 改良（実装: 3-4週, 2025年1月下旬）
+**現行の課題**: PSAR + ATR surge で Box 相場での固定ストップが大きい
+
+**改良案**:
+- Box 相場: Donchian band (20-period) を TP/SL 基準に変更
+- 通常相場: 現行 PSAR + ATR surge 継続
+- Breakout 検出: ADX < 20 → ADX ≥ 25 に急変時、Box を exit
+
+**テスト**: 回帰テスト suite で Pattern A + B の相互作用確認
+
+---
+
 ## Future Separation
 1. `IndicatorService` for PSAR, ADX, Donchian, PVO
 2. `DataSource` abstraction (LiveDataSource / BacktestDataSource)
@@ -133,6 +200,8 @@ Adopt internal `Side` enum (BUY, SELL, NONE) for all decision & portfolio intera
 
 ---
 This document complements `Readme.md` and analysis files; update incrementally.
+
+**Note**: Detailed analysis documents for NO.20 are maintained in `report_tmp/no20_regime_analysis/` (ADX_REGIME_ANALYSIS.md, ADAPTIVE_REGIME_QA.md, COMBINED_TREND_ANALYSIS.md) and are Git-ignored per DEVELOPMENT_RULES.md.
 
 ## 現在の gen2 状態（8e6e543 コミット時）
 - `src/` 以下にボット、戦略、管理、出力のロジックが集約されており、`bot.py` を中心にループ／注文／ログ／可視化が実行される。
