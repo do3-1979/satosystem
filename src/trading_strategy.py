@@ -57,33 +57,18 @@ class TradingStrategy:
         1. ポジションを保有していない
         2. ドンチャンチャネルブレイクが発生
         3. PVOが閾値範囲内
-        4. [Phase 1.5] 2-tier ADX filter:
-           - ADX < 20 (BOX): エントリースキップ
-           - 20 ≤ ADX < 25 (WEAK_TREND): 50% サイズで取引
-           - ADX ≥ 25 (STRONG_TREND): 通常サイズで取引
+        4. [Phase 1] ADX フィルタ: ADX < 25 の場合はエントリースキップ
         """
         side = 'NONE'
         decision = 'NONE'
 
-        # [Phase 1.5] 2-tier レジーム判定：ADXでトレンド強度を確認
+        # [Phase 1] ADX < 25 の場合はエントリーをスキップ
         adx = self.risk_manager.get_adx()
-        regime = 'STRONG_TREND'
-        position_size_ratio = 1.0  # 通常は100%
-        
-        if adx < 20:
-            # BOX 市場 → エントリースキップ
-            regime = 'BOX'
-            self.logger.log(f"[条件判定:ENTRY] Regime: BOX (ADX={adx:.1f} < 20) → Entry SKIP")
+        if adx < 25:
+            self.logger.log(f"[条件判定:ENTRY] ADX フィルタ: ADX={adx:.1f} < 25 → Entry SKIP")
             self.trade_decision["side"] = side
             self.trade_decision["decision"] = decision
-            self.trade_decision["regime"] = regime
-            self.trade_decision["position_size_ratio"] = position_size_ratio
             return
-        elif 20 <= adx < 25:
-            # WEAK_TREND → 50% サイズで取引
-            regime = 'WEAK_TREND'
-            position_size_ratio = 0.5
-            self.logger.log(f"[条件判定:ENTRY] Regime: WEAK_TREND (ADX={adx:.1f}, 20-25) → 50% Position Size")
 
         # シグナルをチェック
         signals = self.price_data_management.get_signals()
@@ -93,19 +78,17 @@ class TradingStrategy:
             # ドンチャンチャネルブレイク発生
             if signals["donchian"]["signal"] == True:
                 if signals["donchian"]["side"] == "BUY":
-                    self.logger.log(f"[条件判定:ENTRY] BUYのエントリー条件成立しました (ADX={adx:.1f}, Regime={regime})")
+                    self.logger.log(f"[条件判定:ENTRY] BUYのエントリー条件成立しました (ADX={adx:.1f})")
                     side = "BUY"
                     decision = "ENTRY"
                 elif signals["donchian"]["side"] == "SELL":
-                    self.logger.log(f"[条件判定:ENTRY] SELLのエントリー条件成立しました (ADX={adx:.1f}, Regime={regime})")
+                    self.logger.log(f"[条件判定:ENTRY] SELLのエントリー条件成立しました (ADX={adx:.1f})")
                     side = "SELL"
                     decision = "ENTRY"
 
         # エントリ条件がない場合はNONEで初期化する
         self.trade_decision["side"] = side
         self.trade_decision["decision"] = decision
-        self.trade_decision["regime"] = regime if decision == 'ENTRY' else 'NONE'
-        self.trade_decision["position_size_ratio"] = position_size_ratio
         
         # エントリー時の指標を記録（ExitStrategyV2用）
         if decision == "ENTRY":
@@ -126,7 +109,7 @@ class TradingStrategy:
         条件:
         1. ポジションを保有している
         2. 追加レンジ幅が前回取得値を超過
-        3. [Phase 1] Weak Trend (20 <= ADX < 25) では averaging 無効化
+        3. [Phase 1] ADX が 20-25 の Weak Trend 時は averaging を禁止
         """
         side = 'NONE'
         decision = 'NONE'
@@ -135,10 +118,12 @@ class TradingStrategy:
         position_side = self.portfolio.get_position_side()
         
         if position_side != 'NONE':
-            # [Phase 1] Weak Trend での averaging 無効化
+            # [Phase 1] ADX が 20-25 の Weak Trend では平均化禁止
             adx = self.risk_manager.get_adx()
             if 20 <= adx < 25:
-                self.logger.log(f"[条件判定:ADD] Weak Trend (ADX={adx:.1f}) → Averaging DISABLED")
+                self.logger.log(f"[条件判定:ADD] ADX フィルタ: ADX={adx:.1f} (20-25 Weak Trend) → Averaging SKIP")
+                self.trade_decision["side"] = side
+                self.trade_decision["decision"] = decision
                 return
             
             # 追加レンジ幅を取得
@@ -149,7 +134,7 @@ class TradingStrategy:
             # 価格がエントリー方向に基準レンジ分だけ進んだか判定する
             # TODO rangeはprice x ボラ x 2の値。妥当？
             if position_side == "BUY" and (price - last_entry_price) > range:
-                self.logger.log(f"[条件判定:ADD] 価格変動 {(price - last_entry_price):.2f} が変動幅 {range:.2f} を超過しました")
+                self.logger.log(f"[条件判定:ADD] 価格変動 {(price - last_entry_price):.2f} が変動幅 {range:.2f} を超過しました (ADX={adx:.1f})")
                 side = "BUY"
                 decision = "ADD"
                 self.trade_decision["side"] = side
@@ -275,79 +260,6 @@ class TradingStrategy:
             self.evaluate_exit()
  
         return self.trade_decision
-    
-    def _evaluate_box_market_entry(self):
-        """
-        Box市場 (ADX < 20) 向けの平均回帰エントリーシグナル生成
-        
-        Donchian Channel 逆張り + Bollinger Bands補助戦略
-        
-        Returns:
-            dict: {'signal': 'LONG'/'SHORT', 'reason': 'Donchian_High_Touch'等, 'position_size_ratio': 0.6}
-                  または None (エントリーなし)
-        """
-        current_price = self.price_data_management.get_ticker()
-        
-        # Donchian Channel取得
-        donchian_high = self.risk_manager.get_donchian_high(period=20)
-        donchian_low = self.risk_manager.get_donchian_low(period=20)
-        
-        # 逆張りシグナル判定：Donchian 極値タッチ (98%/102% マージン付き)
-        if current_price >= donchian_high * 0.98:
-            # 高値タッチ → 売りシグナル (下向き平均回帰期待)
-            return {
-                'signal': 'SELL',
-                'reason': 'Donchian_High_Touch',
-                'position_size_ratio': 0.6
-            }
-        
-        elif current_price <= donchian_low * 1.02:
-            # 安値タッチ → 買いシグナル (上向き平均回帰期待)
-            return {
-                'signal': 'BUY',
-                'reason': 'Donchian_Low_Touch',
-                'position_size_ratio': 0.6
-            }
-        
-        # Donchian シグナルなし → Bollinger Bands 補助シグナル確認
-        bb_signal, reason, ratio = self._evaluate_bollinger_signal()
-        if bb_signal:
-            return {
-                'signal': bb_signal,
-                'reason': reason,
-                'position_size_ratio': ratio
-            }
-        
-        # どちらのシグナルもなし
-        return None
-    
-    def _evaluate_bollinger_signal(self):
-        """
-        Bollinger Bands 2σ 外部接触での逆張りシグナル生成 (Donchian補助用)
-        
-        Returns:
-            tuple: (signal, reason, position_size_ratio)
-                   signal: 'LONG'/'SHORT' または None
-                   reason: 'BB_Upper_Touch' など
-                   position_size_ratio: 0.4 (保守的)
-        """
-        current_price = self.price_data_management.get_ticker()
-        
-        # Bollinger Bands取得
-        bb_upper = self.risk_manager.get_bb_upper(period=20, sigma=2.0)
-        bb_lower = self.risk_manager.get_bb_lower(period=20, sigma=2.0)
-        
-        # BB 2σ外接触での逆張り
-        if current_price > bb_upper:
-            # 上限外 → 売りシグナル
-            return ('SELL', 'BB_Upper_Touch', 0.4)
-        
-        elif current_price < bb_lower:
-            # 下限外 → 買いシグナル
-            return ('BUY', 'BB_Lower_Touch', 0.4)
-        
-        # シグナルなし
-        return (None, None, 0)
     
     def __str__(self):
         return f"Trade Decision: Decision = {self.trade_decision['decision']}, Side = {self.trade_decision['side']}, Order Type = {self.trade_decision['order_type']}"
