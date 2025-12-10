@@ -57,9 +57,21 @@ class TradingStrategy:
         1. ポジションを保有していない
         2. ドンチャンチャネルブレイクが発生
         3. PVOが閾値範囲内
+        4. [Phase 1] ADX >= 25 (トレンド強度確認)
         """
         side = 'NONE'
         decision = 'NONE'
+
+        # [Phase 1] レジーム判定：ADXでトレンド強度を確認
+        adx = self.risk_manager.get_adx()
+        if adx < 25:
+            # トレンド不十分 → エントリースキップ
+            regime = 'BOX' if adx < 20 else 'WEAK_TREND'
+            self.logger.log(f"[条件判定:ENTRY] Regime: {regime} (ADX={adx:.1f} < 25) → Entry SKIP")
+            self.trade_decision["side"] = side
+            self.trade_decision["decision"] = decision
+            self.trade_decision["regime"] = regime
+            return
 
         # シグナルをチェック
         signals = self.price_data_management.get_signals()
@@ -69,17 +81,18 @@ class TradingStrategy:
             # ドンチャンチャネルブレイク発生
             if signals["donchian"]["signal"] == True:
                 if signals["donchian"]["side"] == "BUY":
-                    self.logger.log(f"[条件判定:ENTRY] BUYのエントリー条件成立しました")
+                    self.logger.log(f"[条件判定:ENTRY] BUYのエントリー条件成立しました (ADX={adx:.1f})")
                     side = "BUY"
                     decision = "ENTRY"
                 elif signals["donchian"]["side"] == "SELL":
-                    self.logger.log(f"[条件判定:ENTRY] SELLのエントリー条件成立しました")
+                    self.logger.log(f"[条件判定:ENTRY] SELLのエントリー条件成立しました (ADX={adx:.1f})")
                     side = "SELL"
                     decision = "ENTRY"
 
         # エントリ条件がない場合はNONEで初期化する
         self.trade_decision["side"] = side
         self.trade_decision["decision"] = decision
+        self.trade_decision["regime"] = 'STRONG_TREND' if decision == 'ENTRY' else 'NONE'
         
         # エントリー時の指標を記録（ExitStrategyV2用）
         if decision == "ENTRY":
@@ -100,6 +113,7 @@ class TradingStrategy:
         条件:
         1. ポジションを保有している
         2. 追加レンジ幅が前回取得値を超過
+        3. [Phase 1] Weak Trend (20 <= ADX < 25) では averaging 無効化
         """
         side = 'NONE'
         decision = 'NONE'
@@ -108,6 +122,12 @@ class TradingStrategy:
         position_side = self.portfolio.get_position_side()
         
         if position_side != 'NONE':
+            # [Phase 1] Weak Trend での averaging 無効化
+            adx = self.risk_manager.get_adx()
+            if 20 <= adx < 25:
+                self.logger.log(f"[条件判定:ADD] Weak Trend (ADX={adx:.1f}) → Averaging DISABLED")
+                return
+            
             # 追加レンジ幅を取得
             range = self.risk_manager.get_add_range()
             # 前回取得値を取得
