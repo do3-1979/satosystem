@@ -71,22 +71,9 @@ class TradingStrategy:
         position_size_ratio = 1.0  # 通常は100%
         
         if adx < 20:
-            # BOX 市場 → Donchian逆張り戦略に切り替え
+            # BOX 市場 → エントリースキップ
             regime = 'BOX'
-            self.logger.log(f"[条件判定:ENTRY] Regime: BOX (ADX={adx:.1f} < 20) → Box Market Mean Reversion Strategy")
-            box_result = self._evaluate_box_market_entry()
-            if box_result:
-                side = box_result['signal']
-                decision = 'ENTRY'
-                position_size_ratio = box_result['position_size_ratio']
-                self.logger.log(f"[BOX市場] {box_result['reason']}: {side} Signal (Size Ratio: {position_size_ratio})")
-                self.entry_record = {
-                    'entry_price': self.price_data_management.get_ticker(),
-                    'entry_adx': adx,
-                    'entry_regime': 'BOX',
-                    'entry_reason': box_result['reason'],
-                }
-            
+            self.logger.log(f"[条件判定:ENTRY] Regime: BOX (ADX={adx:.1f} < 20) → Entry SKIP")
             self.trade_decision["side"] = side
             self.trade_decision["decision"] = decision
             self.trade_decision["regime"] = regime
