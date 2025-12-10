@@ -123,6 +123,166 @@ class RiskManagement:
     def get_adx_bear(self):
         return self.adx_bear
 
+    def get_donchian_high(self, period=20):
+        """
+        Donchian Channel の高値を取得 (N期間の最高値)
+        
+        Args:
+            period (int): 期間（デフォルト 20）
+        
+        Returns:
+            float: Donchian高値、データ不足時は現在値
+        """
+        main_time_frame = '1h'
+        
+        # バックテストモードの判定
+        back_test_mode = False
+        try:
+            from config import Config
+            back_test_mode = Config.get_back_test_mode() == 1
+        except:
+            pass
+        
+        if back_test_mode:
+            ohlcv_data = self.price_data_management.get_back_test_ohlcv_data_by_time_frame(main_time_frame)
+        else:
+            ohlcv_data = self.price_data_management.get_ohlcv_data_by_time_frame(main_time_frame)
+        
+        if not ohlcv_data or len(ohlcv_data) < period:
+            return self.price_data_management.get_ticker()
+        
+        # 高値抽出（辞書形式対応）
+        highs = []
+        for candle in ohlcv_data[-period:]:
+            if isinstance(candle, dict):
+                highs.append(candle.get('high_price', candle.get('high', 0)))
+            else:
+                highs.append(candle[2] if len(candle) > 2 else 0)
+        
+        return max(highs) if highs else self.price_data_management.get_ticker()
+    
+    def get_donchian_low(self, period=20):
+        """
+        Donchian Channel の安値を取得 (N期間の最安値)
+        
+        Args:
+            period (int): 期間（デフォルト 20）
+        
+        Returns:
+            float: Donchian安値、データ不足時は現在値
+        """
+        main_time_frame = '1h'
+        
+        # バックテストモードの判定
+        back_test_mode = False
+        try:
+            from config import Config
+            back_test_mode = Config.get_back_test_mode() == 1
+        except:
+            pass
+        
+        if back_test_mode:
+            ohlcv_data = self.price_data_management.get_back_test_ohlcv_data_by_time_frame(main_time_frame)
+        else:
+            ohlcv_data = self.price_data_management.get_ohlcv_data_by_time_frame(main_time_frame)
+        
+        if not ohlcv_data or len(ohlcv_data) < period:
+            return self.price_data_management.get_ticker()
+        
+        # 安値抽出（辞書形式対応）
+        lows = []
+        for candle in ohlcv_data[-period:]:
+            if isinstance(candle, dict):
+                lows.append(candle.get('low_price', candle.get('low', 0)))
+            else:
+                lows.append(candle[3] if len(candle) > 3 else 0)
+        
+        return min(lows) if lows else self.price_data_management.get_ticker()
+    
+    def get_bb_upper(self, period=20, sigma=2.0):
+        """
+        Bollinger Bands の上限を取得
+        
+        Args:
+            period (int): 期間（デフォルト 20）
+            sigma (float): シグマ倍数（デフォルト 2.0）
+        
+        Returns:
+            float: BB上限値
+        """
+        main_time_frame = '1h'
+        
+        # バックテストモードの判定
+        back_test_mode = False
+        try:
+            from config import Config
+            back_test_mode = Config.get_back_test_mode() == 1
+        except:
+            pass
+        
+        if back_test_mode:
+            ohlcv_data = self.price_data_management.get_back_test_ohlcv_data_by_time_frame(main_time_frame)
+        else:
+            ohlcv_data = self.price_data_management.get_ohlcv_data_by_time_frame(main_time_frame)
+        
+        if not ohlcv_data or len(ohlcv_data) < period:
+            return self.price_data_management.get_ticker()
+        
+        # 終値抽出（辞書形式対応）
+        closes = []
+        for candle in ohlcv_data[-period:]:
+            if isinstance(candle, dict):
+                closes.append(candle.get('close_price', candle.get('close', 0)))
+            else:
+                closes.append(candle[4] if len(candle) > 4 else 0)
+        
+        closes_array = np.array(closes)
+        sma = np.mean(closes_array)
+        std = np.std(closes_array)
+        return sma + (sigma * std)
+    
+    def get_bb_lower(self, period=20, sigma=2.0):
+        """
+        Bollinger Bands の下限を取得
+        
+        Args:
+            period (int): 期間（デフォルト 20）
+            sigma (float): シグマ倍数（デフォルト 2.0）
+        
+        Returns:
+            float: BB下限値
+        """
+        main_time_frame = '1h'
+        
+        # バックテストモードの判定
+        back_test_mode = False
+        try:
+            from config import Config
+            back_test_mode = Config.get_back_test_mode() == 1
+        except:
+            pass
+        
+        if back_test_mode:
+            ohlcv_data = self.price_data_management.get_back_test_ohlcv_data_by_time_frame(main_time_frame)
+        else:
+            ohlcv_data = self.price_data_management.get_ohlcv_data_by_time_frame(main_time_frame)
+        
+        if not ohlcv_data or len(ohlcv_data) < period:
+            return self.price_data_management.get_ticker()
+        
+        # 終値抽出（辞書形式対応）
+        closes = []
+        for candle in ohlcv_data[-period:]:
+            if isinstance(candle, dict):
+                closes.append(candle.get('close_price', candle.get('close', 0)))
+            else:
+                closes.append(candle[4] if len(candle) > 4 else 0)
+        
+        closes_array = np.array(closes)
+        sma = np.mean(closes_array)
+        std = np.std(closes_array)
+        return sma - (sigma * std)
+
     def get_psar_stop_offset(self):
         return self.psar_stop_offset
     

@@ -71,9 +71,22 @@ class TradingStrategy:
         position_size_ratio = 1.0  # 通常は100%
         
         if adx < 20:
-            # BOX 市場 → エントリースキップ
+            # BOX 市場 → Donchian逆張り戦略に切り替え
             regime = 'BOX'
-            self.logger.log(f"[条件判定:ENTRY] Regime: BOX (ADX={adx:.1f} < 20) → Entry SKIP")
+            self.logger.log(f"[条件判定:ENTRY] Regime: BOX (ADX={adx:.1f} < 20) → Box Market Mean Reversion Strategy")
+            box_result = self._evaluate_box_market_entry()
+            if box_result:
+                side = box_result['signal']
+                decision = 'ENTRY'
+                position_size_ratio = box_result['position_size_ratio']
+                self.logger.log(f"[BOX市場] {box_result['reason']}: {side} Signal (Size Ratio: {position_size_ratio})")
+                self.entry_record = {
+                    'entry_price': self.price_data_management.get_ticker(),
+                    'entry_adx': adx,
+                    'entry_regime': 'BOX',
+                    'entry_reason': box_result['reason'],
+                }
+            
             self.trade_decision["side"] = side
             self.trade_decision["decision"] = decision
             self.trade_decision["regime"] = regime
@@ -275,6 +288,79 @@ class TradingStrategy:
             self.evaluate_exit()
  
         return self.trade_decision
+    
+    def _evaluate_box_market_entry(self):
+        """
+        Box市場 (ADX < 20) 向けの平均回帰エントリーシグナル生成
+        
+        Donchian Channel 逆張り + Bollinger Bands補助戦略
+        
+        Returns:
+            dict: {'signal': 'LONG'/'SHORT', 'reason': 'Donchian_High_Touch'等, 'position_size_ratio': 0.6}
+                  または None (エントリーなし)
+        """
+        current_price = self.price_data_management.get_ticker()
+        
+        # Donchian Channel取得
+        donchian_high = self.risk_manager.get_donchian_high(period=20)
+        donchian_low = self.risk_manager.get_donchian_low(period=20)
+        
+        # 逆張りシグナル判定：Donchian 極値タッチ (98%/102% マージン付き)
+        if current_price >= donchian_high * 0.98:
+            # 高値タッチ → 売りシグナル (下向き平均回帰期待)
+            return {
+                'signal': 'SELL',
+                'reason': 'Donchian_High_Touch',
+                'position_size_ratio': 0.6
+            }
+        
+        elif current_price <= donchian_low * 1.02:
+            # 安値タッチ → 買いシグナル (上向き平均回帰期待)
+            return {
+                'signal': 'BUY',
+                'reason': 'Donchian_Low_Touch',
+                'position_size_ratio': 0.6
+            }
+        
+        # Donchian シグナルなし → Bollinger Bands 補助シグナル確認
+        bb_signal, reason, ratio = self._evaluate_bollinger_signal()
+        if bb_signal:
+            return {
+                'signal': bb_signal,
+                'reason': reason,
+                'position_size_ratio': ratio
+            }
+        
+        # どちらのシグナルもなし
+        return None
+    
+    def _evaluate_bollinger_signal(self):
+        """
+        Bollinger Bands 2σ 外部接触での逆張りシグナル生成 (Donchian補助用)
+        
+        Returns:
+            tuple: (signal, reason, position_size_ratio)
+                   signal: 'LONG'/'SHORT' または None
+                   reason: 'BB_Upper_Touch' など
+                   position_size_ratio: 0.4 (保守的)
+        """
+        current_price = self.price_data_management.get_ticker()
+        
+        # Bollinger Bands取得
+        bb_upper = self.risk_manager.get_bb_upper(period=20, sigma=2.0)
+        bb_lower = self.risk_manager.get_bb_lower(period=20, sigma=2.0)
+        
+        # BB 2σ外接触での逆張り
+        if current_price > bb_upper:
+            # 上限外 → 売りシグナル
+            return ('SELL', 'BB_Upper_Touch', 0.4)
+        
+        elif current_price < bb_lower:
+            # 下限外 → 買いシグナル
+            return ('BUY', 'BB_Lower_Touch', 0.4)
+        
+        # シグナルなし
+        return (None, None, 0)
     
     def __str__(self):
         return f"Trade Decision: Decision = {self.trade_decision['decision']}, Side = {self.trade_decision['side']}, Order Type = {self.trade_decision['order_type']}"
