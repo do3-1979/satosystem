@@ -28,6 +28,9 @@ src/config.ini
 src/logs/*.json
 src/logs/*.zip
 src/ohlcv_data
+
+# 一時レポート（分析・検証用）
+report_tmp/
 src/output_configs
 ohlcv_data/
 ohlcv_data/*.db
