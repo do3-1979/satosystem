@@ -48,6 +48,58 @@ def get_quarters():
     return quarters
 
 
+def verify_backtest_mode():
+    """
+    config.ini の back_test = 1 であることを確認する
+    
+    Returns:
+        bool: back_test = 1 の場合 True、それ以外 False
+    """
+    if not os.path.exists(CONFIG_FILE):
+        print(f"❌ エラー: config.ini が見つかりません")
+        print(f"   場所: {CONFIG_FILE}")
+        return False
+    
+    back_test_mode = None
+    
+    try:
+        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith('back_test'):
+                    parts = line.split('=')
+                    if len(parts) == 2:
+                        try:
+                            back_test_mode = int(parts[1].strip())
+                            break
+                        except ValueError:
+                            pass
+    except Exception as e:
+        print(f"❌ エラー: config.ini の読み込みに失敗しました: {e}")
+        return False
+    
+    if back_test_mode is None:
+        print(f"❌ エラー: config.ini に 'back_test' パラメータが見つかりません")
+        print(f"   確認場所: {CONFIG_FILE}")
+        print(f"   必須設定: back_test = 1")
+        return False
+    
+    if back_test_mode == 1:
+        print(f"✅ config.ini の back_test = 1 を確認しました")
+        return True
+    else:
+        print(f"❌ エラー: config.ini の back_test が 1 に設定されていません")
+        print(f"   現在の値: back_test = {back_test_mode}")
+        print(f"   必須設定: back_test = 1")
+        print(f"")
+        print(f"修正方法:")
+        print(f"  1. {CONFIG_FILE} を開く")
+        print(f"  2. '[Backtest]' セクション内の 'back_test' を 1 に変更")
+        print(f"  3. ファイルを保存")
+        print(f"  4. 再度このスクリプトを実行")
+        return False
+
+
 def get_quarter_dates(year, q):
     """四半期の開始日と終了日を返す"""
     q_start = datetime(year, (q-1)*3 + 1, 1)
@@ -224,6 +276,12 @@ def main():
     print("=" * 100)
     print("🎯 四半期別バックテスト実行")
     print("=" * 100)
+    
+    # config.ini の back_test = 1 を確認
+    print("\n🔍 バックテスト設定確認")
+    if not verify_backtest_mode():
+        print("\n❌ バックテスト実行中止\n")
+        sys.exit(1)
     
     # 引数チェック
     target_quarters = None
