@@ -365,7 +365,7 @@ class PriceDataManagement:
 
         return False
 
-    def _fetch_with_retry(self, func, *args, retries=3, timeout=10):
+    def _fetch_with_retry(self, func, *args, retries=3):
         """
         API呼び出しをリトライ付きで実行するメソッドです。
         
@@ -373,7 +373,6 @@ class PriceDataManagement:
             func: 呼び出す関数
             *args: 関数の引数
             retries: リトライ回数（デフォルト：3）
-            timeout: タイムアウト時間（秒、デフォルト：10秒）
             
         Returns:
             API の戻り値
@@ -385,7 +384,7 @@ class PriceDataManagement:
         
         for attempt in range(retries):
             try:
-                return func(*args, timeout=timeout)
+                return func(*args)
             except Exception as e:
                 if attempt == retries - 1:
                     # 最後のリトライに失敗した場合は例外を再発生

@@ -428,19 +428,29 @@ class BybitExchange(Exchange):
         ohlcv_data = []
 
         server_retry_wait = Config.get_server_retry_wait()
+        max_retries = 3
+        retry_count = 0
 
-        while True:
+        while retry_count < max_retries:
             try:
                 ohlcv = self.exchange.fetch_ohlcv(
                     symbol = self.market,
                     timeframe = time_frame,
+                    params={'timeout': 10000}  # 10秒のタイムアウト
                 )
                 break
-            except ccxt.BaseError as e:
-                if err_occuerd == False:
-                    self.logger.log_error(f"最新価格取得エラー:{str(e)}")    
-                    err_occuerd = True
-                time.sleep(server_retry_wait)
+            except (ccxt.BaseError, TimeoutError) as e:
+                retry_count += 1
+                if retry_count >= max_retries:
+                    self.logger.log_error(f"【TIMEOUT】最新価格取得エラー（最大リトライ到達）:{str(e)}")
+                    raise
+                else:
+                    if err_occuerd == False:
+                        self.logger.log_error(f"最新価格取得エラー（リトライ {retry_count}/{max_retries}）:{str(e)}")    
+                        err_occuerd = True
+                    wait_time = min(2 ** retry_count, 30)
+                    self.logger.log(f"最新価格取得 → {wait_time}秒待機")
+                    time.sleep(wait_time)
 
         if err_occuerd == True:
             self.logger.log_error("最新価格取得エラー復帰")
@@ -479,10 +489,24 @@ class BybitExchange(Exchange):
         elif market_type == 'ETH/USD':
             symbol = "ETHUSD"
         
-        ticker = self.exchange.fetch_ticker(symbol)
-        price = ticker["last"]
-                           
-        return price
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                ticker = self.exchange.fetch_ticker(symbol, params={'timeout': 10000})
+                price = ticker["last"]
+                return price
+            except (ccxt.BaseError, TimeoutError) as e:
+                retry_count += 1
+                if retry_count >= max_retries:
+                    self.logger.log_error(f"【TIMEOUT】ticker取得失敗（最大リトライ到達）: {str(e)}")
+                    raise
+                else:
+                    self.logger.log(f"ticker取得エラー（リトライ {retry_count}/{max_retries}）: {str(e)}")
+                    wait_time = min(2 ** retry_count, 30)
+                    import time
+                    time.sleep(wait_time)
 
 
 if __name__ == "__main__":
