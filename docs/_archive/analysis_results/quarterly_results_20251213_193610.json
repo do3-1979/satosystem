@@ -1,0 +1,138 @@
+[
+  {
+    "year": 2024,
+    "quarter": 1,
+    "start_date": "2024/01/01 00:00",
+    "end_date": "2024/03/31 23:59",
+    "metrics": {
+      "total_pnl": 503.719408,
+      "profit_factor": 2.840297,
+      "max_drawdown": 114.55717,
+      "max_drawdown_rate": 20.870299,
+      "sharpe": 1.569475,
+      "win_rate": 100.0,
+      "trades": 26,
+      "samples": 991
+    },
+    "timestamp": "2025-12-13T19:35:27.548571"
+  },
+  {
+    "year": 2024,
+    "quarter": 2,
+    "start_date": "2024/04/01 00:00",
+    "end_date": "2024/06/30 23:59",
+    "metrics": {
+      "total_pnl": -0.751224,
+      "profit_factor": 0.997256,
+      "max_drawdown": 81.864804,
+      "max_drawdown_rate": 112.609535,
+      "sharpe": -0.005306,
+      "win_rate": 64.516129,
+      "trades": 31,
+      "samples": 991
+    },
+    "timestamp": "2025-12-13T19:35:33.246861"
+  },
+  {
+    "year": 2024,
+    "quarter": 3,
+    "start_date": "2024/07/01 00:00",
+    "end_date": "2024/09/30 23:59",
+    "metrics": {
+      "total_pnl": -14.638689,
+      "profit_factor": 0.967139,
+      "max_drawdown": 264.324832,
+      "max_drawdown_rate": 136.318154,
+      "sharpe": -0.063897,
+      "win_rate": 57.575758,
+      "trades": 33,
+      "samples": 1003
+    },
+    "timestamp": "2025-12-13T19:35:39.593805"
+  },
+  {
+    "year": 2024,
+    "quarter": 4,
+    "start_date": "2024/10/01 00:00",
+    "end_date": "2024/12/31 23:59",
+    "metrics": {
+      "total_pnl": 149.430292,
+      "profit_factor": 1.30403,
+      "max_drawdown": 357.685883,
+      "max_drawdown_rate": 70.533322,
+      "sharpe": 0.467223,
+      "win_rate": 84.0,
+      "trades": 25,
+      "samples": 1003
+    },
+    "timestamp": "2025-12-13T19:35:45.002366"
+  },
+  {
+    "year": 2025,
+    "quarter": 1,
+    "start_date": "2025/01/01 00:00",
+    "end_date": "2025/03/31 23:59",
+    "metrics": {
+      "total_pnl": -123.484089,
+      "profit_factor": 0.423609,
+      "max_drawdown": 136.819093,
+      "max_drawdown_rate": 1040.268551,
+      "sharpe": -1.366176,
+      "win_rate": 13.043478,
+      "trades": 23,
+      "samples": 979
+    },
+    "timestamp": "2025-12-13T19:35:50.195648"
+  },
+  {
+    "year": 2025,
+    "quarter": 2,
+    "start_date": "2025/04/01 00:00",
+    "end_date": "2025/06/30 23:59",
+    "metrics": {
+      "total_pnl": -185.211325,
+      "profit_factor": 0.419084,
+      "max_drawdown": 204.290641,
+      "max_drawdown_rate": 1070.744056,
+      "sharpe": -1.7278,
+      "win_rate": 3.333333,
+      "trades": 30,
+      "samples": 991
+    },
+    "timestamp": "2025-12-13T19:35:56.957776"
+  },
+  {
+    "year": 2025,
+    "quarter": 3,
+    "start_date": "2025/07/01 00:00",
+    "end_date": "2025/09/30 23:59",
+    "metrics": {
+      "total_pnl": -27.855908,
+      "profit_factor": 0.957859,
+      "max_drawdown": 346.673735,
+      "max_drawdown_rate": 108.737249,
+      "sharpe": -0.081771,
+      "win_rate": 91.666667,
+      "trades": 36,
+      "samples": 1003
+    },
+    "timestamp": "2025-12-13T19:36:05.527855"
+  },
+  {
+    "year": 2025,
+    "quarter": 4,
+    "start_date": "2025/10/01 00:00",
+    "end_date": "2025/12/13 19:36",
+    "metrics": {
+      "total_pnl": 287.818994,
+      "profit_factor": 2.257244,
+      "max_drawdown": 90.139518,
+      "max_drawdown_rate": 23.849051,
+      "sharpe": 1.256721,
+      "win_rate": 100.0,
+      "trades": 21,
+      "samples": 884
+    },
+    "timestamp": "2025-12-13T19:36:10.557125"
+  }
+]

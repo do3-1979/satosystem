@@ -77,10 +77,10 @@ class RiskManagement:
         self.adx = []
         self.adx_bull = False
         self.adx_bear = False
-        self.adx_term = 14
-        self.adx_continue_num = 3
-        self.adx_bull_threshold = 25
-        self.adx_bear_threshold = 20
+        self.adx_term = Config.get_config_int('Strategy', 'adx_term', 14)
+        self.adx_continue_num = Config.get_config_int('Strategy', 'adx_continue_num', 3)
+        self.adx_bull_threshold = Config.get_config_int('Strategy', 'adx_bull_threshold', 25)
+        self.adx_bear_threshold = Config.get_config_int('Strategy', 'adx_bear_threshold', 20)
 
         # ストップ値
         self.stop_offset = 0 # 価格ベース
@@ -495,7 +495,8 @@ class RiskManagement:
         
         adx_value = self.adx[-1] if self.adx else 0
         return {
-            "signal": "BULL" if self.adx_bull else ("BEAR" if self.adx_bear else "NONE"),
+            # signal を BUY/SELL に正規化して返す（BULL/BEAR も詳細として保持）
+            "signal": "BUY" if self.adx_bull else ("SELL" if self.adx_bear else "NONE"),
             "bull": self.adx_bull,
             "bear": self.adx_bear,
             "adx": adx_value

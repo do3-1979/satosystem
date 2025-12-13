@@ -1,7 +1,7 @@
 {
   "metadata": {
     "source_file": "src/config.py",
-    "analyzed_at": "2025-12-13T17:38:39.962552",
+    "analyzed_at": "2025-12-14T00:07:24.688327",
     "python_version": "3.10"
   },
   "file_info": {
@@ -414,8 +414,8 @@
           "summary": "開始時刻をepoch時間で取得します.",
           "calls": [
             "start_time.timestamp",
-            "int",
-            "datetime.strptime"
+            "datetime.strptime",
+            "int"
           ]
         },
         {
@@ -436,9 +436,9 @@
           "docstring": "終了時刻をepoch時間で取得します.\n\nReturns:\n    datetime: 終了時刻 (epoch)",
           "summary": "終了時刻をepoch時間で取得します.",
           "calls": [
-            "int",
+            "end_time.timestamp",
             "datetime.strptime",
-            "end_time.timestamp"
+            "int"
           ]
         },
         {
@@ -769,35 +769,35 @@
           "docstring": "コンフィグ内容を可読性よく文字列として表現するメソッドです。",
           "summary": "コンフィグ内容を可読性よく文字列として表現するメソッドです。",
           "calls": [
-            "self.get_end_time",
-            "self.get_time_frame",
-            "self.get_server_retry_wait",
-            "self.get_stop_range",
             "self.get_market_unit_pair",
-            "self.get_donchian_buy_term",
-            "self.get_pvo_s_term",
-            "self.get_balance_tether_limit",
-            "self.get_back_test_mode",
             "self.get_pvo_threshold",
-            "self.get_volatility_term",
-            "self.get_start_time",
-            "self.get_surge_follow_price_ratio",
-            "self.get_start_epoch",
-            "self.get_pvo_l_term",
-            "self.get_risk_percentage",
-            "self.get_account_balance",
-            "self.get_end_epoch",
             "self.get_stop_AF_max",
+            "self.get_time_frame",
             "self.get_lot_limit_lower",
-            "self.get_psar_time_frame",
-            "self.get_leverage",
+            "self.get_start_epoch",
+            "self.get_risk_percentage",
             "self.get_stop_AF",
-            "self.get_bot_operation_cycle",
-            "self.get_donchian_sell_term",
-            "self.get_entry_times",
+            "self.get_stop_range",
+            "self.get_surge_follow_price_ratio",
             "self.get_stop_AF_add",
+            "self.get_server_retry_wait",
+            "self.get_market",
+            "self.get_pvo_l_term",
+            "self.get_leverage",
             "self.get_entry_range",
-            "self.get_market"
+            "self.get_pvo_s_term",
+            "self.get_end_time",
+            "self.get_back_test_mode",
+            "self.get_end_epoch",
+            "self.get_entry_times",
+            "self.get_volatility_term",
+            "self.get_account_balance",
+            "self.get_donchian_buy_term",
+            "self.get_balance_tether_limit",
+            "self.get_start_time",
+            "self.get_bot_operation_cycle",
+            "self.get_psar_time_frame",
+            "self.get_donchian_sell_term"
           ]
         },
         {
@@ -818,35 +818,149 @@
           "docstring": "Convert Config parameters to a dictionary.",
           "summary": "Convert Config parameters to a dictionary.",
           "calls": [
-            "self.get_end_time",
-            "self.get_time_frame",
-            "self.get_server_retry_wait",
-            "self.get_stop_range",
             "self.get_market_unit_pair",
-            "self.get_donchian_buy_term",
-            "self.get_pvo_s_term",
-            "self.get_balance_tether_limit",
-            "self.get_back_test_mode",
             "self.get_pvo_threshold",
-            "self.get_volatility_term",
-            "self.get_start_time",
-            "self.get_surge_follow_price_ratio",
-            "self.get_start_epoch",
-            "self.get_pvo_l_term",
-            "self.get_risk_percentage",
-            "self.get_account_balance",
-            "self.get_end_epoch",
             "self.get_stop_AF_max",
+            "self.get_time_frame",
             "self.get_lot_limit_lower",
-            "self.get_psar_time_frame",
-            "self.get_leverage",
+            "self.get_start_epoch",
+            "self.get_risk_percentage",
             "self.get_stop_AF",
-            "self.get_bot_operation_cycle",
-            "self.get_donchian_sell_term",
-            "self.get_entry_times",
+            "self.get_stop_range",
+            "self.get_surge_follow_price_ratio",
             "self.get_stop_AF_add",
+            "self.get_server_retry_wait",
+            "self.get_market",
+            "self.get_pvo_l_term",
+            "self.get_leverage",
             "self.get_entry_range",
-            "self.get_market"
+            "self.get_pvo_s_term",
+            "self.get_end_time",
+            "self.get_back_test_mode",
+            "self.get_end_epoch",
+            "self.get_entry_times",
+            "self.get_volatility_term",
+            "self.get_account_balance",
+            "self.get_donchian_buy_term",
+            "self.get_balance_tether_limit",
+            "self.get_start_time",
+            "self.get_bot_operation_cycle",
+            "self.get_psar_time_frame",
+            "self.get_donchian_sell_term"
+          ]
+        },
+        {
+          "name": "get_config_bool",
+          "line": 471,
+          "visibility": "public",
+          "is_classmethod": true,
+          "is_staticmethod": false,
+          "signature": "def get_config_boolcls, section, key, default=False",
+          "parameters": [
+            {
+              "name": "cls",
+              "type": "Any",
+              "description": "Parameter: cls"
+            },
+            {
+              "name": "section",
+              "type": "Any",
+              "description": "Parameter: section"
+            },
+            {
+              "name": "key",
+              "type": "Any",
+              "description": "Parameter: key"
+            },
+            {
+              "name": "default",
+              "type": "Any",
+              "description": "Parameter: default",
+              "default": false
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "コンフィグから論理値を取得します.\n\nArgs:\n    section (str): セクション名\n    key (str): キー名\n    default (bool): デフォルト値\n\nReturns:\n    bool: 設定値",
+          "summary": "コンフィグから論理値を取得します.",
+          "calls": [
+            "value.lower",
+            "cls.config.get"
+          ]
+        },
+        {
+          "name": "get_config_int",
+          "line": 490,
+          "visibility": "public",
+          "is_classmethod": true,
+          "is_staticmethod": false,
+          "signature": "def get_config_intcls, section, key, default=0",
+          "parameters": [
+            {
+              "name": "cls",
+              "type": "Any",
+              "description": "Parameter: cls"
+            },
+            {
+              "name": "section",
+              "type": "Any",
+              "description": "Parameter: section"
+            },
+            {
+              "name": "key",
+              "type": "Any",
+              "description": "Parameter: key"
+            },
+            {
+              "name": "default",
+              "type": "Any",
+              "description": "Parameter: default",
+              "default": 0
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "コンフィグから整数値を取得します.\n\nArgs:\n    section (str): セクション名\n    key (str): キー名\n    default (int): デフォルト値\n\nReturns:\n    int: 設定値",
+          "summary": "コンフィグから整数値を取得します.",
+          "calls": [
+            "cls.config.get",
+            "int"
+          ]
+        },
+        {
+          "name": "get_config_float",
+          "line": 508,
+          "visibility": "public",
+          "is_classmethod": true,
+          "is_staticmethod": false,
+          "signature": "def get_config_floatcls, section, key, default=0.0",
+          "parameters": [
+            {
+              "name": "cls",
+              "type": "Any",
+              "description": "Parameter: cls"
+            },
+            {
+              "name": "section",
+              "type": "Any",
+              "description": "Parameter: section"
+            },
+            {
+              "name": "key",
+              "type": "Any",
+              "description": "Parameter: key"
+            },
+            {
+              "name": "default",
+              "type": "Any",
+              "description": "Parameter: default",
+              "default": 0.0
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "コンフィグから浮動小数点数を取得します.\n\nArgs:\n    section (str): セクション名\n    key (str): キー名\n    default (float): デフォルト値\n\nReturns:\n    float: 設定値",
+          "summary": "コンフィグから浮動小数点数を取得します.",
+          "calls": [
+            "float",
+            "cls.config.get"
           ]
         }
       ]
@@ -856,9 +970,9 @@
   "constants": [],
   "summary": {
     "total_classes": 1,
-    "total_methods": 37,
+    "total_methods": 40,
     "total_functions": 0,
     "total_constants": 0,
-    "lines_of_code": 449
+    "lines_of_code": 495
   }
 }

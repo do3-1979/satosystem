@@ -313,7 +313,8 @@ def run_individual_test_modules():
             "test_visualizer_regression",
             "test_ohlcv_cache_regression",
             "test_bybit_exchange_regression",
-            "test_supplementary_regression"
+            "test_supplementary_regression",
+            "test_indicators_regression"
         ]
         
         all_results = []

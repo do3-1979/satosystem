@@ -1,0 +1,19 @@
+[
+  {
+    "year": 2024,
+    "quarter": 1,
+    "start_date": "2024/01/01 00:00",
+    "end_date": "2024/03/31 23:59",
+    "metrics": {
+      "total_pnl": 460.174688,
+      "profit_factor": 1.84779,
+      "max_drawdown": 168.07439,
+      "max_drawdown_rate": 27.41763,
+      "sharpe": 1.151772,
+      "win_rate": 100.0,
+      "trades": 38,
+      "samples": 991
+    },
+    "timestamp": "2025-12-13T18:36:42.762931"
+  }
+]

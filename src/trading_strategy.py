@@ -69,26 +69,42 @@ class TradingStrategy:
 
         # 新指標ベースのStrategyを評価
         strategy_result = self._evaluate_new_indicator_strategy()
+        use_new_strategy = any([
+            getattr(self.risk_manager, 'enable_strategy_a_adx', False),
+            getattr(self.risk_manager, 'enable_strategy_b_bb_rsi_sma', False),
+            getattr(self.risk_manager, 'enable_strategy_c_combined', False),
+        ])
+        strategy_side = None
+        if strategy_result:
+            raw_signal = strategy_result.get('signal', 'NONE')
+            if raw_signal in ['BUY', 'SELL']:
+                strategy_side = raw_signal
+            elif raw_signal == 'BULL':
+                strategy_side = 'BUY'
+            elif raw_signal == 'BEAR':
+                strategy_side = 'SELL'
         
         # PVO有効範囲チェック
         if signals["pvo"]["signal"] == True:
             # ドンチャンチャネルブレイク発生
             if signals["donchian"]["signal"] == True:
-                if signals["donchian"]["side"] == "BUY":
-                    # Strategy結果を参考にして判定
-                    if strategy_result and strategy_result.get('signal') in ['BUY', 'BULL']:
-                        self.logger.log(f"[条件判定:ENTRY] BUYのエントリー条件成立（新指標確認）")
+                desired_side = signals["donchian"]["side"]
+                allow_entry = True
+
+                if use_new_strategy:
+                    if strategy_side is None:
+                        # 新指標が沈黙ならベースライン許可（フィルタのみとして扱う）
+                        self.logger.log(f"[条件判定:ENTRY] 新指標シグナルなし→ベースライン許可 (donchian={desired_side})")
+                    elif strategy_side == desired_side:
+                        self.logger.log(f"[条件判定:ENTRY] {desired_side} エントリー条件成立（新指標一致）")
                     else:
-                        self.logger.log(f"[条件判定:ENTRY] BUYのエントリー条件成立しました")
-                    side = "BUY"
-                    decision = "ENTRY"
-                elif signals["donchian"]["side"] == "SELL":
-                    # Strategy結果を参考にして判定
-                    if strategy_result and strategy_result.get('signal') in ['SELL', 'BEAR']:
-                        self.logger.log(f"[条件判定:ENTRY] SELLのエントリー条件成立（新指標確認）")
-                    else:
-                        self.logger.log(f"[条件判定:ENTRY] SELLのエントリー条件成立しました")
-                    side = "SELL"
+                        self.logger.log(f"[条件判定:ENTRY] 新指標が逆方向のためエントリー見送り (donchian={desired_side}, strategy={strategy_side})")
+                        allow_entry = False
+                else:
+                    self.logger.log(f"[条件判定:ENTRY] {desired_side} のエントリー条件成立しました")
+
+                if allow_entry:
+                    side = desired_side
                     decision = "ENTRY"
 
         # エントリ条件がない場合はNONEで初期化する
@@ -128,13 +144,21 @@ class TradingStrategy:
                 if strategy_name in all_strategies:
                     result = all_strategies[strategy_name]
                     signal = result.get('signal', 'NONE')
-                    
+                    normalized = None
                     if signal in ['BUY', 'SELL']:
+                        normalized = signal
+                    elif signal == 'BULL':
+                        normalized = 'BUY'
+                    elif signal == 'BEAR':
+                        normalized = 'SELL'
+                    
+                    if normalized:
                         self.logger.log(f"[新指標] {strategy_name}: {signal}")
                         return {
-                            'signal': signal,
+                            'signal': normalized,
+                            'raw_signal': signal,
                             'strategy': strategy_name.split('_')[1].upper(),
-                            'confidence': 0.7 if signal != 'NONE' else 0.0,
+                            'confidence': 0.7 if normalized != 'NONE' else 0.0,
                             'details': result
                         }
             

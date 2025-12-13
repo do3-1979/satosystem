@@ -1,7 +1,7 @@
 {
   "metadata": {
     "source_file": "src/trading_strategy.py",
-    "analyzed_at": "2025-12-13T17:38:40.211543",
+    "analyzed_at": "2025-12-14T00:07:33.291114",
     "python_version": "3.10"
   },
   "file_info": {
@@ -80,9 +80,9 @@
           "docstring": "No description",
           "summary": "__init__",
           "calls": [
-            "Logger",
             "self.initialize_trade_decision",
-            "ExitStrategyV2"
+            "ExitStrategyV2",
+            "Logger"
           ]
         },
         {
@@ -118,19 +118,49 @@
             }
           ],
           "return_type": "Any",
-          "docstring": "エントリー条件を評価し、エントリーするかどうかを決定します。\n\n条件:\n1. ポジションを保有していない\n2. ドンチャンチャネルブレイクが発生\n3. PVOが閾値範囲内",
+          "docstring": "エントリー条件を評価し、エントリーするかどうかを決定します。\n\n条件:\n1. ポジションを保有していない\n2. ドンチャンチャネルブレイクが発生\n3. PVOが閾値範囲内\n\nPhase 22a-22c: 複数のStrategyから最適なものを選択",
           "summary": "エントリー条件を評価し、エントリーするかどうかを決定します。",
           "calls": [
+            "self.risk_manager.get_adx",
+            "strategy_result.get",
+            "self._evaluate_new_indicator_strategy",
+            "current_price.get",
+            "any",
+            "getattr",
             "self.price_data_management.get_signals",
             "self.logger.log",
-            "self.risk_manager.get_adx",
-            "current_price.get",
             "self.price_data_management.get_latest_ohlcv"
           ]
         },
         {
+          "name": "_evaluate_new_indicator_strategy",
+          "line": 128,
+          "visibility": "private",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def _evaluate_new_indicator_strategyself",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "新指標ベースのStrategy（A/B/C）を評価\n\n戻り値:\n    dict: {'signal': 'BUY'/'SELL'/'NONE', 'strategy': 'A'/'B'/'C', 'confidence': 0-1}",
+          "summary": "新指標ベースのStrategy（A/B/C）を評価",
+          "calls": [
+            "str",
+            "strategy_name.split('_')[1].upper",
+            "result.get",
+            "self.risk_manager.evaluate_all_strategies",
+            "self.logger.log",
+            "strategy_name.split"
+          ]
+        },
+        {
           "name": "evaluate_add",
-          "line": 98,
+          "line": 171,
           "visibility": "public",
           "is_classmethod": false,
           "is_staticmethod": false,
@@ -151,15 +181,15 @@
           "docstring": "ピラミッド条件を評価し、買い増しするかどうかを決定します。\n\n条件:\n1. ポジションを保有している\n2. 追加レンジ幅が前回取得値を超過",
           "summary": "ピラミッド条件を評価し、買い増しするかどうかを決定します。",
           "calls": [
+            "self.portfolio.get_position_side",
             "self.risk_manager.get_last_entry_price",
             "self.risk_manager.get_add_range",
-            "self.portfolio.get_position_side",
             "self.logger.log"
           ]
         },
         {
           "name": "evaluate_exit",
-          "line": 137,
+          "line": 210,
           "visibility": "public",
           "is_classmethod": false,
           "is_staticmethod": false,
@@ -175,20 +205,20 @@
           "docstring": "エグジット条件を評価し、ポジションをクローズするかどうかを決定します。\nハイブリッド方式：\n1. 従来のストップロス判定（優先度最高）\n2. ExitStrategyV2（複合シグナル）で補助的に判定",
           "summary": "エグジット条件を評価し、ポジションをクローズするかどうかを決定します。",
           "calls": [
-            "current_ohlcv.get",
+            "self.portfolio.get_position_side",
             "exit_decision.get",
-            "self.portfolio.get_position_quantity",
-            "self.logger.log",
+            "current_ohlcv.get",
             "self.risk_manager.get_stop_price",
+            "self.logger.log",
             "hasattr",
             "self.price_data_management.get_latest_ohlcv",
-            "self.exit_strategy_v2.evaluate_exit_condition",
-            "self.portfolio.get_position_side"
+            "self.portfolio.get_position_quantity",
+            "self.exit_strategy_v2.evaluate_exit_condition"
           ]
         },
         {
           "name": "make_trade_decision",
-          "line": 231,
+          "line": 304,
           "visibility": "public",
           "is_classmethod": false,
           "is_staticmethod": false,
@@ -205,15 +235,15 @@
           "summary": "トレードの実行判断を行います。",
           "calls": [
             "self.evaluate_entry",
-            "self.price_data_management.get_ticker",
             "self.evaluate_add",
             "self.evaluate_exit",
+            "self.price_data_management.get_ticker",
             "self.portfolio.get_position_quantity"
           ]
         },
         {
           "name": "_evaluate_box_market_entry",
-          "line": 249,
+          "line": 322,
           "visibility": "private",
           "is_classmethod": false,
           "is_staticmethod": false,
@@ -231,13 +261,13 @@
           "calls": [
             "self.risk_manager.get_donchian_high",
             "self.price_data_management.get_ticker",
-            "self._evaluate_bollinger_signal",
-            "self.risk_manager.get_donchian_low"
+            "self.risk_manager.get_donchian_low",
+            "self._evaluate_bollinger_signal"
           ]
         },
         {
           "name": "_evaluate_bollinger_signal",
-          "line": 294,
+          "line": 367,
           "visibility": "private",
           "is_classmethod": false,
           "is_staticmethod": false,
@@ -253,14 +283,14 @@
           "docstring": "Bollinger Bands 2σ 外部接触での逆張りシグナル生成 (Donchian補助用)\n\nReturns:\n    tuple: (signal, reason, position_size_ratio)\n           signal: 'LONG'/'SHORT' または None\n           reason: 'BB_Upper_Touch' など\n           position_size_ratio: 0.4 (保守的)",
           "summary": "Bollinger Bands 2σ 外部接触での逆張りシグナル生成 (Donchian補助用)",
           "calls": [
-            "self.risk_manager.get_bb_upper",
             "self.price_data_management.get_ticker",
+            "self.risk_manager.get_bb_upper",
             "self.risk_manager.get_bb_lower"
           ]
         },
         {
           "name": "__str__",
-          "line": 322,
+          "line": 395,
           "visibility": "private",
           "is_classmethod": false,
           "is_staticmethod": false,
@@ -283,9 +313,9 @@
   "constants": [],
   "summary": {
     "total_classes": 1,
-    "total_methods": 9,
+    "total_methods": 10,
     "total_functions": 0,
     "total_constants": 0,
-    "lines_of_code": 238
+    "lines_of_code": 296
   }
 }
