@@ -57,33 +57,10 @@ class TradingStrategy:
         1. ポジションを保有していない
         2. ドンチャンチャネルブレイクが発生
         3. PVOが閾値範囲内
-        4. [Phase 1.5] 2-tier ADX filter:
-           - ADX < 20 (BOX): エントリースキップ
-           - 20 ≤ ADX < 25 (WEAK_TREND): 50% サイズで取引
-           - ADX ≥ 25 (STRONG_TREND): 通常サイズで取引
         """
         side = 'NONE'
         decision = 'NONE'
-
-        # [Phase 1.5] 2-tier レジーム判定：ADXでトレンド強度を確認
-        adx = self.risk_manager.get_adx()
-        regime = 'STRONG_TREND'
-        position_size_ratio = 1.0  # 通常は100%
-        
-        if adx < 20:
-            # BOX 市場 → エントリースキップ
-            regime = 'BOX'
-            self.logger.log(f"[条件判定:ENTRY] Regime: BOX (ADX={adx:.1f} < 20) → Entry SKIP")
-            self.trade_decision["side"] = side
-            self.trade_decision["decision"] = decision
-            self.trade_decision["regime"] = regime
-            self.trade_decision["position_size_ratio"] = position_size_ratio
-            return
-        elif 20 <= adx < 25:
-            # WEAK_TREND → 50% サイズで取引
-            regime = 'WEAK_TREND'
-            position_size_ratio = 0.5
-            self.logger.log(f"[条件判定:ENTRY] Regime: WEAK_TREND (ADX={adx:.1f}, 20-25) → 50% Position Size")
+        position_size_ratio = 1.0  # Phase 0: 常に100%
 
         # シグナルをチェック
         signals = self.price_data_management.get_signals()
@@ -93,18 +70,17 @@ class TradingStrategy:
             # ドンチャンチャネルブレイク発生
             if signals["donchian"]["signal"] == True:
                 if signals["donchian"]["side"] == "BUY":
-                    self.logger.log(f"[条件判定:ENTRY] BUYのエントリー条件成立しました (ADX={adx:.1f}, Regime={regime})")
+                    self.logger.log(f"[条件判定:ENTRY] BUYのエントリー条件成立しました")
                     side = "BUY"
                     decision = "ENTRY"
                 elif signals["donchian"]["side"] == "SELL":
-                    self.logger.log(f"[条件判定:ENTRY] SELLのエントリー条件成立しました (ADX={adx:.1f}, Regime={regime})")
+                    self.logger.log(f"[条件判定:ENTRY] SELLのエントリー条件成立しました")
                     side = "SELL"
                     decision = "ENTRY"
 
         # エントリ条件がない場合はNONEで初期化する
         self.trade_decision["side"] = side
         self.trade_decision["decision"] = decision
-        self.trade_decision["regime"] = regime if decision == 'ENTRY' else 'NONE'
         self.trade_decision["position_size_ratio"] = position_size_ratio
         
         # エントリー時の指標を記録（ExitStrategyV2用）
@@ -126,7 +102,6 @@ class TradingStrategy:
         条件:
         1. ポジションを保有している
         2. 追加レンジ幅が前回取得値を超過
-        3. [Phase 1] Weak Trend (20 <= ADX < 25) では averaging 無効化
         """
         side = 'NONE'
         decision = 'NONE'
@@ -135,11 +110,6 @@ class TradingStrategy:
         position_side = self.portfolio.get_position_side()
         
         if position_side != 'NONE':
-            # [Phase 1] Weak Trend での averaging 無効化
-            adx = self.risk_manager.get_adx()
-            if 20 <= adx < 25:
-                self.logger.log(f"[条件判定:ADD] Weak Trend (ADX={adx:.1f}) → Averaging DISABLED")
-                return
             
             # 追加レンジ幅を取得
             range = self.risk_manager.get_add_range()

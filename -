@@ -1,0 +1,1 @@
+[{"year": 2025, "quarter": 4, "start_date": "2025/10/01 00:00", "end_date": "2025/12/11 00:58", "metrics": {"total_pnl": 348.679592, "profit_factor": 2.141294, "max_drawdown": 86.029164, "max_drawdown_rate": 21.530167, "sharpe": 1.443918, "win_rate": 100.0, "trades": 33, "samples": 850}, "timestamp": "2025-12-11T00:58:46.868821"}]

@@ -126,9 +126,60 @@ Adopt internal `Side` enum (BUY, SELL, NONE) for all decision & portfolio intera
 - Network/API retry: basic loop with sleep; needs max-attempt & exponential backoff.
 - API keys sourced from config; avoid logging secrets.
 
-## Regime-Adaptive Trading Strategy (NO.20)
+## Phase 0 Trading Strategy - 基準戦略
 
-**背景**: 2h / 4h でのトレンド検出精度は 65-75% であり、通常の PSAR ベーストレードでは box 相場で損失が増加する傾向が確認された（31.8% の取引が box 相場で、win rate 17.9%）。
+**戦略概要**: Donchian Breakout + PVO シグナルベースのロング主体戦略（ADX フィルタなし）
+
+### Phase 0 パフォーマンス（8 Quarters: Q1 2024 - Q4 2025）
+
+```
+総PnL: +$593.23
+勝ちQuarter (4個): +$1,073.07 (平均+$268.27/Q, 勝率92.3%)
+  - Q1 2024: +$460.17 (WR 100%, Sharpe 1.152)
+  - Q3 2024: +$121.68 (WR 100%, Sharpe 0.360)
+  - Q4 2024: +$142.53 (WR 69.2%, Sharpe 0.519)
+  - Q4 2025: +$348.68 (WR 100%, Sharpe 1.444)
+
+負けQuarter (4個): -$479.84 (平均-$119.96/Q, 勝率29.0%)
+  - Q2 2024: -$33.09 (WR 33.3%, Sharpe -0.199)
+  - Q1 2025: -$143.83 (WR 7.9%, Sharpe -1.200)
+  - Q2 2025: -$169.05 (WR 12.8%, Sharpe -1.333)
+  - Q3 2025: -$133.87 (WR 62.0%, Sharpe -0.441)
+
+合計337トレード、Overall Win Rate: 56.5%
+```
+
+### 成功要因分析
+
+**勝ちQuarterの共通特性**:
+- ADX > 25（STRONG_TREND環境）
+- トレンド継続率が高い
+- Donchian Breakout が正確に トレンド開始を捉える
+
+**負けQuarterの共通特性**:
+- ADX < 25（WEAK_TREND / BOX環境）
+- 逆方向トレンド（ショート優位）
+- 偽シグナルが多発
+
+### 実装
+
+**ロジック**:
+1. Donchian 20-period ブレイク: エントリーシグナル
+2. PVO（12-26-9）: ボリュームトレンド確認
+3. PSAR: トレーリングストップ
+4. ATR surge: ストップ拡張
+
+**設定** (src/trading_strategy.py):
+- `donchian_lookback = 20`
+- `pvo_fast = 12, pvo_slow = 26, pvo_signal = 9`
+- `position_size_ratio = 1.0` (常に100%)
+- ADX フィルタ: **削除済み** (Phase 0復帰)
+
+---
+
+## Regime-Adaptive Trading Strategy (NO.20) - 計画中
+
+**背景**: Phase 0 分析により、市場体制検出が改善の最優先項目と特定された
 
 **設計方針**:
 
