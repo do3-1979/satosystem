@@ -334,21 +334,38 @@ class BybitExchange(Exchange):
         get_time = start_epoch
         while get_time < end_epoch_fixed:
             # 価格取得
-            while True:
+            max_retries = 3
+            retry_count = 0
+            
+            while retry_count < max_retries:
                 try:
                     ohlcv = self.exchange.fetch_ohlcv(
                         symbol = self.market,
                         timeframe = time_frame,
                         since = int(get_time * 1000), # bybitはミリ秒なので1000倍
+                        params={'timeout': 10000}  # 10秒のタイムアウト
                     )
                     break
-                except ccxt.BaseError as e:
-                    if err_occuerd == False:
-                        self.logger.log_error(f"価格取得エラー:{str(e)}")
-                        err_occuerd = True
-                    time.sleep(server_retry_wait)
+                except (ccxt.BaseError, TimeoutError) as e:
+                    retry_count += 1
+                    if retry_count >= max_retries:
+                        if err_occuerd == False:
+                            self.logger.log_error(f"【TIMEOUT】価格取得エラー（最大リトライ到達）: {str(e)}")
+                            err_occuerd = True
+                        break
+                    else:
+                        if err_occuerd == False:
+                            self.logger.log_error(f"価格取得エラー（リトライ {retry_count}/{max_retries}）: {str(e)}")
+                            err_occuerd = True
+                        wait_time = min(2 ** retry_count, 30)  # 最大30秒の指数バックオフ
+                        time.sleep(wait_time)
 
-            if err_occuerd == True:
+            if retry_count >= max_retries:
+                # 最大リトライに達した場合、スキップして次の時間へ
+                get_time += time_frame * 60  # 次のタイムフレームへ移動
+                continue
+
+            if err_occuerd == True and retry_count < max_retries:
                 self.logger.log_error("価格取得エラー復帰")
             # データ成型
             for i in range(len(ohlcv)):

@@ -106,6 +106,47 @@ def check_and_fix_backtest_config():
         print(f"[ERROR] config.ini の修正に失敗しました: {e}")
         return False
 
+def verify_hottest_config():
+    """
+    ホットテスト実行時に config.ini の back_test=0 であることを確認するロジック
+    （verify_backtest_mode() を参考に実装）
+    """
+    config_path = os.path.join(SRC_DIR, "config.ini")
+    
+    if not os.path.exists(config_path):
+        print(f"[ERROR] config.ini が見つかりません: {config_path}")
+        return False
+    
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config_content = f.read()
+        
+        # back_test の現在の設定を確認
+        import re
+        match = re.search(r'^back_test\s*=\s*(\d+)', config_content, re.MULTILINE)
+        
+        if not match:
+            print(f"[ERROR] config.ini に back_test 設定が見つかりません")
+            return False
+        
+        current_value = match.group(1)
+        
+        if current_value == "0":
+            print(f"[OK] config.ini: back_test = 0 (ホットテスト実行可能)")
+            return True
+        else:
+            print(f"[ERROR] config.ini: back_test = {current_value} となっています")
+            print(f"[ERROR] ホットテスト&ダミートレード実行には back_test = 0 である必要があります")
+            print(f"[修正方法]")
+            print(f"  1. src/config.ini を編集")
+            print(f"  2. back_test = {current_value} を back_test = 0 に変更")
+            print(f"  3. ファイルを保存")
+            return False
+    
+    except Exception as e:
+        print(f"[ERROR] config.ini の確認に失敗しました: {e}")
+        return False
+
 # 1. バックテスト
 
 def test_backtest():
@@ -160,10 +201,15 @@ def test_backtest():
 
 def test_hot():
     """
-    ホットテストはスキップ (実装予定)
+    ホットテスト実行前に back_test = 0 であることを確認
     """
-    test_name = "hot_test"
-    log_result(test_name, True, "スキップ (backtest=0時のダミートレード実装待ち)")
+    test_name = "hot_test_config_verification"
+    
+    # config.ini が back_test = 0 か確認
+    if verify_hottest_config():
+        log_result(test_name, True, "config.ini: back_test = 0 確認完了（ホットテスト実行可能）")
+    else:
+        log_result(test_name, False, "config.ini: back_test = 0 ではありません（ホットテスト実行不可）")
 
 # 3. 主要クラス・メソッド単体テスト
 
