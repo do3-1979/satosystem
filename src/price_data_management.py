@@ -418,15 +418,15 @@ class PriceDataManagement:
         self.signals['donchian']['info']['highest'] = high
         self.signals['donchian']['info']['lowest'] = low
 
+        # PVO update: 常時実施（毎回）
+        volume = self.volume
+        ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
+        pvo, value = self.__evaluate_pvo(ohlcv_data, volume)
+        self.signals['pvo']['signal'] = pvo
+        self.signals['pvo']['info']['value'] = value
+
         # データの更新時
         if self.prev_close_time < last_ohlcv_data['close_time']:
-
-            # PVO update
-            volume = last_ohlcv_data['Volume']
-            ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
-            pvo, value = self.__evaluate_pvo(ohlcv_data, volume)
-            self.signals['pvo']['signal'] = pvo
-            self.signals['pvo']['info']['value'] = value
             # update volatility
             self.volatility = self.calcurate_volatility(tmp_ohlcv_data_1)
             # update last data
