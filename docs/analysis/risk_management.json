@@ -1,7 +1,7 @@
 {
   "metadata": {
     "source_file": "src/risk_management.py",
-    "analyzed_at": "2025-12-10T01:33:38.285263",
+    "analyzed_at": "2025-12-13T17:38:40.166896",
     "python_version": "3.10"
   },
   "file_info": {
@@ -38,6 +38,26 @@
       "module": "numpy",
       "type": "standard",
       "used_for": "Module: numpy"
+    },
+    {
+      "module": "config.Config",
+      "type": "local",
+      "used_for": "From config"
+    },
+    {
+      "module": "config.Config",
+      "type": "local",
+      "used_for": "From config"
+    },
+    {
+      "module": "config.Config",
+      "type": "local",
+      "used_for": "From config"
+    },
+    {
+      "module": "config.Config",
+      "type": "local",
+      "used_for": "From config"
     }
   ],
   "classes": [
@@ -75,19 +95,19 @@
           "docstring": "リスク管理クラスを初期化します。",
           "summary": "リスク管理クラスを初期化します。",
           "calls": [
-            "Config.get_entry_range",
             "Config.get_lot_limit_lower",
+            "Config.get_risk_percentage",
+            "Config.get_stop_range",
+            "Config.get_entry_range",
+            "Logger",
+            "Config.get_stop_AF_max",
             "Config.get_account_balance",
             "Config.get_surge_follow_price_ratio",
             "Config.get_leverage",
-            "Config.get_stop_AF_max",
-            "Config.get_stop_AF_add",
-            "Config.get_stop_AF",
-            "Logger",
-            "Config.get_risk_percentage",
             "Config.get_balance_tether_limit",
-            "Config.get_stop_range",
-            "Config.get_entry_times"
+            "Config.get_stop_AF",
+            "Config.get_entry_times",
+            "Config.get_stop_AF_add"
           ]
         },
         {
@@ -381,8 +401,164 @@
           "summary": "get_adx_bear"
         },
         {
-          "name": "get_psar_stop_offset",
+          "name": "get_donchian_high",
           "line": 126,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_donchian_highself, period=20",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "period",
+              "type": "Any",
+              "description": "Parameter: period",
+              "default": 20
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "Donchian Channel の高値を取得 (N期間の最高値)\n\nArgs:\n    period (int): 期間（デフォルト 20）\n\nReturns:\n    float: Donchian高値、データ不足時は現在値",
+          "summary": "Donchian Channel の高値を取得 (N期間の最高値)",
+          "calls": [
+            "candle.get",
+            "self.price_data_management.get_ohlcv_data_by_time_frame",
+            "Config.get_back_test_mode",
+            "max",
+            "self.price_data_management.get_ticker",
+            "len",
+            "isinstance",
+            "self.price_data_management.get_back_test_ohlcv_data_by_time_frame",
+            "highs.append"
+          ]
+        },
+        {
+          "name": "get_donchian_low",
+          "line": 164,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_donchian_lowself, period=20",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "period",
+              "type": "Any",
+              "description": "Parameter: period",
+              "default": 20
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "Donchian Channel の安値を取得 (N期間の最安値)\n\nArgs:\n    period (int): 期間（デフォルト 20）\n\nReturns:\n    float: Donchian安値、データ不足時は現在値",
+          "summary": "Donchian Channel の安値を取得 (N期間の最安値)",
+          "calls": [
+            "candle.get",
+            "self.price_data_management.get_ohlcv_data_by_time_frame",
+            "Config.get_back_test_mode",
+            "lows.append",
+            "self.price_data_management.get_ticker",
+            "len",
+            "min",
+            "isinstance",
+            "self.price_data_management.get_back_test_ohlcv_data_by_time_frame"
+          ]
+        },
+        {
+          "name": "get_bb_upper",
+          "line": 202,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_bb_upperself, period=20, sigma=2.0",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "period",
+              "type": "Any",
+              "description": "Parameter: period",
+              "default": 20
+            },
+            {
+              "name": "sigma",
+              "type": "Any",
+              "description": "Parameter: sigma",
+              "default": 2.0
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "Bollinger Bands の上限を取得\n\nArgs:\n    period (int): 期間（デフォルト 20）\n    sigma (float): シグマ倍数（デフォルト 2.0）\n\nReturns:\n    float: BB上限値",
+          "summary": "Bollinger Bands の上限を取得",
+          "calls": [
+            "candle.get",
+            "self.price_data_management.get_ohlcv_data_by_time_frame",
+            "Config.get_back_test_mode",
+            "np.std",
+            "closes.append",
+            "self.price_data_management.get_ticker",
+            "np.mean",
+            "np.array",
+            "len",
+            "isinstance",
+            "self.price_data_management.get_back_test_ohlcv_data_by_time_frame"
+          ]
+        },
+        {
+          "name": "get_bb_lower",
+          "line": 244,
+          "visibility": "public",
+          "is_classmethod": false,
+          "is_staticmethod": false,
+          "signature": "def get_bb_lowerself, period=20, sigma=2.0",
+          "parameters": [
+            {
+              "name": "self",
+              "type": "Any",
+              "description": "Parameter: self"
+            },
+            {
+              "name": "period",
+              "type": "Any",
+              "description": "Parameter: period",
+              "default": 20
+            },
+            {
+              "name": "sigma",
+              "type": "Any",
+              "description": "Parameter: sigma",
+              "default": 2.0
+            }
+          ],
+          "return_type": "Any",
+          "docstring": "Bollinger Bands の下限を取得\n\nArgs:\n    period (int): 期間（デフォルト 20）\n    sigma (float): シグマ倍数（デフォルト 2.0）\n\nReturns:\n    float: BB下限値",
+          "summary": "Bollinger Bands の下限を取得",
+          "calls": [
+            "candle.get",
+            "self.price_data_management.get_ohlcv_data_by_time_frame",
+            "Config.get_back_test_mode",
+            "np.std",
+            "closes.append",
+            "self.price_data_management.get_ticker",
+            "np.mean",
+            "np.array",
+            "len",
+            "isinstance",
+            "self.price_data_management.get_back_test_ohlcv_data_by_time_frame"
+          ]
+        },
+        {
+          "name": "get_psar_stop_offset",
+          "line": 286,
           "visibility": "public",
           "is_classmethod": false,
           "is_staticmethod": false,
@@ -400,7 +576,7 @@
         },
         {
           "name": "get_price_surge_stop_offset",
-          "line": 129,
+          "line": 289,
           "visibility": "public",
           "is_classmethod": false,
           "is_staticmethod": false,
@@ -418,7 +594,7 @@
         },
         {
           "name": "__calc_parabolic_sar",
-          "line": 133,
+          "line": 293,
           "visibility": "private",
           "is_classmethod": false,
           "is_staticmethod": false,
@@ -439,17 +615,17 @@
           "docstring": "No description",
           "summary": "__calc_parabolic_sar",
           "calls": [
-            "len",
-            "low.append",
-            "min",
-            "close.append",
             "range",
-            "high.append"
+            "low.append",
+            "high.append",
+            "len",
+            "min",
+            "close.append"
           ]
         },
         {
           "name": "__calc_adx",
-          "line": 244,
+          "line": 404,
           "visibility": "private",
           "is_classmethod": false,
           "is_staticmethod": false,
@@ -470,22 +646,22 @@
           "docstring": "No description",
           "summary": "__calc_adx",
           "calls": [
-            "np.abs",
-            "len",
-            "np.errstate",
-            "max",
-            "abs",
-            "sum",
-            "range",
-            "adx.tolist",
+            "np.zeros",
             "np.where",
+            "sum",
+            "max",
+            "range",
             "all",
-            "np.zeros"
+            "np.abs",
+            "np.errstate",
+            "adx.tolist",
+            "len",
+            "abs"
           ]
         },
         {
           "name": "__calc_stop_psar",
-          "line": 309,
+          "line": 469,
           "visibility": "private",
           "is_classmethod": false,
           "is_staticmethod": false,
@@ -502,16 +678,16 @@
           "summary": "ストップ値をパラボリックASRにする関数",
           "calls": [
             "self.get_psarbear",
-            "round",
-            "min",
             "self.portfolio.get_position_price",
-            "self.portfolio.get_position_side",
-            "self.get_psarbull"
+            "self.get_psarbull",
+            "min",
+            "round",
+            "self.portfolio.get_position_side"
           ]
         },
         {
           "name": "__follow_price_surge",
-          "line": 347,
+          "line": 507,
           "visibility": "private",
           "is_classmethod": false,
           "is_staticmethod": false,
@@ -538,7 +714,7 @@
         },
         {
           "name": "__follow_price_range",
-          "line": 373,
+          "line": 533,
           "visibility": "private",
           "is_classmethod": false,
           "is_staticmethod": false,
@@ -561,7 +737,7 @@
         },
         {
           "name": "__update_stop_price",
-          "line": 383,
+          "line": 543,
           "visibility": "private",
           "is_classmethod": false,
           "is_staticmethod": false,
@@ -577,23 +753,23 @@
           "docstring": "No description",
           "summary": "__update_stop_price",
           "calls": [
-            "self.__follow_price_surge",
-            "self.price_data_management.get_volatility",
-            "self.__calc_parabolic_sar",
-            "Config.get_psar_time_frame",
             "self.__calc_adx",
-            "min",
+            "self.__calc_parabolic_sar",
+            "self.__follow_price_surge",
             "max",
             "Config.get_time_frame",
-            "self.price_data_management.get_ohlcv_data",
+            "self.price_data_management.get_volatility",
+            "self.price_data_management.get_ticker",
             "self.__calc_stop_psar",
+            "self.price_data_management.get_ohlcv_data",
+            "min",
             "self.portfolio.get_position_quantity",
-            "self.price_data_management.get_ticker"
+            "Config.get_psar_time_frame"
           ]
         },
         {
           "name": "calculate_position_size",
-          "line": 455,
+          "line": 615,
           "visibility": "public",
           "is_classmethod": false,
           "is_staticmethod": false,
@@ -614,12 +790,12 @@
           "docstring": "ポジションサイズ[通貨単位]を計算します。\n\nArgs:\n    entry_price (float): エントリー価格\n    stop_loss_price (float): ストップロス価格\n\nReturns:\n    float: ポジションサイズ",
           "summary": "ポジションサイズ[通貨単位]を計算します。",
           "calls": [
+            "min",
             "self.price_data_management.get_volatility",
+            "self.price_data_management.get_ticker",
             "self.get_entry_range",
             "round",
-            "self.logger.log_error",
-            "min",
-            "self.price_data_management.get_ticker"
+            "self.logger.log_error"
           ]
         }
       ]
@@ -629,9 +805,9 @@
   "constants": [],
   "summary": {
     "total_classes": 1,
-    "total_methods": 25,
+    "total_methods": 29,
     "total_functions": 0,
     "total_constants": 0,
-    "lines_of_code": 351
+    "lines_of_code": 471
   }
 }

@@ -1,7 +1,7 @@
 {
   "metadata": {
     "source_file": "src/exit_strategy_v2.py",
-    "analyzed_at": "2025-12-10T01:33:37.900095",
+    "analyzed_at": "2025-12-13T17:38:40.010096",
     "python_version": "3.10"
   },
   "file_info": {
@@ -73,12 +73,12 @@
           "docstring": "複合シグナルベースの出口判定\n\nArgs:\n    current_ohlcv: 現在のOHLCV + 指標 {\n        'close_price', 'high_price', 'low_price',\n        'psar', 'adx', 'pvo_val', 'volatility', ...\n    }\n    position_info: ポジション情報 {\n        'entry_price', 'quantity', 'side', ...\n    }\n    entry_info: エントリー時の指標記録 {\n        'entry_adx', 'entry_pvo', 'entry_price', ...\n    }\n\nReturns:\n    {\n        'should_exit': bool,\n        'exit_reason': str,\n        'close_ratio': float (0.0-1.0),\n        'stage': str,\n        'confidence': float (0.0-1.0),\n    }",
           "summary": "複合シグナルベースの出口判定",
           "calls": [
-            "self._identify_stage",
-            "entry_info.get",
-            "print",
-            "position_info.get",
             "self._check_stop_loss",
-            "current_ohlcv.get"
+            "current_ohlcv.get",
+            "position_info.get",
+            "self._identify_stage",
+            "print",
+            "entry_info.get"
           ]
         },
         {
@@ -254,10 +254,10 @@
           "docstring": "出口判定と実行を統合\n\nReturns:\n    {\n        'executed': bool,\n        'decision': exit_strategy_decision,\n        'result': execution_result,\n    }",
           "summary": "出口判定と実行を統合",
           "calls": [
+            "self.exit_strategy.evaluate_exit_condition",
             "print",
             "self._close_partial_position",
-            "self._close_full_position",
-            "self.exit_strategy.evaluate_exit_condition"
+            "self._close_full_position"
           ]
         },
         {

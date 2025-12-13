@@ -1,7 +1,7 @@
 {
   "metadata": {
     "source_file": "src/ohlcv_cache_inspector.py",
-    "analyzed_at": "2025-12-10T01:33:38.055953",
+    "analyzed_at": "2025-12-13T17:38:40.067376",
     "python_version": "3.10"
   },
   "file_info": {
@@ -91,9 +91,9 @@
           "docstring": "OHLCVCacheInspectorの初期化\n\nArgs:\n    cache_path: SQLiteデータベースのパス",
           "summary": "OHLCVCacheInspectorの初期化",
           "calls": [
-            "Logger",
             "FileNotFoundError",
             "os.path.exists",
+            "Logger",
             "print"
           ]
         },
@@ -136,11 +136,11 @@
           "docstring": "キャッシュ内の総レコード数を取得\n\nReturns:\n    総レコード数",
           "summary": "キャッシュ内の総レコード数を取得",
           "calls": [
+            "cursor.fetchone",
+            "conn.close",
             "cursor.execute",
             "conn.cursor",
-            "self._get_connection",
-            "conn.close",
-            "cursor.fetchone"
+            "self._get_connection"
           ]
         },
         {
@@ -161,15 +161,15 @@
           "docstring": "キャッシュされているパラメータ（start_epoch, end_epoch, time_frame）の一覧を取得\n\nReturns:\n    パラメータの辞書リスト",
           "summary": "キャッシュされているパラメータ（start_epoch, end_epoch, time_frame）の一覧を取得",
           "calls": [
+            "params.append",
+            "conn.close",
             "cursor.execute",
+            "cursor.fetchall",
             "conn.cursor",
             "datetime.fromtimestamp",
-            "self._get_connection",
-            "cursor.fetchall",
-            "conn.close",
             "datetime.fromtimestamp(row['end_epoch']).strftime",
-            "datetime.fromtimestamp(row['start_epoch']).strftime",
-            "params.append"
+            "self._get_connection",
+            "datetime.fromtimestamp(row['start_epoch']).strftime"
           ]
         },
         {
@@ -205,14 +205,14 @@
           "docstring": "指定されたパラメータでのデータ範囲とギャップ（断絶）を分析\n\nArgs:\n    start_epoch: 開始時刻（エポック秒）\n    end_epoch: 終了時刻（エポック秒）\n    time_frame: タイムフレーム（分）\n\nReturns:\n    データ範囲と断絶情報の辞書",
           "summary": "指定されたパラメータでのデータ範囲とギャップ（断絶）を分析",
           "calls": [
-            "cursor.execute",
-            "conn.cursor",
-            "len",
-            "self._get_connection",
-            "cursor.fetchall",
             "conn.close",
+            "cursor.execute",
             "range",
-            "segments.append"
+            "cursor.fetchall",
+            "segments.append",
+            "conn.cursor",
+            "self._get_connection",
+            "len"
           ]
         },
         {
@@ -233,14 +233,14 @@
           "docstring": "キャッシュの概要を表示",
           "summary": "キャッシュの概要を表示",
           "calls": [
+            "os.path.exists",
             "table_data.append",
             "self.get_total_records",
-            "len",
-            "os.path.exists",
-            "print",
             "self.get_cache_parameters",
             "os.path.getsize",
-            "tabulate"
+            "tabulate",
+            "len",
+            "print"
           ]
         },
         {
@@ -279,20 +279,20 @@
           "docstring": "データ範囲と断絶を表示\n\nArgs:\n    start_epoch: 開始時刻（エポック秒）。Noneの場合は最初のパラメータを使用\n    end_epoch: 終了時刻（エポック秒）。Noneの場合は最初のパラメータを使用\n    time_frame: タイムフレーム（分）。Noneの場合は最初のパラメータを使用",
           "summary": "データ範囲と断絶を表示",
           "calls": [
-            "table_data.append",
-            "len",
-            "datetime.fromtimestamp",
-            "datetime.fromtimestamp(curr_start).strftime",
-            "enumerate",
-            "datetime.fromtimestamp(end_epoch).strftime",
-            "print",
-            "range",
-            "self.get_cache_parameters",
             "datetime.fromtimestamp(start_epoch).strftime",
+            "datetime.fromtimestamp(end_epoch).strftime",
+            "table_data.append",
+            "range",
             "datetime.fromtimestamp(prev_end).strftime",
-            "self.get_data_coverage",
             "gap_data.append",
-            "tabulate"
+            "enumerate",
+            "self.get_data_coverage",
+            "datetime.fromtimestamp",
+            "self.get_cache_parameters",
+            "tabulate",
+            "datetime.fromtimestamp(curr_start).strftime",
+            "len",
+            "print"
           ]
         },
         {
@@ -313,9 +313,9 @@
           "docstring": "すべてのパラメータについて詳細分析を表示",
           "summary": "すべてのパラメータについて詳細分析を表示",
           "calls": [
-            "self.get_cache_parameters",
             "self.print_data_coverage",
-            "print"
+            "print",
+            "self.get_cache_parameters"
           ]
         }
       ]

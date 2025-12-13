@@ -1,7 +1,7 @@
 {
   "metadata": {
     "source_file": "src/event.py",
-    "analyzed_at": "2025-12-10T01:33:37.870425",
+    "analyzed_at": "2025-12-13T17:38:39.994035",
     "python_version": "3.10"
   },
   "file_info": {
@@ -127,8 +127,8 @@
           "docstring": "No description",
           "summary": "subscribe",
           "calls": [
-            "self._handlers.setdefault(event_type, []).append",
-            "self._handlers.setdefault"
+            "self._handlers.setdefault",
+            "self._handlers.setdefault(event_type, []).append"
           ]
         },
         {
@@ -189,8 +189,8 @@
           "summary": "emit",
           "calls": [
             "Event",
-            "h",
-            "list"
+            "list",
+            "h"
           ]
         }
       ]

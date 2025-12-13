@@ -1,7 +1,7 @@
 {
   "metadata": {
     "source_file": "src/bybit_exchange.py",
-    "analyzed_at": "2025-12-10T01:33:37.772381",
+    "analyzed_at": "2025-12-13T17:38:39.925924",
     "python_version": "3.10"
   },
   "file_info": {
@@ -92,15 +92,15 @@
           "docstring": "BybitExchange クラスの初期化\n\nArgs:\n    api_key (str): ユーザーごとの API キー\n    api_secret (str): ユーザーごとの API シークレット",
           "summary": "BybitExchange クラスの初期化",
           "calls": [
-            "self.logger.log",
-            "Config.get_hot_test_dummy_mode",
-            "ccxt.bybit",
             "super().__init__",
-            "Logger",
-            "Config.get_market",
-            "Config.get_time_frame",
             "Config.get_back_test_mode",
-            "super"
+            "Config.get_market",
+            "Logger",
+            "Config.get_time_frame",
+            "self.logger.log",
+            "ccxt.bybit",
+            "super",
+            "Config.get_hot_test_dummy_mode"
           ]
         },
         {
@@ -121,11 +121,11 @@
           "docstring": "口座の残高情報を取得します.\n\nReturns:\n    dict: 口座の残高情報",
           "summary": "口座の残高情報を取得します.",
           "calls": [
-            "Config.get_server_retry_wait",
-            "self.exchange.fetchBalance",
             "self.logger.log_error",
-            "time.sleep",
-            "str"
+            "Config.get_server_retry_wait",
+            "str",
+            "self.exchange.fetchBalance",
+            "time.sleep"
           ]
         },
         {
@@ -146,11 +146,11 @@
           "docstring": "口座上の使用可能な証拠金残高を取得します.\n\nReturns:\n    int: 口座上の使用可能な証拠金残高",
           "summary": "口座上の使用可能な証拠金残高を取得します.",
           "calls": [
-            "Config.get_server_retry_wait",
-            "self.exchange.fetchBalance",
             "self.logger.log_error",
-            "time.sleep",
-            "str"
+            "Config.get_server_retry_wait",
+            "str",
+            "self.exchange.fetchBalance",
+            "time.sleep"
           ]
         },
         {
@@ -191,19 +191,19 @@
           "docstring": "注文を発行します.\n\nArgs:\n    side (str): 注文のタイプ ('buy' または 'sell')\n    quantity (float): 注文数量\n    price (float or None): 注文価格 (市場注文の場合は None)\n    order_type (str): 注文タイプ ('limit' または 'market')\n\nReturns:\n    dict: 注文の実行結果",
           "summary": "注文を発行します.",
           "calls": [
-            "time.sleep",
-            "time.time",
-            "self.logger.log",
-            "Config.get_server_retry_wait",
-            "ValueError",
-            "self.logger.log_error",
-            "self.exchange.create_market_order",
-            "side.upper",
             "Config.get_back_test_mode",
             "int",
-            "self.exchange.create_limit_order",
+            "Config.get_server_retry_wait",
             "self.exchange.create_order",
-            "str"
+            "self.exchange.create_market_order",
+            "self.logger.log",
+            "str",
+            "side.upper",
+            "time.sleep",
+            "time.time",
+            "self.exchange.create_limit_order",
+            "self.logger.log_error",
+            "ValueError"
           ]
         },
         {
@@ -229,16 +229,16 @@
           "docstring": "_summary_\n\nArgs:\n    end_epoch (_type_): _description_\n\nReturns:\n    _type_: _description_",
           "summary": "_summary_",
           "calls": [
-            "epoch_time_str.timestamp",
-            "len",
             "datetime.now",
-            "datetime.fromtimestamp",
-            "timedelta",
             "range",
             "int",
-            "current_local_time.timestamp",
             "target_time.replace",
-            "datetime"
+            "timedelta",
+            "datetime",
+            "datetime.fromtimestamp",
+            "len",
+            "current_local_time.timestamp",
+            "epoch_time_str.timestamp"
           ]
         },
         {
@@ -274,23 +274,23 @@
           "docstring": "取引情報を取得\n\nReturns:\n    list: 価格データのリスト",
           "summary": "取引情報を取得",
           "calls": [
-            "str",
-            "datetime.fromtimestamp(end_epoch_fixed).strftime",
-            "Config.get_server_retry_wait",
-            "len",
-            "datetime.fromtimestamp(get_time).strftime",
-            "self.exchange.fetch_ohlcv",
-            "datetime.fromtimestamp",
-            "self.logger.log_error",
-            "self.get_nearest_epoch_time",
-            "print",
-            "range",
-            "Config.get_back_test_mode",
-            "int",
             "datetime.fromtimestamp(start_epoch).strftime",
-            "time.sleep",
             "ohlcv_data.append",
-            "datetime.fromtimestamp(tmp_time).strftime"
+            "Config.get_back_test_mode",
+            "self.logger.log_error",
+            "range",
+            "int",
+            "Config.get_server_retry_wait",
+            "str",
+            "self.exchange.fetch_ohlcv",
+            "datetime.fromtimestamp(get_time).strftime",
+            "time.sleep",
+            "datetime.fromtimestamp",
+            "len",
+            "datetime.fromtimestamp(tmp_time).strftime",
+            "datetime.fromtimestamp(end_epoch_fixed).strftime",
+            "self.get_nearest_epoch_time",
+            "print"
           ]
         },
         {
@@ -316,17 +316,17 @@
           "docstring": "最新取引情報を取得\n\nReturns:\n    list: 価格データのリスト",
           "summary": "最新取引情報を取得",
           "calls": [
-            "time.time",
-            "random.uniform",
-            "str",
-            "Config.get_server_retry_wait",
-            "datetime.fromtimestamp",
-            "self.exchange.fetch_ohlcv",
-            "self.logger.log_error",
-            "int",
-            "time.sleep",
             "ohlcv_data.append",
-            "datetime.fromtimestamp(tmp_time).strftime"
+            "random.uniform",
+            "int",
+            "Config.get_server_retry_wait",
+            "str",
+            "self.exchange.fetch_ohlcv",
+            "datetime.fromtimestamp",
+            "datetime.fromtimestamp(tmp_time).strftime",
+            "time.time",
+            "self.logger.log_error",
+            "time.sleep"
           ]
         },
         {
@@ -347,9 +347,9 @@
           "docstring": "指定されたペアの最新の価格情報を取得します.\n\nArgs:\n    symbol (str): 取得するペアのシンボル (例: 'BTC/USD')\n\nReturns:\n    dict: 最新の価格情報",
           "summary": "指定されたペアの最新の価格情報を取得します.",
           "calls": [
+            "self.exchange.fetch_ticker",
             "Config.get_market",
-            "random.uniform",
-            "self.exchange.fetch_ticker"
+            "random.uniform"
           ]
         }
       ]

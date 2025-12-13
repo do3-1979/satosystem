@@ -1,7 +1,7 @@
 {
   "metadata": {
     "source_file": "src/logger.py",
-    "analyzed_at": "2025-12-10T01:33:37.940302",
+    "analyzed_at": "2025-12-13T17:38:40.024468",
     "python_version": "3.10"
   },
   "file_info": {
@@ -65,9 +65,9 @@
           "docstring": "シングルトンインスタンスを生成または既存のインスタンスを返します。\n\nArgs:\n    log_file (str): ログを保存するファイル名\n\nReturns:\n    Logger: Loggerクラスの唯一のインスタンス",
           "summary": "シングルトンインスタンスを生成または既存のインスタンスを返します。",
           "calls": [
-            "cls._instance._initialize",
             "super",
-            "super(Logger, cls).__new__"
+            "super(Logger, cls).__new__",
+            "cls._instance._initialize"
           ]
         },
         {
@@ -88,21 +88,21 @@
           "docstring": "Loggerクラスを初期化します。\n\nArgs:\n    log_file (str): ログを保存するファイル名",
           "summary": "Loggerクラスを初期化します。",
           "calls": [
-            "logging.StreamHandler",
-            "os.makedirs",
-            "self.open_log_file",
-            "self.logger.setLevel",
-            "console_handler.setLevel",
-            "logging.Formatter",
             "self.logger.addHandler",
+            "logging.FileHandler",
             "file_handler.setLevel",
-            "Config.get_log_dir_name",
             "os.path.exists",
             "Config.get_log_file_name",
+            "self.open_log_file",
+            "logging.Formatter",
+            "file_handler.setFormatter",
+            "console_handler.setLevel",
             "console_handler.setFormatter",
-            "logging.FileHandler",
             "logging.getLogger",
-            "file_handler.setFormatter"
+            "Config.get_log_dir_name",
+            "self.logger.setLevel",
+            "logging.StreamHandler",
+            "os.makedirs"
           ]
         },
         {
@@ -175,11 +175,11 @@
           "docstring": "No description",
           "summary": "open_log_file",
           "calls": [
+            "datetime.now",
+            "self.current_log_file.write",
             "os.path.join",
             "open",
-            "datetime.now",
-            "current_time.strftime",
-            "self.current_log_file.write"
+            "current_time.strftime"
           ]
         },
         {
@@ -200,10 +200,10 @@
           "docstring": "No description",
           "summary": "close_log_file",
           "calls": [
+            "self.current_log_file.close",
             "self.current_log_file.seek",
-            "self.current_log_file.tell",
             "self.current_log_file.write",
-            "self.current_log_file.close"
+            "self.current_log_file.tell"
           ]
         },
         {
@@ -251,16 +251,16 @@
           "docstring": "No description",
           "summary": "compress_logs",
           "calls": [
-            "os.path.join",
-            "datetime.now",
-            "os.walk",
+            "file.endswith",
             "os.path.exists",
-            "os.path.relpath",
-            "current_time.strftime",
-            "os.remove",
+            "datetime.now",
             "zipfile.ZipFile",
+            "os.walk",
+            "os.remove",
+            "os.path.join",
             "log_zip.write",
-            "file.endswith"
+            "os.path.relpath",
+            "current_time.strftime"
           ]
         }
       ]

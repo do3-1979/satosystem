@@ -1,7 +1,7 @@
 {
   "metadata": {
     "source_file": "src/ohlcv_cache.py",
-    "analyzed_at": "2025-12-10T01:33:38.006813",
+    "analyzed_at": "2025-12-13T17:38:40.048877",
     "python_version": "3.10"
   },
   "file_info": {
@@ -91,12 +91,12 @@
           "docstring": "OHLCVCacheの初期化\n\nArgs:\n    cache_path: SQLiteデータベースのパス",
           "summary": "OHLCVCacheの初期化",
           "calls": [
-            "self._initialize_database",
-            "os.makedirs",
-            "self.logger.log",
+            "os.path.dirname",
             "os.path.exists",
             "Logger",
-            "os.path.dirname"
+            "self.logger.log",
+            "self._initialize_database",
+            "os.makedirs"
           ]
         },
         {
@@ -138,12 +138,12 @@
           "docstring": "データベースとテーブルを初期化",
           "summary": "データベースとテーブルを初期化",
           "calls": [
+            "conn.close",
             "cursor.execute",
+            "conn.commit",
             "self.logger.log",
             "conn.cursor",
-            "self._get_connection",
-            "conn.close",
-            "conn.commit"
+            "self._get_connection"
           ]
         },
         {
@@ -179,14 +179,14 @@
           "docstring": "指定されたパラメータでOHLCVデータをキャッシュから取得\n\nArgs:\n    start_epoch: 開始時刻（エポック秒）\n    end_epoch: 終了時刻（エポック秒）\n    time_frame: タイムフレーム（分）\n\nReturns:\n    キャッシュされたOHLCVデータのリスト、またはNone（キャッシュなし）",
           "summary": "指定されたパラメータでOHLCVデータをキャッシュから取得",
           "calls": [
+            "conn.close",
             "cursor.execute",
+            "cursor.fetchall",
             "self.logger.log",
             "conn.cursor",
             "data.append",
-            "len",
             "self._get_connection",
-            "cursor.fetchall",
-            "conn.close"
+            "len"
           ]
         },
         {
@@ -222,15 +222,15 @@
           "docstring": "指定期間がキャッシュに含まれているか確認し、含まれていれば取得\nキャッシュの期間が要求期間を完全に含んでいる場合に取得する（部分一致）\n\nArgs:\n    start_epoch: 開始時刻（エポック秒）\n    end_epoch: 終了時刻（エポック秒）\n    time_frame: タイムフレーム（分）\n\nReturns:\n    キャッシュされたOHLCVデータのリスト、またはNone（キャッシュに期間が含まれない場合）",
           "summary": "指定期間がキャッシュに含まれているか確認し、含まれていれば取得",
           "calls": [
+            "cursor.fetchone",
             "cursor.execute",
+            "conn.close",
+            "cursor.fetchall",
             "self.logger.log",
             "conn.cursor",
             "data.append",
-            "len",
             "self._get_connection",
-            "cursor.fetchall",
-            "conn.close",
-            "cursor.fetchone"
+            "len"
           ]
         },
         {
@@ -271,16 +271,16 @@
           "docstring": "OHLCVデータをキャッシュに保存\n\nArgs:\n    ohlcv_list: OHLCVデータのリスト\n    start_epoch: 開始時刻（エポック秒）\n    end_epoch: 終了時刻（エポック秒）\n    time_frame: タイムフレーム（分）\n\nReturns:\n    保存成功の可否",
           "summary": "OHLCVデータをキャッシュに保存",
           "calls": [
+            "conn.rollback",
             "cursor.execute",
+            "conn.close",
+            "conn.commit",
             "self.logger.log",
             "conn.cursor",
-            "len",
+            "str",
             "self._get_connection",
-            "self.logger.log_error",
-            "conn.close",
-            "conn.rollback",
-            "conn.commit",
-            "str"
+            "len",
+            "self.logger.log_error"
           ]
         },
         {
@@ -301,14 +301,14 @@
           "docstring": "キャッシュを全削除\n\nReturns:\n    削除成功の可否",
           "summary": "キャッシュを全削除",
           "calls": [
+            "conn.close",
             "cursor.execute",
+            "conn.commit",
             "self.logger.log",
             "conn.cursor",
+            "str",
             "self._get_connection",
-            "self.logger.log_error",
-            "conn.close",
-            "conn.commit",
-            "str"
+            "self.logger.log_error"
           ]
         },
         {
@@ -329,12 +329,12 @@
           "docstring": "キャッシュ統計情報を取得\n\nReturns:\n    キャッシュ統計情報の辞書",
           "summary": "キャッシュ統計情報を取得",
           "calls": [
-            "cursor.execute",
-            "conn.cursor",
-            "self._get_connection",
-            "cursor.fetchall",
+            "cursor.fetchone",
             "conn.close",
-            "cursor.fetchone"
+            "cursor.execute",
+            "cursor.fetchall",
+            "conn.cursor",
+            "self._get_connection"
           ]
         },
         {
@@ -361,21 +361,21 @@
           "docstring": "JSONキャッシュファイルからSQLiteに移行\n\nArgs:\n    json_cache_dir: JSONキャッシュファイルのディレクトリ\n\nReturns:\n    移行成功の可否",
           "summary": "JSONキャッシュファイルからSQLiteに移行",
           "calls": [
-            "os.path.join",
-            "glob.glob",
-            "self.logger.log",
-            "open",
-            "len",
             "filename.replace('ohlcv_data_', '').replace",
-            "json.load",
-            "os.path.basename",
             "os.path.exists",
             "filename.replace('ohlcv_data_', '').replace('.json', '').split",
-            "self.save_ohlcv_data",
-            "self.logger.log_error",
+            "glob.glob",
+            "os.path.basename",
             "int",
             "filename.replace",
-            "str"
+            "self.logger.log",
+            "json.load",
+            "str",
+            "os.path.join",
+            "len",
+            "open",
+            "self.save_ohlcv_data",
+            "self.logger.log_error"
           ]
         },
         {
@@ -401,17 +401,17 @@
           "docstring": "SQLiteキャッシュをJSONにダンプ（デバッグ用）\n\nArgs:\n    output_file: 出力JSONファイルパス\n\nReturns:\n    ダンプ成功の可否",
           "summary": "SQLiteキャッシュをJSONにダンプ（デバッグ用）",
           "calls": [
-            "open",
-            "cursor.execute",
-            "self.logger.log",
-            "conn.cursor",
-            "len",
-            "self._get_connection",
-            "cursor.fetchall",
-            "self.logger.log_error",
-            "json.dump",
             "conn.close",
-            "str"
+            "cursor.execute",
+            "cursor.fetchall",
+            "self.logger.log",
+            "str",
+            "conn.cursor",
+            "json.dump",
+            "open",
+            "self._get_connection",
+            "len",
+            "self.logger.log_error"
           ]
         }
       ]

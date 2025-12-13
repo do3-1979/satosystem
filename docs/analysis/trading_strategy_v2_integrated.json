@@ -1,7 +1,7 @@
 {
   "metadata": {
     "source_file": "src/trading_strategy_v2_integrated.py",
-    "analyzed_at": "2025-12-10T01:33:38.442055",
+    "analyzed_at": "2025-12-13T17:38:40.225438",
     "python_version": "3.10"
   },
   "file_info": {
@@ -81,8 +81,8 @@
           "summary": "__init__",
           "calls": [
             "Logger",
-            "ExitStrategyV2",
-            "self.initialize_trade_decision"
+            "self.initialize_trade_decision",
+            "ExitStrategyV2"
           ]
         },
         {
@@ -121,11 +121,11 @@
           "docstring": "エントリー条件を評価し、エントリーするかどうかを決定します。\n\n条件:\n1. ポジションを保有していない\n2. ドンチャンチャネルブレイクが発生\n3. PVOが閾値範囲内",
           "summary": "エントリー条件を評価し、エントリーするかどうかを決定します。",
           "calls": [
-            "self.risk_manager.get_adx",
-            "self.price_data_management.get_latest_ohlcv",
-            "self.logger.log",
             "self.price_data_management.get_signals",
-            "current_price.get"
+            "self.logger.log",
+            "self.risk_manager.get_adx",
+            "current_price.get",
+            "self.price_data_management.get_latest_ohlcv"
           ]
         },
         {
@@ -151,10 +151,10 @@
           "docstring": "ピラミッド条件を評価し、買い増しするかどうかを決定します。\n\n条件:\n1. ポジションを保有している\n2. 追加レンジ幅が前回取得値を超過",
           "summary": "ピラミッド条件を評価し、買い増しするかどうかを決定します。",
           "calls": [
-            "self.portfolio.get_position_side",
             "self.risk_manager.get_last_entry_price",
-            "self.logger.log",
-            "self.risk_manager.get_add_range"
+            "self.risk_manager.get_add_range",
+            "self.portfolio.get_position_side",
+            "self.logger.log"
           ]
         },
         {
@@ -175,15 +175,15 @@
           "docstring": "エグジット条件を評価し、ポジションをクローズするかどうかを決定します。\nハイブリッド方式：\n1. 従来のストップロス判定（優先度最高）\n2. ExitStrategyV2（複合シグナル）で補助的に判定",
           "summary": "エグジット条件を評価し、ポジションをクローズするかどうかを決定します。",
           "calls": [
-            "self.price_data_management.get_latest_ohlcv",
-            "self.logger.log",
-            "self.exit_strategy_v2.evaluate_exit_condition",
-            "self.risk_manager.get_stop_price",
-            "self.portfolio.get_position_side",
-            "self.portfolio.get_position_quantity",
-            "hasattr",
+            "current_ohlcv.get",
             "exit_decision.get",
-            "current_ohlcv.get"
+            "self.portfolio.get_position_quantity",
+            "self.logger.log",
+            "self.risk_manager.get_stop_price",
+            "hasattr",
+            "self.price_data_management.get_latest_ohlcv",
+            "self.exit_strategy_v2.evaluate_exit_condition",
+            "self.portfolio.get_position_side"
           ]
         },
         {
@@ -204,11 +204,11 @@
           "docstring": "トレードの実行判断を行います。",
           "summary": "トレードの実行判断を行います。",
           "calls": [
-            "self.evaluate_add",
             "self.evaluate_entry",
+            "self.price_data_management.get_ticker",
+            "self.evaluate_add",
             "self.evaluate_exit",
-            "self.portfolio.get_position_quantity",
-            "self.price_data_management.get_ticker"
+            "self.portfolio.get_position_quantity"
           ]
         },
         {

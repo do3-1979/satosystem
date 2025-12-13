@@ -1,7 +1,7 @@
 {
   "metadata": {
     "source_file": "src/source_analyzer.py",
-    "analyzed_at": "2025-12-10T01:33:38.384662",
+    "analyzed_at": "2025-12-13T17:38:40.203927",
     "python_version": "3.10"
   },
   "file_info": {
@@ -95,11 +95,11 @@
           "docstring": "SourceAnalyzerの初期化\n\nArgs:\n    source_file: 解析対象のPythonファイルパス",
           "summary": "SourceAnalyzerの初期化",
           "calls": [
-            "open",
+            "self.source_code.split",
             "f.read",
             "ast.parse",
-            "print",
-            "self.source_code.split"
+            "open",
+            "print"
           ]
         },
         {
@@ -146,9 +146,9 @@
           "docstring": "コード行数を取得",
           "summary": "コード行数を取得",
           "calls": [
-            "len",
             "line.strip",
-            "line.strip().startswith"
+            "line.strip().startswith",
+            "len"
           ]
         },
         {
@@ -169,9 +169,9 @@
           "docstring": "インポート情報を抽出",
           "summary": "インポート情報を抽出",
           "calls": [
+            "imports.append",
             "isinstance",
-            "ast.walk",
-            "imports.append"
+            "ast.walk"
           ]
         },
         {
@@ -197,11 +197,11 @@
           "docstring": "関数・メソッドのパラメータを抽出",
           "summary": "関数・メソッドのパラメータを抽出",
           "calls": [
-            "self._extract_annotation",
-            "len",
+            "params.append",
             "enumerate",
+            "len",
             "self._extract_value",
-            "params.append"
+            "self._extract_annotation"
           ]
         },
         {
@@ -280,15 +280,15 @@
           "summary": "クラスのメソッドを解析",
           "calls": [
             "self._generate_signature",
-            "self.extract_docstring(item) or ''.split",
-            "self._extract_annotation",
-            "isinstance",
             "self._extract_method_calls",
-            "item.name.startswith",
-            "self.extract_docstring",
+            "self._extract_annotation",
+            "self.analyze_parameters",
             "any",
+            "self.extract_docstring",
+            "self.extract_docstring(item) or ''.split",
             "methods.append",
-            "self.analyze_parameters"
+            "isinstance",
+            "item.name.startswith"
           ]
         },
         {
@@ -340,12 +340,12 @@
           "docstring": "メソッド内で呼び出されている関数を抽出",
           "summary": "メソッド内で呼び出されている関数を抽出",
           "calls": [
-            "list",
+            "calls.append",
+            "ast.unparse",
             "ast.walk",
             "isinstance",
-            "set",
-            "calls.append",
-            "ast.unparse"
+            "list",
+            "set"
           ]
         },
         {
@@ -366,13 +366,13 @@
           "docstring": "クラスを解析",
           "summary": "クラスを解析",
           "calls": [
-            "ast.walk",
-            "isinstance",
-            "self.extract_docstring",
-            "classes.append",
             "self.analyze_methods",
             "ast.unparse",
-            "hasattr"
+            "self.extract_docstring",
+            "ast.walk",
+            "classes.append",
+            "hasattr",
+            "isinstance"
           ]
         },
         {
@@ -394,13 +394,13 @@
           "summary": "トップレベルの関数を解析",
           "calls": [
             "self._generate_signature",
-            "self._extract_annotation",
-            "isinstance",
-            "self.extract_docstring",
-            "self.extract_docstring(node) or ''.split",
             "self.analyze_parameters",
+            "node.name.startswith",
+            "self.extract_docstring",
             "functions.append",
-            "node.name.startswith"
+            "isinstance",
+            "self._extract_annotation",
+            "self.extract_docstring(node) or ''.split"
           ]
         },
         {
@@ -421,11 +421,11 @@
           "docstring": "定数を解析（UPPERCASE変数）",
           "summary": "定数を解析（UPPERCASE変数）",
           "calls": [
-            "target.id.isupper",
-            "isinstance",
-            "self._extract_value",
             "constants.append",
-            "type"
+            "target.id.isupper",
+            "type",
+            "self._extract_value",
+            "isinstance"
           ]
         },
         {
@@ -446,15 +446,15 @@
           "docstring": "解析結果をまとめたレポートを生成",
           "summary": "解析結果をまとめたレポートを生成",
           "calls": [
-            "datetime.now().isoformat",
             "self.get_line_count",
-            "len",
-            "datetime.now",
-            "sum",
             "self.analyze_constants",
             "self.analyze_imports",
-            "self.analyze_functions",
-            "self.analyze_classes"
+            "datetime.now",
+            "sum",
+            "datetime.now().isoformat",
+            "len",
+            "self.analyze_classes",
+            "self.analyze_functions"
           ]
         }
       ]

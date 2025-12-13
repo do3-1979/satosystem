@@ -43,7 +43,9 @@ def test_trading_strategy_methods():
         expected_methods = {m["name"] for m in analysis["classes"][0]["methods"]}
         # __str__ は name mangling の対象外（Python特殊メソッド）だが、テスト比較ロジックに含めない
         expected_methods.discard("__str__")
-        actual_methods = {m for m in dir(TradingStrategy) if not m.startswith("_") or m == "__init__"}
+        
+        # 実際のメソッドを取得（パブリック + プライベート両方含める）
+        actual_methods = {m for m in dir(TradingStrategy) if callable(getattr(TradingStrategy, m, None)) and not m.startswith("__")} | {"__init__"}
         
         missing = expected_methods - actual_methods
         if missing:
