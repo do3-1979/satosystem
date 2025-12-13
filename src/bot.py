@@ -106,6 +106,10 @@ class Bot:
 
         self.logger.log(str(config_instance))
         self.logger.log("-------------------------------------------------------")
+        
+        # メモリ監視機能の初期化（リアルタイムモードのみ）
+        memory_check_interval = 3600  # 1時間ごと
+        last_memory_check = time.time() if back_test_mode == 0 else 0
 
         while True:
             try:
@@ -303,7 +307,6 @@ class Bot:
 
                 # portfolio
                 trade_data['positions'] = self.portfolio.get_position_quantity()
-
                 # 取引データを表示
                 # if back_test_mode == 0:
                 self.show_trade_data(trade_data)
@@ -324,6 +327,19 @@ class Bot:
                 else:
                     current_time = datetime.fromtimestamp(self.price_data_management.get_latest_close_time())
 
+                # メモリ監視ログ（リアルタイムモード、1時間ごと）
+                if back_test_mode == 0:
+                    current_timestamp = time.time()
+                    if current_timestamp - last_memory_check > memory_check_interval:
+                        try:
+                            import psutil
+                            process = psutil.Process()
+                            mem_info = process.memory_info()
+                            mem_percent = process.memory_percent()
+                            self.logger.log(f"【メモリ監視】 RSS: {mem_info.rss / 1024 / 1024:.2f}MB, VMS: {mem_info.vms / 1024 / 1024:.2f}MB, 使用率: {mem_percent:.2f}%")
+                            last_memory_check = current_timestamp
+                        except Exception as e:
+                            self.logger.log_error(f"メモリ監視エラー: {e}")
                 if log_zipped == False and int(current_time.strftime("%H")) % 2 == 0 and int(current_time.strftime("%M")) == 0:
                     # ログをローテート
                     self.logger.close_log_file()

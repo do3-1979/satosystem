@@ -365,79 +365,174 @@ class PriceDataManagement:
 
         return False
 
+    def _fetch_with_retry(self, func, *args, retries=3):
+        """
+        API呼び出しをリトライ付きで実行するメソッドです。
+        
+        Args:
+            func: 呼び出す関数
+            *args: 関数の引数
+            retries: リトライ回数（デフォルト：3）
+            
+        Returns:
+            API の戻り値
+            
+        Raises:
+            Exception: すべてのリトライに失敗した場合
+        """
+        import time
+        
+        for attempt in range(retries):
+            try:
+                return func(*args)
+            except Exception as e:
+                if attempt == retries - 1:
+                    # 最後のリトライに失敗した場合は例外を再発生
+                    self.logger.log_error(f"API呼び出し失敗（リトライ {attempt+1}/{retries} 終了）: {e}")
+                    raise
+                wait_time = 2 ** attempt  # 指数バックオフ: 1秒, 2秒, 4秒...
+                self.logger.log(f"API呼び出し失敗（リトライ {attempt+1}/{retries}）: {e} → {wait_time}秒待機")
+                time.sleep(wait_time)
+
     def update_price_data(self):
         """
         価格データとトレードシグナルを更新するメソッドです。
+        リトライロジック、例外処理、バリデーション機能を備えています。
         """
+        try:
+            # 価格データの更新
+            # TODO 本番では開始・終端時間はコンフィグ取得ではなく自動計算　終端は今　開始は必要期間をさかのぼって取得
+            start_epoch = Config.get_start_epoch()
+            end_epoch = Config.get_end_epoch()
+            
+            # --------------------------------------------
+            # データの更新(15分) ※常に最新で入れ替える
+            # リトライ付きで取得
+            # --------------------------------------------
+            try:
+                tmp_ohlcv_data_2 = self._fetch_with_retry(
+                    self.exchange.fetch_latest_ohlcv, 
+                    self.psar_time_frame,
+                    retries=3
+                )
+                self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data_2, self.psar_time_frame)
+            except Exception as e:
+                self.logger.log_error(f"15分足データ取得失敗: {e}")
+                return False
 
-        # 価格データの更新
-        # TODO 本番では開始・終端時間はコンフィグ取得ではなく自動計算　終端は今　開始は必要期間をさかのぼって取得
-        start_epoch = Config.get_start_epoch()
-        end_epoch = Config.get_end_epoch()
-        
-        # --------------------------------------------
-        # データの更新(15分) ※常に最新で入れ替える
-        # --------------------------------------------
-        tmp_ohlcv_data_2 = self.exchange.fetch_latest_ohlcv(self.psar_time_frame)
-        self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data_2,self.psar_time_frame)
+            # --------------------------------------------
+            # データの更新(120分)
+            # 確定した最新値を取得（リトライ付き）
+            # --------------------------------------------
+            try:
+                tmp_ohlcv_data_1 = self._fetch_with_retry(
+                    self.exchange.fetch_ohlcv,
+                    start_epoch, end_epoch, self.time_frame,
+                    retries=3
+                )
+                
+                # 空リストチェック
+                if not tmp_ohlcv_data_1:
+                    self.logger.log_error("fetch_ohlcv: 空リスト返却（データがありません）")
+                    return False
+                
+                last_ohlcv_data = tmp_ohlcv_data_1[-1]
+            except IndexError as e:
+                self.logger.log_error(f"120分足データ取得エラー: リスト が空です: {e}")
+                return False
+            except Exception as e:
+                self.logger.log_error(f"120分足データ取得失敗: {e}")
+                return False
 
-        # --------------------------------------------
-        # データの更新(120分)
-        # --------------------------------------------
-        # 確定した最新値を取得
-        tmp_ohlcv_data_1 = self.exchange.fetch_ohlcv(start_epoch, end_epoch, self.time_frame)
-        last_ohlcv_data = tmp_ohlcv_data_1[-1]
+            # 最新値を取得（リトライ付き）
+            try:
+                self.latest_ohlcv_data = self._fetch_with_retry(
+                    self.exchange.fetch_latest_ohlcv,
+                    self.time_frame,
+                    retries=3
+                )
+                
+                if not self.latest_ohlcv_data:
+                    self.logger.log_error("fetch_latest_ohlcv: 空リスト返却（データがありません）")
+                    return False
+                
+                # ticker と volume を取得（キー存在チェック付き）
+                if 'Volume' not in self.latest_ohlcv_data[0]:
+                    self.logger.log_error("fetch_latest_ohlcv: 'Volume' キーが見つかりません")
+                    return False
+                
+                self.volume = self.latest_ohlcv_data[0]['Volume']
+                
+            except IndexError as e:
+                self.logger.log_error(f"最新足データ取得エラー: リストが空です: {e}")
+                return False
+            except KeyError as e:
+                self.logger.log_error(f"最新足データ取得エラー: キーが見つかりません: {e}")
+                return False
+            except Exception as e:
+                self.logger.log_error(f"最新足データ取得失敗: {e}")
+                return False
 
-        # 最新値を取得
-        self.latest_ohlcv_data = self.exchange.fetch_latest_ohlcv(self.time_frame)
-        self.ticker = self.exchange.fetch_ticker()
-        self.volume = self.latest_ohlcv_data[0]['Volume']
+            # ticker を取得（リトライ付き）
+            try:
+                self.ticker = self._fetch_with_retry(
+                    self.exchange.fetch_ticker,
+                    retries=3
+                )
+            except Exception as e:
+                self.logger.log_error(f"ticker取得失敗: {e}")
+                return False
 
-        # 初回の処理
-        if self.prev_close_time == 0:            
-            self.prev_close_time = last_ohlcv_data['close_time']
-            # 初回のみ初期化
-            self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data_1, self.time_frame)
-            self.volatility = self.calcurate_volatility(tmp_ohlcv_data_1)
-            return
+            # 初回の処理
+            if self.prev_close_time == 0:            
+                self.prev_close_time = last_ohlcv_data['close_time']
+                # 初回のみ初期化
+                self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data_1, self.time_frame)
+                self.volatility = self.calcurate_volatility(tmp_ohlcv_data_1)
+                return True
 
-        # donchianシグナル演算は常時実施
-        ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
-        dc, high, low = self.__evaluate_donchian(ohlcv_data, self.ticker)
-        
-        if dc == 'BUY':
-            self.signals['donchian']['signal'] = True
-            self.signals['donchian']['side'] = 'BUY'
-        elif dc == 'SELL':
-            self.signals['donchian']['signal'] = True
-            self.signals['donchian']['side'] = 'SELL'
-        else:
-            self.signals['donchian']['signal'] = False
-            self.signals['donchian']['side'] = 'None'
+            # donchianシグナル演算は常時実施
+            ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
+            dc, high, low = self.__evaluate_donchian(ohlcv_data, self.ticker)
+            
+            if dc == 'BUY':
+                self.signals['donchian']['signal'] = True
+                self.signals['donchian']['side'] = 'BUY'
+            elif dc == 'SELL':
+                self.signals['donchian']['signal'] = True
+                self.signals['donchian']['side'] = 'SELL'
+            else:
+                self.signals['donchian']['signal'] = False
+                self.signals['donchian']['side'] = 'None'
 
-        self.signals['donchian']['info']['highest'] = high
-        self.signals['donchian']['info']['lowest'] = low
+            self.signals['donchian']['info']['highest'] = high
+            self.signals['donchian']['info']['lowest'] = low
 
-        # PVO update: 常時実施（毎回）
-        volume = self.volume
-        ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
-        pvo, value = self.__evaluate_pvo(ohlcv_data, volume)
-        self.signals['pvo']['signal'] = pvo
-        self.signals['pvo']['info']['value'] = value
+            # PVO update: 常時実施（毎回）
+            volume = self.volume
+            ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
+            pvo, value = self.__evaluate_pvo(ohlcv_data, volume)
+            self.signals['pvo']['signal'] = pvo
+            self.signals['pvo']['info']['value'] = value
 
-        # データの更新時
-        if self.prev_close_time < last_ohlcv_data['close_time']:
-            # update volatility
-            self.volatility = self.calcurate_volatility(tmp_ohlcv_data_1)
-            # update last data
-            self.prev_close_time = last_ohlcv_data['close_time']
-            # 最新行を追加し、最古を削除する
-            # バックテストの場合は、2h経過時にデータ一覧を追加してからシグナル再計算する
-            self.append_ohlcv_data_by_time_frame(last_ohlcv_data, self.time_frame)
-            # 最新行を追加し、最古を削除する
-            self.del_ohlcv_data_by_time_frame(self.time_frame)   
+            # データの更新時
+            if self.prev_close_time < last_ohlcv_data['close_time']:
+                # update volatility
+                self.volatility = self.calcurate_volatility(tmp_ohlcv_data_1)
+                # update last data
+                self.prev_close_time = last_ohlcv_data['close_time']
+                # 最新行を追加し、最古を削除する
+                # バックテストの場合は、2h経過時にデータ一覧を追加してからシグナル再計算する
+                self.append_ohlcv_data_by_time_frame(last_ohlcv_data, self.time_frame)
+                # 最新行を追加し、最古を削除する
+                self.del_ohlcv_data_by_time_frame(self.time_frame)   
 
-        return
+            return True
+            
+        except Exception as e:
+            # 予期しない例外をキャッチ
+            self.logger.log_error(f"update_price_data メインループエラー: {e}")
+            return False
 
     def initialise_back_test_ohlcv_data(self):
         """
