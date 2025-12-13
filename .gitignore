@@ -46,3 +46,6 @@ output_configs/
 # Ignore regression test results
 docs/regression_test_results/
 
+# Ignore quarterly backtest results (grow unboundedly)
+docs/quarterly_backtest_results/
+
