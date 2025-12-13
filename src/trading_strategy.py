@@ -57,6 +57,8 @@ class TradingStrategy:
         1. ポジションを保有していない
         2. ドンチャンチャネルブレイクが発生
         3. PVOが閾値範囲内
+        
+        Phase 22a-22c: 複数のStrategyから最適なものを選択
         """
         side = 'NONE'
         decision = 'NONE'
@@ -65,16 +67,27 @@ class TradingStrategy:
         # シグナルをチェック
         signals = self.price_data_management.get_signals()
 
+        # 新指標ベースのStrategyを評価
+        strategy_result = self._evaluate_new_indicator_strategy()
+        
         # PVO有効範囲チェック
         if signals["pvo"]["signal"] == True:
             # ドンチャンチャネルブレイク発生
             if signals["donchian"]["signal"] == True:
                 if signals["donchian"]["side"] == "BUY":
-                    self.logger.log(f"[条件判定:ENTRY] BUYのエントリー条件成立しました")
+                    # Strategy結果を参考にして判定
+                    if strategy_result and strategy_result.get('signal') in ['BUY', 'BULL']:
+                        self.logger.log(f"[条件判定:ENTRY] BUYのエントリー条件成立（新指標確認）")
+                    else:
+                        self.logger.log(f"[条件判定:ENTRY] BUYのエントリー条件成立しました")
                     side = "BUY"
                     decision = "ENTRY"
                 elif signals["donchian"]["side"] == "SELL":
-                    self.logger.log(f"[条件判定:ENTRY] SELLのエントリー条件成立しました")
+                    # Strategy結果を参考にして判定
+                    if strategy_result and strategy_result.get('signal') in ['SELL', 'BEAR']:
+                        self.logger.log(f"[条件判定:ENTRY] SELLのエントリー条件成立（新指標確認）")
+                    else:
+                        self.logger.log(f"[条件判定:ENTRY] SELLのエントリー条件成立しました")
                     side = "SELL"
                     decision = "ENTRY"
 
@@ -91,9 +104,45 @@ class TradingStrategy:
                 'entry_adx': self.risk_manager.get_adx(),
                 'entry_pvo': current_price.get('pvo_val', 0) or current_price.get('pvo', 0),
                 'entry_time': current_price.get('real_time_dt'),
+                'strategy_result': strategy_result,  # Strategy結果も記録
             }
             
         return
+    
+    def _evaluate_new_indicator_strategy(self):
+        """
+        新指標ベースのStrategy（A/B/C）を評価
+        
+        戻り値:
+            dict: {'signal': 'BUY'/'SELL'/'NONE', 'strategy': 'A'/'B'/'C', 'confidence': 0-1}
+        """
+        try:
+            # すべてのStrategyを評価
+            all_strategies = self.risk_manager.evaluate_all_strategies()
+            
+            if not all_strategies:
+                return None
+            
+            # どのStrategyが最初に有効なシグナルを出しているか確認
+            for strategy_name in ['strategy_c', 'strategy_b', 'strategy_a']:
+                if strategy_name in all_strategies:
+                    result = all_strategies[strategy_name]
+                    signal = result.get('signal', 'NONE')
+                    
+                    if signal in ['BUY', 'SELL']:
+                        self.logger.log(f"[新指標] {strategy_name}: {signal}")
+                        return {
+                            'signal': signal,
+                            'strategy': strategy_name.split('_')[1].upper(),
+                            'confidence': 0.7 if signal != 'NONE' else 0.0,
+                            'details': result
+                        }
+            
+            return None
+            
+        except Exception as e:
+            self.logger.log(f"[新指標評価エラー] {str(e)}")
+            return None
     
     def evaluate_add(self, price):
         """
