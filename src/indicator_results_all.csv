@@ -1,0 +1,4 @@
+adx,bb_lower,bb_middle,bb_upper,bear,bull,rsi,signal,sma_fast,sma_slow,strategy,strategy_a_signal,strategy_b_signal,timestamp
+0,N/A,N/A,N/A,False,False,N/A,NONE,N/A,N/A,A,N/A,N/A,2025-12-13T18:15:45.512221
+N/A,0,0,0,N/A,N/A,0,NONE,0,0,B,N/A,N/A,2025-12-13T18:15:45.512239
+N/A,N/A,N/A,N/A,N/A,N/A,N/A,NONE,N/A,N/A,C,N/A,N/A,2025-12-13T18:15:45.512249

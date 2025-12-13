@@ -14,6 +14,7 @@ from logger import Logger
 from price_data_management import PriceDataManagement
 from bybit_exchange import BybitExchange
 from portfolio import Portfolio
+from new_indicators import NewIndicators
 import numpy as np
 
 class RiskManagement:
@@ -31,6 +32,24 @@ class RiskManagement:
         self.lot_limit_lower = Config.get_lot_limit_lower()
         self.balance_tether_limit = Config.get_balance_tether_limit()
         self.capital_exhausted = False
+        
+        # 新指標（Phase 22a-22c）
+        self.new_indicators = NewIndicators()
+        self.enable_strategy_a_adx = Config.get_config_bool('Strategy', 'enable_strategy_a_adx', 1)
+        self.enable_strategy_b_bb_rsi_sma = Config.get_config_bool('Strategy', 'enable_strategy_b_bb_rsi_sma', 0)
+        self.enable_strategy_c_combined = Config.get_config_bool('Strategy', 'enable_strategy_c_combined', 0)
+        
+        # 新指標パラメータ
+        self.bb_period = Config.get_config_int('Strategy', 'bb_period', 20)
+        self.bb_std_dev = Config.get_config_float('Strategy', 'bb_std_dev', 2.0)
+        self.rsi_period = Config.get_config_int('Strategy', 'rsi_period', 14)
+        self.rsi_overbought = Config.get_config_int('Strategy', 'rsi_overbought', 70)
+        self.rsi_oversold = Config.get_config_int('Strategy', 'rsi_oversold', 30)
+        self.sma_fast_period = Config.get_config_int('Strategy', 'sma_fast_period', 50)
+        self.sma_slow_period = Config.get_config_int('Strategy', 'sma_slow_period', 200)
+        self.macd_fast_period = Config.get_config_int('Strategy', 'macd_fast_period', 12)
+        self.macd_slow_period = Config.get_config_int('Strategy', 'macd_slow_period', 26)
+        self.macd_signal_period = Config.get_config_int('Strategy', 'macd_signal_period', 9)
         
         # 分割制御
         self.leverage = Config.get_leverage()
@@ -465,6 +484,116 @@ class RiskManagement:
         self.adx_bear = all(adx[i] < bear_threshold for i in range(-continue_num, 0))
         
         return
+
+    def evaluate_strategy_a_adx(self):
+        """
+        Strategy A: ADX\u30d9\u30fc\u30b9の\u5e02\u5834\u30ec\u30b8\u30fc\u30e0\u691c\u51fa
+        ADX\u304c\u6240\u5b9a\u5024\u3092\u8d85\u3048\u308b\u3068\u304d\u306fbull/bear\u3092\u8fd4\u3059\        
+        """
+        if not self.enable_strategy_a_adx:
+            return {"signal": "NONE", "bull": False, "bear": False, "adx": 0}
+        
+        adx_value = self.adx[-1] if self.adx else 0
+        return {
+            "signal": "BULL" if self.adx_bull else ("BEAR" if self.adx_bear else "NONE"),
+            "bull": self.adx_bull,
+            "bear": self.adx_bear,
+            "adx": adx_value
+        }
+
+    def evaluate_strategy_b_bb_rsi_sma(self):
+        """
+        Strategy B: Bollinger Bands + RSI + SMA\u8907\u5408\u6307\u6a19
+        \u8907\u6570\u306e\u6307\u6a19\u304c\u63c3\u3063\u305f\u3068\u304d\u306esignal\u3092\u8fd4\u3059
+        """
+        if not self.enable_strategy_b_bb_rsi_sma:
+            return {"signal": "NONE", "bb": {}, "rsi": {}, "sma": {}}
+        
+        try:
+            main_time_frame = Config.get_time_frame()
+            ohlcv_data = self.price_data_management.get_ohlcv_data(main_time_frame)
+            
+            if not ohlcv_data or len(ohlcv_data) < self.sma_slow_period:
+                return {"signal": "NONE", "bb": {}, "rsi": {}, "sma": {}}
+            
+            close_prices = [item['close_price'] for item in ohlcv_data]
+            current_price = self.price_data_management.get_ticker()
+            
+            # Bollinger Bands\u8a08\u7b97
+            bb_upper, bb_middle, bb_lower = self.new_indicators.calc_bollinger_bands(
+                close_prices, self.bb_period, self.bb_std_dev
+            )
+            
+            # RSI\u8a08\u7b97
+            rsi_value = self.new_indicators.calc_rsi(close_prices, self.rsi_period)
+            
+            # SMA\u8a08\u7b97
+            sma_fast, sma_slow = self.new_indicators.calc_sma(
+                close_prices, self.sma_fast_period, self.sma_slow_period
+            )
+            
+            # Signal\u8a55\u4fa1
+            bb_signal = "BUY" if current_price < bb_lower else ("SELL" if current_price > bb_upper else "NONE")
+            rsi_signal = "BUY" if rsi_value < self.rsi_oversold else ("SELL" if rsi_value > self.rsi_overbought else "NONE")
+            sma_signal = "BUY" if sma_fast > sma_slow else ("SELL" if sma_fast < sma_slow else "NONE")
+            
+            # \u8907\u5408\u30b7\u30b0\u30ca\u30eb\uff08\u8907\u6570\u4e00\u81f4\u3067BUY/SELL\uff09
+            signals = [bb_signal, rsi_signal, sma_signal]
+            buy_count = signals.count("BUY")
+            sell_count = signals.count("SELL")
+            
+            combined_signal = "BUY" if buy_count >= 2 else ("SELL" if sell_count >= 2 else "NONE")
+            
+            return {
+                "signal": combined_signal,
+                "bb": {"upper": bb_upper, "middle": bb_middle, "lower": bb_lower, "signal": bb_signal},
+                "rsi": {"value": rsi_value, "signal": rsi_signal},
+                "sma": {"fast": sma_fast, "slow": sma_slow, "signal": sma_signal}
+            }
+        except Exception as e:
+            self.logger.log(f"Error in Strategy B evaluation: {str(e)}")
+            return {"signal": "NONE", "bb": {}, "rsi": {}, "sma": {}}
+
+    def evaluate_strategy_c_combined(self):
+        """
+        Strategy C: \u5168\u6307\u6a19\u7d71\u5408 (ADX + BB + RSI + SMA)
+        Strategy A\u3068B\u306e\u4e21\u65b9\u304c\u63c3\u3063\u305f\u3068\u304d\u306esignal\u3092\u8fd4\u3059
+        """
+        if not self.enable_strategy_c_combined:
+            return {"signal": "NONE", "strategy_a": {}, "strategy_b": {}}
+        
+        try:
+            strategy_a_result = self.evaluate_strategy_a_adx()
+            strategy_b_result = self.evaluate_strategy_b_bb_rsi_sma()
+            
+            # \u4e21\u65b9\u304c\u63c3\u3063\u305f\u3068\u304d\u306eみbull/bear\u3092\u8a55\u4fa1
+            a_signal = strategy_a_result.get("signal", "NONE")
+            b_signal = strategy_b_result.get("signal", "NONE")
+            
+            if a_signal != "NONE" and b_signal != "NONE" and a_signal == b_signal:
+                combined_signal = a_signal
+            else:
+                combined_signal = "NONE"
+            
+            return {
+                "signal": combined_signal,
+                "strategy_a": strategy_a_result,
+                "strategy_b": strategy_b_result
+            }
+        except Exception as e:
+            self.logger.log(f"Error in Strategy C evaluation: {str(e)}")
+            return {"signal": "NONE", "strategy_a": {}, "strategy_b": {}}
+
+    def evaluate_all_strategies(self):
+        """
+        \u3059\u3079\u3066\u306e\u30b9\u30c8\u30e9\u30c6\u30b8\u30fc\u3092\u8a55\u4fa1\u3057\u3001\u6709\u52b9\u306a\u3082\u306e\u3092\u8fd4\u3059
+        """
+        results = {
+            "strategy_a": self.evaluate_strategy_a_adx(),
+            "strategy_b": self.evaluate_strategy_b_bb_rsi_sma(),
+            "strategy_c": self.evaluate_strategy_c_combined()
+        }
+        return results
 
     def __calc_stop_psar(self):
         """

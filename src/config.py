@@ -467,6 +467,61 @@ class Config:
             "Back Test Mode": self.get_back_test_mode()
         }
 
+    @classmethod
+    def get_config_bool(cls, section, key, default=False):
+        """
+        コンフィグから論理値を取得します.
+
+        Args:
+            section (str): セクション名
+            key (str): キー名
+            default (bool): デフォルト値
+
+        Returns:
+            bool: 設定値
+        """
+        try:
+            value = cls.config.get(section, key)
+            return value.lower() in ('1', 'true', 'yes', 'on')
+        except:
+            return default
+
+    @classmethod
+    def get_config_int(cls, section, key, default=0):
+        """
+        コンフィグから整数値を取得します.
+
+        Args:
+            section (str): セクション名
+            key (str): キー名
+            default (int): デフォルト値
+
+        Returns:
+            int: 設定値
+        """
+        try:
+            return int(cls.config.get(section, key))
+        except:
+            return default
+
+    @classmethod
+    def get_config_float(cls, section, key, default=0.0):
+        """
+        コンフィグから浮動小数点数を取得します.
+
+        Args:
+            section (str): セクション名
+            key (str): キー名
+            default (float): デフォルト値
+
+        Returns:
+            float: 設定値
+        """
+        try:
+            return float(cls.config.get(section, key))
+        except:
+            return default
+
 if __name__ == "__main__":
     # APIキーとAPIシークレットを取得
     api_key = Config.get_api_key()
