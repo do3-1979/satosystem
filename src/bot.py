@@ -359,8 +359,16 @@ class Bot:
         """
         注文を実行します。
 
+        指値注文戦略を使用してエントリー・決済を実行。
+        ダミーモード（hot_test_dummy_mode = 1）では、実際の取引は行われません。
+
         Args:
-            trade_decision (dict): トレード判断に基づいた注文情報
+            order (dict): トレード判断に基づいた注文情報
+                - symbol: 取引ペア（例: 'BTC/USD'）
+                - side: 'buy' または 'sell'
+                - quantity: 注文数量
+                - price: 注文価格（market注文時は無視）
+                - order_type: 'limit' または 'market'
 
         Returns:
             dict: 注文の実行結果
@@ -374,10 +382,31 @@ class Bot:
         else:
             price = 0
 
-        # TODO テスト処理
-        order_response = 0
-        #order_response = self.exchange.execute_order(side, quantity, price, order_type)
-        return order_response
+        try:
+            # 現在値を取得
+            current_price = self.price_data_management.get_ticker()
+            
+            # エントリー注文と決済注文を判定
+            # order_sideの値に基づいて判定（'buy'/'sell'がエントリー、決済は portfolio で管理）
+            if side in ['buy', 'sell']:
+                # エントリー注文：指値で約定を狙う
+                # 失敗時は成行にフォールバック
+                order_response = self.exchange.execute_entry_order(
+                    side=side,
+                    quantity=quantity,
+                    current_price=current_price
+                )
+                self.logger.log(f"✅ エントリー注文実行: {side.upper()} {quantity} @ {current_price:.2f}")
+            else:
+                # 予期しないサイドの場合
+                self.logger.log_error(f"❌ 不正なサイド: {side}")
+                return False
+            
+            return order_response
+            
+        except Exception as e:
+            self.logger.log_error(f"❌ 注文実行エラー: {str(e)}")
+            return False
 
 if __name__ == "__main__":
     # bot class test flag

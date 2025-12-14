@@ -398,6 +398,100 @@ class Config:
         """
         return int(cls.config['Backtest']['hot_test_dummy_mode'])
 
+    @classmethod
+    def get_entry_slippage(cls):
+        """
+        エントリー時の基本スリッページを取得します（%）.
+
+        Returns:
+            float: スリッページ（%）
+        """
+        try:
+            return float(cls.config['OrderExecution']['entry_slippage'])
+        except (KeyError, ValueError):
+            return 0.5  # デフォルト値
+
+    @classmethod
+    def get_slippage_multiplier(cls):
+        """
+        スリッページ増加の倍率を取得します.
+
+        Returns:
+            float: 倍率
+        """
+        try:
+            return float(cls.config['OrderExecution']['slippage_multiplier'])
+        except (KeyError, ValueError):
+            return 1.5  # デフォルト値
+
+    @classmethod
+    def get_max_entry_retries(cls):
+        """
+        エントリー時の最大リトライ回数を取得します.
+
+        Returns:
+            int: リトライ回数
+        """
+        try:
+            return int(cls.config['OrderExecution']['max_entry_retries'])
+        except (KeyError, ValueError):
+            return 4  # デフォルト値
+
+    @classmethod
+    def get_max_exit_retries(cls):
+        """
+        決済時の最大リトライ回数を取得します.
+
+        Returns:
+            int: リトライ回数
+        """
+        try:
+            return int(cls.config['OrderExecution']['max_exit_retries'])
+        except (KeyError, ValueError):
+            return 3  # デフォルト値
+
+    @classmethod
+    def get_order_timeout(cls):
+        """
+        注文タイムアウト時間を取得します（秒）.
+
+        Returns:
+            int: タイムアウト時間（秒）
+        """
+        try:
+            return int(cls.config['OrderExecution']['order_timeout'])
+        except (KeyError, ValueError):
+            return 30  # デフォルト値
+
+    @classmethod
+    def is_dummy_mode(cls):
+        """
+        現在がダミーモード（ペーパートレード）かを判定します.
+
+        ダミーモード判定ロジック：
+        - back_test = 1 → ダミーモード（バックテスト）
+        - back_test = 0 かつ hot_test_dummy_mode = 1 → ダミーモード（ペーパートレード）
+        - back_test = 0 かつ hot_test_dummy_mode = 0 → 本番取引
+
+        Returns:
+            bool: True = ダミーモード、False = 本番取引
+        """
+        try:
+            back_test_mode = int(cls.config['Backtest']['back_test'])
+            hot_test_dummy_mode = int(cls.config['Backtest']['hot_test_dummy_mode'])
+            
+            # バックテスト時は常にダミーモード
+            if back_test_mode == 1:
+                return True
+            # バックテスト以外でもペーパートレードはダミーモード
+            if back_test_mode == 0 and hot_test_dummy_mode == 1:
+                return True
+            # それ以外は本番取引
+            return False
+        except (KeyError, ValueError):
+            # デフォルトは安全のためダミーモード
+            return True
+
     def __str__(self):
         """
         コンフィグ内容を可読性よく文字列として表現するメソッドです。

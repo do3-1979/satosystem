@@ -154,15 +154,15 @@ class RiskManagement:
         """
         main_time_frame = '1h'
         
-        # バックテストモードの判定
-        back_test_mode = False
+        # ダミーモードの判定（バックテスト or ペーパートレード）
+        is_dummy = False
         try:
             from config import Config
-            back_test_mode = Config.get_back_test_mode() == 1
+            is_dummy = Config.is_dummy_mode()
         except:
             pass
         
-        if back_test_mode:
+        if is_dummy:
             ohlcv_data = self.price_data_management.get_back_test_ohlcv_data_by_time_frame(main_time_frame)
         else:
             ohlcv_data = self.price_data_management.get_ohlcv_data_by_time_frame(main_time_frame)
@@ -192,15 +192,15 @@ class RiskManagement:
         """
         main_time_frame = '1h'
         
-        # バックテストモードの判定
-        back_test_mode = False
+        # ダミーモードの判定（バックテスト or ペーパートレード）
+        is_dummy = False
         try:
             from config import Config
-            back_test_mode = Config.get_back_test_mode() == 1
+            is_dummy = Config.is_dummy_mode()
         except:
             pass
         
-        if back_test_mode:
+        if is_dummy:
             ohlcv_data = self.price_data_management.get_back_test_ohlcv_data_by_time_frame(main_time_frame)
         else:
             ohlcv_data = self.price_data_management.get_ohlcv_data_by_time_frame(main_time_frame)
@@ -231,15 +231,15 @@ class RiskManagement:
         """
         main_time_frame = '1h'
         
-        # バックテストモードの判定
-        back_test_mode = False
+        # ダミーモードの判定（バックテスト or ペーパートレード）
+        is_dummy = False
         try:
             from config import Config
-            back_test_mode = Config.get_back_test_mode() == 1
+            is_dummy = Config.is_dummy_mode()
         except:
             pass
         
-        if back_test_mode:
+        if is_dummy:
             ohlcv_data = self.price_data_management.get_back_test_ohlcv_data_by_time_frame(main_time_frame)
         else:
             ohlcv_data = self.price_data_management.get_ohlcv_data_by_time_frame(main_time_frame)
@@ -273,15 +273,15 @@ class RiskManagement:
         """
         main_time_frame = '1h'
         
-        # バックテストモードの判定
-        back_test_mode = False
+        # ダミーモードの判定（バックテスト or ペーパートレード）
+        is_dummy = False
         try:
             from config import Config
-            back_test_mode = Config.get_back_test_mode() == 1
+            is_dummy = Config.is_dummy_mode()
         except:
             pass
         
-        if back_test_mode:
+        if is_dummy:
             ohlcv_data = self.price_data_management.get_back_test_ohlcv_data_by_time_frame(main_time_frame)
         else:
             ohlcv_data = self.price_data_management.get_ohlcv_data_by_time_frame(main_time_frame)
