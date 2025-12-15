@@ -6,6 +6,8 @@
 
 | ジャンル                | No. | タスク内容                                                                                       | 関連コミット/備考             | 優先度 |
 |------------------------|-----|--------------------------------------------------------------------------------------------------|----------------------------------|--------|
+| **パラメータ最適化**    | 24  | entry_times 10→5 + risk 30%→0.5% + leverage 10→5 に変更（+155%期待）                        | parameter_optimization_analysis | ★★★★★ |
+| **パラメータ最適化**    | 25  | 新設定で 2024-2025全期間 re-backtest + results 比較（COMPREHENSIVE_TRADE_ANALYSIS参照）      | implementation_guide            | ★★★★★ |
 | **Phase 0改善戦略**     | 22a | Strategy A: 市場レジーム検出（ADX）- 負けQ損失を70-80%削減（+15-25%期待、3-5日）              | COMPREHENSIVE_TRADE_ANALYSIS    | ★★★★★ |
 | **Phase 0改善戦略**     | 22b | Strategy B: 指標確認（Bollinger+RSI+SMA）- エントリー精度向上（+8-12%期待、2-3日）            | COMPREHENSIVE_TRADE_ANALYSIS    | ★★★★☆ |
 | **Phase 0改善戦略**     | 22c | Strategy C: 複合戦略（A+B）- 最大改善期待（+20-30%期待）                                       | COMPREHENSIVE_TRADE_ANALYSIS    | ★★★★☆ |
@@ -30,6 +32,8 @@
 
 | ジャンル                | No. | タスク内容                                                                                       | 進捗                             | 優先度 |
 |------------------------|-----|--------------------------------------------------------------------------------------------------|----------------------------------|--------|
+| **パラメータ最適化分析** | 23c | Leverage×Risk×EntryTimes スイープテスト 実施完了 - 57テスト、最適パラメータ特定                 | ✅ 分析完了（parameter_optimization_analysis.json）| ★★★★★ |
+| **ドキュメント統合**    | 23d | docs/ の DEVELOPMENT_RULES/ARCHITECTURE/PRICE_DATA_FLOW を analysis/ に反映                     | ✅ 完了（docs_to_analysis_integration.py）       | ★★★★★ |
 | **Phase 1.5実装**       | 20a | 3段階ADXフィルタ戦略実装 - BOX/WEAK/STRONG環境対応                                             | ✅ 完了、+$641改善達成          | ★★★★★ |
 | **Phase 3計画**         | 20b | マルチタイムフレーム ADX 確認 - 1h+4h複合判定でノイズ削減                                      | 🔄 設計中 (2025年度対応)        | ★★★★☆ |
 

@@ -259,6 +259,249 @@ class BybitExchange(Exchange):
 
         return response
 
+    def _calculate_entry_price(self, side, current_price, slippage_percent):
+        """
+        エントリー指値価格を計算します（スリッページを考慮）
+        
+        Args:
+            side (str): 'buy' または 'sell'
+            current_price (float): 現在値
+            slippage_percent (float): スリッページ率（%）
+            
+        Returns:
+            float: 指値価格
+        """
+        if side == 'buy':
+            # 買いは下に（安く買いたい）
+            return current_price * (1 - slippage_percent / 100)
+        else:
+            # 売りは上に（高く売りたい）
+            return current_price * (1 + slippage_percent / 100)
+
+    def _calculate_exit_price(self, side, current_price, slippage_percent):
+        """
+        決済指値価格を計算します（少しでも良い値で）
+        
+        Args:
+            side (str): 'buy' または 'sell' (現在のポジション側)
+            current_price (float): 現在値
+            slippage_percent (float): スリッページ率（%）
+            
+        Returns:
+            float: 指値価格
+        """
+        if side == 'sell':
+            # ショート決済（買い戻し）= 安く買い戻す
+            return current_price * (1 - slippage_percent / 100)
+        else:
+            # ロング決済（売却）= 高く売る
+            return current_price * (1 + slippage_percent / 100)
+
+    def _execute_market_order(self, side, quantity):
+        """
+        成行注文を実行します（リトライなし）
+        
+        Args:
+            side (str): 'buy' または 'sell'
+            quantity (float): 数量
+            
+        Returns:
+            dict or bool: 注文結果
+        """
+        try:
+            order = self.exchange.create_market_order(
+                symbol=self.market,
+                side=side,
+                amount=quantity,
+                params={'timeout': 10000}
+            )
+            self.logger.log(f"✅ 成行注文成功: {side} {quantity}")
+            return order
+        except (ccxt.BaseError, TimeoutError) as e:
+            self.logger.log_error(f"成行注文失敗: {str(e)}")
+            raise
+
+    def _execute_market_order_final(self, side, quantity):
+        """
+        最後のフォールバック成行注文を実行します
+        
+        Args:
+            side (str): 'buy' または 'sell'
+            quantity (float): 数量
+            
+        Returns:
+            dict or bool: 注文結果
+        """
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                order = self.exchange.create_market_order(
+                    symbol=self.market,
+                    side=side,
+                    amount=quantity,
+                    params={'timeout': 10000}
+                )
+                self.logger.log(f"✅ 最終成行成功 (試行 {attempt+1}/{max_retries}): {side} {quantity}")
+                return order
+            except (ccxt.BaseError, TimeoutError) as e:
+                if attempt == max_retries - 1:
+                    self.logger.log_error(f"❌ 最終成行失敗 (全リトライ完了): {str(e)}")
+                    raise
+                else:
+                    self.logger.log(f"⚠️ 最終成行失敗 (試行 {attempt+1}/{max_retries}), リトライ中...")
+                    time.sleep(1)
+
+    def execute_entry_order(self, side, quantity, current_price):
+        """
+        エントリー注文を指値で実行します
+        
+        指値で約定を狙い、失敗時は動的にスリッページを拡大してリトライ。
+        全て失敗時は成行で約定します。
+        
+        Args:
+            side (str): 'buy' または 'sell'
+            quantity (float): 注文数量
+            current_price (float): 現在値
+            
+        Returns:
+            dict or bool: 注文結果
+        """
+        # ダミーモード対応
+        if self.is_dummy_mode:
+            return self._dummy_entry_order(side, quantity, current_price)
+        
+        # パラメータ取得
+        base_slippage = Config.get_entry_slippage()  # デフォルト 0.5%
+        slippage_multiplier = Config.get_slippage_multiplier()  # デフォルト 1.5
+        max_retries = Config.get_max_entry_retries()  # デフォルト 4
+        
+        # 指値注文をリトライ
+        for attempt in range(max_retries):
+            adjusted_slippage = base_slippage * (slippage_multiplier ** attempt)
+            limit_price = self._calculate_entry_price(side, current_price, adjusted_slippage)
+            
+            try:
+                order = self.exchange.create_limit_order(
+                    symbol=self.market,
+                    side=side,
+                    amount=quantity,
+                    price=limit_price,
+                    params={'timeout': 10000}
+                )
+                self.logger.log(f"✅ エントリー成功 (指値): {side} {quantity} @ {limit_price:.2f} USD")
+                return order
+            except (ccxt.BaseError, TimeoutError) as e:
+                if attempt == max_retries - 1:
+                    # 最後のリトライ失敗 → 成行へ
+                    self.logger.log(f"⚠️ 指値失敗 (試行 {attempt+1}/{max_retries}, スリッページ: {adjusted_slippage:.3f}%) → 成行で決済")
+                    try:
+                        return self._execute_market_order(side, quantity)
+                    except Exception as e_market:
+                        self.logger.log_error(f"❌ エントリー最終失敗 (成行も失敗): {str(e_market)}")
+                        raise
+                else:
+                    self.logger.log(f"⚠️ 指値失敗 (試行 {attempt+1}/{max_retries}, スリッページ: {adjusted_slippage:.3f}%) → リトライ中...")
+                    time.sleep(1)
+
+    def execute_exit_order(self, side, quantity):
+        """
+        決済注文を成行で実行します
+        
+        確実な約定を優先。成行失敗時は指値でリトライ。
+        最終的には成行で決済します。
+        
+        Args:
+            side (str): 'buy' または 'sell' (ポジション反対側)
+            quantity (float): 注文数量
+            
+        Returns:
+            dict or bool: 注文結果
+        """
+        # ダミーモード対応
+        if self.is_dummy_mode:
+            return self._dummy_exit_order(side, quantity)
+        
+        # パラメータ取得
+        max_exit_retries = Config.get_max_exit_retries()  # デフォルト 3
+        
+        # 成行注文をトライ
+        try:
+            order = self.exchange.create_market_order(
+                symbol=self.market,
+                side=side,
+                amount=quantity,
+                params={'timeout': 10000}
+            )
+            self.logger.log(f"✅ 決済成功 (成行): {side} {quantity}")
+            return order
+        except (ccxt.BaseError, TimeoutError) as e:
+            self.logger.log(f"⚠️ 成行失敗: {str(e)} → 指値にフォールバック")
+            
+            # 指値のリトライ
+            current_price = self.fetch_ticker()
+            for attempt in range(max_exit_retries):
+                slippage = 0.1 * (attempt + 1)  # 0.1%, 0.2%, 0.3%
+                limit_price = self._calculate_exit_price(side, current_price, slippage)
+                
+                try:
+                    order = self.exchange.create_limit_order(
+                        symbol=self.market,
+                        side=side,
+                        amount=quantity,
+                        price=limit_price,
+                        params={'timeout': 10000}
+                    )
+                    self.logger.log(f"✅ 決済成功 (指値): {side} {quantity} @ {limit_price:.2f} USD")
+                    return order
+                except (ccxt.BaseError, TimeoutError) as e_limit:
+                    if attempt == max_exit_retries - 1:
+                        # 最後のリトライ失敗 → 成行へ再度トライ
+                        self.logger.log(f"⚠️ 指値失敗 (試行 {attempt+1}/{max_exit_retries}) → 最後の成行トライ")
+                        try:
+                            return self._execute_market_order_final(side, quantity)
+                        except Exception as e_final:
+                            self.logger.log_error(f"❌ 決済最終失敗: {str(e_final)}")
+                            raise
+                    else:
+                        self.logger.log(f"⚠️ 指値失敗 (試行 {attempt+1}/{max_exit_retries}, スリッページ: {slippage:.3f}%) → リトライ中...")
+                        time.sleep(1)
+
+    def _dummy_entry_order(self, side, quantity, current_price):
+        """
+        ダミーエントリー注文を実行します
+        
+        Args:
+            side (str): 'buy' または 'sell'
+            quantity (float): 注文数量
+            current_price (float): 現在値
+            
+        Returns:
+            bool: True（常に成功）
+        """
+        base_slippage = Config.get_entry_slippage() / 100
+        entry_price = self._calculate_entry_price(side, current_price, base_slippage * 100)
+        self.dummy_balance -= quantity * entry_price
+        self.logger.log(f"🎭 ダミーエントリー: {side} {quantity} @ {entry_price:.2f} USD")
+        return True
+
+    def _dummy_exit_order(self, side, quantity):
+        """
+        ダミー決済注文を実行します
+        
+        Args:
+            side (str): 'buy' または 'sell'
+            quantity (float): 注文数量
+            
+        Returns:
+            bool: True（常に成功）
+        """
+        import random
+        base_price = 100000
+        exit_price = base_price + random.uniform(-500, 500)
+        self.dummy_balance += quantity * exit_price
+        self.logger.log(f"🎭 ダミー決済: {side} {quantity} @ {exit_price:.2f} USD")
+        return True
+
     def get_nearest_epoch_time(self, end_epoch):
         """_summary_
 

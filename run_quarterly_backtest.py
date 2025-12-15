@@ -61,17 +61,32 @@ def verify_backtest_mode():
         return False
     
     back_test_mode = None
+    risk_percentage = None
+    leverage = None
     
     try:
         with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
             for line in f:
                 line = line.strip()
-                if line.startswith('back_test'):
+                if line.startswith('back_test ='):
                     parts = line.split('=')
                     if len(parts) == 2:
                         try:
                             back_test_mode = int(parts[1].strip())
-                            break
+                        except ValueError:
+                            pass
+                elif line.startswith('risk_percentage ='):
+                    parts = line.split('=')
+                    if len(parts) == 2:
+                        try:
+                            risk_percentage = float(parts[1].strip())
+                        except ValueError:
+                            pass
+                elif line.startswith('leverage ='):
+                    parts = line.split('=')
+                    if len(parts) == 2:
+                        try:
+                            leverage = int(parts[1].strip())
                         except ValueError:
                             pass
     except Exception as e:
@@ -85,7 +100,12 @@ def verify_backtest_mode():
         return False
     
     if back_test_mode == 1:
-        print(f"✅ config.ini の back_test = 1 を確認しました")
+        print(f"✅ config.ini 設定確認:")
+        print(f"   - back_test = 1 (バックテストモード)")
+        if risk_percentage is not None:
+            print(f"   - risk_percentage = {risk_percentage} ({risk_percentage*100:.0f}%)")
+        if leverage is not None:
+            print(f"   - leverage = {leverage}倍")
         return True
     else:
         print(f"❌ エラー: config.ini の back_test が 1 に設定されていません")
