@@ -31,6 +31,8 @@ src/.api_key
 src/config.ini
 src/logs/*.json
 src/logs/*.zip
+logs/*.json
+logs/*.zip
 src/ohlcv_data
 
 # 一時レポート（分析・検証用）
