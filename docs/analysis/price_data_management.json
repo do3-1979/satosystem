@@ -1,807 +1,175 @@
 {
-  "metadata": {
-    "source_file": "src/price_data_management.py",
-    "analyzed_at": "2025-12-14T00:07:26.833331",
-    "python_version": "3.10"
-  },
-  "file_info": {
-    "path": "src/price_data_management.py",
-    "description": "Source code structure analysis"
-  },
-  "imports": [
-    {
-      "module": "datetime.datetime",
-      "type": "local",
-      "used_for": "From datetime"
-    },
-    {
-      "module": "datetime.timedelta",
-      "type": "local",
-      "used_for": "From datetime"
-    },
-    {
-      "module": "config.Config",
-      "type": "local",
-      "used_for": "From config"
-    },
-    {
-      "module": "logger.Logger",
-      "type": "local",
-      "used_for": "From logger"
-    },
-    {
-      "module": "bybit_exchange.BybitExchange",
-      "type": "local",
-      "used_for": "From bybit_exchange"
-    },
-    {
-      "module": "ohlcv_cache.OHLCVCache",
-      "type": "local",
-      "used_for": "From ohlcv_cache"
-    },
-    {
-      "module": "pprint",
-      "type": "standard",
-      "used_for": "Module: pprint"
-    },
-    {
-      "module": "json",
-      "type": "standard",
-      "used_for": "Module: json"
-    },
-    {
-      "module": "os",
-      "type": "standard",
-      "used_for": "Module: os"
-    }
-  ],
   "classes": [
     {
-      "name": "PriceDataManagement",
-      "line": 11,
-      "docstring": "No description",
-      "inheritance": [],
+      "class_name": "PriceDataManagement",
+      "module": "price_data_management",
       "methods": [
         {
-          "name": "__new__",
-          "line": 38,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __new__cls",
-          "parameters": [
-            {
-              "name": "cls",
-              "type": "Any",
-              "description": "Parameter: cls"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "__new__",
-          "calls": [
-            "cls._instance.initialize",
-            "super",
-            "super(PriceDataManagement, cls).__new__"
-          ]
-        },
-        {
-          "name": "initialize",
-          "line": 44,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def initializeself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "initialize",
-          "calls": [
-            "Config.get_back_test_mode",
-            "Config.get_api_secret",
-            "Config.get_time_frame",
-            "Logger",
-            "Config.get_psar_time_frame",
-            "BybitExchange",
-            "OHLCVCache",
-            "Config.get_api_key"
-          ]
-        },
-        {
-          "name": "get_ohlcv_data",
-          "line": 76,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_ohlcv_dataself, time_frame",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "time_frame",
-              "type": "Any",
-              "description": "Parameter: time_frame"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "確定済のOHLCVデータを取得するメソッドです。\n\nReturns:\n    list: OHLCVデータのリスト",
-          "summary": "確定済のOHLCVデータを取得するメソッドです。",
-          "calls": [
-            "self.get_ohlcv_data_by_time_frame"
-          ]
-        },
-        {
-          "name": "get_ticker",
-          "line": 87,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_tickerself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "tickerデータを取得するメソッドです。\n\nReturns:\n    int: tickerデータ",
-          "summary": "tickerデータを取得するメソッドです。"
-        },
-        {
-          "name": "get_latest_close_time",
-          "line": 96,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_latest_close_timeself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "close_timeデータを取得するメソッドです。\n\nReturns:\n    int: close_time",
-          "summary": "close_timeデータを取得するメソッドです。"
-        },
-        {
-          "name": "get_latest_close_time_dt",
-          "line": 105,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_latest_close_time_dtself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "close_timeデータを取得するメソッドです。\n\nReturns:\n    int: close_time",
-          "summary": "close_timeデータを取得するメソッドです。",
-          "calls": [
-            "datetime.fromtimestamp(self.close_time).strftime",
-            "datetime.fromtimestamp"
-          ]
-        },
-        {
-          "name": "get_latest_ohlcv",
-          "line": 114,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_latest_ohlcvself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "最新の未確定のOHLCVデータを表示するメソッドです。",
-          "summary": "最新の未確定のOHLCVデータを表示するメソッドです。"
-        },
-        {
-          "name": "get_latest_volume",
-          "line": 120,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_latest_volumeself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "最新の出来高を取得するメソッドです。",
-          "summary": "最新の出来高を取得するメソッドです。"
-        },
-        {
-          "name": "get_volatility",
-          "line": 126,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_volatilityself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "価格データのボラティリティを取得するメソッドです。\nこのメソッドは実際のデータを取得するロジックを追加してください。\n\nReturns:\n    int: 価格データのボラティリティ",
-          "summary": "価格データのボラティリティを取得するメソッドです。"
+          "name": "append_ohlcv_data_by_time_frame",
+          "line": 591,
+          "signature": "(self, ohlcv_data, target_time_frame)",
+          "docstring": "指定されたtime_frameの終端にデータを追加する",
+          "visibility": "public"
         },
         {
           "name": "calcurate_volatility",
           "line": 136,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def calcurate_volatilityself, ohlcv_data",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "ohlcv_data",
-              "type": "Any",
-              "description": "Parameter: ohlcv_data"
-            }
-          ],
-          "return_type": "Any",
+          "signature": "(self, ohlcv_data)",
           "docstring": "ボラティリティを計算するメソッドです。\n\nArgs:\n    ohlcv_data (list): OHLCVデータのリスト\n\nReturns:\n    int: ボラティリティ",
-          "summary": "ボラティリティを計算するメソッドです。",
-          "calls": [
-            "Config.get_volatility_term",
-            "sum"
-          ]
+          "visibility": "public"
         },
         {
-          "name": "show_latest_ticker",
-          "line": 152,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def show_latest_tickerself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "最新のティッカー価格を表示するメソッドです。",
-          "summary": "最新のティッカー価格を表示するメソッドです。",
-          "calls": [
-            "self.logger.log"
-          ]
+          "name": "del_ohlcv_data_by_time_frame",
+          "line": 581,
+          "signature": "(self, target_time_frame)",
+          "docstring": "指定されたtime_frameの先頭行を削除する",
+          "visibility": "public"
         },
         {
-          "name": "show_latest_volume",
-          "line": 158,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def show_latest_volumeself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "最新の出来高を表示するメソッドです。",
-          "summary": "最新の出来高を表示するメソッドです。",
-          "calls": [
-            "self.logger.log"
-          ]
+          "name": "get_back_test_ohlcv_data",
+          "line": 629,
+          "signature": "(self, target_unix_time, time_frame)",
+          "docstring": "（バックテスト用）指定されたtime_frameのデータで、指定されたunix_timeのデータを取得",
+          "visibility": "public"
         },
         {
-          "name": "show_latest_ohlcv",
-          "line": 164,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def show_latest_ohlcvself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
+          "name": "get_back_test_ohlcv_data_by_time_frame",
+          "line": 620,
+          "signature": "(self, target_time_frame)",
+          "docstring": "（バックテスト用）指定されたtime_frameのデータを取得",
+          "visibility": "public"
+        },
+        {
+          "name": "get_latest_close_time",
+          "line": 96,
+          "signature": "(self)",
+          "docstring": "close_timeデータを取得するメソッドです。\n\nReturns:\n    int: close_time",
+          "visibility": "public"
+        },
+        {
+          "name": "get_latest_close_time_dt",
+          "line": 105,
+          "signature": "(self)",
+          "docstring": "close_timeデータを取得するメソッドです。\n\nReturns:\n    int: close_time",
+          "visibility": "public"
+        },
+        {
+          "name": "get_latest_ohlcv",
+          "line": 114,
+          "signature": "(self)",
           "docstring": "最新の未確定のOHLCVデータを表示するメソッドです。",
-          "summary": "最新の未確定のOHLCVデータを表示するメソッドです。",
-          "calls": [
-            "round",
-            "self.logger.log",
-            "datetime.fromtimestamp",
-            "datetime.fromtimestamp(latest_ohlcv_data['close_time']).strftime"
-          ]
+          "visibility": "public"
         },
         {
-          "name": "show_latest_signals",
-          "line": 178,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def show_latest_signalsself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "最新のトレードシグナルを表示するメソッドです。",
-          "summary": "最新のトレードシグナルを表示するメソッドです。",
-          "calls": [
-            "self.signals.items",
-            "self.logger.log"
-          ]
+          "name": "get_latest_volume",
+          "line": 120,
+          "signature": "(self)",
+          "docstring": "最新の出来高を取得するメソッドです。",
+          "visibility": "public"
+        },
+        {
+          "name": "get_ohlcv_data",
+          "line": 76,
+          "signature": "(self, time_frame)",
+          "docstring": "確定済のOHLCVデータを取得するメソッドです。\n\nReturns:\n    list: OHLCVデータのリスト",
+          "visibility": "public"
+        },
+        {
+          "name": "get_ohlcv_data_by_time_frame",
+          "line": 611,
+          "signature": "(self, target_time_frame)",
+          "docstring": "指定されたtime_frameのデータリストを取得する",
+          "visibility": "public"
         },
         {
           "name": "get_signals",
           "line": 186,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_signalsself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
+          "signature": "(self)",
           "docstring": "トレードシグナルを取得するメソッドです。\n\nReturns:\n    dict: トレードシグナルの辞書",
-          "summary": "トレードシグナルを取得するメソッドです。"
+          "visibility": "public"
+        },
+        {
+          "name": "get_ticker",
+          "line": 87,
+          "signature": "(self)",
+          "docstring": "tickerデータを取得するメソッドです。\n\nReturns:\n    int: tickerデータ",
+          "visibility": "public"
+        },
+        {
+          "name": "get_volatility",
+          "line": 126,
+          "signature": "(self)",
+          "docstring": "価格データのボラティリティを取得するメソッドです。\nこのメソッドは実際のデータを取得するロジックを追加してください。\n\nReturns:\n    int: 価格データのボラティリティ",
+          "visibility": "public"
+        },
+        {
+          "name": "initialise_back_test_ohlcv_data",
+          "line": 537,
+          "signature": "(self)",
+          "docstring": "バックテスト用取引データ初期化",
+          "visibility": "public"
+        },
+        {
+          "name": "initialize",
+          "line": 44,
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "set_ohlcv_data_by_time_frame",
+          "line": 601,
+          "signature": "(self, ohlcv_data, target_time_frame)",
+          "docstring": "指定されたtime_frameのデータに、指定データリストを置き換える",
+          "visibility": "public"
+        },
+        {
+          "name": "show_latest_ohlcv",
+          "line": 164,
+          "signature": "(self)",
+          "docstring": "最新の未確定のOHLCVデータを表示するメソッドです。",
+          "visibility": "public"
+        },
+        {
+          "name": "show_latest_signals",
+          "line": 178,
+          "signature": "(self)",
+          "docstring": "最新のトレードシグナルを表示するメソッドです。",
+          "visibility": "public"
+        },
+        {
+          "name": "show_latest_ticker",
+          "line": 152,
+          "signature": "(self)",
+          "docstring": "最新のティッカー価格を表示するメソッドです。",
+          "visibility": "public"
+        },
+        {
+          "name": "show_latest_volume",
+          "line": 158,
+          "signature": "(self)",
+          "docstring": "最新の出来高を表示するメソッドです。",
+          "visibility": "public"
+        },
+        {
+          "name": "update_price_data",
+          "line": 397,
+          "signature": "(self)",
+          "docstring": "価格データとトレードシグナルを更新するメソッドです。\nリトライロジック、例外処理、バリデーション機能を備えています。",
+          "visibility": "public"
         },
         {
           "name": "update_price_data_backtest",
           "line": 195,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def update_price_data_backtestself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
+          "signature": "(self)",
           "docstring": "バックテスト用に価格データとトレードシグナルを更新するメソッドです。",
-          "summary": "バックテスト用に価格データとトレードシグナルを更新するメソッドです。",
-          "calls": [
-            "self.del_ohlcv_data_by_time_frame",
-            "self.get_ohlcv_data_by_time_frame",
-            "self.__evaluate_donchian",
-            "int",
-            "datetime.strptime",
-            "Config.get_start_epoch",
-            "self.latest_ohlcv_data.append",
-            "self.__evaluate_pvo",
-            "self.calcurate_volatility",
-            "self.append_ohlcv_data_by_time_frame",
-            "self.set_ohlcv_data_by_time_frame",
-            "self.get_back_test_ohlcv_data",
-            "Config.get_start_time",
-            "start_time.replace",
-            "self.exchange.fetch_ohlcv",
-            "self.get_back_test_ohlcv_data_by_time_frame",
-            "timedelta",
-            "start_time.timestamp",
-            "Config.get_test_initial_max_term"
-          ]
-        },
-        {
-          "name": "update_price_data",
-          "line": 368,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def update_price_dataself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "価格データとトレードシグナルを更新するメソッドです。",
-          "summary": "価格データとトレードシグナルを更新するメソッドです。",
-          "calls": [
-            "self.set_ohlcv_data_by_time_frame",
-            "self.del_ohlcv_data_by_time_frame",
-            "self.get_ohlcv_data_by_time_frame",
-            "self.append_ohlcv_data_by_time_frame",
-            "self.calcurate_volatility",
-            "self.exchange.fetch_latest_ohlcv",
-            "self.exchange.fetch_ohlcv",
-            "self.exchange.fetch_ticker",
-            "self.__evaluate_donchian",
-            "Config.get_end_epoch",
-            "Config.get_start_epoch",
-            "self.__evaluate_pvo"
-          ]
-        },
-        {
-          "name": "initialise_back_test_ohlcv_data",
-          "line": 442,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def initialise_back_test_ohlcv_dataself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "バックテスト用取引データ初期化",
-          "summary": "バックテスト用取引データ初期化",
-          "calls": [
-            "self.logger.log",
-            "self.cache.get_ohlcv_data_partial",
-            "self.exchange.fetch_ohlcv",
-            "int",
-            "datetime.strptime",
-            "start_time.timestamp",
-            "Config.get_start_epoch",
-            "timedelta",
-            "Config.get_test_initial_max_term",
-            "Config.get_end_epoch",
-            "self.cache.save_ohlcv_data",
-            "len",
-            "Config.get_start_time",
-            "start_time.replace"
-          ]
-        },
-        {
-          "name": "del_ohlcv_data_by_time_frame",
-          "line": 483,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def del_ohlcv_data_by_time_frameself, target_time_frame",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "target_time_frame",
-              "type": "Any",
-              "description": "Parameter: target_time_frame"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "指定されたtime_frameの先頭行を削除する",
-          "summary": "指定されたtime_frameの先頭行を削除する"
-        },
-        {
-          "name": "append_ohlcv_data_by_time_frame",
-          "line": 493,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def append_ohlcv_data_by_time_frameself, ohlcv_data, target_time_frame",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "ohlcv_data",
-              "type": "Any",
-              "description": "Parameter: ohlcv_data"
-            },
-            {
-              "name": "target_time_frame",
-              "type": "Any",
-              "description": "Parameter: target_time_frame"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "指定されたtime_frameの終端にデータを追加する",
-          "summary": "指定されたtime_frameの終端にデータを追加する",
-          "calls": [
-            "tmp_ohlcv_data.append"
-          ]
-        },
-        {
-          "name": "set_ohlcv_data_by_time_frame",
-          "line": 503,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def set_ohlcv_data_by_time_frameself, ohlcv_data, target_time_frame",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "ohlcv_data",
-              "type": "Any",
-              "description": "Parameter: ohlcv_data"
-            },
-            {
-              "name": "target_time_frame",
-              "type": "Any",
-              "description": "Parameter: target_time_frame"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "指定されたtime_frameのデータに、指定データリストを置き換える",
-          "summary": "指定されたtime_frameのデータに、指定データリストを置き換える",
-          "calls": [
-            "ohlcv_data.copy"
-          ]
-        },
-        {
-          "name": "get_ohlcv_data_by_time_frame",
-          "line": 513,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_ohlcv_data_by_time_frameself, target_time_frame",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "target_time_frame",
-              "type": "Any",
-              "description": "Parameter: target_time_frame"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "指定されたtime_frameのデータリストを取得する",
-          "summary": "指定されたtime_frameのデータリストを取得する"
-        },
-        {
-          "name": "get_back_test_ohlcv_data_by_time_frame",
-          "line": 522,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_back_test_ohlcv_data_by_time_frameself, target_time_frame",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "target_time_frame",
-              "type": "Any",
-              "description": "Parameter: target_time_frame"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "（バックテスト用）指定されたtime_frameのデータを取得",
-          "summary": "（バックテスト用）指定されたtime_frameのデータを取得"
-        },
-        {
-          "name": "get_back_test_ohlcv_data",
-          "line": 531,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_back_test_ohlcv_dataself, target_unix_time, time_frame",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "target_unix_time",
-              "type": "Any",
-              "description": "Parameter: target_unix_time"
-            },
-            {
-              "name": "time_frame",
-              "type": "Any",
-              "description": "Parameter: time_frame"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "（バックテスト用）指定されたtime_frameのデータで、指定されたunix_timeのデータを取得",
-          "summary": "（バックテスト用）指定されたtime_frameのデータで、指定されたunix_timeのデータを取得",
-          "calls": [
-            "target_time.replace",
-            "target_time.timestamp",
-            "range",
-            "float",
-            "int",
-            "next",
-            "datetime.fromtimestamp",
-            "len"
-          ]
-        },
-        {
-          "name": "__evaluate_donchian",
-          "line": 582,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __evaluate_donchianself, ohlcv_data, price",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "ohlcv_data",
-              "type": "Any",
-              "description": "Parameter: ohlcv_data"
-            },
-            {
-              "name": "price",
-              "type": "Any",
-              "description": "Parameter: price"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "ドンチャンチャネルに基づくトレードシグナルを評価するメソッドです。\n\n\n\nArgs:\n    ohlcv_data (list): OHLCVデータのリスト\n    price (float): 現在の価格\n\nReturns:\n    str: トレードシグナル ('BUY', 'SELL', 'None')",
-          "summary": "ドンチャンチャネルに基づくトレードシグナルを評価するメソッドです。",
-          "calls": [
-            "Config.get_donchian_sell_term",
-            "max",
-            "Config.get_donchian_buy_term",
-            "min"
-          ]
-        },
-        {
-          "name": "__calc_ema",
-          "line": 612,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __calc_emaself, term, data",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "term",
-              "type": "Any",
-              "description": "Parameter: term"
-            },
-            {
-              "name": "data",
-              "type": "Any",
-              "description": "Parameter: data"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "Exponential Moving Average（指数平滑移動平均）を計算するメソッドです。\n\nArgs:\n    term (int): 移動平均の期間\n    data (list): 価格データのリスト\n\nReturns:\n    float: EMAの値",
-          "summary": "Exponential Moving Average（指数平滑移動平均）を計算するメソッドです。",
-          "calls": [
-            "sum",
-            "float",
-            "len"
-          ]
-        },
-        {
-          "name": "__calcurate_pvo",
-          "line": 639,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __calcurate_pvoself, ohlcv_data, volume",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "ohlcv_data",
-              "type": "Any",
-              "description": "Parameter: ohlcv_data"
-            },
-            {
-              "name": "volume",
-              "type": "Any",
-              "description": "Parameter: volume"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "Price Volume Oscillator（PVO）を計算するメソッドです。\n\nArgs:\n    ohlcv_data (list): OHLCVデータのリスト\n    volume (float): 出来高\n\nReturns:\n    float: PVOの値",
-          "summary": "Price Volume Oscillator（PVO）を計算するメソッドです。",
-          "calls": [
-            "volume_data.append",
-            "self.__calc_ema",
-            "max",
-            "Config.get_pvo_s_term",
-            "Config.get_pvo_l_term"
-          ]
-        },
-        {
-          "name": "__evaluate_pvo",
-          "line": 666,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __evaluate_pvoself, ohlcv_data, volume",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "ohlcv_data",
-              "type": "Any",
-              "description": "Parameter: ohlcv_data"
-            },
-            {
-              "name": "volume",
-              "type": "Any",
-              "description": "Parameter: volume"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "PVOに基づくトレードシグナルを評価するメソッドです。\n\nArgs:\n    ohlcv_data (list): OHLCVデータのリスト\n    volume (float): 出来高\n\nReturns:\n    bool: トレードシグナル (True, False)",
-          "summary": "PVOに基づくトレードシグナルを評価するメソッドです。",
-          "calls": [
-            "Config.get_pvo_threshold",
-            "self.__calcurate_pvo"
-          ]
+          "visibility": "public"
         }
-      ]
+      ],
+      "method_count": 23,
+      "docstring": null
     }
   ],
-  "functions": [],
-  "constants": [],
-  "summary": {
-    "total_classes": 1,
-    "total_methods": 28,
-    "total_functions": 0,
-    "total_constants": 0,
-    "lines_of_code": 477
-  }
+  "analysis_date": "2025-12-21",
+  "notes": "BTC/USDT 移行完了 - symbol パラメータを cache 呼び出しに追加"
 }

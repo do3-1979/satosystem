@@ -51,11 +51,28 @@ class OHLCVCache:
         conn = self._get_connection()
         cursor = conn.cursor()
         
+        # 既存テーブルのスキーマを確認
+        cursor.execute("PRAGMA table_info(candles)")
+        columns = [col[1] for col in cursor.fetchall()]
+        
+        # symbol 列が存在しない場合、テーブルを再作成
+        if 'symbol' not in columns and columns:  # テーブルは存在するが symbol がない
+            self.logger.log("⚠️  古いスキーマを検出。テーブルをアップグレードします...")
+            try:
+                cursor.execute("DROP TABLE IF EXISTS candles")
+                cursor.execute("DROP INDEX IF EXISTS idx_params")
+                cursor.execute("DROP INDEX IF EXISTS idx_time")
+                conn.commit()
+                self.logger.log("✅ 古いテーブルを削除しました")
+            except Exception as e:
+                self.logger.log_error(f"テーブル削除エラー: {str(e)}")
+        
         # キャッシュテーブルを作成
-        # 複合キー: (start_epoch, end_epoch, time_frame, close_time)でユニークにする
+        # 複合キー: (symbol, start_epoch, end_epoch, time_frame, close_time)でユニークにする
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS candles (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                symbol TEXT NOT NULL,
                 start_epoch INTEGER NOT NULL,
                 end_epoch INTEGER NOT NULL,
                 time_frame INTEGER NOT NULL,
@@ -73,7 +90,7 @@ class OHLCVCache:
         # インデックスを作成
         cursor.execute("""
             CREATE INDEX IF NOT EXISTS idx_params 
-            ON candles (start_epoch, end_epoch, time_frame)
+            ON candles (symbol, start_epoch, end_epoch, time_frame)
         """)
         
         cursor.execute("""
@@ -89,7 +106,8 @@ class OHLCVCache:
         self,
         start_epoch: int,
         end_epoch: int,
-        time_frame: int
+        time_frame: int,
+        symbol: str
     ) -> Optional[List[Dict]]:
         """
         指定されたパラメータでOHLCVデータをキャッシュから取得
@@ -98,6 +116,7 @@ class OHLCVCache:
             start_epoch: 開始時刻（エポック秒）
             end_epoch: 終了時刻（エポック秒）
             time_frame: タイムフレーム（分）
+            symbol: 取引シンボル（例: BTC/USD:BTC, BTC/USDT:USDT）
 
         Returns:
             キャッシュされたOHLCVデータのリスト、またはNone（キャッシュなし）
@@ -110,10 +129,10 @@ class OHLCVCache:
             SELECT close_time, close_time_dt, open_price, high_price, 
                    low_price, close_price, volume 
             FROM candles 
-            WHERE start_epoch = ? AND end_epoch = ? AND time_frame = ?
+            WHERE symbol = ? AND start_epoch = ? AND end_epoch = ? AND time_frame = ?
             ORDER BY close_time ASC
             """,
-            (start_epoch, end_epoch, time_frame)
+            (symbol, start_epoch, end_epoch, time_frame)
         )
         
         rows = cursor.fetchall()
@@ -137,11 +156,11 @@ class OHLCVCache:
         
         self.logger.log(
             f"キャッシュから {len(data)} 件のOHLCVデータを取得 "
-            f"(start_epoch={start_epoch}, end_epoch={end_epoch}, time_frame={time_frame})"
+            f"(symbol={symbol}, start_epoch={start_epoch}, end_epoch={end_epoch}, time_frame={time_frame})"
         )
         return data
 
-    def get_ohlcv_data_partial(self, start_epoch: int, end_epoch: int, time_frame: int) -> Optional[List[Dict]]:
+    def get_ohlcv_data_partial(self, start_epoch: int, end_epoch: int, time_frame: int, symbol: str) -> Optional[List[Dict]]:
         """
         指定期間がキャッシュに含まれているか確認し、含まれていれば取得
         キャッシュの期間が要求期間を完全に含んでいる場合に取得する（部分一致）
@@ -150,6 +169,7 @@ class OHLCVCache:
             start_epoch: 開始時刻（エポック秒）
             end_epoch: 終了時刻（エポック秒）
             time_frame: タイムフレーム（分）
+            symbol: 取引シンボル（例: BTC/USD:BTC, BTC/USDT:USDT）
 
         Returns:
             キャッシュされたOHLCVデータのリスト、またはNone（キャッシュに期間が含まれない場合）
@@ -157,18 +177,18 @@ class OHLCVCache:
         conn = self._get_connection()
         cursor = conn.cursor()
         
-        # 同じ time_frame で、要求期間を含むキャッシュを探す
+        # 同じ symbol・time_frame で、要求期間を含むキャッシュを探す
         # キャッシュの start_epoch <= 要求開始 AND キャッシュの end_epoch >= 要求終了
         cursor.execute(
             """
             SELECT start_epoch, end_epoch, COUNT(*) as record_count
             FROM candles
-            WHERE time_frame = ?
+            WHERE symbol = ? AND time_frame = ?
             AND start_epoch <= ?
             AND end_epoch >= ?
             GROUP BY start_epoch, end_epoch
             """,
-            (time_frame, start_epoch, end_epoch)
+            (symbol, time_frame, start_epoch, end_epoch)
         )
         
         cache_info = cursor.fetchone()
@@ -183,11 +203,11 @@ class OHLCVCache:
             SELECT close_time, close_time_dt, open_price, high_price,
                    low_price, close_price, volume
             FROM candles
-            WHERE start_epoch = ? AND end_epoch = ? AND time_frame = ?
+            WHERE symbol = ? AND start_epoch = ? AND end_epoch = ? AND time_frame = ?
             AND close_time >= ? AND close_time <= ?
             ORDER BY close_time ASC
             """,
-            (cache_info["start_epoch"], cache_info["end_epoch"], time_frame, start_epoch, end_epoch)
+            (symbol, cache_info["start_epoch"], cache_info["end_epoch"], time_frame, start_epoch, end_epoch)
         )
         
         rows = cursor.fetchall()
@@ -211,7 +231,7 @@ class OHLCVCache:
         
         self.logger.log(
             f"キャッシュから {len(data)} 件のOHLCVデータを取得（部分一致） "
-            f"(要求: {start_epoch}～{end_epoch}, キャッシュ: {cache_info['start_epoch']}～{cache_info['end_epoch']}, time_frame={time_frame})"
+            f"(symbol={symbol}, 要求: {start_epoch}～{end_epoch}, キャッシュ: {cache_info['start_epoch']}～{cache_info['end_epoch']}, time_frame={time_frame})"
         )
         return data
 
@@ -220,7 +240,8 @@ class OHLCVCache:
         ohlcv_list: List[Dict],
         start_epoch: int,
         end_epoch: int,
-        time_frame: int
+        time_frame: int,
+        symbol: str
     ) -> bool:
         """
         OHLCVデータをキャッシュに保存
@@ -230,6 +251,7 @@ class OHLCVCache:
             start_epoch: 開始時刻（エポック秒）
             end_epoch: 終了時刻（エポック秒）
             time_frame: タイムフレーム（分）
+            symbol: 取引シンボル（例: BTC/USD:BTC, BTC/USDT:USDT）
 
         Returns:
             保存成功の可否
@@ -246,9 +268,9 @@ class OHLCVCache:
             cursor.execute(
                 """
                 DELETE FROM candles 
-                WHERE start_epoch = ? AND end_epoch = ? AND time_frame = ?
+                WHERE symbol = ? AND start_epoch = ? AND end_epoch = ? AND time_frame = ?
                 """,
-                (start_epoch, end_epoch, time_frame)
+                (symbol, start_epoch, end_epoch, time_frame)
             )
             
             # 新しいデータを挿入
@@ -256,11 +278,12 @@ class OHLCVCache:
                 cursor.execute(
                     """
                     INSERT OR REPLACE INTO candles 
-                    (start_epoch, end_epoch, time_frame, close_time, close_time_dt, 
+                    (symbol, start_epoch, end_epoch, time_frame, close_time, close_time_dt, 
                      open_price, high_price, low_price, close_price, volume)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
+                        symbol,
                         start_epoch,
                         end_epoch,
                         time_frame,
@@ -277,7 +300,7 @@ class OHLCVCache:
             conn.commit()
             self.logger.log(
                 f"キャッシュに {len(ohlcv_list)} 件のOHLCVデータを保存 "
-                f"(start_epoch={start_epoch}, end_epoch={end_epoch}, time_frame={time_frame})"
+                f"(symbol={symbol}, start_epoch={start_epoch}, end_epoch={end_epoch}, time_frame={time_frame})"
             )
             return True
         except Exception as e:

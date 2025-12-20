@@ -1,121 +1,21 @@
 {
-  "metadata": {
-    "source_file": "src/order.py",
-    "analyzed_at": "2025-12-13T17:38:40.075366",
-    "python_version": "3.10"
-  },
-  "file_info": {
-    "path": "src/order.py",
-    "description": "Source code structure analysis"
-  },
-  "imports": [
-    {
-      "module": "side.normalize_side",
-      "type": "local",
-      "used_for": "From side"
-    }
-  ],
   "classes": [
     {
-      "name": "Order",
-      "line": 17,
-      "docstring": "No description",
-      "inheritance": [],
+      "class_name": "Order",
+      "module": "order",
       "methods": [
-        {
-          "name": "__init__",
-          "line": 18,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __init__self, symbol, side, quantity, price=None, order_type='limit'",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "symbol",
-              "type": "Any",
-              "description": "Parameter: symbol"
-            },
-            {
-              "name": "side",
-              "type": "Any",
-              "description": "Parameter: side"
-            },
-            {
-              "name": "quantity",
-              "type": "Any",
-              "description": "Parameter: quantity"
-            },
-            {
-              "name": "price",
-              "type": "Any",
-              "description": "Parameter: price",
-              "default": null
-            },
-            {
-              "name": "order_type",
-              "type": "Any",
-              "description": "Parameter: order_type",
-              "default": "limit"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "Orderクラスを初期化します。\n\nArgs:\n    symbol (str): 通貨ペア (例: 'BTC/USD')\n    side (str|Side): 注文の方向 ('BUY' または 'SELL')\n    quantity (float): 注文数量\n    price (float, optional): 注文価格 (limit注文の場合にのみ指定). Defaults to None.\n    order_type (str, optional): 注文タイプ ('limit'または'market'). Defaults to 'limit'.",
-          "summary": "Orderクラスを初期化します。",
-          "calls": [
-            "normalize_side"
-          ]
-        },
         {
           "name": "to_dict",
           "line": 35,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def to_dictself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
+          "signature": "(self)",
           "docstring": "注文情報を辞書形式で取得します。\n\nReturns:\n    dict: 注文情報の辞書",
-          "summary": "注文情報を辞書形式で取得します。"
-        },
-        {
-          "name": "__str__",
-          "line": 54,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __str__self",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "__str__"
+          "visibility": "public"
         }
-      ]
+      ],
+      "method_count": 1,
+      "docstring": null
     }
   ],
-  "functions": [],
-  "constants": [],
-  "summary": {
-    "total_classes": 1,
-    "total_methods": 3,
-    "total_functions": 0,
-    "total_constants": 0,
-    "lines_of_code": 46
-  }
+  "analysis_date": "2025-12-21",
+  "notes": "BTC/USDT 移行完了 - 注文DTO 更新"
 }

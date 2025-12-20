@@ -552,6 +552,9 @@ class PriceDataManagement:
         # epoch時間に変換
         start_epoch = int(start_time.timestamp())
 
+        # 取引シンボルを取得
+        symbol = self.exchange.get_market_symbol()
+
         # 時間足データ初期化
         for data_dict in self.back_test_ohlcv_data:
             time_frame = data_dict["time_frame"]
@@ -559,7 +562,7 @@ class PriceDataManagement:
             self.logger.log(f"時間足データ {time_frame} 分 初期化")
 
             # SQLiteキャッシュから取得を試みる（部分一致：指定期間がキャッシュに含まれているか確認）
-            cached_data = self.cache.get_ohlcv_data_partial(start_epoch, end_epoch, time_frame)
+            cached_data = self.cache.get_ohlcv_data_partial(start_epoch, end_epoch, time_frame, symbol)
             if cached_data is not None:
                 self.logger.log(f"SQLiteキャッシュから {len(cached_data)} 件のデータを取得")
                 data_dict["data"] = cached_data
@@ -569,7 +572,7 @@ class PriceDataManagement:
                 data_dict["data"] = self.exchange.fetch_ohlcv(start_epoch, end_epoch, time_frame)
                 # SQLiteキャッシュに保存
                 if data_dict["data"]:
-                    self.cache.save_ohlcv_data(data_dict["data"], start_epoch, end_epoch, time_frame)
+                    self.cache.save_ohlcv_data(data_dict["data"], start_epoch, end_epoch, time_frame, symbol)
 
         self.logger.log("時間足データ初期化 done")
 

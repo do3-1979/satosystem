@@ -1,919 +1,196 @@
 {
-  "metadata": {
-    "source_file": "src/risk_management.py",
-    "analyzed_at": "2025-12-14T00:07:28.780253",
-    "python_version": "3.10"
-  },
-  "file_info": {
-    "path": "src/risk_management.py",
-    "description": "Source code structure analysis"
-  },
-  "imports": [
-    {
-      "module": "config.Config",
-      "type": "local",
-      "used_for": "From config"
-    },
-    {
-      "module": "logger.Logger",
-      "type": "local",
-      "used_for": "From logger"
-    },
-    {
-      "module": "price_data_management.PriceDataManagement",
-      "type": "local",
-      "used_for": "From price_data_management"
-    },
-    {
-      "module": "bybit_exchange.BybitExchange",
-      "type": "local",
-      "used_for": "From bybit_exchange"
-    },
-    {
-      "module": "portfolio.Portfolio",
-      "type": "local",
-      "used_for": "From portfolio"
-    },
-    {
-      "module": "new_indicators.NewIndicators",
-      "type": "local",
-      "used_for": "From new_indicators"
-    },
-    {
-      "module": "numpy",
-      "type": "standard",
-      "used_for": "Module: numpy"
-    },
-    {
-      "module": "config.Config",
-      "type": "local",
-      "used_for": "From config"
-    },
-    {
-      "module": "config.Config",
-      "type": "local",
-      "used_for": "From config"
-    },
-    {
-      "module": "config.Config",
-      "type": "local",
-      "used_for": "From config"
-    },
-    {
-      "module": "config.Config",
-      "type": "local",
-      "used_for": "From config"
-    }
-  ],
   "classes": [
     {
-      "name": "RiskManagement",
-      "line": 20,
-      "docstring": "No description",
-      "inheritance": [],
+      "class_name": "RiskManagement",
+      "module": "risk_management",
       "methods": [
         {
-          "name": "__init__",
-          "line": 21,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __init__self, price_data_management, portfolio",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "price_data_management",
-              "type": "Any",
-              "description": "Parameter: price_data_management"
-            },
-            {
-              "name": "portfolio",
-              "type": "Any",
-              "description": "Parameter: portfolio"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "リスク管理クラスを初期化します。",
-          "summary": "リスク管理クラスを初期化します。",
-          "calls": [
-            "Config.get_account_balance",
-            "Config.get_entry_range",
-            "Config.get_lot_limit_lower",
-            "Config.get_entry_times",
-            "Config.get_config_bool",
-            "Config.get_stop_AF_add",
-            "Config.get_leverage",
-            "Config.get_config_int",
-            "Config.get_balance_tether_limit",
-            "Config.get_stop_AF_max",
-            "Config.get_risk_percentage",
-            "Config.get_stop_range",
-            "Config.get_surge_follow_price_ratio",
-            "Config.get_stop_AF",
-            "Logger",
-            "Config.get_config_float",
-            "NewIndicators"
-          ]
-        },
-        {
-          "name": "get_entry_range",
-          "line": 90,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_entry_rangeself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "get_entry_range"
-        },
-        {
-          "name": "get_add_range",
-          "line": 93,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_add_rangeself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "get_add_range"
-        },
-        {
-          "name": "get_last_entry_price",
-          "line": 96,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_last_entry_priceself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "get_last_entry_price"
-        },
-        {
-          "name": "update_last_entry_price",
-          "line": 99,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def update_last_entry_priceself, price",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "price",
-              "type": "Any",
-              "description": "Parameter: price"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "update_last_entry_price"
-        },
-        {
-          "name": "update_risk_status",
-          "line": 103,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def update_risk_statusself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "update_risk_status",
-          "calls": [
-            "self.__update_stop_price"
-          ]
-        },
-        {
-          "name": "get_stop_price",
-          "line": 107,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_stop_priceself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "get_stop_price"
-        },
-        {
-          "name": "get_position_size",
-          "line": 110,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_position_sizeself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "get_position_size"
-        },
-        {
-          "name": "get_total_size",
-          "line": 113,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_total_sizeself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "get_total_size"
-        },
-        {
-          "name": "get_stop_offset",
-          "line": 116,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_stop_offsetself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "get_stop_offset"
-        },
-        {
-          "name": "get_psar",
-          "line": 119,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_psarself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "get_psar",
-          "calls": [
-            "len"
-          ]
-        },
-        {
-          "name": "get_psarbull",
-          "line": 124,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_psarbullself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "get_psarbull",
-          "calls": [
-            "len"
-          ]
-        },
-        {
-          "name": "get_psarbear",
-          "line": 129,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_psarbearself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "get_psarbear",
-          "calls": [
-            "len"
-          ]
-        },
-        {
-          "name": "get_adx",
-          "line": 134,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_adxself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "get_adx",
-          "calls": [
-            "len"
-          ]
-        },
-        {
-          "name": "get_adx_bull",
-          "line": 139,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_adx_bullself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "get_adx_bull"
-        },
-        {
-          "name": "get_adx_bear",
-          "line": 142,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_adx_bearself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "get_adx_bear"
-        },
-        {
-          "name": "get_donchian_high",
-          "line": 145,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_donchian_highself, period=20",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "period",
-              "type": "Any",
-              "description": "Parameter: period",
-              "default": 20
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "Donchian Channel の高値を取得 (N期間の最高値)\n\nArgs:\n    period (int): 期間（デフォルト 20）\n\nReturns:\n    float: Donchian高値、データ不足時は現在値",
-          "summary": "Donchian Channel の高値を取得 (N期間の最高値)",
-          "calls": [
-            "self.price_data_management.get_ohlcv_data_by_time_frame",
-            "isinstance",
-            "Config.get_back_test_mode",
-            "self.price_data_management.get_ticker",
-            "max",
-            "candle.get",
-            "len",
-            "self.price_data_management.get_back_test_ohlcv_data_by_time_frame",
-            "highs.append"
-          ]
-        },
-        {
-          "name": "get_donchian_low",
-          "line": 183,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_donchian_lowself, period=20",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "period",
-              "type": "Any",
-              "description": "Parameter: period",
-              "default": 20
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "Donchian Channel の安値を取得 (N期間の最安値)\n\nArgs:\n    period (int): 期間（デフォルト 20）\n\nReturns:\n    float: Donchian安値、データ不足時は現在値",
-          "summary": "Donchian Channel の安値を取得 (N期間の最安値)",
-          "calls": [
-            "self.price_data_management.get_ohlcv_data_by_time_frame",
-            "isinstance",
-            "Config.get_back_test_mode",
-            "self.price_data_management.get_ticker",
-            "lows.append",
-            "candle.get",
-            "min",
-            "len",
-            "self.price_data_management.get_back_test_ohlcv_data_by_time_frame"
-          ]
-        },
-        {
-          "name": "get_bb_upper",
-          "line": 221,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_bb_upperself, period=20, sigma=2.0",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "period",
-              "type": "Any",
-              "description": "Parameter: period",
-              "default": 20
-            },
-            {
-              "name": "sigma",
-              "type": "Any",
-              "description": "Parameter: sigma",
-              "default": 2.0
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "Bollinger Bands の上限を取得\n\nArgs:\n    period (int): 期間（デフォルト 20）\n    sigma (float): シグマ倍数（デフォルト 2.0）\n\nReturns:\n    float: BB上限値",
-          "summary": "Bollinger Bands の上限を取得",
-          "calls": [
-            "self.price_data_management.get_ohlcv_data_by_time_frame",
-            "isinstance",
-            "np.mean",
-            "self.price_data_management.get_ticker",
-            "Config.get_back_test_mode",
-            "np.array",
-            "candle.get",
-            "np.std",
-            "len",
-            "closes.append",
-            "self.price_data_management.get_back_test_ohlcv_data_by_time_frame"
-          ]
-        },
-        {
-          "name": "get_bb_lower",
-          "line": 263,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_bb_lowerself, period=20, sigma=2.0",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "period",
-              "type": "Any",
-              "description": "Parameter: period",
-              "default": 20
-            },
-            {
-              "name": "sigma",
-              "type": "Any",
-              "description": "Parameter: sigma",
-              "default": 2.0
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "Bollinger Bands の下限を取得\n\nArgs:\n    period (int): 期間（デフォルト 20）\n    sigma (float): シグマ倍数（デフォルト 2.0）\n\nReturns:\n    float: BB下限値",
-          "summary": "Bollinger Bands の下限を取得",
-          "calls": [
-            "self.price_data_management.get_ohlcv_data_by_time_frame",
-            "isinstance",
-            "np.mean",
-            "self.price_data_management.get_ticker",
-            "Config.get_back_test_mode",
-            "np.array",
-            "candle.get",
-            "np.std",
-            "len",
-            "closes.append",
-            "self.price_data_management.get_back_test_ohlcv_data_by_time_frame"
-          ]
-        },
-        {
-          "name": "get_psar_stop_offset",
-          "line": 305,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_psar_stop_offsetself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "get_psar_stop_offset"
-        },
-        {
-          "name": "get_price_surge_stop_offset",
-          "line": 308,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_price_surge_stop_offsetself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "get_price_surge_stop_offset"
-        },
-        {
-          "name": "__calc_parabolic_sar",
-          "line": 312,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __calc_parabolic_sarself, data",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "data",
-              "type": "Any",
-              "description": "Parameter: data"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "__calc_parabolic_sar",
-          "calls": [
-            "range",
-            "low.append",
-            "min",
-            "len",
-            "high.append",
-            "close.append"
-          ]
-        },
-        {
-          "name": "__calc_adx",
-          "line": 423,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __calc_adxself, data",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "data",
-              "type": "Any",
-              "description": "Parameter: data"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "__calc_adx",
-          "calls": [
-            "np.abs",
-            "sum",
-            "np.zeros",
-            "range",
-            "np.errstate",
-            "adx.tolist",
-            "max",
-            "len",
-            "all",
-            "abs",
-            "np.where"
-          ]
-        },
-        {
-          "name": "evaluate_strategy_a_adx",
-          "line": 488,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def evaluate_strategy_a_adxself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "Strategy A: ADXベースの市場レジーム検出\nADXが所定値を超えるときはbull/bearを返す\\        ",
-          "summary": "Strategy A: ADXベースの市場レジーム検出"
-        },
-        {
-          "name": "evaluate_strategy_b_bb_rsi_sma",
-          "line": 505,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def evaluate_strategy_b_bb_rsi_smaself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "Strategy B: Bollinger Bands + RSI + SMA複合指標\n複数の指標が揃ったときのsignalを返す",
-          "summary": "Strategy B: Bollinger Bands + RSI + SMA複合指標",
-          "calls": [
-            "self.new_indicators.calc_sma",
-            "self.price_data_management.get_ticker",
-            "signals.count",
-            "self.logger.log",
-            "Config.get_time_frame",
-            "self.price_data_management.get_ohlcv_data",
-            "self.new_indicators.calc_bollinger_bands",
-            "len",
-            "str",
-            "self.new_indicators.calc_rsi"
-          ]
-        },
-        {
-          "name": "evaluate_strategy_c_combined",
-          "line": 558,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def evaluate_strategy_c_combinedself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "Strategy C: 全指標統合 (ADX + BB + RSI + SMA)\nStrategy AとBの両方が揃ったときのsignalを返す",
-          "summary": "Strategy C: 全指標統合 (ADX + BB + RSI + SMA)",
-          "calls": [
-            "strategy_a_result.get",
-            "self.evaluate_strategy_b_bb_rsi_sma",
-            "self.logger.log",
-            "str",
-            "self.evaluate_strategy_a_adx",
-            "strategy_b_result.get"
-          ]
+          "name": "calculate_position_size",
+          "line": 750,
+          "signature": "(self, balance_tether)",
+          "docstring": "ポジションサイズ[通貨単位]を計算します。\n\nArgs:\n    entry_price (float): エントリー価格\n    stop_loss_price (float): ストップロス価格\n\nReturns:\n    float: ポジションサイズ",
+          "visibility": "public"
         },
         {
           "name": "evaluate_all_strategies",
           "line": 588,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def evaluate_all_strategiesself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
+          "signature": "(self)",
           "docstring": "すべてのストラテジーを評価し、有効なものを返す",
-          "summary": "すべてのストラテジーを評価し、有効なものを返す",
-          "calls": [
-            "self.evaluate_strategy_b_bb_rsi_sma",
-            "self.evaluate_strategy_a_adx",
-            "self.evaluate_strategy_c_combined"
-          ]
+          "visibility": "public"
         },
         {
-          "name": "__calc_stop_psar",
-          "line": 599,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __calc_stop_psarself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "ストップ値をパラボリックASRにする関数\n\nポジションのBUY/SELLに応じてパラボリックSARの値をストップポジションとする",
-          "summary": "ストップ値をパラボリックASRにする関数",
-          "calls": [
-            "self.get_psarbull",
-            "self.portfolio.get_position_side",
-            "self.portfolio.get_position_price",
-            "round",
-            "min",
-            "self.get_psarbear"
-          ]
+          "name": "evaluate_strategy_a_adx",
+          "line": 488,
+          "signature": "(self)",
+          "docstring": "Strategy A: ADXベースの市場レジーム検出\nADXが所定値を超えるときはbull/bearを返す\\        ",
+          "visibility": "public"
         },
         {
-          "name": "__follow_price_surge",
-          "line": 637,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __follow_price_surgeself, price",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "price",
-              "type": "Any",
-              "description": "Parameter: price"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "__follow_price_surge",
-          "calls": [
-            "self.portfolio.get_position_price",
-            "self.portfolio.get_position_side"
-          ]
+          "name": "evaluate_strategy_b_bb_rsi_sma",
+          "line": 505,
+          "signature": "(self)",
+          "docstring": "Strategy B: Bollinger Bands + RSI + SMA複合指標\n複数の指標が揃ったときのsignalを返す",
+          "visibility": "public"
         },
         {
-          "name": "__follow_price_range",
-          "line": 663,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __follow_price_rangeself, price",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "price",
-              "type": "Any",
-              "description": "Parameter: price"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "__follow_price_range"
+          "name": "evaluate_strategy_c_combined",
+          "line": 558,
+          "signature": "(self)",
+          "docstring": "Strategy C: 全指標統合 (ADX + BB + RSI + SMA)\nStrategy AとBの両方が揃ったときのsignalを返す",
+          "visibility": "public"
         },
         {
-          "name": "__update_stop_price",
-          "line": 673,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __update_stop_priceself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "__update_stop_price",
-          "calls": [
-            "self.__calc_stop_psar",
-            "self.price_data_management.get_volatility",
-            "self.__calc_parabolic_sar",
-            "self.price_data_management.get_ticker",
-            "self.__follow_price_surge",
-            "self.__calc_adx",
-            "max",
-            "min",
-            "Config.get_time_frame",
-            "self.price_data_management.get_ohlcv_data",
-            "self.portfolio.get_position_quantity",
-            "Config.get_psar_time_frame"
-          ]
+          "name": "get_add_range",
+          "line": 93,
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
         },
         {
-          "name": "calculate_position_size",
-          "line": 745,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def calculate_position_sizeself, balance_tether",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "balance_tether",
-              "type": "Any",
-              "description": "Parameter: balance_tether"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "ポジションサイズ[通貨単位]を計算します。\n\nArgs:\n    entry_price (float): エントリー価格\n    stop_loss_price (float): ストップロス価格\n\nReturns:\n    float: ポジションサイズ",
-          "summary": "ポジションサイズ[通貨単位]を計算します。",
-          "calls": [
-            "self.price_data_management.get_volatility",
-            "self.get_entry_range",
-            "self.price_data_management.get_ticker",
-            "self.logger.log_error",
-            "round",
-            "min"
-          ]
+          "name": "get_adx",
+          "line": 134,
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "get_adx_bear",
+          "line": 142,
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "get_adx_bull",
+          "line": 139,
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "get_bb_lower",
+          "line": 263,
+          "signature": "(self, period=20, sigma=2.0)",
+          "docstring": "Bollinger Bands の下限を取得\n\nArgs:\n    period (int): 期間（デフォルト 20）\n    sigma (float): シグマ倍数（デフォルト 2.0）\n\nReturns:\n    float: BB下限値",
+          "visibility": "public"
+        },
+        {
+          "name": "get_bb_upper",
+          "line": 221,
+          "signature": "(self, period=20, sigma=2.0)",
+          "docstring": "Bollinger Bands の上限を取得\n\nArgs:\n    period (int): 期間（デフォルト 20）\n    sigma (float): シグマ倍数（デフォルト 2.0）\n\nReturns:\n    float: BB上限値",
+          "visibility": "public"
+        },
+        {
+          "name": "get_donchian_high",
+          "line": 145,
+          "signature": "(self, period=20)",
+          "docstring": "Donchian Channel の高値を取得 (N期間の最高値)\n\nArgs:\n    period (int): 期間（デフォルト 20）\n\nReturns:\n    float: Donchian高値、データ不足時は現在値",
+          "visibility": "public"
+        },
+        {
+          "name": "get_donchian_low",
+          "line": 183,
+          "signature": "(self, period=20)",
+          "docstring": "Donchian Channel の安値を取得 (N期間の最安値)\n\nArgs:\n    period (int): 期間（デフォルト 20）\n\nReturns:\n    float: Donchian安値、データ不足時は現在値",
+          "visibility": "public"
+        },
+        {
+          "name": "get_entry_range",
+          "line": 90,
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "get_last_entry_price",
+          "line": 96,
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "get_position_size",
+          "line": 110,
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "get_price_surge_stop_offset",
+          "line": 308,
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "get_psar",
+          "line": 119,
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "get_psar_stop_offset",
+          "line": 305,
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "get_psarbear",
+          "line": 129,
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "get_psarbull",
+          "line": 124,
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "get_stop_offset",
+          "line": 116,
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "get_stop_price",
+          "line": 107,
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "get_total_size",
+          "line": 113,
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "update_last_entry_price",
+          "line": 99,
+          "signature": "(self, price)",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "update_risk_status",
+          "line": 103,
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
         }
-      ]
+      ],
+      "method_count": 26,
+      "docstring": null
     }
   ],
-  "functions": [],
-  "constants": [],
-  "summary": {
-    "total_classes": 1,
-    "total_methods": 33,
-    "total_functions": 0,
-    "total_constants": 0,
-    "lines_of_code": 571
-  }
+  "analysis_date": "2025-12-21",
+  "notes": "BTC/USDT 移行完了 - type safety 対応（position dict チェック追加）"
 }

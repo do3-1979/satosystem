@@ -80,9 +80,13 @@ class BybitExchange(Exchange):
         # マーケット変換
         market_type = Config.get_market()
         if market_type == 'BTC/USD':
-            self.market = "BTCUSD"
+            self.market = "BTC/USD:BTC"
+        elif market_type == 'BTC/USDT':
+            self.market = "BTC/USDT:USDT"
         elif market_type == 'ETH/USD':
-            self.market = "ETHUSD"
+            self.market = "ETH/USD:ETH"
+        elif market_type == 'ETH/USDT':
+            self.market = "ETH/USDT:USDT"
 
         # バックテスト時のみ exchange を初期化しない
         # ペーパートレード時は本番と同等の exchange を初期化
@@ -170,6 +174,15 @@ class BybitExchange(Exchange):
         usd_balance = balance['USDT']['total']
 
         return usd_balance
+
+    def get_market_symbol(self) -> str:
+        """
+        現在の取引シンボルを返す（例: BTC/USD:BTC, BTC/USDT:USDT）
+
+        Returns:
+            str: 取引シンボル
+        """
+        return self.market
 
     def execute_order(self, side, quantity, price, order_type):
         """
@@ -728,9 +741,15 @@ class BybitExchange(Exchange):
         # マーケット変換
         market_type = Config.get_market()
         if market_type == 'BTC/USD':
-            symbol = "BTCUSD"
+            symbol = "BTC/USD:BTC"
+        elif market_type == 'BTC/USDT':
+            symbol = "BTC/USDT:USDT"
         elif market_type == 'ETH/USD':
-            symbol = "ETHUSD"
+            symbol = "ETH/USD:ETH"
+        elif market_type == 'ETH/USDT':
+            symbol = "ETH/USDT:USDT"
+        else:
+            symbol = "BTC/USDT:USDT"  # デフォルト
         
         max_retries = 3
         retry_count = 0

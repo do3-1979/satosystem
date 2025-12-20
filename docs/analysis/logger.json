@@ -1,278 +1,56 @@
 {
-  "metadata": {
-    "source_file": "src/logger.py",
-    "analyzed_at": "2025-12-13T17:38:40.024468",
-    "python_version": "3.10"
-  },
-  "file_info": {
-    "path": "src/logger.py",
-    "description": "Source code structure analysis"
-  },
-  "imports": [
-    {
-      "module": "os",
-      "type": "standard",
-      "used_for": "Module: os"
-    },
-    {
-      "module": "json",
-      "type": "standard",
-      "used_for": "Module: json"
-    },
-    {
-      "module": "zipfile",
-      "type": "standard",
-      "used_for": "Module: zipfile"
-    },
-    {
-      "module": "datetime.datetime",
-      "type": "local",
-      "used_for": "From datetime"
-    },
-    {
-      "module": "logging",
-      "type": "standard",
-      "used_for": "Module: logging"
-    },
-    {
-      "module": "config.Config",
-      "type": "local",
-      "used_for": "From config"
-    }
-  ],
   "classes": [
     {
-      "name": "Logger",
-      "line": 18,
-      "docstring": "No description",
-      "inheritance": [],
+      "class_name": "Logger",
+      "module": "logger",
       "methods": [
-        {
-          "name": "__new__",
-          "line": 21,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __new__cls",
-          "parameters": [
-            {
-              "name": "cls",
-              "type": "Any",
-              "description": "Parameter: cls"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "シングルトンインスタンスを生成または既存のインスタンスを返します。\n\nArgs:\n    log_file (str): ログを保存するファイル名\n\nReturns:\n    Logger: Loggerクラスの唯一のインスタンス",
-          "summary": "シングルトンインスタンスを生成または既存のインスタンスを返します。",
-          "calls": [
-            "super",
-            "super(Logger, cls).__new__",
-            "cls._instance._initialize"
-          ]
-        },
-        {
-          "name": "_initialize",
-          "line": 36,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def _initializeself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "Loggerクラスを初期化します。\n\nArgs:\n    log_file (str): ログを保存するファイル名",
-          "summary": "Loggerクラスを初期化します。",
-          "calls": [
-            "self.logger.addHandler",
-            "logging.FileHandler",
-            "file_handler.setLevel",
-            "os.path.exists",
-            "Config.get_log_file_name",
-            "self.open_log_file",
-            "logging.Formatter",
-            "file_handler.setFormatter",
-            "console_handler.setLevel",
-            "console_handler.setFormatter",
-            "logging.getLogger",
-            "Config.get_log_dir_name",
-            "self.logger.setLevel",
-            "logging.StreamHandler",
-            "os.makedirs"
-          ]
-        },
-        {
-          "name": "log",
-          "line": 70,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def logself, message",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "message",
-              "type": "Any",
-              "description": "Parameter: message"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "ログメッセージを出力します。\n\nArgs:\n    message (str): 出力するログメッセージ",
-          "summary": "ログメッセージを出力します。",
-          "calls": [
-            "self.logger.info"
-          ]
-        },
-        {
-          "name": "log_error",
-          "line": 79,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def log_errorself, message",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "message",
-              "type": "Any",
-              "description": "Parameter: message"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "エラーメッセージを出力します。\n\nArgs:\n    message (str): 出力するエラーメッセージ",
-          "summary": "エラーメッセージを出力します。",
-          "calls": [
-            "self.logger.error"
-          ]
-        },
-        {
-          "name": "open_log_file",
-          "line": 88,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def open_log_fileself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "open_log_file",
-          "calls": [
-            "datetime.now",
-            "self.current_log_file.write",
-            "os.path.join",
-            "open",
-            "current_time.strftime"
-          ]
-        },
         {
           "name": "close_log_file",
           "line": 95,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def close_log_fileself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "close_log_file",
-          "calls": [
-            "self.current_log_file.close",
-            "self.current_log_file.seek",
-            "self.current_log_file.write",
-            "self.current_log_file.tell"
-          ]
-        },
-        {
-          "name": "log_trade_data",
-          "line": 103,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def log_trade_dataself, trade_data",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "trade_data",
-              "type": "Any",
-              "description": "Parameter: trade_data"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "log_trade_data",
-          "calls": [
-            "json.dump",
-            "self.current_log_file.write"
-          ]
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
         },
         {
           "name": "compress_logs",
           "line": 108,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def compress_logsself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "compress_logs",
-          "calls": [
-            "file.endswith",
-            "os.path.exists",
-            "datetime.now",
-            "zipfile.ZipFile",
-            "os.walk",
-            "os.remove",
-            "os.path.join",
-            "log_zip.write",
-            "os.path.relpath",
-            "current_time.strftime"
-          ]
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "log",
+          "line": 70,
+          "signature": "(self, message)",
+          "docstring": "ログメッセージを出力します。\n\nArgs:\n    message (str): 出力するログメッセージ",
+          "visibility": "public"
+        },
+        {
+          "name": "log_error",
+          "line": 79,
+          "signature": "(self, message)",
+          "docstring": "エラーメッセージを出力します。\n\nArgs:\n    message (str): 出力するエラーメッセージ",
+          "visibility": "public"
+        },
+        {
+          "name": "log_trade_data",
+          "line": 103,
+          "signature": "(self, trade_data)",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "open_log_file",
+          "line": 88,
+          "signature": "(self)",
+          "docstring": null,
+          "visibility": "public"
         }
-      ]
+      ],
+      "method_count": 6,
+      "docstring": null
     }
   ],
-  "functions": [],
-  "constants": [],
-  "summary": {
-    "total_classes": 1,
-    "total_methods": 8,
-    "total_functions": 0,
-    "total_constants": 0,
-    "lines_of_code": 129
-  }
+  "analysis_date": "2025-12-21",
+  "notes": "BTC/USDT 移行完了 - ログシステム正常動作確認"
 }

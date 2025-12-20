@@ -1,402 +1,112 @@
 {
-  "metadata": {
-    "source_file": "src/portfolio.py",
-    "analyzed_at": "2025-12-13T17:38:40.083194",
-    "python_version": "3.10"
-  },
-  "file_info": {
-    "path": "src/portfolio.py",
-    "description": "Source code structure analysis"
-  },
-  "imports": [
-    {
-      "module": "logger.Logger",
-      "type": "local",
-      "used_for": "From logger"
-    },
-    {
-      "module": "config.Config",
-      "type": "local",
-      "used_for": "From config"
-    }
-  ],
   "classes": [
     {
-      "name": "Portfolio",
-      "line": 19,
-      "docstring": "No description",
-      "inheritance": [],
+      "class_name": "Portfolio",
+      "module": "portfolio",
       "methods": [
         {
-          "name": "__init__",
-          "line": 20,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __init__self",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "__init__",
-          "calls": [
-            "Logger",
-            "Config.get_market"
-          ]
-        },
-        {
-          "name": "get_position_quantity",
-          "line": 33,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_position_quantityself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "指定した通貨の保有ポジション量を取得",
-          "summary": "指定した通貨の保有ポジション量を取得"
-        },
-        {
-          "name": "get_position_side",
-          "line": 41,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_position_sideself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "指定した通貨の保有ポジション量を取得",
-          "summary": "指定した通貨の保有ポジション量を取得"
-        },
-        {
-          "name": "get_position_price",
-          "line": 49,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_position_priceself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "指定した通貨の保有ポジション量を取得",
-          "summary": "指定した通貨の保有ポジション量を取得"
-        },
-        {
-          "name": "get_profit_and_loss",
-          "line": 57,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_profit_and_lossself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "利益と損失を取得します。単位は[BTC/USD]",
-          "summary": "利益と損失を取得します。単位は[BTC/USD]"
-        },
-        {
-          "name": "get_profit_factor",
-          "line": 63,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_profit_factorself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "プロフィットファクターを取得します。",
-          "summary": "プロフィットファクターを取得します。",
-          "calls": [
-            "round"
-          ]
-        },
-        {
-          "name": "get_drawdown",
-          "line": 73,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_drawdownself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "ドローダウンを取得します。",
-          "summary": "ドローダウンを取得します。"
-        },
-        {
-          "name": "get_drawdown_rate",
-          "line": 79,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_drawdown_rateself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "ドローダウン率を取得します。",
-          "summary": "ドローダウン率を取得します。",
-          "calls": [
-            "round"
-          ]
-        },
-        {
           "name": "add_position_quantity",
-          "line": 89,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def add_position_quantityself, quantity, side, price",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "quantity",
-              "type": "Any",
-              "description": "Parameter: quantity"
-            },
-            {
-              "name": "side",
-              "type": "Any",
-              "description": "Parameter: side"
-            },
-            {
-              "name": "price",
-              "type": "Any",
-              "description": "Parameter: price"
-            }
-          ],
-          "return_type": "Any",
+          "line": 90,
+          "signature": "(self, quantity, side, price)",
           "docstring": "通貨の保有ポジション量を更新",
-          "summary": "通貨の保有ポジション量を更新"
+          "visibility": "public"
         },
         {
           "name": "calc_position_quantity",
-          "line": 117,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def calc_position_quantityself, price",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "price",
-              "type": "Any",
-              "description": "Parameter: price"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "calc_position_quantity",
-          "calls": [
-            "self.get_position_side"
-          ]
+          "line": 118,
+          "signature": "(self, price)",
+          "docstring": null,
+          "visibility": "public"
         },
         {
           "name": "clear_position_quantity",
-          "line": 146,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def clear_position_quantityself, price",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "price",
-              "type": "Any",
-              "description": "Parameter: price"
-            }
-          ],
-          "return_type": "Any",
+          "line": 147,
+          "signature": "(self, price)",
           "docstring": "通貨の保有ポジション量を更新し、利益または損失を計算します。\n\nArgs:\n    price (float): 売却時の価格",
-          "summary": "通貨の保有ポジション量を更新し、利益または損失を計算します。",
-          "calls": [
-            "max",
-            "self.calc_position_quantity",
-            "self.logger.log"
-          ]
-        },
-        {
-          "name": "get_position_quantity_with_symbol",
-          "line": 185,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_position_quantity_with_symbolself, symbol",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "symbol",
-              "type": "Any",
-              "description": "Parameter: symbol"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "指定した通貨の保有ポジション量を取得",
-          "summary": "指定した通貨の保有ポジション量を取得"
-        },
-        {
-          "name": "get_position_side_with_symbol",
-          "line": 193,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_position_side_with_symbolself, symbol",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "symbol",
-              "type": "Any",
-              "description": "Parameter: symbol"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "指定した通貨の保有ポジション量を取得",
-          "summary": "指定した通貨の保有ポジション量を取得"
-        },
-        {
-          "name": "update_position_quantity_with_symbol",
-          "line": 201,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def update_position_quantity_with_symbolself, symbol, quantity, side",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "symbol",
-              "type": "Any",
-              "description": "Parameter: symbol"
-            },
-            {
-              "name": "quantity",
-              "type": "Any",
-              "description": "Parameter: quantity"
-            },
-            {
-              "name": "side",
-              "type": "Any",
-              "description": "Parameter: side"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "通貨の保有ポジション量を更新",
-          "summary": "通貨の保有ポジション量を更新"
-        },
-        {
-          "name": "__str__",
-          "line": 208,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __str__self",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "__str__",
-          "calls": [
-            "round",
-            "self.positions.items"
-          ]
+          "visibility": "public"
         },
         {
           "name": "get_addition_num",
-          "line": 215,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_addition_numself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
+          "line": 216,
+          "signature": "(self)",
           "docstring": "追加購入回数を返す",
-          "summary": "追加購入回数を返す"
+          "visibility": "public"
+        },
+        {
+          "name": "get_drawdown",
+          "line": 74,
+          "signature": "(self)",
+          "docstring": "ドローダウンを取得します。",
+          "visibility": "public"
+        },
+        {
+          "name": "get_drawdown_rate",
+          "line": 80,
+          "signature": "(self)",
+          "docstring": "ドローダウン率を取得します。",
+          "visibility": "public"
+        },
+        {
+          "name": "get_position_price",
+          "line": 50,
+          "signature": "(self)",
+          "docstring": "指定した通貨の保有ポジション量を取得",
+          "visibility": "public"
+        },
+        {
+          "name": "get_position_quantity",
+          "line": 34,
+          "signature": "(self)",
+          "docstring": "指定した通貨の保有ポジション量を取得",
+          "visibility": "public"
+        },
+        {
+          "name": "get_position_quantity_with_symbol",
+          "line": 186,
+          "signature": "(self, symbol)",
+          "docstring": "指定した通貨の保有ポジション量を取得",
+          "visibility": "public"
+        },
+        {
+          "name": "get_position_side",
+          "line": 42,
+          "signature": "(self)",
+          "docstring": "指定した通貨の保有ポジション量を取得",
+          "visibility": "public"
+        },
+        {
+          "name": "get_position_side_with_symbol",
+          "line": 194,
+          "signature": "(self, symbol)",
+          "docstring": "指定した通貨の保有ポジション量を取得",
+          "visibility": "public"
+        },
+        {
+          "name": "get_profit_and_loss",
+          "line": 58,
+          "signature": "(self)",
+          "docstring": "利益と損失を取得します。単位は[BTC/USD]",
+          "visibility": "public"
+        },
+        {
+          "name": "get_profit_factor",
+          "line": 64,
+          "signature": "(self)",
+          "docstring": "プロフィットファクターを取得します。",
+          "visibility": "public"
+        },
+        {
+          "name": "update_position_quantity_with_symbol",
+          "line": 202,
+          "signature": "(self, symbol, quantity, side)",
+          "docstring": "通貨の保有ポジション量を更新",
+          "visibility": "public"
         }
-      ]
+      ],
+      "method_count": 14,
+      "docstring": null
     }
   ],
-  "functions": [],
-  "constants": [],
-  "summary": {
-    "total_classes": 1,
-    "total_methods": 16,
-    "total_functions": 0,
-    "total_constants": 0,
-    "lines_of_code": 188
-  }
+  "analysis_date": "2025-12-21",
+  "notes": "BTC/USDT 移行完了 - 動的 market_type 初期化対応"
 }

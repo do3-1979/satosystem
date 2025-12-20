@@ -1,367 +1,84 @@
 {
-  "metadata": {
-    "source_file": "src/bybit_exchange.py",
-    "analyzed_at": "2025-12-13T17:38:39.925924",
-    "python_version": "3.10"
-  },
-  "file_info": {
-    "path": "src/bybit_exchange.py",
-    "description": "Source code structure analysis"
-  },
-  "imports": [
-    {
-      "module": "ccxt",
-      "type": "standard",
-      "used_for": "Module: ccxt"
-    },
-    {
-      "module": "time",
-      "type": "standard",
-      "used_for": "Module: time"
-    },
-    {
-      "module": "datetime.datetime",
-      "type": "local",
-      "used_for": "From datetime"
-    },
-    {
-      "module": "datetime.timedelta",
-      "type": "local",
-      "used_for": "From datetime"
-    },
-    {
-      "module": "config.Config",
-      "type": "local",
-      "used_for": "From config"
-    },
-    {
-      "module": "logger.Logger",
-      "type": "local",
-      "used_for": "From logger"
-    },
-    {
-      "module": "exchange.Exchange",
-      "type": "local",
-      "used_for": "From exchange"
-    },
-    {
-      "module": "random",
-      "type": "standard",
-      "used_for": "Module: random"
-    },
-    {
-      "module": "random",
-      "type": "standard",
-      "used_for": "Module: random"
-    }
-  ],
   "classes": [
     {
-      "name": "BybitExchange",
-      "line": 45,
-      "docstring": "No description",
-      "inheritance": [
-        "Exchange"
-      ],
+      "class_name": "BybitExchange",
+      "module": "bybit_exchange",
       "methods": [
         {
-          "name": "__init__",
-          "line": 46,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __init__self, api_key, api_secret",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "api_key",
-              "type": "Any",
-              "description": "Parameter: api_key"
-            },
-            {
-              "name": "api_secret",
-              "type": "Any",
-              "description": "Parameter: api_secret"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "BybitExchange クラスの初期化\n\nArgs:\n    api_key (str): ユーザーごとの API キー\n    api_secret (str): ユーザーごとの API シークレット",
-          "summary": "BybitExchange クラスの初期化",
-          "calls": [
-            "super().__init__",
-            "Config.get_back_test_mode",
-            "Config.get_market",
-            "Logger",
-            "Config.get_time_frame",
-            "self.logger.log",
-            "ccxt.bybit",
-            "super",
-            "Config.get_hot_test_dummy_mode"
-          ]
+          "name": "execute_entry_order",
+          "line": 367,
+          "signature": "(self, side, quantity, current_price)",
+          "docstring": "エントリー注文を指値で実行します\n\n指値で約定を狙い、失敗時は動的にスリッページを拡大してリトライ。\n全て失敗時は成行で約定します。\n\nArgs:\n    side (str): 'buy' または 'sell'\n    quantity (float): 注文数量\n    current_price (float): 現在値\n    \nReturns:\n    dict or bool: 注文結果",
+          "visibility": "public"
         },
         {
-          "name": "get_account_balance",
-          "line": 107,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_account_balanceself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "口座の残高情報を取得します.\n\nReturns:\n    dict: 口座の残高情報",
-          "summary": "口座の残高情報を取得します.",
-          "calls": [
-            "self.logger.log_error",
-            "Config.get_server_retry_wait",
-            "str",
-            "self.exchange.fetchBalance",
-            "time.sleep"
-          ]
-        },
-        {
-          "name": "get_account_balance_total",
-          "line": 142,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_account_balance_totalself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "口座上の使用可能な証拠金残高を取得します.\n\nReturns:\n    int: 口座上の使用可能な証拠金残高",
-          "summary": "口座上の使用可能な証拠金残高を取得します.",
-          "calls": [
-            "self.logger.log_error",
-            "Config.get_server_retry_wait",
-            "str",
-            "self.exchange.fetchBalance",
-            "time.sleep"
-          ]
+          "name": "execute_exit_order",
+          "line": 419,
+          "signature": "(self, side, quantity)",
+          "docstring": "決済注文を成行で実行します\n\n確実な約定を優先。成行失敗時は指値でリトライ。\n最終的には成行で決済します。\n\nArgs:\n    side (str): 'buy' または 'sell' (ポジション反対側)\n    quantity (float): 注文数量\n    \nReturns:\n    dict or bool: 注文結果",
+          "visibility": "public"
         },
         {
           "name": "execute_order",
-          "line": 174,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def execute_orderself, side, quantity, price, order_type",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "side",
-              "type": "Any",
-              "description": "Parameter: side"
-            },
-            {
-              "name": "quantity",
-              "type": "Any",
-              "description": "Parameter: quantity"
-            },
-            {
-              "name": "price",
-              "type": "Any",
-              "description": "Parameter: price"
-            },
-            {
-              "name": "order_type",
-              "type": "Any",
-              "description": "Parameter: order_type"
-            }
-          ],
-          "return_type": "Any",
+          "line": 187,
+          "signature": "(self, side, quantity, price, order_type)",
           "docstring": "注文を発行します.\n\nArgs:\n    side (str): 注文のタイプ ('buy' または 'sell')\n    quantity (float): 注文数量\n    price (float or None): 注文価格 (市場注文の場合は None)\n    order_type (str): 注文タイプ ('limit' または 'market')\n\nReturns:\n    dict: 注文の実行結果",
-          "summary": "注文を発行します.",
-          "calls": [
-            "Config.get_back_test_mode",
-            "int",
-            "Config.get_server_retry_wait",
-            "self.exchange.create_order",
-            "self.exchange.create_market_order",
-            "self.logger.log",
-            "str",
-            "side.upper",
-            "time.sleep",
-            "time.time",
-            "self.exchange.create_limit_order",
-            "self.logger.log_error",
-            "ValueError"
-          ]
-        },
-        {
-          "name": "get_nearest_epoch_time",
-          "line": 262,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_nearest_epoch_timeself, end_epoch",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "end_epoch",
-              "type": "Any",
-              "description": "Parameter: end_epoch"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "_summary_\n\nArgs:\n    end_epoch (_type_): _description_\n\nReturns:\n    _type_: _description_",
-          "summary": "_summary_",
-          "calls": [
-            "datetime.now",
-            "range",
-            "int",
-            "target_time.replace",
-            "timedelta",
-            "datetime",
-            "datetime.fromtimestamp",
-            "len",
-            "current_local_time.timestamp",
-            "epoch_time_str.timestamp"
-          ]
-        },
-        {
-          "name": "fetch_ohlcv",
-          "line": 317,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def fetch_ohlcvself, start_epoch, end_epoch, time_frame",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "start_epoch",
-              "type": "Any",
-              "description": "Parameter: start_epoch"
-            },
-            {
-              "name": "end_epoch",
-              "type": "Any",
-              "description": "Parameter: end_epoch"
-            },
-            {
-              "name": "time_frame",
-              "type": "Any",
-              "description": "Parameter: time_frame"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "取引情報を取得\n\nReturns:\n    list: 価格データのリスト",
-          "summary": "取引情報を取得",
-          "calls": [
-            "datetime.fromtimestamp(start_epoch).strftime",
-            "ohlcv_data.append",
-            "Config.get_back_test_mode",
-            "self.logger.log_error",
-            "range",
-            "int",
-            "Config.get_server_retry_wait",
-            "str",
-            "self.exchange.fetch_ohlcv",
-            "datetime.fromtimestamp(get_time).strftime",
-            "time.sleep",
-            "datetime.fromtimestamp",
-            "len",
-            "datetime.fromtimestamp(tmp_time).strftime",
-            "datetime.fromtimestamp(end_epoch_fixed).strftime",
-            "self.get_nearest_epoch_time",
-            "print"
-          ]
+          "visibility": "public"
         },
         {
           "name": "fetch_latest_ohlcv",
-          "line": 387,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def fetch_latest_ohlcvself, time_frame",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "time_frame",
-              "type": "Any",
-              "description": "Parameter: time_frame"
-            }
-          ],
-          "return_type": "Any",
+          "line": 660,
+          "signature": "(self, time_frame)",
           "docstring": "最新取引情報を取得\n\nReturns:\n    list: 価格データのリスト",
-          "summary": "最新取引情報を取得",
-          "calls": [
-            "ohlcv_data.append",
-            "random.uniform",
-            "int",
-            "Config.get_server_retry_wait",
-            "str",
-            "self.exchange.fetch_ohlcv",
-            "datetime.fromtimestamp",
-            "datetime.fromtimestamp(tmp_time).strftime",
-            "time.time",
-            "self.logger.log_error",
-            "time.sleep"
-          ]
+          "visibility": "public"
+        },
+        {
+          "name": "fetch_ohlcv",
+          "line": 573,
+          "signature": "(self, start_epoch, end_epoch, time_frame)",
+          "docstring": "取引情報を取得\n\nReturns:\n    list: 価格データのリスト",
+          "visibility": "public"
         },
         {
           "name": "fetch_ticker",
-          "line": 443,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def fetch_tickerself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
+          "line": 726,
+          "signature": "(self)",
           "docstring": "指定されたペアの最新の価格情報を取得します.\n\nArgs:\n    symbol (str): 取得するペアのシンボル (例: 'BTC/USD')\n\nReturns:\n    dict: 最新の価格情報",
-          "summary": "指定されたペアの最新の価格情報を取得します.",
-          "calls": [
-            "self.exchange.fetch_ticker",
-            "Config.get_market",
-            "random.uniform"
-          ]
+          "visibility": "public"
+        },
+        {
+          "name": "get_account_balance",
+          "line": 111,
+          "signature": "(self)",
+          "docstring": "口座の残高情報を取得します.\n\nReturns:\n    dict: 口座の残高情報",
+          "visibility": "public"
+        },
+        {
+          "name": "get_account_balance_total",
+          "line": 146,
+          "signature": "(self)",
+          "docstring": "口座上の使用可能な証拠金残高を取得します.\n\nReturns:\n    int: 口座上の使用可能な証拠金残高",
+          "visibility": "public"
+        },
+        {
+          "name": "get_market_symbol",
+          "line": 178,
+          "signature": "(self) -> str",
+          "docstring": "現在の取引シンボルを返す（例: BTC/USD:BTC, BTC/USDT:USDT）\n\nReturns:\n    str: 取引シンボル",
+          "visibility": "public"
+        },
+        {
+          "name": "get_nearest_epoch_time",
+          "line": 518,
+          "signature": "(self, end_epoch)",
+          "docstring": "_summary_\n\nArgs:\n    end_epoch (_type_): _description_\n\nReturns:\n    _type_: _description_",
+          "visibility": "public"
         }
-      ]
+      ],
+      "method_count": 10,
+      "docstring": "Exchangeクラス:\n\nこのクラスは仮想通貨の取引所との通信を担当します。APIキーの認証、注文の発行、口座残高の取得などの機能を提供します。\n各取引所に対するサブクラスを作成して、取引所固有の実装を処理できます。たとえば、BinanceExchange、CoinbaseExchangeなどのサブクラスを考えることができます。"
     }
   ],
-  "functions": [],
-  "constants": [],
-  "summary": {
-    "total_classes": 1,
-    "total_methods": 8,
-    "total_functions": 0,
-    "total_constants": 0,
-    "lines_of_code": 467
-  }
+  "analysis_date": "2025-12-21",
+  "notes": "BTC/USDT 移行完了後の最新分析 - symbol パラメータ対応確認"
 }

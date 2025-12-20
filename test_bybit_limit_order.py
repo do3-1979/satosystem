@@ -50,11 +50,13 @@ def test_entry_order():
     exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
     
     try:
-        current_price = 50000.0
-        quantity = 1.0
+        current_price = 88000.0
+        quantity = 0.01
         
-        print_status(f"現在値: {current_price:.2f} USD", "INFO")
+        print_status(f"現在値: {current_price:.2f} USDT", "INFO")
         print_status(f"買い数量: {quantity} BTC", "INFO")
+        print_status(f"概算金額: {current_price * quantity:.2f} USDT", "INFO")
+        print_status(f"⚠️  注意: 実際の注文が発行されます（ペーパーテストではありません）", "WARNING")
         print_status(f"実行モード: {'ダミーモード' if exchange.is_dummy_mode else '本番API'}", "INFO")
         
         # execute_entry_order を実行（buy）
@@ -76,11 +78,13 @@ def test_entry_order_sell():
     exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
     
     try:
-        current_price = 50000.0
-        quantity = 1.0
+        current_price = 88000.0
+        quantity = 0.01
         
-        print_status(f"現在値: {current_price:.2f} USD", "INFO")
+        print_status(f"現在値: {current_price:.2f} USDT", "INFO")
         print_status(f"売り数量: {quantity} BTC", "INFO")
+        print_status(f"概算金額: {current_price * quantity:.2f} USDT", "INFO")
+        print_status(f"⚠️  注意: 実際の注文が発行されます（ペーパーテストではありません）", "WARNING")
         print_status(f"実行モード: {'ダミーモード' if exchange.is_dummy_mode else '本番API'}", "INFO")
         
         # execute_entry_order を実行（sell）
@@ -102,9 +106,10 @@ def test_exit_order():
     exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
     
     try:
-        quantity = 1.0
+        quantity = 0.01
         
         print_status(f"決済数量: {quantity} BTC", "INFO")
+        print_status(f"⚠️  注意: 実際の注文が発行されます（ペーパーテストではありません）", "WARNING")
         print_status(f"実行モード: {'ダミーモード' if exchange.is_dummy_mode else '本番API'}", "INFO")
         
         # execute_exit_order を実行（sell）

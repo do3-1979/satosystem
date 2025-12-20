@@ -308,8 +308,12 @@ class TradingStrategy:
         """
         portfolio = self.portfolio.get_position_quantity()
         
+        # ポートフォリオが辞書でない場合は初期化（ポジションなし）
+        if not isinstance(portfolio, dict):
+            portfolio = {"quantity": 0, "side": None, "position_price": 0}
+        
         # エントリ・買い増し直後に離脱しないように
-        if portfolio["quantity"] == 0:        
+        if portfolio.get("quantity", 0) == 0:        
             self.evaluate_entry()
         else:
             price = self.price_data_management.get_ticker()

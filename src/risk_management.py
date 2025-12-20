@@ -676,9 +676,14 @@ class RiskManagement:
         psar_time_frame = Config.get_psar_time_frame()
 
         position = self.portfolio.get_position_quantity()
-        quantity = position["quantity"]
-        side = position["side"]
-        position_price = position["position_price"]
+        
+        # ポジションが辞書でない場合は初期化（ポジションなし）
+        if not isinstance(position, dict):
+            position = {"quantity": 0, "side": None, "position_price": 0}
+        
+        quantity = position.get("quantity", 0)
+        side = position.get("side", None)
+        position_price = position.get("position_price", 0)
         price = self.price_data_management.get_ticker()
         #ohlcv = self.price_data_management.get_latest_ohlcv()
         

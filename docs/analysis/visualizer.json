@@ -1,453 +1,49 @@
 {
-  "metadata": {
-    "source_file": "src/visualizer.py",
-    "analyzed_at": "2025-12-13T17:38:40.256605",
-    "python_version": "3.10"
-  },
-  "file_info": {
-    "path": "src/visualizer.py",
-    "description": "Source code structure analysis"
-  },
-  "imports": [
-    {
-      "module": "pandas",
-      "type": "standard",
-      "used_for": "Module: pandas"
-    },
-    {
-      "module": "plotly.graph_objects",
-      "type": "local",
-      "used_for": "Module: plotly.graph_objects"
-    },
-    {
-      "module": "plotly.subplots.make_subplots",
-      "type": "local",
-      "used_for": "From plotly.subplots"
-    },
-    {
-      "module": "json",
-      "type": "standard",
-      "used_for": "Module: json"
-    },
-    {
-      "module": "zipfile",
-      "type": "standard",
-      "used_for": "Module: zipfile"
-    },
-    {
-      "module": "os",
-      "type": "standard",
-      "used_for": "Module: os"
-    },
-    {
-      "module": "datetime.datetime",
-      "type": "local",
-      "used_for": "From datetime"
-    },
-    {
-      "module": "datetime.timedelta",
-      "type": "local",
-      "used_for": "From datetime"
-    },
-    {
-      "module": "config.Config",
-      "type": "local",
-      "used_for": "From config"
-    },
-    {
-      "module": "sys",
-      "type": "standard",
-      "used_for": "Module: sys"
-    },
-    {
-      "module": "re",
-      "type": "standard",
-      "used_for": "Module: re"
-    },
-    {
-      "module": "traceback",
-      "type": "standard",
-      "used_for": "Module: traceback"
-    }
-  ],
   "classes": [
     {
-      "name": "Visualizer",
-      "line": 22,
-      "docstring": "No description",
-      "inheritance": [],
+      "class_name": "Visualizer",
+      "module": "visualizer",
       "methods": [
         {
-          "name": "__init__",
-          "line": 23,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __init__self",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "__init__",
-          "calls": [
-            "Config"
-          ]
+          "name": "create_interactive_chart",
+          "line": 295,
+          "signature": "(self, df, candles_2h, output_html='backtest_visualization.html', normalize_indicators=True)",
+          "docstring": "インタラクティブなチャートを生成（3つのサブプロット）\n\nArgs:\n    df: 1分足データ (全指標含む)\n    candles_2h: 2時間足ローソク足データ\n    output_html: 出力HTMLファイルパス\n    normalize_indicators: True=標準化, False=元の値 (デフォルト: True)",
+          "visibility": "public"
         },
         {
           "name": "detect_period_log_files",
           "line": 26,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def detect_period_log_filesself, log_directory, start_time, end_time",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "log_directory",
-              "type": "Any",
-              "description": "Parameter: log_directory"
-            },
-            {
-              "name": "start_time",
-              "type": "Any",
-              "description": "Parameter: start_time"
-            },
-            {
-              "name": "end_time",
-              "type": "Any",
-              "description": "Parameter: end_time"
-            }
-          ],
-          "return_type": "Any",
+          "signature": "(self, log_directory, start_time, end_time)",
           "docstring": "指定期間に含まれるZIPファイルを自動検出\n\nファイル名のパターン: *.zip または *-YYYYMMDD_HHMMSS-YYYYMMDD_HHMMSS.zip\nファイル名から期間を抽出し、指定期間と一致するファイルを検出\n\nArgs:\n    log_directory: ログディレクトリ\n    start_time: 期間開始時刻 (datetime)\n    end_time: 期間終了時刻 (datetime)\n\nReturns:\n    list: 期間に含まれるZIPファイルパスのリスト（時系列順）",
-          "summary": "指定期間に含まれるZIPファイルを自動検出",
-          "calls": [
-            "file.endswith",
-            "datetime.strptime",
-            "relevant_files.sort",
-            "os.path.basename",
-            "os.walk",
-            "match.group",
-            "zip_files.sort",
-            "zip_files.append",
-            "os.path.join",
-            "re.search",
-            "len",
-            "relevant_files.append",
-            "isinstance",
-            "print"
-          ]
+          "visibility": "public"
         },
         {
           "name": "load_logs_data",
           "line": 99,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def load_logs_dataself, log_directory, start_time=None, end_time=None, log_file=None, lookback_days=20",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "log_directory",
-              "type": "Any",
-              "description": "Parameter: log_directory"
-            },
-            {
-              "name": "start_time",
-              "type": "Any",
-              "description": "Parameter: start_time",
-              "default": null
-            },
-            {
-              "name": "end_time",
-              "type": "Any",
-              "description": "Parameter: end_time",
-              "default": null
-            },
-            {
-              "name": "log_file",
-              "type": "Any",
-              "description": "Parameter: log_file",
-              "default": null
-            },
-            {
-              "name": "lookback_days",
-              "type": "Any",
-              "description": "Parameter: lookback_days",
-              "default": 20
-            }
-          ],
-          "return_type": "Any",
+          "signature": "(self, log_directory, start_time=None, end_time=None, log_file=None, lookback_days=20)",
           "docstring": "ログディレクトリから全データを読み込む (JSON/ZIP対応)\n\n計算用の拡張期間を遡って読み込み、計算完了後に指定期間のみを返す\n\n指定期間に含まれるすべてのZIPファイルを自動検出して統合する\n\nArgs:\n    log_directory: ログディレクトリパス\n    start_time: 表示開始時刻 (datetime or str)\n    end_time: 表示終了時刻 (datetime or str)\n    log_file: 特定のログファイルを指定（Noneの場合は自動検出）\n    lookback_days: 計算用に遡る日数（デフォルト: 20日）\n\nReturns:\n    tuple: (全データDF, 表示用期間のみのDF, 表示用のstart_time, 表示用のend_time)",
-          "summary": "ログディレクトリから全データを読み込む (JSON/ZIP対応)",
-          "calls": [
-            "datetime.strptime",
-            "log_files.append",
-            "df['real_time'].notna",
-            "combined.loc[mask_display].copy",
-            "zip_files.sort",
-            "enumerate",
-            "json_files.sort",
-            "zf.namelist",
-            "os.path.join",
-            "combined.sort_values",
-            "timedelta",
-            "len",
-            "combined.drop_duplicates",
-            "df.dropna",
-            "self.detect_period_log_files",
-            "os.walk",
-            "str",
-            "pd.to_datetime",
-            "isinstance",
-            "print",
-            "zf.open",
-            "file.endswith",
-            "f.endswith",
-            "pd.Timestamp",
-            "pd.concat",
-            "os.path.isabs",
-            "os.path.exists",
-            "zipfile.ZipFile",
-            "dataframes.append",
-            "os.path.basename",
-            "path.endswith",
-            "file[0].isdigit",
-            "combined.copy",
-            "pd.read_json"
-          ]
+          "visibility": "public"
         },
         {
           "name": "resample_to_2h_candles",
           "line": 244,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def resample_to_2h_candlesself, df",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "df",
-              "type": "Any",
-              "description": "Parameter: df"
-            }
-          ],
-          "return_type": "Any",
+          "signature": "(self, df)",
           "docstring": "与えられた時系列を2時間足へ変換。ただし既に2時間以上のステップであれば再サンプリングせずそのまま返す。",
-          "summary": "与えられた時系列を2時間足へ変換。ただし既に2時間以上のステップであれば再サンプリングせずそのまま返す。",
-          "calls": [
-            "df['real_time_dt'].sort_values",
-            "df.drop_duplicates",
-            "result.sort_values('real_time_dt').reset_index",
-            "df.drop_duplicates(subset=['real_time_dt'], keep='first').copy",
-            "pd.Series",
-            "result.sort_values",
-            "deltas.median",
-            "timedelta",
-            "{'open_price', 'high_price', 'low_price', 'close_price'}.issubset",
-            "df[['real_time_dt', 'open_price', 'high_price', 'low_price', 'close_price']].copy",
-            "df_unique.set_index",
-            "candles_2h.reset_index",
-            "len",
-            "df_candle.resample",
-            "df['real_time_dt'].sort_values().unique",
-            "result.drop_duplicates",
-            "df_candle.resample('2h').agg(ohlc_dict).dropna",
-            "df_candle.resample('2h').agg"
-          ]
-        },
-        {
-          "name": "_normalize_series",
-          "line": 279,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def _normalize_seriesself, series",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "series",
-              "type": "Any",
-              "description": "Parameter: series"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "時系列データを標準化（Z-score正規化）\n\nArgs:\n    series: pd.Series\n\nReturns:\n    pd.Series: 標準化されたシリーズ (平均0、標準偏差1)",
-          "summary": "時系列データを標準化（Z-score正規化）",
-          "calls": [
-            "series.std",
-            "series.mean"
-          ]
-        },
-        {
-          "name": "create_interactive_chart",
-          "line": 295,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def create_interactive_chartself, df, candles_2h, output_html='backtest_visualization.html', normalize_indicators=True",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "df",
-              "type": "Any",
-              "description": "Parameter: df"
-            },
-            {
-              "name": "candles_2h",
-              "type": "Any",
-              "description": "Parameter: candles_2h"
-            },
-            {
-              "name": "output_html",
-              "type": "Any",
-              "description": "Parameter: output_html",
-              "default": "backtest_visualization.html"
-            },
-            {
-              "name": "normalize_indicators",
-              "type": "Any",
-              "description": "Parameter: normalize_indicators",
-              "default": true
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "インタラクティブなチャートを生成（3つのサブプロット）\n\nArgs:\n    df: 1分足データ (全指標含む)\n    candles_2h: 2時間足ローソク足データ\n    output_html: 出力HTMLファイルパス\n    normalize_indicators: True=標準化, False=元の値 (デフォルト: True)",
-          "summary": "インタラクティブなチャートを生成（3つのサブプロット）",
-          "calls": [
-            "dict",
-            "fig.update_layout",
-            "fig.add_hline",
-            "pd.DataFrame",
-            "len",
-            "fig.write_html",
-            "still_zero.any",
-            "df['Volume'].notna().any",
-            "go.Bar",
-            "df['has_position'].astype(int).diff().fillna",
-            "go.Candlestick",
-            "df['pvo_val'].copy",
-            "print",
-            "df['decision'].notna",
-            "make_subplots",
-            "df['Volume'].notna",
-            "df['has_position'].astype",
-            "fig.add_trace",
-            "df_with_position['stop_price'].copy",
-            "row.get",
-            "df['action_name'].notna",
-            "df['pvo'].copy",
-            "df['adx'].copy",
-            "df_entry.apply",
-            "df['has_position'].astype(int).diff",
-            "fig.update_yaxes",
-            "df_add.apply",
-            "fig.add_vrect",
-            "go.Scatter",
-            "self._normalize_series",
-            "df['action_name'].isin",
-            "entry_records.iterrows",
-            "df['volatility'].copy",
-            "df_exit.apply",
-            "df[mask].copy"
-          ]
+          "visibility": "public"
         },
         {
           "name": "visualize_backtest",
           "line": 733,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def visualize_backtestself, log_directory='logs', output_html='report/backtest_visualization.html', start_time=None, end_time=None, normalize_indicators=True",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "log_directory",
-              "type": "Any",
-              "description": "Parameter: log_directory",
-              "default": "logs"
-            },
-            {
-              "name": "output_html",
-              "type": "Any",
-              "description": "Parameter: output_html",
-              "default": "report/backtest_visualization.html"
-            },
-            {
-              "name": "start_time",
-              "type": "Any",
-              "description": "Parameter: start_time",
-              "default": null
-            },
-            {
-              "name": "end_time",
-              "type": "Any",
-              "description": "Parameter: end_time",
-              "default": null
-            },
-            {
-              "name": "normalize_indicators",
-              "type": "Any",
-              "description": "Parameter: normalize_indicators",
-              "default": true
-            }
-          ],
-          "return_type": "Any",
+          "signature": "(self, log_directory='logs', output_html='report/backtest_visualization.html', start_time=None, end_time=None, normalize_indicators=True)",
           "docstring": "バックテスト結果を可視化 (メインエントリポイント)\n\n計算用の拡張期間でデータを読み込み、表示用期間のみでグラフを出力\n\nArgs:\n    log_directory: ログディレクトリ\n    output_html: 出力HTMLファイル名（デフォルト: report/backtest_visualization.html）\n    start_time: 表示開始時刻 (datetime or str \"%Y/%m/%d %H:%M\")\n    end_time: 表示終了時刻 (datetime or str \"%Y/%m/%d %H:%M\")\n    normalize_indicators: True=標準化, False=元の値 (デフォルト: True)",
-          "summary": "バックテスト結果を可視化 (メインエントリポイント)",
-          "calls": [
-            "os.path.dirname",
-            "os.path.exists",
-            "self.resample_to_2h_candles",
-            "self.create_interactive_chart",
-            "self.config.get_end_time",
-            "candles_2h_calc.loc[mask].copy",
-            "self.config.get_start_time",
-            "self.load_logs_data",
-            "len",
-            "print",
-            "os.makedirs"
-          ]
+          "visibility": "public"
         }
-      ]
+      ],
+      "method_count": 5,
+      "docstring": null
     }
   ],
-  "functions": [],
-  "constants": [],
-  "summary": {
-    "total_classes": 1,
-    "total_methods": 7,
-    "total_functions": 0,
-    "total_constants": 0,
-    "lines_of_code": 643
-  }
+  "analysis_date": "2025-12-21",
+  "notes": "BTC/USDT 移行完了 - 可視化モジュール更新"
 }

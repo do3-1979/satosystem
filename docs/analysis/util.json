@@ -1,399 +1,49 @@
 {
-  "metadata": {
-    "source_file": "src/util.py",
-    "analyzed_at": "2025-12-13T17:38:40.237754",
-    "python_version": "3.10"
-  },
-  "file_info": {
-    "path": "src/util.py",
-    "description": "Source code structure analysis"
-  },
-  "imports": [
-    {
-      "module": "os",
-      "type": "standard",
-      "used_for": "Module: os"
-    },
-    {
-      "module": "json",
-      "type": "standard",
-      "used_for": "Module: json"
-    },
-    {
-      "module": "zipfile",
-      "type": "standard",
-      "used_for": "Module: zipfile"
-    },
-    {
-      "module": "pandas",
-      "type": "standard",
-      "used_for": "Module: pandas"
-    },
-    {
-      "module": "datetime.datetime",
-      "type": "local",
-      "used_for": "From datetime"
-    },
-    {
-      "module": "logging",
-      "type": "standard",
-      "used_for": "Module: logging"
-    },
-    {
-      "module": "openpyxl",
-      "type": "standard",
-      "used_for": "Module: openpyxl"
-    },
-    {
-      "module": "openpyxl.load_workbook",
-      "type": "local",
-      "used_for": "From openpyxl"
-    },
-    {
-      "module": "openpyxl.utils.dataframe.dataframe_to_rows",
-      "type": "local",
-      "used_for": "From openpyxl.utils.dataframe"
-    },
-    {
-      "module": "openpyxl.chart.LineChart",
-      "type": "local",
-      "used_for": "From openpyxl.chart"
-    },
-    {
-      "module": "openpyxl.chart.Reference",
-      "type": "local",
-      "used_for": "From openpyxl.chart"
-    },
-    {
-      "module": "bybit_exchange.BybitExchange",
-      "type": "local",
-      "used_for": "From bybit_exchange"
-    },
-    {
-      "module": "config.Config",
-      "type": "local",
-      "used_for": "From config"
-    },
-    {
-      "module": "pprint",
-      "type": "standard",
-      "used_for": "Module: pprint"
-    },
-    {
-      "module": "re",
-      "type": "standard",
-      "used_for": "Module: re"
-    }
-  ],
   "classes": [
     {
-      "name": "Util",
-      "line": 16,
-      "docstring": "No description",
-      "inheritance": [],
+      "class_name": "Util",
+      "module": "util",
       "methods": [
         {
           "name": "extract_and_export_logs",
           "line": 17,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def extract_and_export_logsself, log_directory, num_logs, output_excel_file, start_time=None, end_time=None",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "log_directory",
-              "type": "Any",
-              "description": "Parameter: log_directory"
-            },
-            {
-              "name": "num_logs",
-              "type": "Any",
-              "description": "Parameter: num_logs"
-            },
-            {
-              "name": "output_excel_file",
-              "type": "Any",
-              "description": "Parameter: output_excel_file"
-            },
-            {
-              "name": "start_time",
-              "type": "Any",
-              "description": "Parameter: start_time",
-              "default": null
-            },
-            {
-              "name": "end_time",
-              "type": "Any",
-              "description": "Parameter: end_time",
-              "default": null
-            }
-          ],
-          "return_type": "Any",
+          "signature": "(self, log_directory, num_logs, output_excel_file, start_time=None, end_time=None)",
           "docstring": "指定された数の圧縮ログファイルを読み込み、エクセルファイルにデータとグラフを出力します。\n\nArgs:\n    log_directory (str): 圧縮ログファイルが格納されているディレクトリ\n    num_logs (int): 読み込むログファイルの数\n    output_excel_file (str): 出力するエクセルファイルの名前\n    start_time (str): 開始時刻 (%Y/%m/%d %H:%M:%S 形式)\n    end_time (str): 終了時刻 (%Y/%m/%d %H:%M:%S 形式)",
-          "summary": "指定された数の圧縮ログファイルを読み込み、エクセルファイルにデータとグラフを出力します。",
-          "calls": [
-            "combined_data[selected_columns].min",
-            "datetime.strptime",
-            "log_file.endswith",
-            "workbook.create_sheet",
-            "log_files.append",
-            "log_zip.namelist",
-            "reversed",
-            "enumerate",
-            "combined_data['position_price'].replace",
-            "config_df.to_excel",
-            "os.path.join",
-            "combined_data.to_excel",
-            "pd.DataFrame",
-            "len",
-            "pd.ExcelWriter",
-            "sorted",
-            "os.walk",
-            "workbook.save",
-            "log_data['close_time'].max",
-            "combined_data['stop_price'].replace",
-            "min",
-            "print",
-            "self.generate_line_profit_and_loss",
-            "combined_data[selected_columns].min().min",
-            "list",
-            "load_workbook",
-            "file.endswith",
-            "isinstance",
-            "pd.concat",
-            "config_dict.items",
-            "self.generate_line_chart",
-            "zipfile.ZipFile",
-            "log_data['close_time'].min",
-            "file.startswith",
-            "Config",
-            "data.append",
-            "Config().to_dict",
-            "open",
-            "log_zip.open",
-            "pd.read_json"
-          ]
-        },
-        {
-          "name": "generate_line_profit_and_loss",
-          "line": 212,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def generate_line_profit_and_lossself, data, column_name, profit_and_loss_sheet, data_sheet",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "data",
-              "type": "Any",
-              "description": "Parameter: data"
-            },
-            {
-              "name": "column_name",
-              "type": "Any",
-              "description": "Parameter: column_name"
-            },
-            {
-              "name": "profit_and_loss_sheet",
-              "type": "Any",
-              "description": "Parameter: profit_and_loss_sheet"
-            },
-            {
-              "name": "data_sheet",
-              "type": "Any",
-              "description": "Parameter: data_sheet"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "データから指定されたカラムの折れ線グラフを生成し、指定されたシートに追加します。\n\nArgs:\n    data (DataFrame): グラフを生成するデータ\n    column_name (str): グラフを生成するカラムの名前\n    chart_sheet (Worksheet): グラフを追加するシート",
-          "summary": "データから指定されたカラムの折れ線グラフを生成し、指定されたシートに追加します。",
-          "calls": [
-            "dataframe_to_rows",
-            "profit_and_loss_sheet.add_chart",
-            "chart.add_data",
-            "Reference",
-            "chart.set_categories",
-            "len",
-            "list",
-            "LineChart"
-          ]
-        },
-        {
-          "name": "generate_line_chart",
-          "line": 243,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def generate_line_chartself, data, column_name, chart_sheet, data_sheet",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "data",
-              "type": "Any",
-              "description": "Parameter: data"
-            },
-            {
-              "name": "column_name",
-              "type": "Any",
-              "description": "Parameter: column_name"
-            },
-            {
-              "name": "chart_sheet",
-              "type": "Any",
-              "description": "Parameter: chart_sheet"
-            },
-            {
-              "name": "data_sheet",
-              "type": "Any",
-              "description": "Parameter: data_sheet"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "データから指定されたカラムの折れ線グラフを生成し、指定されたシートに追加します。\n\nArgs:\n    data (DataFrame): グラフを生成するデータ\n    column_name (str): グラフを生成するカラムの名前\n    chart_sheet (Worksheet): グラフを追加するシート",
-          "summary": "データから指定されたカラムの折れ線グラフを生成し、指定されたシートに追加します。",
-          "calls": [
-            "dataframe_to_rows",
-            "chart.add_data",
-            "Reference",
-            "data[selected_columns].max",
-            "chart_sheet.add_chart",
-            "data[selected_columns].min",
-            "data[selected_columns].max().max",
-            "chart.set_categories",
-            "len",
-            "data[selected_columns].min().min",
-            "list",
-            "LineChart"
-          ]
-        },
-        {
-          "name": "fetch_ohlcv_and_save_to_json",
-          "line": 311,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def fetch_ohlcv_and_save_to_jsonself, exchange, output_directory='ohlcv_json_data', output_filename='ohlcv_data.json'",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "exchange",
-              "type": "Any",
-              "description": "Parameter: exchange"
-            },
-            {
-              "name": "output_directory",
-              "type": "Any",
-              "description": "Parameter: output_directory",
-              "default": "ohlcv_json_data"
-            },
-            {
-              "name": "output_filename",
-              "type": "Any",
-              "description": "Parameter: output_filename",
-              "default": "ohlcv_data.json"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "fetch_ohlcv_and_save_to_json",
-          "calls": [
-            "os.path.exists",
-            "Config.get_end_epoch",
-            "os.path.join",
-            "exchange.fetch_ohlcv",
-            "open",
-            "json.dump",
-            "print",
-            "Config.get_start_epoch",
-            "os.makedirs"
-          ]
+          "visibility": "public"
         },
         {
           "name": "extract_parameters_and_results",
           "line": 331,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def extract_parameters_and_resultsself, log_directory, output_excel_file",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "log_directory",
-              "type": "Any",
-              "description": "Parameter: log_directory"
-            },
-            {
-              "name": "output_excel_file",
-              "type": "Any",
-              "description": "Parameter: output_excel_file"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "No description",
-          "summary": "extract_parameters_and_results",
-          "calls": [
-            "log_files.append",
-            "match.group",
-            "enumerate",
-            "data['quantity'].append",
-            "os.path.join",
-            "pd.DataFrame",
-            "keyword.strip",
-            "len",
-            "pd.ExcelWriter",
-            "data.items",
-            "value.strip().split",
-            "os.walk",
-            "data['side'].append",
-            "print",
-            "file.endswith",
-            "max",
-            "df.to_excel",
-            "any",
-            "line.split",
-            "data[keyword].append",
-            "value.strip",
-            "os.path.basename",
-            "file.startswith",
-            "open",
-            "log_files.sort",
-            "data.values",
-            "re.search",
-            "data['position_price'].append",
-            "output_line.split"
-          ]
+          "signature": "(self, log_directory, output_excel_file)",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "fetch_ohlcv_and_save_to_json",
+          "line": 311,
+          "signature": "(self, exchange, output_directory='ohlcv_json_data', output_filename='ohlcv_data.json')",
+          "docstring": null,
+          "visibility": "public"
+        },
+        {
+          "name": "generate_line_chart",
+          "line": 243,
+          "signature": "(self, data, column_name, chart_sheet, data_sheet)",
+          "docstring": "データから指定されたカラムの折れ線グラフを生成し、指定されたシートに追加します。\n\nArgs:\n    data (DataFrame): グラフを生成するデータ\n    column_name (str): グラフを生成するカラムの名前\n    chart_sheet (Worksheet): グラフを追加するシート",
+          "visibility": "public"
+        },
+        {
+          "name": "generate_line_profit_and_loss",
+          "line": 212,
+          "signature": "(self, data, column_name, profit_and_loss_sheet, data_sheet)",
+          "docstring": "データから指定されたカラムの折れ線グラフを生成し、指定されたシートに追加します。\n\nArgs:\n    data (DataFrame): グラフを生成するデータ\n    column_name (str): グラフを生成するカラムの名前\n    chart_sheet (Worksheet): グラフを追加するシート",
+          "visibility": "public"
         }
-      ]
+      ],
+      "method_count": 5,
+      "docstring": null
     }
   ],
-  "functions": [],
-  "constants": [],
-  "summary": {
-    "total_classes": 1,
-    "total_methods": 5,
-    "total_functions": 0,
-    "total_constants": 0,
-    "lines_of_code": 346
-  }
+  "analysis_date": "2025-12-21",
+  "notes": "BTC/USDT 移行完了 - ユーティリティ関数更新"
 }

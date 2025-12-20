@@ -8,7 +8,7 @@
 |------------------------|-----|--------------------------------------------------------------------------------------------------|----------------------------------|--------|
 | **パラメータ最適化**    | 24  | entry_times 10→5 + risk 30%→0.5% + leverage 10→5 に変更（+155%期待）                        | parameter_optimization_analysis | ★★★★★ |
 | **パラメータ最適化**    | 25  | 新設定で 2024-2025全期間 re-backtest + results 比較（COMPREHENSIVE_TRADE_ANALYSIS参照）      | implementation_guide            | ★★★★★ |
-| **Phase 0改善戦略**     | 22a | Strategy A: 市場レジーム検出（ADX）- 負けQ損失を70-80%削減（+15-25%期待、3-5日）              | COMPREHENSIVE_TRADE_ANALYSIS    | ★★★★★ |
+| **Phase 0改善戦略**     | 22a | Strategy A: 市場レジーム検出（ADX）- 負けQ損失を70-80%削減（+15-25%期待、3-5日）              | 前回検証時効果なし - 優先度下げ | ★★☆☆☆ |
 | **Phase 0改善戦略**     | 22b | Strategy B: 指標確認（Bollinger+RSI+SMA）- エントリー精度向上（+8-12%期待、2-3日）            | COMPREHENSIVE_TRADE_ANALYSIS    | ★★★★☆ |
 | **Phase 0改善戦略**     | 22c | Strategy C: 複合戦略（A+B）- 最大改善期待（+20-30%期待）                                       | COMPREHENSIVE_TRADE_ANALYSIS    | ★★★★☆ |
 | **段階1（即座）**       | 23a | Fear & Greed Index 統合 - 過度な楽観/恐怖でのエントリー抑制（+5-8%期待、2-3h）               | IMPLEMENTATION_ROADMAP          | ★★★★★ |

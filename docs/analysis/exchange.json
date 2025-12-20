@@ -1,132 +1,28 @@
 {
-  "metadata": {
-    "source_file": "src/exchange.py",
-    "analyzed_at": "2025-12-13T17:38:39.998947",
-    "python_version": "3.10"
-  },
-  "file_info": {
-    "path": "src/exchange.py",
-    "description": "Source code structure analysis"
-  },
-  "imports": [
-    {
-      "module": "ccxt",
-      "type": "standard",
-      "used_for": "Module: ccxt"
-    }
-  ],
   "classes": [
     {
-      "name": "Exchange",
-      "line": 3,
-      "docstring": "Exchangeクラス:\n\nこのクラスは仮想通貨の取引所との通信を担当します。APIキーの認証、注文の発行、口座残高の取得などの機能を提供します。\n各取引所に対するサブクラスを作成して、取引所固有の実装を処理できます。たとえば、BinanceExchange、CoinbaseExchangeなどのサブクラスを考えることができます。",
-      "inheritance": [],
+      "class_name": "Exchange",
+      "module": "exchange",
       "methods": [
         {
-          "name": "__init__",
-          "line": 10,
-          "visibility": "private",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def __init__self, api_key, api_secret",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "api_key",
-              "type": "Any",
-              "description": "Parameter: api_key"
-            },
-            {
-              "name": "api_secret",
-              "type": "Any",
-              "description": "Parameter: api_secret"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "Exchangeクラスを初期化します。\n\nArgs:\n    api_key (str): 取引所のAPIキー\n    api_secret (str): 取引所のAPIシークレット",
-          "summary": "Exchangeクラスを初期化します。"
+          "name": "execute_order",
+          "line": 30,
+          "signature": "(self, symbol, side, quantity, price, order_type)",
+          "docstring": "注文を発行します。\n\nArgs:\n    symbol (str): トレード対象の通貨ペア（例: 'BTC/USD'）\n    side (str): 注文の種類（'buy'または'sell'）\n    quantity (float): 注文数量\n    price (float or None): 注文価格（市場価格注文の場合はNone）\n    order_type (str): 注文のタイプ（'limit'または'market'）\n\nReturns:\n    dict: 注文の実行結果",
+          "visibility": "public"
         },
         {
           "name": "get_account_balance",
           "line": 21,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def get_account_balanceself",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            }
-          ],
-          "return_type": "Any",
+          "signature": "(self)",
           "docstring": "口座の残高情報を取得します。\n\nReturns:\n    dict: 口座の残高情報",
-          "summary": "口座の残高情報を取得します。",
-          "calls": [
-            "NotImplementedError"
-          ]
-        },
-        {
-          "name": "execute_order",
-          "line": 30,
-          "visibility": "public",
-          "is_classmethod": false,
-          "is_staticmethod": false,
-          "signature": "def execute_orderself, symbol, side, quantity, price, order_type",
-          "parameters": [
-            {
-              "name": "self",
-              "type": "Any",
-              "description": "Parameter: self"
-            },
-            {
-              "name": "symbol",
-              "type": "Any",
-              "description": "Parameter: symbol"
-            },
-            {
-              "name": "side",
-              "type": "Any",
-              "description": "Parameter: side"
-            },
-            {
-              "name": "quantity",
-              "type": "Any",
-              "description": "Parameter: quantity"
-            },
-            {
-              "name": "price",
-              "type": "Any",
-              "description": "Parameter: price"
-            },
-            {
-              "name": "order_type",
-              "type": "Any",
-              "description": "Parameter: order_type"
-            }
-          ],
-          "return_type": "Any",
-          "docstring": "注文を発行します。\n\nArgs:\n    symbol (str): トレード対象の通貨ペア（例: 'BTC/USD'）\n    side (str): 注文の種類（'buy'または'sell'）\n    quantity (float): 注文数量\n    price (float or None): 注文価格（市場価格注文の場合はNone）\n    order_type (str): 注文のタイプ（'limit'または'market'）\n\nReturns:\n    dict: 注文の実行結果",
-          "summary": "注文を発行します。",
-          "calls": [
-            "NotImplementedError"
-          ]
+          "visibility": "public"
         }
-      ]
+      ],
+      "method_count": 2,
+      "docstring": "Exchangeクラス:\n\nこのクラスは仮想通貨の取引所との通信を担当します。APIキーの認証、注文の発行、口座残高の取得などの機能を提供します。\n各取引所に対するサブクラスを作成して、取引所固有の実装を処理できます。たとえば、BinanceExchange、CoinbaseExchangeなどのサブクラスを考えることができます。"
     }
   ],
-  "functions": [],
-  "constants": [],
-  "summary": {
-    "total_classes": 1,
-    "total_methods": 3,
-    "total_functions": 0,
-    "total_constants": 0,
-    "lines_of_code": 36
-  }
+  "analysis_date": "2025-12-21",
+  "notes": "BTC/USDT 移行完了 - 基底クラス更新"
 }

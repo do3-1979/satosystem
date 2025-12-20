@@ -19,8 +19,9 @@ from config import Config  # Config クラスのインポート
 class Portfolio:
     def __init__(self):
         self.logger = Logger()
-        self.positions = {'BTC/USD': {'quantity': 0, 'side': 'NONE', 'position_price': 0 }}  # ポートフォリオ内の各通貨の保有ポジション量
         self.market_type = Config.get_market()
+        # 現在の market_type に基づいてポジションを初期化
+        self.positions = {self.market_type: {'quantity': 0, 'side': 'NONE', 'position_price': 0}}
         self.profit = 0
         self.loss = 0
         self.funds = 0
