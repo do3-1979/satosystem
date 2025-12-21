@@ -37,7 +37,7 @@ class Portfolio:
         """
         if self.market_type in self.positions:
             return self.positions[self.market_type]
-        return 0
+        return {'quantity': 0, 'side': 'NONE', 'position_price': 0}
 
     def get_position_side(self):
         """
