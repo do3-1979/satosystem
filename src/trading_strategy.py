@@ -17,6 +17,7 @@ from price_data_management import PriceDataManagement
 from risk_management import RiskManagement
 from portfolio import Portfolio
 from exit_strategy_v2 import ExitStrategyV2
+from market_regime_detector import MarketRegimeDetector
 
 class TradingStrategy:
     """
@@ -41,6 +42,16 @@ class TradingStrategy:
         self.portfolio = portfolio
         self.exit_strategy_v2 = ExitStrategyV2()  # ExitStrategyV2を初期化
         self.entry_record = {}  # エントリー時の指標情報を記録
+        
+        # 市場体制判定の初期化
+        self.market_regime_detector = MarketRegimeDetector(
+            atr_period=Config.get_atr_period(),
+            atr_ma_period=Config.get_atr_ma_period(),
+            lookback_period=Config.get_swing_lookback_period()
+        )
+        self.current_market_regime = 'TRANSITION'  # 現在の市場体制
+        self.market_regime_confidence = 0.0
+        
         self.initialize_trade_decision()
  
     def initialize_trade_decision(self):
@@ -106,6 +117,58 @@ class TradingStrategy:
                         allow_entry = False
                 else:
                     self.logger.log(f"[条件判定:ENTRY] {desired_side} のエントリー条件成立しました")
+
+                # =========== 市場体制判定 ===========
+                enable_market_regime_detection = Config.get_enable_market_regime_detection()
+                if allow_entry and enable_market_regime_detection:
+                    # OHLCV データを取得
+                    try:
+                        ohlcv_data = self.price_data_management.get_ohlcv_data_by_time_frame(
+                            Config.get_time_frame()
+                        )
+                        
+                        if ohlcv_data and len(ohlcv_data) >= 30:  # 最小30本必要
+                            # 市場体制判定
+                            atr_lower = Config.get_atr_range_threshold_lower()
+                            atr_upper = Config.get_atr_range_threshold_upper()
+                            regime_result = self.market_regime_detector.detect_regime(ohlcv_data, atr_lower, atr_upper)
+                            
+                            self.current_market_regime = regime_result['regime']
+                            self.market_regime_confidence = regime_result['confidence']
+                            
+                            self.logger.log(f"[市場体制] {self.current_market_regime} (信頼度={self.market_regime_confidence:.2f}, {regime_result['reason']})")
+                            
+                            # ボックス相場判定時の条件強化
+                            enable_strictness = Config.get_enable_entry_condition_strictness_on_range()
+                            if self.current_market_regime == 'RANGING' and enable_strictness:
+                                # ボックス相場時：Volume + ADXフィルタを必須化
+                                self.logger.log(f"[市場体制:ボックス相場] エントリー条件を強化します")
+                                
+                                # Volume フィルター強制有効化
+                                volume_value = self.price_data_management.get_latest_volume()
+                                volume_threshold = Config.get_volume_filter_threshold()
+                                if volume_value < volume_threshold:
+                                    self.logger.log(f"[市場体制フィルター] Volume不足 (Volume={volume_value:.0f} < {volume_threshold:.0f})")
+                                    allow_entry = False
+                                
+                                # ADX フィルター強制有効化
+                                if allow_entry:
+                                    adx_value = self.risk_manager.get_adx() if hasattr(self.risk_manager, 'get_adx') else 0
+                                    adx_threshold = Config.get_adx_filter_threshold()
+                                    if adx_value < adx_threshold:
+                                        self.logger.log(f"[市場体制フィルター] ADX不足 (ADX={adx_value:.2f} < {adx_threshold})")
+                                        allow_entry = False
+                                
+                                # ポジションサイズ削減
+                                ranging_multiplier = Config.get_ranging_position_size_multiplier()
+                                position_size_ratio *= ranging_multiplier
+                                self.logger.log(f"[市場体制:ボックス相場] ポジションサイズを {ranging_multiplier:.1%} に削減 (元の {position_size_ratio/ranging_multiplier:.1%}から)")
+                            
+                            elif self.current_market_regime in ['TRENDING_UP', 'TRENDING_DOWN']:
+                                self.logger.log(f"[市場体制:トレンド相場] 通常エントリー条件で進行")
+                    except Exception as e:
+                        # 市場体制判定エラーはログするが、エントリー判定は続行
+                        self.logger.log(f"[市場体制判定エラー] {str(e)}")
 
                 # =========== フィルター機能 ===========
                 # PVO フィルター

@@ -489,6 +489,112 @@ class Config:
         except (KeyError, ValueError):
             return 1000  # デフォルト: 1000
 
+    # ==================== MarketRegime セクション ====================
+
+    @classmethod
+    def get_enable_market_regime_detection(cls):
+        """
+        市場体制判定機能の有効/無効を取得します.
+
+        Returns:
+            int: 1=有効, 0=無効
+        """
+        try:
+            return int(cls.config['MarketRegime']['enable_market_regime_detection'])
+        except (KeyError, ValueError):
+            return 0  # デフォルト: 無効
+
+    @classmethod
+    def get_atr_range_threshold_lower(cls):
+        """
+        ATR比較のボックス判定下限倍率を取得します.
+
+        Returns:
+            float: 倍率（デフォルト0.75）
+        """
+        try:
+            return float(cls.config['MarketRegime']['atr_range_threshold_lower'])
+        except (KeyError, ValueError):
+            return 0.75
+
+    @classmethod
+    def get_atr_range_threshold_upper(cls):
+        """
+        ATR比較のトレンド判定上限倍率を取得します.
+
+        Returns:
+            float: 倍率（デフォルト1.25）
+        """
+        try:
+            return float(cls.config['MarketRegime']['atr_range_threshold_upper'])
+        except (KeyError, ValueError):
+            return 1.25
+
+    @classmethod
+    def get_atr_period(cls):
+        """
+        ATR計算期間を取得します.
+
+        Returns:
+            int: 期間（デフォルト14）
+        """
+        try:
+            return int(cls.config['MarketRegime']['atr_period'])
+        except (KeyError, ValueError):
+            return 14
+
+    @classmethod
+    def get_atr_ma_period(cls):
+        """
+        ATR移動平均期間を取得します.
+
+        Returns:
+            int: 期間（デフォルト28）
+        """
+        try:
+            return int(cls.config['MarketRegime']['atr_ma_period'])
+        except (KeyError, ValueError):
+            return 28
+
+    @classmethod
+    def get_swing_lookback_period(cls):
+        """
+        スイング判定の遡り期間を取得します.
+
+        Returns:
+            int: 期間（デフォルト20）
+        """
+        try:
+            return int(cls.config['MarketRegime']['swing_lookback_period'])
+        except (KeyError, ValueError):
+            return 20
+
+    @classmethod
+    def get_enable_entry_condition_strictness_on_range(cls):
+        """
+        ボックス相場時のエントリー条件強化の有効/無効を取得します.
+
+        Returns:
+            int: 1=有効, 0=無効
+        """
+        try:
+            return int(cls.config['MarketRegime']['enable_entry_condition_strictness_on_range'])
+        except (KeyError, ValueError):
+            return 1  # デフォルト: 有効
+
+    @classmethod
+    def get_ranging_position_size_multiplier(cls):
+        """
+        ボックス相場時のポジションサイズ倍率を取得します.
+
+        Returns:
+            float: 倍率（0.7 = 30%削減）
+        """
+        try:
+            return float(cls.config['MarketRegime']['ranging_position_size_multiplier'])
+        except (KeyError, ValueError):
+            return 0.7  # デフォルト: 30%削減（70%のサイズ）
+
     @classmethod
     def get_entry_slippage(cls):
         """
