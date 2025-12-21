@@ -59,6 +59,10 @@ class TradingStrategy:
         3. PVOが閾値範囲内
         
         Phase 22a-22c: 複数のStrategyから最適なものを選択
+        
+        フィルター機能:
+        - enable_pvo_filter: PVO > 0 を必須条件として追加
+        - enable_adx_filter: ADX > threshold を必須条件として追加
         """
         side = 'NONE'
         decision = 'NONE'
@@ -102,6 +106,29 @@ class TradingStrategy:
                         allow_entry = False
                 else:
                     self.logger.log(f"[条件判定:ENTRY] {desired_side} のエントリー条件成立しました")
+
+                # =========== フィルター機能 ===========
+                # PVO フィルター
+                enable_pvo_filter = Config.get_enable_pvo_filter()
+                if allow_entry and enable_pvo_filter:
+                    pvo_value = signals["pvo"]["info"].get("value", 0)
+                    pvo_threshold = Config.get_pvo_threshold()
+                    if pvo_value <= pvo_threshold:
+                        self.logger.log(f"[フィルター:ENTRY] PVO フィルター失敗 (PVO={pvo_value:.4f} <= {pvo_threshold})")
+                        allow_entry = False
+                    else:
+                        self.logger.log(f"[フィルター:ENTRY] PVO フィルター成功 (PVO={pvo_value:.4f} > {pvo_threshold})")
+                
+                # ADX フィルター
+                enable_adx_filter = Config.get_enable_adx_filter()
+                adx_threshold = Config.get_adx_filter_threshold()
+                if allow_entry and enable_adx_filter:
+                    adx_value = self.risk_manager.get_adx() if hasattr(self.risk_manager, 'get_adx') else 0
+                    if adx_value < adx_threshold:
+                        self.logger.log(f"[フィルター:ENTRY] ADX フィルター失敗 (ADX={adx_value:.2f} < {adx_threshold})")
+                        allow_entry = False
+                    else:
+                        self.logger.log(f"[フィルター:ENTRY] ADX フィルター成功 (ADX={adx_value:.2f} >= {adx_threshold})")
 
                 if allow_entry:
                     side = desired_side

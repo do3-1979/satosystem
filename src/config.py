@@ -399,6 +399,45 @@ class Config:
         return int(cls.config['Backtest']['hot_test_dummy_mode'])
 
     @classmethod
+    def get_enable_pvo_filter(cls):
+        """
+        PVOフィルターの有効/無効を取得します.
+
+        Returns:
+            int: 1=有効, 0=無効
+        """
+        try:
+            return int(cls.config['EntryFilters']['enable_pvo_filter'])
+        except (KeyError, ValueError):
+            return 0  # デフォルト: 無効
+
+    @classmethod
+    def get_enable_adx_filter(cls):
+        """
+        ADXフィルターの有効/無効を取得します.
+
+        Returns:
+            int: 1=有効, 0=無効
+        """
+        try:
+            return int(cls.config['EntryFilters']['enable_adx_filter'])
+        except (KeyError, ValueError):
+            return 0  # デフォルト: 無効
+
+    @classmethod
+    def get_adx_filter_threshold(cls):
+        """
+        ADXフィルターの最小閾値を取得します.
+
+        Returns:
+            int: ADX最小値
+        """
+        try:
+            return int(cls.config['EntryFilters']['adx_filter_threshold'])
+        except (KeyError, ValueError):
+            return 70  # デフォルト: 70
+
+    @classmethod
     def get_entry_slippage(cls):
         """
         エントリー時の基本スリッページを取得します（%）.
