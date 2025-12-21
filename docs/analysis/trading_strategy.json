@@ -1,49 +1,102 @@
 {
+  "metadata": {
+    "source_file": "src/trading_strategy.py",
+    "analyzed_at": "2025-12-21T17:16:31.322210",
+    "python_version": "3.10"
+  },
   "classes": [
     {
       "class_name": "TradingStrategy",
-      "module": "trading_strategy",
+      "line": 21,
       "methods": [
         {
-          "name": "evaluate_add",
-          "line": 171,
-          "signature": "(self, price)",
-          "docstring": "ピラミッド条件を評価し、買い増しするかどうかを決定します。\n\n条件:\n1. ポジションを保有している\n2. 追加レンジ幅が前回取得値を超過",
+          "name": "__init__",
+          "line": 36,
+          "docstring": "",
+          "visibility": "private"
+        },
+        {
+          "name": "initialize_trade_decision",
+          "line": 46,
+          "docstring": "trade_decision 辞書を初期化します。",
           "visibility": "public"
         },
         {
           "name": "evaluate_entry",
           "line": 52,
-          "signature": "(self)",
           "docstring": "エントリー条件を評価し、エントリーするかどうかを決定します。\n\n条件:\n1. ポジションを保有していない\n2. ドンチャンチャネルブレイクが発生\n3. PVOが閾値範囲内\n\nPhase 22a-22c: 複数のStrategyから最適なものを選択",
+          "visibility": "public"
+        },
+        {
+          "name": "_evaluate_new_indicator_strategy",
+          "line": 128,
+          "docstring": "新指標ベースのStrategy（A/B/C）を評価\n\n戻り値:\n    dict: {'signal': 'BUY'/'SELL'/'NONE', 'strategy': 'A'/'B'/'C', 'confidence': 0-1}",
+          "visibility": "private"
+        },
+        {
+          "name": "evaluate_add",
+          "line": 171,
+          "docstring": "ピラミッド条件を評価し、買い増しするかどうかを決定します。\n\n条件:\n1. ポジションを保有している\n2. 追加レンジ幅が前回取得値を超過",
           "visibility": "public"
         },
         {
           "name": "evaluate_exit",
           "line": 210,
-          "signature": "(self)",
           "docstring": "エグジット条件を評価し、ポジションをクローズするかどうかを決定します。\nハイブリッド方式：\n1. 従来のストップロス判定（優先度最高）\n2. ExitStrategyV2（複合シグナル）で補助的に判定",
-          "visibility": "public"
-        },
-        {
-          "name": "initialize_trade_decision",
-          "line": 46,
-          "signature": "(self)",
-          "docstring": "trade_decision 辞書を初期化します。",
           "visibility": "public"
         },
         {
           "name": "make_trade_decision",
           "line": 304,
-          "signature": "(self)",
           "docstring": "トレードの実行判断を行います。",
           "visibility": "public"
+        },
+        {
+          "name": "_evaluate_box_market_entry",
+          "line": 326,
+          "docstring": "Box市場 (ADX < 20) 向けの平均回帰エントリーシグナル生成\n\nDonchian Channel 逆張り + Bollinger Bands補助戦略\n\nReturns:\n    dict: {'signal': 'LONG'/'SHORT', 'reason': 'Donchian_High_Touch'等, 'position_size_ratio': 0.6}\n          または None (エントリーなし)",
+          "visibility": "private"
+        },
+        {
+          "name": "_evaluate_bollinger_signal",
+          "line": 371,
+          "docstring": "Bollinger Bands 2σ 外部接触での逆張りシグナル生成 (Donchian補助用)\n\nReturns:\n    tuple: (signal, reason, position_size_ratio)\n           signal: 'LONG'/'SHORT' または None\n           reason: 'BB_Upper_Touch' など\n           position_size_ratio: 0.4 (保守的)",
+          "visibility": "private"
+        },
+        {
+          "name": "__str__",
+          "line": 399,
+          "docstring": "",
+          "visibility": "private"
         }
-      ],
-      "method_count": 5,
-      "docstring": "トレーディング戦略を表現するクラス。\n\nこのクラスはトレーディングアルゴリズムを実装し、エントリーポイントと出口ポイントを決定します。\n異なる戦略をサポートするために、複数の戦略クラスを作成し、戦略の切り替えが可能になるようにします。\n\nTradingStrategyクラスはエントリー条件、ピラミッディング条件、エグジット条件を評価してポジションの管理を行います。\nエントリー条件とエグジット条件は価格データに対して評価され、条件を満たす場合にポジションの開始やクローズなどの操作を行います。\n\nAttributes:\n    position (dict): ポジション情報を格納する辞書"
+      ]
     }
   ],
-  "analysis_date": "2025-12-21",
-  "notes": "BTC/USDT 移行完了 - make_trade_decision() に type safety 対応追加"
+  "functions": [],
+  "imports": [
+    {
+      "module": "logger.Logger",
+      "type": "local"
+    },
+    {
+      "module": "config.Config",
+      "type": "local"
+    },
+    {
+      "module": "price_data_management.PriceDataManagement",
+      "type": "local"
+    },
+    {
+      "module": "risk_management.RiskManagement",
+      "type": "local"
+    },
+    {
+      "module": "portfolio.Portfolio",
+      "type": "local"
+    },
+    {
+      "module": "exit_strategy_v2.ExitStrategyV2",
+      "type": "local"
+    }
+  ]
 }

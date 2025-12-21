@@ -1,0 +1,179 @@
+{
+  "report_title": "ソースコード分析ファイル不一致レポート",
+  "report_date": "2025-12-21",
+  "analysis_scope": {
+    "source_files_analyzed": [
+      "src/bot.py",
+      "src/bybit_exchange.py",
+      "src/trading_strategy.py",
+      "src/portfolio.py",
+      "src/risk_management.py"
+    ],
+    "analysis_files_reviewed": [
+      "docs/analysis/bot.json",
+      "docs/analysis/bybit_exchange.json",
+      "docs/analysis/trading_strategy.json",
+      "docs/analysis/portfolio.json",
+      "docs/analysis/risk_management.json"
+    ]
+  },
+  "summary": {
+    "total_files_analyzed": 5,
+    "files_with_issues": 4,
+    "files_up_to_date": 1,
+    "total_discrepancies_found": 8,
+    "requires_update": true,
+    "update_priority": "HIGH"
+  },
+  "detailed_findings": {
+    "bot.json": {
+      "status": "⚠️  UPDATE REQUIRED",
+      "last_analyzed": "2025-12-13T17:38:39.869904",
+      "days_since_analysis": 8,
+      "issues_count": 2,
+      "severity": "MEDIUM",
+      "issues": [
+        {
+          "type": "ドキュメント不一致",
+          "method": "__init__",
+          "description": "パラメータ説明が不完全。5つのパラメータ中、risk_management, price_data_management, portfolio の説明がない"
+        },
+        {
+          "type": "シグネチャ誤字",
+          "method": "__init__",
+          "description": "JSONシグネチャが 'def __init__self' となっており、括弧と区切りが正しくない"
+        }
+      ]
+    },
+    "bybit_exchange.json": {
+      "status": "⚠️  UPDATE REQUIRED",
+      "last_analyzed": "2025-12-21",
+      "days_since_analysis": 0,
+      "issues_count": 3,
+      "severity": "MEDIUM",
+      "issues": [
+        {
+          "type": "行番号不正",
+          "method": "execute_exit_order",
+          "description": "JSON記載: line 419 → 実際: line 483（ファイル構造の変更を未反映）"
+        },
+        {
+          "type": "ドキュメント不一致",
+          "method": "execute_exit_order",
+          "description": "ドキュメント表現が若干異なる。意味は同じだが、ワーディングの更新が必要"
+        },
+        {
+          "type": "ドキュメント不一致",
+          "method": "fetch_ticker",
+          "description": "JSONには 'symbol (str)' パラメータの説明があるが、実装ではパラメータなし。旧実装のコピペ残存"
+        }
+      ]
+    },
+    "trading_strategy.json": {
+      "status": "⚠️  UPDATE REQUIRED",
+      "last_analyzed": "2025-12-21",
+      "days_since_analysis": 0,
+      "issues_count": 1,
+      "severity": "LOW",
+      "issues": [
+        {
+          "type": "ドキュメント不完全",
+          "method": "make_trade_decision",
+          "description": "type safety 対応による実装の詳細化がドキュメントに反映されていない。portfolio.get_position_quantity() の型チェック処理など"
+        }
+      ]
+    },
+    "portfolio.json": {
+      "status": "✅ UP TO DATE",
+      "last_analyzed": "2025-12-21",
+      "days_since_analysis": 0,
+      "issues_count": 0,
+      "severity": "NONE"
+    },
+    "risk_management.json": {
+      "status": "⚠️  UPDATE REQUIRED",
+      "last_analyzed": "2025-12-21",
+      "days_since_analysis": 0,
+      "issues_count": 1,
+      "severity": "HIGH",
+      "issues": [
+        {
+          "type": "シグネチャ大幅変更",
+          "method": "calculate_position_size",
+          "description": "JSONは旧シグネチャ: (entry_price, stop_loss_price) → 実装: (balance_tether) のみ。パラメータが完全に異なる。ドキュメント文字列が旧実装のまま"
+        }
+      ]
+    }
+  },
+  "critical_issues": [
+    {
+      "file": "risk_management.json",
+      "method": "calculate_position_size",
+      "severity": "HIGH",
+      "issue": "メソッドシグネチャが根本的に異なる。パラメータと戻り値の定義を完全に更新する必要がある"
+    },
+    {
+      "file": "bybit_exchange.json",
+      "method": "fetch_ticker",
+      "severity": "MEDIUM",
+      "issue": "旧実装のドキュメントが残っており、誤解を招く恐れがある"
+    }
+  ],
+  "recommendations": {
+    "immediate_actions": [
+      {
+        "action": "リスク管理モジュール分析ファイルの再生成",
+        "file": "docs/analysis/risk_management.json",
+        "reason": "calculate_position_size のシグネチャが根本的に異なるため、全ファイルの再生成を推奨"
+      },
+      {
+        "action": "Bybit交換モジュール分析ファイルの部分更新",
+        "file": "docs/analysis/bybit_exchange.json",
+        "reason": "行番号とドキュメント文字列を修正"
+      }
+    ],
+    "scheduled_maintenance": [
+      {
+        "action": "Bot クラス分析ファイルの更新",
+        "file": "docs/analysis/bot.json",
+        "reason": "パラメータドキュメントの完全化とシグネチャの修正"
+      },
+      {
+        "action": "トレード戦略分析ファイルの更新",
+        "file": "docs/analysis/trading_strategy.json",
+        "reason": "make_trade_decision の type safety 対応を反映"
+      }
+    ]
+  },
+  "update_strategy": {
+    "phase_1_critical": [
+      "risk_management.json を完全に再生成",
+      "bybit_exchange.json の fetch_ticker ドキュメントを修正"
+    ],
+    "phase_2_important": [
+      "bot.json のシグネチャとドキュメント修正",
+      "trading_strategy.json の make_trade_decision ドキュメント拡充"
+    ],
+    "phase_3_maintenance": [
+      "portfolio.json は保持（現在OK）",
+      "全ファイルの metadata.analyzed_at を2025-12-21に更新"
+    ]
+  },
+  "conclusion": {
+    "overall_status": "REQUIRES UPDATE",
+    "files_requiring_regeneration": [
+      "docs/analysis/risk_management.json"
+    ],
+    "files_requiring_partial_update": [
+      "docs/analysis/bot.json",
+      "docs/analysis/bybit_exchange.json",
+      "docs/analysis/trading_strategy.json"
+    ],
+    "files_in_good_standing": [
+      "docs/analysis/portfolio.json"
+    ],
+    "estimated_effort": "LOW TO MEDIUM (4-5 時間で全更新可能)",
+    "last_full_analysis": "2025-12-21",
+    "next_review_recommended": "2026-01-04 (2週間後)"
+  }
+}

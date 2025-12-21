@@ -1,112 +1,122 @@
 {
+  "metadata": {
+    "source_file": "src/portfolio.py",
+    "analyzed_at": "2025-12-21T17:16:31.341043",
+    "python_version": "3.10"
+  },
   "classes": [
     {
       "class_name": "Portfolio",
-      "module": "portfolio",
+      "line": 19,
       "methods": [
         {
-          "name": "add_position_quantity",
-          "line": 90,
-          "signature": "(self, quantity, side, price)",
-          "docstring": "通貨の保有ポジション量を更新",
-          "visibility": "public"
-        },
-        {
-          "name": "calc_position_quantity",
-          "line": 118,
-          "signature": "(self, price)",
-          "docstring": null,
-          "visibility": "public"
-        },
-        {
-          "name": "clear_position_quantity",
-          "line": 147,
-          "signature": "(self, price)",
-          "docstring": "通貨の保有ポジション量を更新し、利益または損失を計算します。\n\nArgs:\n    price (float): 売却時の価格",
-          "visibility": "public"
-        },
-        {
-          "name": "get_addition_num",
-          "line": 216,
-          "signature": "(self)",
-          "docstring": "追加購入回数を返す",
-          "visibility": "public"
-        },
-        {
-          "name": "get_drawdown",
-          "line": 74,
-          "signature": "(self)",
-          "docstring": "ドローダウンを取得します。",
-          "visibility": "public"
-        },
-        {
-          "name": "get_drawdown_rate",
-          "line": 80,
-          "signature": "(self)",
-          "docstring": "ドローダウン率を取得します。",
-          "visibility": "public"
-        },
-        {
-          "name": "get_position_price",
-          "line": 50,
-          "signature": "(self)",
-          "docstring": "指定した通貨の保有ポジション量を取得",
-          "visibility": "public"
+          "name": "__init__",
+          "line": 20,
+          "docstring": "",
+          "visibility": "private"
         },
         {
           "name": "get_position_quantity",
           "line": 34,
-          "signature": "(self)",
-          "docstring": "指定した通貨の保有ポジション量を取得",
-          "visibility": "public"
-        },
-        {
-          "name": "get_position_quantity_with_symbol",
-          "line": 186,
-          "signature": "(self, symbol)",
           "docstring": "指定した通貨の保有ポジション量を取得",
           "visibility": "public"
         },
         {
           "name": "get_position_side",
           "line": 42,
-          "signature": "(self)",
           "docstring": "指定した通貨の保有ポジション量を取得",
           "visibility": "public"
         },
         {
-          "name": "get_position_side_with_symbol",
-          "line": 194,
-          "signature": "(self, symbol)",
+          "name": "get_position_price",
+          "line": 50,
           "docstring": "指定した通貨の保有ポジション量を取得",
           "visibility": "public"
         },
         {
           "name": "get_profit_and_loss",
           "line": 58,
-          "signature": "(self)",
           "docstring": "利益と損失を取得します。単位は[BTC/USD]",
           "visibility": "public"
         },
         {
           "name": "get_profit_factor",
           "line": 64,
-          "signature": "(self)",
           "docstring": "プロフィットファクターを取得します。",
+          "visibility": "public"
+        },
+        {
+          "name": "get_drawdown",
+          "line": 74,
+          "docstring": "ドローダウンを取得します。",
+          "visibility": "public"
+        },
+        {
+          "name": "get_drawdown_rate",
+          "line": 80,
+          "docstring": "ドローダウン率を取得します。",
+          "visibility": "public"
+        },
+        {
+          "name": "add_position_quantity",
+          "line": 90,
+          "docstring": "通貨の保有ポジション量を更新",
+          "visibility": "public"
+        },
+        {
+          "name": "calc_position_quantity",
+          "line": 118,
+          "docstring": "",
+          "visibility": "public"
+        },
+        {
+          "name": "clear_position_quantity",
+          "line": 147,
+          "docstring": "通貨の保有ポジション量を更新し、利益または損失を計算します。\n\nArgs:\n    price (float): 売却時の価格",
+          "visibility": "public"
+        },
+        {
+          "name": "get_position_quantity_with_symbol",
+          "line": 186,
+          "docstring": "指定した通貨の保有ポジション量を取得",
+          "visibility": "public"
+        },
+        {
+          "name": "get_position_side_with_symbol",
+          "line": 194,
+          "docstring": "指定した通貨の保有ポジション量を取得",
           "visibility": "public"
         },
         {
           "name": "update_position_quantity_with_symbol",
           "line": 202,
-          "signature": "(self, symbol, quantity, side)",
           "docstring": "通貨の保有ポジション量を更新",
           "visibility": "public"
+        },
+        {
+          "name": "__str__",
+          "line": 209,
+          "docstring": "",
+          "visibility": "private"
+        },
+        {
+          "name": "get_addition_num",
+          "line": 216,
+          "docstring": "追加購入回数を返す",
+          "visibility": "public"
         }
-      ],
-      "method_count": 14,
-      "docstring": null
+      ]
     }
   ],
-  "analysis_date": "2025-12-21",
-  "notes": "BTC/USDT 移行完了 - 動的 market_type 初期化対応"
+  "functions": [],
+  "imports": [
+    {
+      "module": "logger.Logger",
+      "type": "local"
+    },
+    {
+      "module": "config.Config",
+      "type": "local"
+    }
+  ]
 }

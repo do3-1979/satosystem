@@ -1,84 +1,176 @@
 {
+  "metadata": {
+    "source_file": "src/bybit_exchange.py",
+    "analyzed_at": "2025-12-21T17:16:31.273318",
+    "python_version": "3.10"
+  },
   "classes": [
     {
       "class_name": "BybitExchange",
-      "module": "bybit_exchange",
+      "line": 45,
       "methods": [
         {
-          "name": "execute_entry_order",
-          "line": 367,
-          "signature": "(self, side, quantity, current_price)",
-          "docstring": "エントリー注文を指値で実行します\n\n指値で約定を狙い、失敗時は動的にスリッページを拡大してリトライ。\n全て失敗時は成行で約定します。\n\nArgs:\n    side (str): 'buy' または 'sell'\n    quantity (float): 注文数量\n    current_price (float): 現在値\n    \nReturns:\n    dict or bool: 注文結果",
-          "visibility": "public"
-        },
-        {
-          "name": "execute_exit_order",
-          "line": 419,
-          "signature": "(self, side, quantity)",
-          "docstring": "決済注文を成行で実行します\n\n確実な約定を優先。成行失敗時は指値でリトライ。\n最終的には成行で決済します。\n\nArgs:\n    side (str): 'buy' または 'sell' (ポジション反対側)\n    quantity (float): 注文数量\n    \nReturns:\n    dict or bool: 注文結果",
-          "visibility": "public"
-        },
-        {
-          "name": "execute_order",
-          "line": 187,
-          "signature": "(self, side, quantity, price, order_type)",
-          "docstring": "注文を発行します.\n\nArgs:\n    side (str): 注文のタイプ ('buy' または 'sell')\n    quantity (float): 注文数量\n    price (float or None): 注文価格 (市場注文の場合は None)\n    order_type (str): 注文タイプ ('limit' または 'market')\n\nReturns:\n    dict: 注文の実行結果",
-          "visibility": "public"
-        },
-        {
-          "name": "fetch_latest_ohlcv",
-          "line": 660,
-          "signature": "(self, time_frame)",
-          "docstring": "最新取引情報を取得\n\nReturns:\n    list: 価格データのリスト",
-          "visibility": "public"
-        },
-        {
-          "name": "fetch_ohlcv",
-          "line": 573,
-          "signature": "(self, start_epoch, end_epoch, time_frame)",
-          "docstring": "取引情報を取得\n\nReturns:\n    list: 価格データのリスト",
-          "visibility": "public"
-        },
-        {
-          "name": "fetch_ticker",
-          "line": 726,
-          "signature": "(self)",
-          "docstring": "指定されたペアの最新の価格情報を取得します.\n\nArgs:\n    symbol (str): 取得するペアのシンボル (例: 'BTC/USD')\n\nReturns:\n    dict: 最新の価格情報",
-          "visibility": "public"
+          "name": "__init__",
+          "line": 46,
+          "docstring": "BybitExchange クラスの初期化\n\nArgs:\n    api_key (str): ユーザーごとの API キー\n    api_secret (str): ユーザーごとの API シークレット",
+          "visibility": "private"
         },
         {
           "name": "get_account_balance",
           "line": 111,
-          "signature": "(self)",
           "docstring": "口座の残高情報を取得します.\n\nReturns:\n    dict: 口座の残高情報",
           "visibility": "public"
         },
         {
           "name": "get_account_balance_total",
           "line": 146,
-          "signature": "(self)",
           "docstring": "口座上の使用可能な証拠金残高を取得します.\n\nReturns:\n    int: 口座上の使用可能な証拠金残高",
           "visibility": "public"
         },
         {
           "name": "get_market_symbol",
           "line": 178,
-          "signature": "(self) -> str",
           "docstring": "現在の取引シンボルを返す（例: BTC/USD:BTC, BTC/USDT:USDT）\n\nReturns:\n    str: 取引シンボル",
           "visibility": "public"
         },
         {
+          "name": "execute_order",
+          "line": 187,
+          "docstring": "注文を発行します.\n\nArgs:\n    side (str): 注文のタイプ ('buy' または 'sell')\n    quantity (float): 注文数量\n    price (float or None): 注文価格 (市場注文の場合は None)\n    order_type (str): 注文タイプ ('limit' または 'market')\n\nReturns:\n    dict: 注文の実行結果",
+          "visibility": "public"
+        },
+        {
+          "name": "_calculate_entry_price",
+          "line": 275,
+          "docstring": "エントリー指値価格を計算します（スリッページを考慮）\n\nArgs:\n    side (str): 'buy' または 'sell'\n    current_price (float): 現在値\n    slippage_percent (float): スリッページ率（%）\n    \nReturns:\n    float: 指値価格",
+          "visibility": "private"
+        },
+        {
+          "name": "_calculate_exit_price",
+          "line": 294,
+          "docstring": "決済指値価格を計算します（少しでも良い値で）\n\nArgs:\n    side (str): 'buy' または 'sell' (現在のポジション側)\n    current_price (float): 現在値\n    slippage_percent (float): スリッページ率（%）\n    \nReturns:\n    float: 指値価格",
+          "visibility": "private"
+        },
+        {
+          "name": "_execute_market_order",
+          "line": 313,
+          "docstring": "成行注文を実行します（リトライなし）\n\nArgs:\n    side (str): 'buy' または 'sell'\n    quantity (float): 数量\n    \nReturns:\n    dict or bool: 注文結果",
+          "visibility": "private"
+        },
+        {
+          "name": "_execute_market_order_final",
+          "line": 337,
+          "docstring": "最後のフォールバック成行注文を実行します\n\nArgs:\n    side (str): 'buy' または 'sell'\n    quantity (float): 数量\n    \nReturns:\n    dict or bool: 注文結果",
+          "visibility": "private"
+        },
+        {
+          "name": "execute_entry_order",
+          "line": 367,
+          "docstring": "エントリー注文を指値で実行します\n\n指値で約定を狙い、失敗時は動的にスリッページを拡大してリトライ。\n全て失敗時は成行で約定します。\n\n注意: 現時点では成行注文を優先的に使用しています。\n将来的には以下の指値リトライロジックを有効化できます。\n\nArgs:\n    side (str): 'buy' または 'sell'\n    quantity (float): 注文数量\n    current_price (float): 現在値\n    \nReturns:\n    dict or bool: 注文結果",
+          "visibility": "public"
+        },
+        {
+          "name": "_execute_entry_order_with_limit_retry",
+          "line": 396,
+          "docstring": "指値リトライロジック（約定確認とキャンセル処理付き）\n\n将来的にこのロジックを有効化することで、より低い手数料での約定を狙えます。\n\nArgs:\n    side (str): 'buy' または 'sell'\n    quantity (float): 注文数量\n    current_price (float): 現在値\n    \nReturns:\n    dict or bool: 注文結果",
+          "visibility": "private"
+        },
+        {
+          "name": "execute_exit_order",
+          "line": 483,
+          "docstring": "決済注文を成行で実行します\n\n現時点では成行注文を優先（早期約定を重視）。\n成行失敗時は指値でリトライします。\n\nArgs:\n    side (str): 'buy' または 'sell' (ポジション反対側)\n    quantity (float): 注文数量\n    \nReturns:\n    dict or bool: 注文結果",
+          "visibility": "public"
+        },
+        {
+          "name": "_execute_exit_order_with_limit_retry",
+          "line": 515,
+          "docstring": "決済注文の指値リトライロジック（約定確認とキャンセル処理付き）\n\n成行失敗時のフォールバック処理。\n\nArgs:\n    side (str): 'buy' または 'sell' (ポジション反対側)\n    quantity (float): 注文数量\n    \nReturns:\n    dict or bool: 注文結果",
+          "visibility": "private"
+        },
+        {
+          "name": "_dummy_entry_order",
+          "line": 598,
+          "docstring": "ダミーエントリー注文を実行します\n\nArgs:\n    side (str): 'buy' または 'sell'\n    quantity (float): 注文数量\n    current_price (float): 現在値\n    \nReturns:\n    bool: True（常に成功）",
+          "visibility": "private"
+        },
+        {
+          "name": "_dummy_exit_order",
+          "line": 616,
+          "docstring": "ダミー決済注文を実行します\n\nArgs:\n    side (str): 'buy' または 'sell'\n    quantity (float): 注文数量\n    \nReturns:\n    bool: True（常に成功）",
+          "visibility": "private"
+        },
+        {
           "name": "get_nearest_epoch_time",
-          "line": 518,
-          "signature": "(self, end_epoch)",
+          "line": 634,
           "docstring": "_summary_\n\nArgs:\n    end_epoch (_type_): _description_\n\nReturns:\n    _type_: _description_",
           "visibility": "public"
+        },
+        {
+          "name": "fetch_ohlcv",
+          "line": 689,
+          "docstring": "取引情報を取得\n\nReturns:\n    list: 価格データのリスト",
+          "visibility": "public"
+        },
+        {
+          "name": "fetch_latest_ohlcv",
+          "line": 776,
+          "docstring": "最新取引情報を取得\n\nReturns:\n    list: 価格データのリスト",
+          "visibility": "public"
+        },
+        {
+          "name": "fetch_ticker",
+          "line": 842,
+          "docstring": "指定されたペアの最新の価格情報を取得します.\n\nArgs:\n    symbol (str): 取得するペアのシンボル (例: 'BTC/USD')\n\nReturns:\n    dict: 最新の価格情報",
+          "visibility": "public"
         }
-      ],
-      "method_count": 10,
-      "docstring": "Exchangeクラス:\n\nこのクラスは仮想通貨の取引所との通信を担当します。APIキーの認証、注文の発行、口座残高の取得などの機能を提供します。\n各取引所に対するサブクラスを作成して、取引所固有の実装を処理できます。たとえば、BinanceExchange、CoinbaseExchangeなどのサブクラスを考えることができます。"
+      ]
     }
   ],
-  "analysis_date": "2025-12-21",
-  "notes": "BTC/USDT 移行完了後の最新分析 - symbol パラメータ対応確認"
+  "functions": [],
+  "imports": [
+    {
+      "module": "ccxt",
+      "type": "standard"
+    },
+    {
+      "module": "time",
+      "type": "standard"
+    },
+    {
+      "module": "datetime.datetime",
+      "type": "local"
+    },
+    {
+      "module": "datetime.timedelta",
+      "type": "local"
+    },
+    {
+      "module": "config.Config",
+      "type": "local"
+    },
+    {
+      "module": "logger.Logger",
+      "type": "local"
+    },
+    {
+      "module": "exchange.Exchange",
+      "type": "local"
+    },
+    {
+      "module": "random",
+      "type": "standard"
+    },
+    {
+      "module": "random",
+      "type": "standard"
+    },
+    {
+      "module": "random",
+      "type": "standard"
+    },
+    {
+      "module": "time",
+      "type": "standard"
+    }
+  ]
 }
