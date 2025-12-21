@@ -66,7 +66,7 @@ class BybitExchange(Exchange):
         self.is_dummy_mode = (back_test_mode == 1) or (back_test_mode == 0 and hot_test_dummy_mode == 1)
         self.is_backtest_mode = (back_test_mode == 1)  # バックテストモードのみ
         self.is_papertrading_mode = (back_test_mode == 0 and hot_test_dummy_mode == 1)  # ペーパートレード識別
-        self.dummy_balance = 100000.0  # ダミー口座残高
+        self.dummy_balance = 100.0  # ダミー口座残高
         self.dummy_orders = {}  # ダミー注文履歴
         self.dummy_order_id = 0  # 注文ID カウンタ
 
