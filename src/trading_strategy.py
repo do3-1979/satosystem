@@ -66,75 +66,6 @@ class TradingStrategy:
             "order_type": "market"
         }
 
-    def _get_current_quarter_and_year(self, timestamp):
-        """
-        タイムスタンプから現在のQ(四半期)と年を取得する
-        
-        Args:
-            timestamp: datetime object
-            
-        Returns:
-            tuple: (year, quarter_name) e.g., (2025, 'Q1')
-        """
-        if not isinstance(timestamp, datetime):
-            return None, None
-        
-        year = timestamp.year
-        month = timestamp.month
-        
-        if month <= 3:
-            quarter = 'Q1'
-        elif month <= 6:
-            quarter = 'Q2'
-        elif month <= 9:
-            quarter = 'Q3'
-        else:
-            quarter = 'Q4'
-        
-        return year, quarter
-
-    def _apply_seasonality_positioning(self, current_timestamp, position_size_ratio):
-        """
-        季節性ベースのロット調整を適用する
-        
-        損失が多い四半期（Q2, Q3, Q1-2025+）ではロットを削減
-        利益が多い四半期（Q1, Q4）では通常のロット
-        
-        Args:
-            current_timestamp: 現在のタイムスタンプ (datetime)
-            position_size_ratio: 現在のポジションサイズ比率
-            
-        Returns:
-            float: 調整後のポジションサイズ比率
-        """
-        if not Config.get_enable_seasonality_based_positioning():
-            return position_size_ratio
-        
-        year, quarter = self._get_current_quarter_and_year(current_timestamp)
-        if year is None or quarter is None:
-            return position_size_ratio
-        
-        # 損失が多い四半期の判定
-        loss_quarters = ['Q2', 'Q3']  # Q2, Q3 は箱相場で損失が多い
-        is_loss_quarter_2025_plus = (quarter == 'Q1' and year >= 2025)  # 2025年以降のQ1も損失
-        
-        if quarter in loss_quarters or is_loss_quarter_2025_plus:
-            seasonality_multiplier = Config.get_seasonality_loss_quarter_multiplier()
-            original_ratio = position_size_ratio
-            position_size_ratio *= seasonality_multiplier
-            self.logger.log(
-                f"[季節性:ロット調整] {year}{quarter} → 損失四半期で {seasonality_multiplier:.1%} に削減 "
-                f"({original_ratio:.2f} → {position_size_ratio:.2f})"
-            )
-        else:
-            seasonality_multiplier = Config.get_seasonality_profit_quarter_multiplier()
-            self.logger.log(
-                f"[季節性:ロット調整] {year}{quarter} → 利益四半期で {seasonality_multiplier:.1%} 適用 "
-                f"(位置サイズ={position_size_ratio:.2f})"
-            )
-        
-        return position_size_ratio
-
     def evaluate_entry(self):
         """
         エントリー条件を評価し、エントリーするかどうかを決定します。
@@ -251,50 +182,6 @@ class TradingStrategy:
                         # 市場体制判定エラーはログするが、エントリー判定は続行
                         self.logger.log(f"[市場体制判定エラー] {str(e)}")
 
-                # =========== 季節性ベースのエントリースキップ ===========
-                # Option 2: 損失が多い四半期ではエントリーをスキップする
-                seasonality_adjusted_position_ratio = 1.0
-                
-                if allow_entry and Config.get_enable_seasonality_based_positioning():
-                    try:
-                        current_ohlcv = self.price_data_management.get_latest_ohlcv()
-                        
-                        # 複数のキーを試す: real_time_dt または close_time_dt
-                        current_timestamp = None
-                        if current_ohlcv:
-                            if 'real_time_dt' in current_ohlcv:
-                                current_timestamp = current_ohlcv['real_time_dt']
-                            elif 'close_time_dt' in current_ohlcv:
-                                current_timestamp = current_ohlcv['close_time_dt']
-                        
-                        # 文字列の場合はdatetimeに変換
-                        if current_timestamp and isinstance(current_timestamp, str):
-                            try:
-                                current_timestamp = datetime.strptime(current_timestamp, '%Y/%m/%d %H:%M')
-                            except:
-                                current_timestamp = None
-                        
-                        # datetimeの場合のみ処理
-                        if isinstance(current_timestamp, datetime):
-                            year, quarter = self._get_current_quarter_and_year(current_timestamp)
-                            if year is not None and quarter is not None:
-                                # 季節性判定
-                                loss_quarters = ['Q2', 'Q3']
-                                is_loss_quarter = (quarter in loss_quarters or (quarter == 'Q1' and year >= 2025))
-                                
-                                if is_loss_quarter:
-                                    # 損失四半期：エントリーをスキップ
-                                    self.logger.log(
-                                        f"[季節性:スキップ] {year}{quarter} → 損失四半期のため取引を回避"
-                                    )
-                                    allow_entry = False
-                    except Exception as e:
-                        self.logger.log(f"[季節性エラー] {str(e)}")
-
-
-
-
-
                 # =========== フィルター機能 ===========
                 # PVO フィルター
                 enable_pvo_filter = Config.get_enable_pvo_filter()
@@ -343,10 +230,6 @@ class TradingStrategy:
                 if allow_entry:
                     side = desired_side
                     decision = "ENTRY"
-                    # 季節性の倍率を適用
-                    position_size_ratio *= seasonality_adjusted_position_ratio
-                    if seasonality_adjusted_position_ratio < 1.0:
-                        self.logger.log(f"[季節性:ロット削減] ロットサイズを {seasonality_adjusted_position_ratio:.0%} に削減")
 
         # エントリ条件がない場合はNONEで初期化する
         self.trade_decision["side"] = side
