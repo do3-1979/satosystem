@@ -36,7 +36,6 @@ rm -f err.log
 # APIキーとシークレットを置換
 ./replace_api_key.sh
 
-
 # 4: python bot.py の実行
 # 実行モード判定: back_test と hot_test_dummy_mode の値で分岐
 BOT_SCRIPT="$SCRIPT_DIR/bot.py"
@@ -51,8 +50,10 @@ hot_test_dummy_mode=${hot_test_dummy_mode:-1}
 
 # 背景実行フラグ
 bg_flag=""
+bg_mode=0
 if [ "$#" -eq 1 ] && [ "$1" == "bg" ]; then
     bg_flag=" (background)"
+    bg_mode=1
 fi
 
 # 実行モード判定
@@ -60,9 +61,18 @@ if [ "$back_test" = "1" ]; then
     # バックテストモード
     echo "📊 バックテストモード$bg_flag"
     log_file="logs/latest_backtest.log"
-    if [ "$#" -eq 1 ] && [ "$1" == "bg" ]; then
-        python "$BOT_SCRIPT" 2> "$log_file" > /dev/null &
+    if [ "$bg_mode" = "1" ]; then
+        # バックグラウンド実行: nohup + disown で親プロセスから切り離し
+        nohup python "$BOT_SCRIPT" > "$log_file" 2>&1 &
+        bot_pid=$!
+        echo "$bot_pid" > logs/bot.pid
+        disown $bot_pid
+        echo "✅ バックグラウンドで起動しました (PID: $bot_pid)"
+        echo "📝 ログファイル: $log_file"
+        echo "📋 ログ確認: tail -f $log_file"
+        echo "⏹️  停止コマンド: kill $bot_pid または bash stop_bot.sh"
     else
+        # フォアグラウンド実行
         python "$BOT_SCRIPT" 2> "$log_file" > /dev/null
         end_time=$(date +%s)
         total_time=$((end_time - start_time))
@@ -75,9 +85,18 @@ elif [ "$hot_test_dummy_mode" = "1" ]; then
     # ホットテスト（ダミー取引）モード
     echo "🎭 ホットテスト（ペーパートレード）モード$bg_flag"
     log_file="logs/latest_hot_test_dummy.log"
-    if [ "$#" -eq 1 ] && [ "$1" == "bg" ]; then
-        python "$BOT_SCRIPT" 2> "$log_file" > /dev/null &
+    if [ "$bg_mode" = "1" ]; then
+        # バックグラウンド実行: nohup + disown で親プロセスから切り離し
+        nohup python "$BOT_SCRIPT" > "$log_file" 2>&1 &
+        bot_pid=$!
+        echo "$bot_pid" > logs/bot.pid
+        disown $bot_pid
+        echo "✅ バックグラウンドで起動しました (PID: $bot_pid)"
+        echo "📝 ログファイル: $log_file"
+        echo "📋 ログ確認: tail -f $log_file"
+        echo "⏹️  停止コマンド: kill $bot_pid または bash stop_bot.sh"
     else
+        # フォアグラウンド実行
         python "$BOT_SCRIPT" 2> "$log_file" > /dev/null
         end_time=$(date +%s)
         total_time=$((end_time - start_time))
@@ -96,9 +115,18 @@ else
         echo "キャンセルしました。"
         exit 1
     fi
-    if [ "$#" -eq 1 ] && [ "$1" == "bg" ]; then
-        python "$BOT_SCRIPT" 2> "$log_file" > /dev/null &
+    if [ "$bg_mode" = "1" ]; then
+        # バックグラウンド実行: nohup + disown で親プロセスから切り離し
+        nohup python "$BOT_SCRIPT" > "$log_file" 2>&1 &
+        bot_pid=$!
+        echo "$bot_pid" > logs/bot.pid
+        disown $bot_pid
+        echo "✅ バックグラウンドで起動しました (PID: $bot_pid)"
+        echo "📝 ログファイル: $log_file"
+        echo "📋 ログ確認: tail -f $log_file"
+        echo "⏹️  停止コマンド: kill $bot_pid または bash stop_bot.sh"
     else
+        # フォアグラウンド実行
         python "$BOT_SCRIPT" 2> "$log_file" > /dev/null
         end_time=$(date +%s)
         total_time=$((end_time - start_time))
@@ -109,5 +137,5 @@ else
     fi
 fi
 
-# 実行終了後、APIキーをプレースホルダに戻す
+# 実行終了後、APIキーをプレースホルダに戻す（バックグラウンド時も実行）
 ./replace_api_key.sh restore
