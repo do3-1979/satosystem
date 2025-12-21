@@ -251,55 +251,49 @@ class TradingStrategy:
                         # 市場体制判定エラーはログするが、エントリー判定は続行
                         self.logger.log(f"[市場体制判定エラー] {str(e)}")
 
-                # =========== 季節性ベースのロット調整 ===========
-                # 損失が多い四半期ではロットを削減、利益が多い四半期では通常のロット
-                if allow_entry:
+                # =========== 季節性ベースのエントリースキップ ===========
+                # Option 2: 損失が多い四半期ではエントリーをスキップする
+                seasonality_adjusted_position_ratio = 1.0
+                
+                if allow_entry and Config.get_enable_seasonality_based_positioning():
                     try:
                         current_ohlcv = self.price_data_management.get_latest_ohlcv()
-                        if current_ohlcv and 'real_time_dt' in current_ohlcv:
-                            current_timestamp = current_ohlcv['real_time_dt']
-                            if isinstance(current_timestamp, datetime):
-                                year, quarter = self._get_current_quarter_and_year(current_timestamp)
-                                if year is not None and quarter is not None:
-                                    # 季節性判定
-                                    loss_quarters = ['Q2', 'Q3']
-                                    is_loss_quarter = (quarter in loss_quarters or (quarter == 'Q1' and year >= 2025))
-                                    
-                                    if is_loss_quarter and Config.get_enable_seasonality_based_positioning():
-                                        # 損失四半期では、より厳格な条件を強制（Volume + ADXフィルタ）
-                                        seasonality_multiplier = Config.get_seasonality_loss_quarter_multiplier()
-                                        self.logger.log(
-                                            f"[季節性判定] {year}{quarter} → 損失四半期検出 ({seasonality_multiplier:.0%} の適用)"
-                                        )
-                                        
-                                        # Volume フィルター強制有効化
-                                        volume_value = self.price_data_management.get_latest_volume()
-                                        volume_threshold = Config.get_volume_filter_threshold()
-                                        if volume_value < volume_threshold:
-                                            self.logger.log(
-                                                f"[季節性:損失四半期] Volume不足で除外 "
-                                                f"(Volume={volume_value:.0f} < {volume_threshold:.0f})"
-                                            )
-                                            allow_entry = False
-                                        
-                                        # ADX フィルター強制有効化
-                                        if allow_entry:
-                                            adx_value = self.risk_manager.get_adx() if hasattr(self.risk_manager, 'get_adx') else 0
-                                            adx_threshold = Config.get_adx_filter_threshold()
-                                            if adx_value < adx_threshold:
-                                                self.logger.log(
-                                                    f"[季節性:損失四半期] ADX不足で除外 (ADX={adx_value:.2f} < {adx_threshold})"
-                                                )
-                                                allow_entry = False
-                                        
-                                        # エントリーが許可されていればポジションサイズ削減
-                                        if allow_entry:
-                                            position_size_ratio *= seasonality_multiplier
-                                            self.logger.log(
-                                                f"[季節性:損失四半期] ポジションサイズを {seasonality_multiplier:.0%} に削減"
-                                            )
+                        
+                        # 複数のキーを試す: real_time_dt または close_time_dt
+                        current_timestamp = None
+                        if current_ohlcv:
+                            if 'real_time_dt' in current_ohlcv:
+                                current_timestamp = current_ohlcv['real_time_dt']
+                            elif 'close_time_dt' in current_ohlcv:
+                                current_timestamp = current_ohlcv['close_time_dt']
+                        
+                        # 文字列の場合はdatetimeに変換
+                        if current_timestamp and isinstance(current_timestamp, str):
+                            try:
+                                current_timestamp = datetime.strptime(current_timestamp, '%Y/%m/%d %H:%M')
+                            except:
+                                current_timestamp = None
+                        
+                        # datetimeの場合のみ処理
+                        if isinstance(current_timestamp, datetime):
+                            year, quarter = self._get_current_quarter_and_year(current_timestamp)
+                            if year is not None and quarter is not None:
+                                # 季節性判定
+                                loss_quarters = ['Q2', 'Q3']
+                                is_loss_quarter = (quarter in loss_quarters or (quarter == 'Q1' and year >= 2025))
+                                
+                                if is_loss_quarter:
+                                    # 損失四半期：エントリーをスキップ
+                                    self.logger.log(
+                                        f"[季節性:スキップ] {year}{quarter} → 損失四半期のため取引を回避"
+                                    )
+                                    allow_entry = False
                     except Exception as e:
-                        self.logger.log(f"[季節性調整エラー] {str(e)}")
+                        self.logger.log(f"[季節性エラー] {str(e)}")
+
+
+
+
 
                 # =========== フィルター機能 ===========
                 # PVO フィルター
@@ -349,6 +343,10 @@ class TradingStrategy:
                 if allow_entry:
                     side = desired_side
                     decision = "ENTRY"
+                    # 季節性の倍率を適用
+                    position_size_ratio *= seasonality_adjusted_position_ratio
+                    if seasonality_adjusted_position_ratio < 1.0:
+                        self.logger.log(f"[季節性:ロット削減] ロットサイズを {seasonality_adjusted_position_ratio:.0%} に削減")
 
         # エントリ条件がない場合はNONEで初期化する
         self.trade_decision["side"] = side
