@@ -71,6 +71,12 @@ if [ "$back_test" = "1" ]; then
         echo "📝 ログファイル: $log_file"
         echo "📋 ログ確認: tail -f $log_file"
         echo "⏹️  停止コマンド: kill $bot_pid または bash stop_bot.sh"
+        
+        # バックグラウンドプロセスの終了を監視して復元
+        (
+            wait $bot_pid 2>/dev/null
+            ./replace_api_key.sh restore
+        ) &
     else
         # フォアグラウンド実行
         python "$BOT_SCRIPT" 2> "$log_file" > /dev/null
@@ -80,6 +86,9 @@ if [ "$back_test" = "1" ]; then
         total_minutes=$((total_time % 3600 / 60))
         total_seconds=$((total_time % 60))
         echo "実行時間: ${total_hours}h ${total_minutes}m ${total_seconds}s"
+        
+        # フォアグラウンド実行完了後にAPIキーを復元
+        ./replace_api_key.sh restore
     fi
 elif [ "$hot_test_dummy_mode" = "1" ]; then
     # ホットテスト（ダミー取引）モード
@@ -95,6 +104,12 @@ elif [ "$hot_test_dummy_mode" = "1" ]; then
         echo "📝 ログファイル: $log_file"
         echo "📋 ログ確認: tail -f $log_file"
         echo "⏹️  停止コマンド: kill $bot_pid または bash stop_bot.sh"
+        
+        # バックグラウンドプロセスの終了を監視して復元
+        (
+            wait $bot_pid 2>/dev/null
+            ./replace_api_key.sh restore
+        ) &
     else
         # フォアグラウンド実行
         python "$BOT_SCRIPT" 2> "$log_file" > /dev/null
@@ -104,6 +119,9 @@ elif [ "$hot_test_dummy_mode" = "1" ]; then
         total_minutes=$((total_time % 3600 / 60))
         total_seconds=$((total_time % 60))
         echo "実行時間: ${total_hours}h ${total_minutes}m ${total_seconds}s"
+        
+        # フォアグラウンド実行完了後にAPIキーを復元
+        ./replace_api_key.sh restore
     fi
 else
     # ホットテスト（本番取引）モード
@@ -125,6 +143,12 @@ else
         echo "📝 ログファイル: $log_file"
         echo "📋 ログ確認: tail -f $log_file"
         echo "⏹️  停止コマンド: kill $bot_pid または bash stop_bot.sh"
+        
+        # バックグラウンドプロセスの終了を監視して復元
+        (
+            wait $bot_pid 2>/dev/null
+            ./replace_api_key.sh restore
+        ) &
     else
         # フォアグラウンド実行
         python "$BOT_SCRIPT" 2> "$log_file" > /dev/null
@@ -134,8 +158,8 @@ else
         total_minutes=$((total_time % 3600 / 60))
         total_seconds=$((total_time % 60))
         echo "実行時間: ${total_hours}h ${total_minutes}m ${total_seconds}s"
+        
+        # フォアグラウンド実行完了後にAPIキーを復元
+        ./replace_api_key.sh restore
     fi
 fi
-
-# 実行終了後、APIキーをプレースホルダに戻す（バックグラウンド時も実行）
-./replace_api_key.sh restore
