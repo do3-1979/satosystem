@@ -438,6 +438,58 @@ class Config:
             return 70  # デフォルト: 70
 
     @classmethod
+    def get_enable_volume_filter(cls):
+        """
+        Volumeフィルターの有効/無効を取得します.
+
+        Returns:
+            int: 1=有効, 0=無効
+        """
+        try:
+            return int(cls.config['EntryFilters']['enable_volume_filter'])
+        except (KeyError, ValueError):
+            return 0  # デフォルト: 無効
+
+    @classmethod
+    def get_volume_filter_threshold(cls):
+        """
+        Volumeフィルターの最小閾値を取得します.
+
+        Returns:
+            float: 出来高最小値
+        """
+        try:
+            return float(cls.config['EntryFilters']['volume_filter_threshold'])
+        except (KeyError, ValueError):
+            return 15000  # デフォルト: 15000
+
+    @classmethod
+    def get_enable_volatility_filter(cls):
+        """
+        Volatilityフィルターの有効/無効を取得します.
+
+        Returns:
+            int: 1=有効, 0=無効
+        """
+        try:
+            return int(cls.config['EntryFilters']['enable_volatility_filter'])
+        except (KeyError, ValueError):
+            return 0  # デフォルト: 無効
+
+    @classmethod
+    def get_volatility_filter_threshold(cls):
+        """
+        Volatilityフィルターの最大閾値を取得します.
+
+        Returns:
+            float: Volatility最大値
+        """
+        try:
+            return float(cls.config['EntryFilters']['volatility_filter_threshold'])
+        except (KeyError, ValueError):
+            return 1000  # デフォルト: 1000
+
+    @classmethod
     def get_entry_slippage(cls):
         """
         エントリー時の基本スリッページを取得します（%）.

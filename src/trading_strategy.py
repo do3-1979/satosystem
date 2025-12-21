@@ -129,6 +129,28 @@ class TradingStrategy:
                         allow_entry = False
                     else:
                         self.logger.log(f"[フィルター:ENTRY] ADX フィルター成功 (ADX={adx_value:.2f} >= {adx_threshold})")
+                
+                # Volume フィルター
+                enable_volume_filter = Config.get_enable_volume_filter()
+                volume_threshold = Config.get_volume_filter_threshold()
+                if allow_entry and enable_volume_filter:
+                    volume_value = self.price_data_management.get_latest_volume()
+                    if volume_value < volume_threshold:
+                        self.logger.log(f"[フィルター:ENTRY] Volume フィルター失敗 (Volume={volume_value:.0f} < {volume_threshold:.0f})")
+                        allow_entry = False
+                    else:
+                        self.logger.log(f"[フィルター:ENTRY] Volume フィルター成功 (Volume={volume_value:.0f} >= {volume_threshold:.0f})")
+                
+                # Volatility フィルター
+                enable_volatility_filter = Config.get_enable_volatility_filter()
+                volatility_threshold = Config.get_volatility_filter_threshold()
+                if allow_entry and enable_volatility_filter:
+                    volatility_value = self.price_data_management.get_latest_volatility()
+                    if volatility_value > volatility_threshold:
+                        self.logger.log(f"[フィルター:ENTRY] Volatility フィルター失敗 (Volatility={volatility_value:.2f} > {volatility_threshold:.2f})")
+                        allow_entry = False
+                    else:
+                        self.logger.log(f"[フィルター:ENTRY] Volatility フィルター成功 (Volatility={volatility_value:.2f} <= {volatility_threshold:.2f})")
 
                 if allow_entry:
                     side = desired_side

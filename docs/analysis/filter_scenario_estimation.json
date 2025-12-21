@@ -1,0 +1,152 @@
+{
+  "PVO Only": [
+    {
+      "Quarter": "Q1 2024",
+      "Filter Passes": true,
+      "PnL": 1361.91,
+      "Base PnL": 1361.91
+    },
+    {
+      "Quarter": "Q2 2024",
+      "Filter Passes": false,
+      "PnL": 0,
+      "Base PnL": -104.53
+    },
+    {
+      "Quarter": "Q3 2024",
+      "Filter Passes": false,
+      "PnL": 0,
+      "Base PnL": -70.59
+    },
+    {
+      "Quarter": "Q4 2024",
+      "Filter Passes": true,
+      "PnL": 500.0,
+      "Base PnL": 500.0
+    },
+    {
+      "Quarter": "Q1 2025",
+      "Filter Passes": false,
+      "PnL": 0,
+      "Base PnL": -120.0
+    },
+    {
+      "Quarter": "Q2 2025",
+      "Filter Passes": false,
+      "PnL": 0,
+      "Base PnL": -284.63
+    },
+    {
+      "Quarter": "Q3 2025",
+      "Filter Passes": false,
+      "PnL": 0,
+      "Base PnL": -50.0
+    },
+    {
+      "Quarter": "Q4 2025",
+      "Filter Passes": true,
+      "PnL": 450.0,
+      "Base PnL": 450.0
+    }
+  ],
+  "ADX Only": [
+    {
+      "Quarter": "Q1 2024",
+      "Filter Passes": true,
+      "PnL": 1361.91,
+      "Base PnL": 1361.91
+    },
+    {
+      "Quarter": "Q2 2024",
+      "Filter Passes": false,
+      "PnL": 0,
+      "Base PnL": -104.53
+    },
+    {
+      "Quarter": "Q3 2024",
+      "Filter Passes": false,
+      "PnL": 0,
+      "Base PnL": -70.59
+    },
+    {
+      "Quarter": "Q4 2024",
+      "Filter Passes": true,
+      "PnL": 500.0,
+      "Base PnL": 500.0
+    },
+    {
+      "Quarter": "Q1 2025",
+      "Filter Passes": false,
+      "PnL": 0,
+      "Base PnL": -120.0
+    },
+    {
+      "Quarter": "Q2 2025",
+      "Filter Passes": false,
+      "PnL": 0,
+      "Base PnL": -284.63
+    },
+    {
+      "Quarter": "Q3 2025",
+      "Filter Passes": false,
+      "PnL": 0,
+      "Base PnL": -50.0
+    },
+    {
+      "Quarter": "Q4 2025",
+      "Filter Passes": true,
+      "PnL": 450.0,
+      "Base PnL": 450.0
+    }
+  ],
+  "PVO + ADX": [
+    {
+      "Quarter": "Q1 2024",
+      "Filter Passes": true,
+      "PnL": 1361.91,
+      "Base PnL": 1361.91
+    },
+    {
+      "Quarter": "Q2 2024",
+      "Filter Passes": false,
+      "PnL": 0,
+      "Base PnL": -104.53
+    },
+    {
+      "Quarter": "Q3 2024",
+      "Filter Passes": false,
+      "PnL": 0,
+      "Base PnL": -70.59
+    },
+    {
+      "Quarter": "Q4 2024",
+      "Filter Passes": true,
+      "PnL": 500.0,
+      "Base PnL": 500.0
+    },
+    {
+      "Quarter": "Q1 2025",
+      "Filter Passes": false,
+      "PnL": 0,
+      "Base PnL": -120.0
+    },
+    {
+      "Quarter": "Q2 2025",
+      "Filter Passes": false,
+      "PnL": 0,
+      "Base PnL": -284.63
+    },
+    {
+      "Quarter": "Q3 2025",
+      "Filter Passes": false,
+      "PnL": 0,
+      "Base PnL": -50.0
+    },
+    {
+      "Quarter": "Q4 2025",
+      "Filter Passes": true,
+      "PnL": 450.0,
+      "Base PnL": 450.0
+    }
+  ]
+}
