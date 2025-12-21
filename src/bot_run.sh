@@ -36,6 +36,26 @@ rm -f err.log
 # APIキーとシークレットを置換
 ./replace_api_key.sh
 
+# APIキーが正しく置換されたか確認（リトライ最大3回）
+retry_count=0
+max_retries=3
+while [ $retry_count -lt $max_retries ]; do
+    api_key=$(grep '^api_key *= *' config.ini | awk -F' *= *' '{print $2}' | tr -d '\n\r')
+    if [ "$api_key" != "YOUR_API_KEY" ] && [ -n "$api_key" ]; then
+        break
+    fi
+    retry_count=$((retry_count + 1))
+    if [ $retry_count -lt $max_retries ]; then
+        sleep 0.5
+        ./replace_api_key.sh
+    fi
+done
+
+if [ "$api_key" == "YOUR_API_KEY" ] || [ -z "$api_key" ]; then
+    echo "❌ APIキーの置換に失敗しました"
+    exit 1
+fi
+
 # 4: python bot.py の実行
 # 実行モード判定: back_test と hot_test_dummy_mode の値で分岐
 BOT_SCRIPT="$SCRIPT_DIR/bot.py"
@@ -72,10 +92,11 @@ if [ "$back_test" = "1" ]; then
         echo "📋 ログ確認: tail -f $log_file"
         echo "⏹️  停止コマンド: kill $bot_pid または bash stop_bot.sh"
         
-        # バックグラウンドプロセスの終了を監視して復元
+        # バックグラウンドプロセスの終了を監視して復元（別プロセスで実行）
         (
             wait $bot_pid 2>/dev/null
-            ./replace_api_key.sh restore
+            sleep 1  # APIキーへのアクセス待機
+            ./replace_api_key.sh restore > /dev/null 2>&1
         ) &
     else
         # フォアグラウンド実行
@@ -105,10 +126,11 @@ elif [ "$hot_test_dummy_mode" = "1" ]; then
         echo "📋 ログ確認: tail -f $log_file"
         echo "⏹️  停止コマンド: kill $bot_pid または bash stop_bot.sh"
         
-        # バックグラウンドプロセスの終了を監視して復元
+        # バックグラウンドプロセスの終了を監視して復元（別プロセスで実行）
         (
             wait $bot_pid 2>/dev/null
-            ./replace_api_key.sh restore
+            sleep 1  # APIキーへのアクセス待機
+            ./replace_api_key.sh restore > /dev/null 2>&1
         ) &
     else
         # フォアグラウンド実行
@@ -144,10 +166,11 @@ else
         echo "📋 ログ確認: tail -f $log_file"
         echo "⏹️  停止コマンド: kill $bot_pid または bash stop_bot.sh"
         
-        # バックグラウンドプロセスの終了を監視して復元
+        # バックグラウンドプロセスの終了を監視して復元（別プロセスで実行）
         (
             wait $bot_pid 2>/dev/null
-            ./replace_api_key.sh restore
+            sleep 1  # APIキーへのアクセス待機
+            ./replace_api_key.sh restore > /dev/null 2>&1
         ) &
     else
         # フォアグラウンド実行
