@@ -365,7 +365,7 @@ class Bot:
         Args:
             order (dict): トレード判断に基づいた注文情報
                 - symbol: 取引ペア（例: 'BTC/USD'）
-                - side: 'buy' または 'sell'
+                - side: 'BUY' または 'SELL'（内部表記）
                 - quantity: 注文数量
                 - price: 注文価格（market注文時は無視）
                 - order_type: 'limit' または 'market'
@@ -373,6 +373,8 @@ class Bot:
         Returns:
             dict: 注文の実行結果
         """
+        from side import to_exchange_side
+        
         symbol = order['symbol'] # execute orderには使わない
         side = order['side']
         quantity = order['quantity']
@@ -387,16 +389,17 @@ class Bot:
             current_price = self.price_data_management.get_ticker()
             
             # エントリー注文と決済注文を判定
-            # order_sideの値に基づいて判定（'buy'/'sell'がエントリー、決済は portfolio で管理）
-            if side in ['buy', 'sell']:
+            # 内部表記 'BUY'/'SELL' を取引所API用の 'buy'/'sell' に変換
+            exchange_side = to_exchange_side(side)
+            if exchange_side in ['buy', 'sell']:
                 # エントリー注文：指値で約定を狙う
                 # 失敗時は成行にフォールバック
                 order_response = self.exchange.execute_entry_order(
-                    side=side,
+                    side=exchange_side,
                     quantity=quantity,
                     current_price=current_price
                 )
-                self.logger.log(f"✅ エントリー注文実行: {side.upper()} {quantity} @ {current_price:.2f}")
+                self.logger.log(f"✅ エントリー注文実行: {exchange_side.upper()} {quantity} @ {current_price:.2f}")
             else:
                 # 予期しないサイドの場合
                 self.logger.log_error(f"❌ 不正なサイド: {side}")
