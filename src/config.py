@@ -489,6 +489,47 @@ class Config:
         except (KeyError, ValueError):
             return 1000  # デフォルト: 1000
 
+    # ==================== Seasonality セクション ====================
+
+    @classmethod
+    def get_enable_seasonality_based_positioning(cls):
+        """
+        季節性ベースのロット削減機能の有効/無効を取得します.
+
+        Returns:
+            int: 1=有効, 0=無効
+        """
+        try:
+            return int(cls.config['Seasonality']['enable_seasonality_based_positioning'])
+        except (KeyError, ValueError):
+            return 0  # デフォルト: 無効
+
+    @classmethod
+    def get_seasonality_loss_quarter_multiplier(cls):
+        """
+        ボックス相場シーズンのロット削減倍率を取得します.
+
+        Returns:
+            float: 倍率（0.7 = 30%削減）
+        """
+        try:
+            return float(cls.config['Seasonality']['seasonality_loss_quarter_multiplier'])
+        except (KeyError, ValueError):
+            return 0.7  # デフォルト: 70% (30%削減)
+
+    @classmethod
+    def get_seasonality_profit_quarter_multiplier(cls):
+        """
+        トレンド相場シーズンの倍率を取得します.
+
+        Returns:
+            float: 倍率（1.0 = 削減なし）
+        """
+        try:
+            return float(cls.config['Seasonality']['seasonality_profit_quarter_multiplier'])
+        except (KeyError, ValueError):
+            return 1.0  # デフォルト: 100% (削減なし)
+
     # ==================== MarketRegime セクション ====================
 
     @classmethod

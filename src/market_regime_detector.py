@@ -196,7 +196,103 @@ class MarketRegimeDetector:
         
         return sum(atr_values[-ma_period:]) / len(atr_values[-ma_period:])
     
-    def _detect_swing_direction(self, ohlcv_data, lookback_period=20):
+    def detect_regime_simple(self, ohlcv_data, lookback_period=20):
+        """
+        シンプルなボックス相場判定（高値-安値の変動幅で判定）
+        
+        Args:
+            ohlcv_data (list): OHLCV データリスト
+            lookback_period (int): 遡り期間
+        
+        Returns:
+            dict: {
+                'regime': 'RANGING' | 'TRENDING_UP' | 'TRENDING_DOWN' | 'TRANSITION',
+                'range_ratio': float (直近レンジ / 平均レンジ),
+                'confidence': float (0.0 ~ 1.0)
+            }
+        """
+        if len(ohlcv_data) < lookback_period * 2:
+            return {
+                'regime': 'TRANSITION',
+                'range_ratio': None,
+                'confidence': 0.0,
+                'reason': 'Insufficient data'
+            }
+        
+        # 直近期間とその前の期間を比較
+        recent_period = ohlcv_data[-lookback_period:]
+        previous_period = ohlcv_data[-lookback_period*2:-lookback_period]
+        
+        # 高値-安値の幅を計算
+        def calculate_avg_range(period):
+            ranges = []
+            for i in range(1, len(period)):
+                candle = period[i]
+                prev_candle = period[i-1]
+                
+                # 高値-安値の幅
+                range_val = candle['high'] - candle['low']
+                ranges.append(range_val)
+            
+            if ranges:
+                return sum(ranges) / len(ranges)
+            return 0
+        
+        recent_range = calculate_avg_range(recent_period)
+        previous_range = calculate_avg_range(previous_period)
+        overall_range = (recent_range + previous_range) / 2
+        
+        if overall_range == 0:
+            return {
+                'regime': 'TRANSITION',
+                'range_ratio': 0,
+                'confidence': 0.0,
+                'reason': 'Zero range'
+            }
+        
+        # レンジ比率を計算（直近レンジ / 平均レンジ）
+        range_ratio = recent_range / overall_range
+        
+        # スイング判定
+        recent_high = max([c['high'] for c in recent_period])
+        recent_low = min([c['low'] for c in recent_period])
+        previous_high = max([c['high'] for c in previous_period])
+        previous_low = min([c['low'] for c in previous_period])
+        
+        higher_high = recent_high > previous_high
+        higher_low = recent_low > previous_low
+        lower_high = recent_high < previous_high
+        lower_low = recent_low < previous_low
+        
+        # 判定ロジック
+        if range_ratio < 0.85:
+            # レンジが縮小 = ボックス相場
+            regime = 'RANGING'
+            confidence = min(0.9, 1.0 - (range_ratio / 0.85) * 0.3)
+        elif range_ratio > 1.15:
+            # レンジが拡大 + スイング判定
+            if higher_high and higher_low:
+                regime = 'TRENDING_UP'
+                confidence = min(0.95, 0.5 + (range_ratio - 1.0) * 0.2)
+            elif lower_high and lower_low:
+                regime = 'TRENDING_DOWN'
+                confidence = min(0.95, 0.5 + (range_ratio - 1.0) * 0.2)
+            else:
+                regime = 'TRANSITION'
+                confidence = 0.4
+        else:
+            regime = 'TRANSITION'
+            confidence = 0.4
+        
+        return {
+            'regime': regime,
+            'range_ratio': range_ratio,
+            'confidence': confidence,
+            'reason': f'Range ratio={range_ratio:.3f} (recent={recent_range:.2f}, avg={overall_range:.2f})',
+            'recent_range': recent_range,
+            'overall_range': overall_range
+        }
+
         """
         スイング構造を判定します（上昇スイング、下降スイング、横ばい）
         
