@@ -164,12 +164,12 @@ class Bot:
 
                 # 取引所から口座残高を取得
                 if back_test_mode == 1:
+                    # バックテスト: 初期資産 + 累積損益
                     balance_tether = config_instance.get_account_balance() + self.portfolio.get_profit_and_loss()
                 else:
+                    # 本番: Bybit実際の残高 + 累積損益
                     balance = self.exchange.get_account_balance_total()
-                    balance_tether = balance
-                    # TODO シミュレーション用　口座0円のため
-                    balance_tether = config_instance.get_account_balance() + self.portfolio.get_profit_and_loss()
+                    balance_tether = balance + self.portfolio.get_profit_and_loss()
 
                 # --------------------------------------------
                 # 取引戦略に口座残高を渡してトレード判断を取得

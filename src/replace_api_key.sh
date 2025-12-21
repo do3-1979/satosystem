@@ -18,8 +18,18 @@ fi
 api_key=$(awk -F' = ' '/api_key/ {print $2}' .api_key)
 api_secret=$(awk -F' = ' '/api_secret/ {print $2}' .api_key)
 
-# config.iniファイルを生成または上書きして値を書き込む
-sed -i "s/YOUR_API_KEY/$api_key/" config.ini
-sed -i "s/YOUR_API_SECRET/$api_secret/" config.ini
+# 特殊文字のエスケープを適切に処理する
+api_key_escaped=$(printf '%s\n' "$api_key" | sed -e 's/[\/&]/\\&/g')
+api_secret_escaped=$(printf '%s\n' "$api_secret" | sed -e 's/[\/&]/\\&/g')
 
-echo "api_key and api_secret replace at config.ini"
+# config.iniファイルを生成または上書きして値を書き込む
+sed -i "s/YOUR_API_KEY/$api_key_escaped/" config.ini
+sed -i "s/YOUR_API_SECRET/$api_secret_escaped/" config.ini
+
+if [ $? -eq 0 ]; then
+    echo "✅ api_key and api_secret successfully replaced in config.ini"
+else
+    echo "❌ Error: Failed to replace API keys in config.ini"
+    exit 1
+fi
+
