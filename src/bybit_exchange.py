@@ -371,6 +371,9 @@ class BybitExchange(Exchange):
         指値で約定を狙い、失敗時は動的にスリッページを拡大してリトライ。
         全て失敗時は成行で約定します。
         
+        注意: 現時点では成行注文を優先的に使用しています。
+        将来的には以下の指値リトライロジックを有効化できます。
+        
         Args:
             side (str): 'buy' または 'sell'
             quantity (float): 注文数量
@@ -383,13 +386,45 @@ class BybitExchange(Exchange):
         if self.is_dummy_mode:
             return self._dummy_entry_order(side, quantity, current_price)
         
+        # 現時点では成行注文を優先（早期約定を重視）
+        try:
+            return self._execute_market_order(side, quantity)
+        except Exception as e:
+            self.logger.log(f"⚠️ 成行失敗: {str(e)} → 指値にフォールバック")
+            return self._execute_entry_order_with_limit_retry(side, quantity, current_price)
+    
+    def _execute_entry_order_with_limit_retry(self, side, quantity, current_price):
+        """
+        指値リトライロジック（約定確認とキャンセル処理付き）
+        
+        将来的にこのロジックを有効化することで、より低い手数料での約定を狙えます。
+        
+        Args:
+            side (str): 'buy' または 'sell'
+            quantity (float): 注文数量
+            current_price (float): 現在値
+            
+        Returns:
+            dict or bool: 注文結果
+        """
         # パラメータ取得
         base_slippage = Config.get_entry_slippage()  # デフォルト 0.5%
         slippage_multiplier = Config.get_slippage_multiplier()  # デフォルト 1.5
         max_retries = Config.get_max_entry_retries()  # デフォルト 4
         
+        previous_order_id = None
+        
         # 指値注文をリトライ
         for attempt in range(max_retries):
+            # 前の注文がまだ未決済ならキャンセル
+            if previous_order_id:
+                try:
+                    self.exchange.cancel_order(previous_order_id, self.market)
+                    self.logger.log(f"✅ 前の注文をキャンセル: {previous_order_id}")
+                except Exception as e:
+                    self.logger.log(f"⚠️ キャンセル失敗 (注文が既に約定した可能性): {str(e)}")
+                time.sleep(0.5)
+            
             adjusted_slippage = base_slippage * (slippage_multiplier ** attempt)
             limit_price = self._calculate_entry_price(side, current_price, adjusted_slippage)
             
@@ -401,27 +436,56 @@ class BybitExchange(Exchange):
                     price=limit_price,
                     params={'timeout': 10000}
                 )
-                self.logger.log(f"✅ エントリー成功 (指値): {side} {quantity} @ {limit_price:.2f} USD")
-                return order
+                order_id = order.get('id')
+                previous_order_id = order_id
+                
+                self.logger.log(f"📝 指値注文発注 (試行 {attempt+1}/{max_retries}): {side} {quantity} @ {limit_price:.2f} USD (注文ID: {order_id})")
+                
+                # 短時間で約定したか確認（500ms待機）
+                time.sleep(0.5)
+                
+                try:
+                    filled_order = self.exchange.fetch_order(order_id, self.market)
+                    order_status = filled_order.get('status', 'unknown')
+                    
+                    if order_status == 'closed':
+                        # 約定成功
+                        self.logger.log(f"✅ エントリー成功 (指値): {side} {quantity} @ {filled_order.get('average', limit_price):.2f} USD")
+                        return filled_order
+                    else:
+                        # 未約定 (status = 'open') → リトライへ
+                        self.logger.log(f"⏳ 未約定 (status: {order_status}) → リトライ中 (スリッページ: {adjusted_slippage:.3f}%)")
+                        if attempt == max_retries - 1:
+                            # 最後のリトライなので、この注文をキャンセル
+                            try:
+                                self.exchange.cancel_order(order_id, self.market)
+                                self.logger.log(f"✅ リトライ最終失敗のため注文をキャンセル: {order_id}")
+                            except Exception as e:
+                                self.logger.log(f"⚠️ キャンセル失敗: {str(e)}")
+                        continue
+                        
+                except Exception as e:
+                    self.logger.log(f"⚠️ 注文状態確認失敗: {str(e)}")
+                    continue
+                    
             except (ccxt.BaseError, TimeoutError) as e:
+                self.logger.log(f"⚠️ 指値発注失敗 (試行 {attempt+1}/{max_retries}): {str(e)}")
                 if attempt == max_retries - 1:
                     # 最後のリトライ失敗 → 成行へ
-                    self.logger.log(f"⚠️ 指値失敗 (試行 {attempt+1}/{max_retries}, スリッページ: {adjusted_slippage:.3f}%) → 成行で決済")
+                    self.logger.log(f"⚠️ 指値全て失敗 → 成行で約定を試みる")
                     try:
                         return self._execute_market_order(side, quantity)
                     except Exception as e_market:
                         self.logger.log_error(f"❌ エントリー最終失敗 (成行も失敗): {str(e_market)}")
                         raise
-                else:
-                    self.logger.log(f"⚠️ 指値失敗 (試行 {attempt+1}/{max_retries}, スリッページ: {adjusted_slippage:.3f}%) → リトライ中...")
-                    time.sleep(1)
+                time.sleep(1)
 
     def execute_exit_order(self, side, quantity):
         """
         決済注文を成行で実行します
         
-        確実な約定を優先。成行失敗時は指値でリトライ。
-        最終的には成行で決済します。
+        現時点では成行注文を優先（早期約定を重視）。
+        成行失敗時は指値でリトライします。
         
         Args:
             side (str): 'buy' または 'sell' (ポジション反対側)
@@ -434,10 +498,7 @@ class BybitExchange(Exchange):
         if self.is_dummy_mode:
             return self._dummy_exit_order(side, quantity)
         
-        # パラメータ取得
-        max_exit_retries = Config.get_max_exit_retries()  # デフォルト 3
-        
-        # 成行注文をトライ
+        # 現時点では成行注文を優先（早期約定を重視）
         try:
             order = self.exchange.create_market_order(
                 symbol=self.market,
@@ -449,35 +510,90 @@ class BybitExchange(Exchange):
             return order
         except (ccxt.BaseError, TimeoutError) as e:
             self.logger.log(f"⚠️ 成行失敗: {str(e)} → 指値にフォールバック")
+            return self._execute_exit_order_with_limit_retry(side, quantity)
+    
+    def _execute_exit_order_with_limit_retry(self, side, quantity):
+        """
+        決済注文の指値リトライロジック（約定確認とキャンセル処理付き）
+        
+        成行失敗時のフォールバック処理。
+        
+        Args:
+            side (str): 'buy' または 'sell' (ポジション反対側)
+            quantity (float): 注文数量
             
-            # 指値のリトライ
-            current_price = self.fetch_ticker()
-            for attempt in range(max_exit_retries):
-                slippage = 0.1 * (attempt + 1)  # 0.1%, 0.2%, 0.3%
-                limit_price = self._calculate_exit_price(side, current_price, slippage)
+        Returns:
+            dict or bool: 注文結果
+        """
+        max_exit_retries = Config.get_max_exit_retries()  # デフォルト 3
+        current_price = self.fetch_ticker()
+        previous_order_id = None
+        
+        # 指値のリトライ
+        for attempt in range(max_exit_retries):
+            # 前の注文がまだ未決済ならキャンセル
+            if previous_order_id:
+                try:
+                    self.exchange.cancel_order(previous_order_id, self.market)
+                    self.logger.log(f"✅ 前の決済注文をキャンセル: {previous_order_id}")
+                except Exception as e:
+                    self.logger.log(f"⚠️ キャンセル失敗 (注文が既に約定した可能性): {str(e)}")
+                time.sleep(0.5)
+            
+            slippage = 0.1 * (attempt + 1)  # 0.1%, 0.2%, 0.3%
+            limit_price = self._calculate_exit_price(side, current_price, slippage)
+            
+            try:
+                order = self.exchange.create_limit_order(
+                    symbol=self.market,
+                    side=side,
+                    amount=quantity,
+                    price=limit_price,
+                    params={'timeout': 10000}
+                )
+                order_id = order.get('id')
+                previous_order_id = order_id
+                
+                self.logger.log(f"📝 決済指値注文発注 (試行 {attempt+1}/{max_exit_retries}): {side} {quantity} @ {limit_price:.2f} USD (注文ID: {order_id})")
+                
+                # 短時間で約定したか確認（500ms待機）
+                time.sleep(0.5)
                 
                 try:
-                    order = self.exchange.create_limit_order(
-                        symbol=self.market,
-                        side=side,
-                        amount=quantity,
-                        price=limit_price,
-                        params={'timeout': 10000}
-                    )
-                    self.logger.log(f"✅ 決済成功 (指値): {side} {quantity} @ {limit_price:.2f} USD")
-                    return order
-                except (ccxt.BaseError, TimeoutError) as e_limit:
-                    if attempt == max_exit_retries - 1:
-                        # 最後のリトライ失敗 → 成行へ再度トライ
-                        self.logger.log(f"⚠️ 指値失敗 (試行 {attempt+1}/{max_exit_retries}) → 最後の成行トライ")
-                        try:
-                            return self._execute_market_order_final(side, quantity)
-                        except Exception as e_final:
-                            self.logger.log_error(f"❌ 決済最終失敗: {str(e_final)}")
-                            raise
+                    filled_order = self.exchange.fetch_order(order_id, self.market)
+                    order_status = filled_order.get('status', 'unknown')
+                    
+                    if order_status == 'closed':
+                        # 約定成功
+                        self.logger.log(f"✅ 決済成功 (指値): {side} {quantity} @ {filled_order.get('average', limit_price):.2f} USD")
+                        return filled_order
                     else:
-                        self.logger.log(f"⚠️ 指値失敗 (試行 {attempt+1}/{max_exit_retries}, スリッページ: {slippage:.3f}%) → リトライ中...")
-                        time.sleep(1)
+                        # 未約定 (status = 'open') → リトライへ
+                        self.logger.log(f"⏳ 未約定 (status: {order_status}) → リトライ中 (スリッページ: {slippage:.3f}%)")
+                        if attempt == max_exit_retries - 1:
+                            # 最後のリトライなので、この注文をキャンセル
+                            try:
+                                self.exchange.cancel_order(order_id, self.market)
+                                self.logger.log(f"✅ リトライ最終失敗のため決済注文をキャンセル: {order_id}")
+                            except Exception as e:
+                                self.logger.log(f"⚠️ キャンセル失敗: {str(e)}")
+                        continue
+                        
+                except Exception as e:
+                    self.logger.log(f"⚠️ 決済注文状態確認失敗: {str(e)}")
+                    continue
+                    
+            except (ccxt.BaseError, TimeoutError) as e_limit:
+                self.logger.log(f"⚠️ 決済指値失敗 (試行 {attempt+1}/{max_exit_retries}): {str(e_limit)}")
+                if attempt == max_exit_retries - 1:
+                    # 最後のリトライ失敗 → 成行へ再度トライ
+                    self.logger.log(f"⚠️ 決済指値全て失敗 → 最後の成行トライ")
+                    try:
+                        return self._execute_market_order_final(side, quantity)
+                    except Exception as e_final:
+                        self.logger.log_error(f"❌ 決済最終失敗: {str(e_final)}")
+                        raise
+                time.sleep(1)
 
     def _dummy_entry_order(self, side, quantity, current_price):
         """
