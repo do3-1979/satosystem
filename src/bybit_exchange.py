@@ -58,14 +58,19 @@ class BybitExchange(Exchange):
         self.logger = Logger()
         
         # ダミー取引モード判定
-        # back_test = 1 の場合は常にダミーモード（バックテスト）
-        # back_test = 0 かつ hot_test_dummy_mode = 1 の場合もダミーモード（ペーパーテスト）
+        # back_test = 1 の場合はバックテストモード（ダミー価格・ダミー取引）
+        # back_test = 0 の場合はホットテスト（実API価格を使用）
+        # - hot_test_dummy_mode = 1: ペーパートレード（実API価格でダミー取引）
+        # - hot_test_dummy_mode = 0: 本番取引（実API価格で実取引）
         back_test_mode = Config.get_back_test_mode()
         hot_test_dummy_mode = Config.get_hot_test_dummy_mode()
         
-        self.is_dummy_mode = (back_test_mode == 1) or (back_test_mode == 0 and hot_test_dummy_mode == 1)
+        # 価格データについて: バックテストのみ、fetch_latest_ohlcv/fetch_tickerがダミー値を返す
+        # ホットテスト（ペーパートレード含む）は常に実API価格を使用
+        self.is_dummy_mode = (back_test_mode == 1)  # バックテスト＝ダミー価格
         self.is_backtest_mode = (back_test_mode == 1)  # バックテストモードのみ
         self.is_papertrading_mode = (back_test_mode == 0 and hot_test_dummy_mode == 1)  # ペーパートレード識別
+        self.is_live_trading_mode = (back_test_mode == 0 and hot_test_dummy_mode == 0)  # 本番取引識別
         self.dummy_balance = 100.0  # ダミー口座残高
         self.dummy_orders = {}  # ダミー注文履歴
         self.dummy_order_id = 0  # 注文ID カウンタ
@@ -115,8 +120,8 @@ class BybitExchange(Exchange):
         Returns:
             dict: 口座の残高情報
         """
-        # ダミーモード対応
-        if self.is_dummy_mode:
+        # バックテスト・ペーパートレード時のダミー残高
+        if self.is_backtest_mode or self.is_papertrading_mode:
             return {
                 'USDT': {
                     'total': self.dummy_balance,
@@ -150,8 +155,8 @@ class BybitExchange(Exchange):
         Returns:
             int: 口座上の使用可能な証拠金残高
         """
-        # ダミーモード対応
-        if self.is_dummy_mode:
+        # バックテスト・ペーパートレード時のダミー残高
+        if self.is_backtest_mode or self.is_papertrading_mode:
             return self.dummy_balance
         
         server_retry_wait = Config.get_server_retry_wait()
@@ -382,8 +387,8 @@ class BybitExchange(Exchange):
         Returns:
             dict or bool: 注文結果
         """
-        # ダミーモード対応
-        if self.is_dummy_mode:
+        # バックテスト時のみダミー注文
+        if self.is_backtest_mode:
             return self._dummy_entry_order(side, quantity, current_price)
         
         # 現時点では成行注文を優先（早期約定を重視）
@@ -494,8 +499,8 @@ class BybitExchange(Exchange):
         Returns:
             dict or bool: 注文結果
         """
-        # ダミーモード対応
-        if self.is_dummy_mode:
+        # バックテスト時のみダミー取引
+        if self.is_backtest_mode:
             return self._dummy_exit_order(side, quantity)
         
         # 現時点では成行注文を優先（早期約定を重視）
@@ -780,8 +785,9 @@ class BybitExchange(Exchange):
         Returns:
             list: 価格データのリスト
         """
-        # ダミーモード対応
-        if self.is_dummy_mode:
+        # バックテスト時のみダミー価格を返す
+        # ホットテスト（ペーパートレード含む）は常に実API価格を使用
+        if self.is_backtest_mode:
             import random
             base_price = 100000  # ダミー基準価格
             random_price = base_price + random.uniform(-1000, 1000)
@@ -849,8 +855,9 @@ class BybitExchange(Exchange):
         Returns:
             dict: 最新の価格情報
         """
-        # ダミーモード対応
-        if self.is_dummy_mode:
+        # バックテスト時のみダミー価格を返す
+        # ホットテスト（ペーパートレード含む）は常に実API価格を使用
+        if self.is_backtest_mode:
             import random
             return 100000 + random.uniform(-1000, 1000)
         
