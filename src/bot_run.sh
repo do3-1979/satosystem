@@ -86,7 +86,7 @@ if [ "$back_test" = "1" ]; then
         nohup python "$BOT_SCRIPT" > "$log_file" 2>&1 &
         bot_pid=$!
         echo "$bot_pid" > logs/bot.pid
-        disown $bot_pid
+        disown $bot_pid 2>/dev/null
         echo "✅ バックグラウンドで起動しました (PID: $bot_pid)"
         echo "📝 ログファイル: $log_file"
         echo "📋 ログ確認: tail -f $log_file"
@@ -120,7 +120,7 @@ elif [ "$hot_test_dummy_mode" = "1" ]; then
         nohup python "$BOT_SCRIPT" > "$log_file" 2>&1 &
         bot_pid=$!
         echo "$bot_pid" > logs/bot.pid
-        disown $bot_pid
+        disown $bot_pid 2>/dev/null
         echo "✅ バックグラウンドで起動しました (PID: $bot_pid)"
         echo "📝 ログファイル: $log_file"
         echo "📋 ログ確認: tail -f $log_file"
@@ -160,7 +160,7 @@ else
         nohup python "$BOT_SCRIPT" > "$log_file" 2>&1 &
         bot_pid=$!
         echo "$bot_pid" > logs/bot.pid
-        disown $bot_pid
+        disown $bot_pid 2>/dev/null
         echo "✅ バックグラウンドで起動しました (PID: $bot_pid)"
         echo "📝 ログファイル: $log_file"
         echo "📋 ログ確認: tail -f $log_file"

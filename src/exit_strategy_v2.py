@@ -62,8 +62,19 @@ class ExitStrategyV2:
         """
         
         try:
+            # データタイプ検証用ヘルパー関数
+            def safe_get(val, default=0):
+                """辞書またはスカラー値をスカラー値に変換"""
+                if isinstance(val, dict):
+                    return val.get('value', default) or default
+                try:
+                    return float(val) if val else default
+                except (ValueError, TypeError):
+                    return default
+            
             # 基本検証
-            if not position_info or position_info.get('quantity', 0) <= 0:
+            quantity = safe_get(position_info.get('quantity', 0))
+            if not position_info or quantity <= 0:
                 return {
                     'should_exit': False,
                     'exit_reason': 'NO_POSITION',
@@ -73,14 +84,14 @@ class ExitStrategyV2:
                 }
             
             # 指標の取得
-            current_price = current_ohlcv.get('close_price', 0)
-            current_psar = current_ohlcv.get('psar', 0)
-            current_adx = current_ohlcv.get('adx', 0)
-            current_pvo = current_ohlcv.get('pvo_val', 0)
+            current_price = safe_get(current_ohlcv.get('close_price', 0))
+            current_psar = safe_get(current_ohlcv.get('psar', 0))
+            current_adx = safe_get(current_ohlcv.get('adx', 0))
+            current_pvo = safe_get(current_ohlcv.get('pvo_val', 0))
             
-            entry_price = entry_info.get('entry_price', position_info.get('entry_price', 0))
-            entry_adx = entry_info.get('entry_adx', 0)
-            entry_pvo = entry_info.get('entry_pvo', 0)
+            entry_price = safe_get(entry_info.get('entry_price', position_info.get('entry_price', 0)))
+            entry_adx = safe_get(entry_info.get('entry_adx', 0))
+            entry_pvo = safe_get(entry_info.get('entry_pvo', 0))
             
             # Stage判定
             stage = self._identify_stage(entry_adx, entry_pvo, current_adx, current_pvo)
@@ -135,7 +146,9 @@ class ExitStrategyV2:
             }
         
         except Exception as e:
-            print(f"❌ ExitStrategyV2 エラー: {e}")
+            import traceback
+            error_msg = f"{e}\n{traceback.format_exc()}"
+            print(f"❌ ExitStrategyV2 エラー: {error_msg}")
             return {
                 'should_exit': False,
                 'exit_reason': 'ERROR',
@@ -160,12 +173,22 @@ class ExitStrategyV2:
         Stage 4: PSAR (別途判定)
         """
         
+        # データタイプチェックと変換
+        try:
+            entry_adx = float(entry_adx) if entry_adx is not None else 0
+            entry_pvo = float(entry_pvo) if entry_pvo is not None else 0
+            curr_adx = float(curr_adx) if curr_adx is not None else 0
+            curr_pvo = float(curr_pvo) if curr_pvo is not None else 0
+        except (ValueError, TypeError):
+            # 変換失敗時はデフォルト値で継続
+            entry_adx, entry_pvo, curr_adx, curr_pvo = 0, 0, 0, 0
+        
         adx_increasing = curr_adx > entry_adx
-        pvo_positive = curr_pvo is not None and curr_pvo > self.PVO_EXHAUSTION_THRESHOLD
+        pvo_positive = curr_pvo > self.PVO_EXHAUSTION_THRESHOLD
         adx_strong = curr_adx > self.ADX_STRONG_THRESHOLD
         adx_weak = self.ADX_WEAK_THRESHOLD_LOW < curr_adx <= self.ADX_WEAK_THRESHOLD_HIGH
         adx_exhausted = curr_adx <= self.ADX_WEAK_THRESHOLD_LOW
-        pvo_negative = curr_pvo is not None and curr_pvo < self.PVO_EXHAUSTION_THRESHOLD
+        pvo_negative = curr_pvo < self.PVO_EXHAUSTION_THRESHOLD
         
         # Stage 1: 強いトレンド継続
         if adx_strong and pvo_positive and adx_increasing:
@@ -195,6 +218,22 @@ class ExitStrategyV2:
         Returns:
             bool: Stop Loss に触れたか
         """
+        
+        # psar_priceが辞書の場合は値を抽出（データタイプチェック）
+        if isinstance(psar_price, dict):
+            psar_price = psar_price.get('value', 0) or 0
+        
+        # psar_priceが数値でない場合は0として扱う
+        try:
+            psar_price = float(psar_price) if psar_price else 0
+        except (ValueError, TypeError):
+            psar_price = 0
+        
+        # current_priceが数値でない場合も同様
+        try:
+            current_price = float(current_price) if current_price else 0
+        except (ValueError, TypeError):
+            current_price = 0
         
         side = position_info.get('side', 'NONE')
         
