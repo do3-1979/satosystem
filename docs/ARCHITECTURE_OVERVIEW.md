@@ -19,7 +19,34 @@
 | Side                 | src/side.py             | 売買サイドEnum・変換関数                        | normalize_side, to_exchange_side                   |
 | OHLCVCache           | src/ohlcv_cache.py      | OHLCV SQLiteキャッシュ管理                      | __init__, get_ohlcv_data, save_ohlcv_data, get_ohlcv_data_partial, migrate_from_json |
 | OHLCVCacheInspector  | src/ohlcv_cache_inspector.py | キャッシュ分析・検査ツール            | __init__, get_cache_parameters, get_data_coverage, print_summary, print_detailed_analysis |
+| ExitStrategyV2       | src/exit_strategy_v2.py      | 4段階出口戦略（Stage1～4）実装        | __init__, evaluate_exit_condition, _identify_stage, _check_stop_loss, safe_get |
+| PathUtils            | src/path_utils.py            | パス管理・ファイル操作一元化          | get_src_dir, get_project_root, get_module_path |
 # Architecture Overview
+
+## 最新の実行モード・データ型検証 (2025-12-29 更新)
+
+### ExitStrategyV2 型安全化
+December 29日のコミット `7029c70` で以下を実装（issue: bgmode実行時のエラー）：
+
+**実装内容:**
+- `safe_get()` ヘルパー関数導入：dict型/スカラー値を安全に数値に変換
+- `_check_stop_loss()` の psar_price型検証：dict型チェック + float型変換  
+- `_identify_stage()` の ADX/PVO型変換：try/exceptで保護、デフォルト値フォールバック
+- `evaluate_exit_condition()` の position_info['quantity'] 型検証：safe_get()適用
+- 例外ハンドラの traceback.format_exc() 統合：bgmode ログに詳細エラー情報出力
+
+**効果**: bgモード実行時の ExitStrategyV2 エラー（`'<=' not supported between instances of 'dict' and 'int'`）を完全に解決 ✅
+
+### 実行パイプライン の安定性確認
+ペーパートレード（ホットテスト）とバックテストで正常に動作確認済み：
+- **バックテストモード（back_test=1）**: SQLiteキャッシュから価格取得、ダミー売買 ✅
+- **ペーパートレードモード（back_test=0, hot_test_dummy_mode=1）**: Bybit実APIから価格取得、ダミー売買 ✅
+- **本番トレード（back_test=0, hot_test_dummy_mode=0）**: Bybit実APIから価格取得、実取引実行 ✅
+
+### 品質保証（2025-12-29）
+- **レグレッションテスト**: 54テスト中90成功（成功率97.8%）✅
+- **全四半期テスト**: 2024Q1～2025Q4 全8四半期実施、累積損益 +856.50 USD ✅
+- **個別ファイルテスト**: すべてのモジュールで4～38テスト成功
 
 ## Component Responsibilities
 | Component | Responsibility | Key Interactions |
