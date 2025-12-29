@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>パラメータスイープテスト - 期別マトリクス</title>
+    <style>
+        * { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body {
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .table-wrapper {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+            padding: 12px;
+            text-align: right;
+            font-weight: bold;
+        }
+        th:first-child {
+            text-align: left;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: right;
+        }
+        td:first-child {
+            text-align: left;
+            font-weight: 600;
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f0f8ff;
+        }
+        .positive { color: green; font-weight: bold; }
+        .negative { color: red; font-weight: bold; }
+        .total { background-color: #fffacd; font-weight: bold; }
+        .info-box {
+            background-color: #e3f2fd;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .highlight {
+            background-color: #fff59d;
+            font-weight: bold;
+        }
+        .legend {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>パラメータスイープテスト - 期別マトリクス</h1>
+    <div class="info-box">
+        <strong>説明:</strong> 各パラメータの異なる値での期別損益（単位: USD）
+        <br/><strong>期間:</strong> 2024/Q1 ～ 2025/Q4
+        <br/><strong>色分け:</strong> <span class="positive">緑 = 利益</span> / <span class="negative">赤 = 損失</span>
+    </div>
+<h2>volatility_term</h2>
+<div class="table-wrapper">
+<table>
+<tr>
+<th>volatility_term</th>
+<th>2024/Q1</th>
+<th>2024/Q2</th>
+<th>2024/Q3</th>
+<th>2024/Q4</th>
+<th>2025/Q1</th>
+<th>2025/Q2</th>
+<th>2025/Q3</th>
+<th>2025/Q4</th>
+<th style="background-color: #28a745;">合計</th>
+</tr>
+<tr>
+<td>7</td>
+<td class="positive">$2758.08</td>
+<td class="negative">$-145.59</td>
+<td class="negative">$-142.89</td>
+<td class="positive">$134.90</td>
+<td class="negative">$-243.45</td>
+<td class="negative">$-163.10</td>
+<td class="negative">$-125.49</td>
+<td class="positive">$386.58</td>
+<td class="total positive">$2459.04</td>
+</tr>
+<tr>
+<td>10</td>
+<td class="positive">$2914.08</td>
+<td class="negative">$-114.38</td>
+<td class="negative">$-86.37</td>
+<td class="positive">$138.26</td>
+<td class="negative">$-227.82</td>
+<td class="negative">$-237.99</td>
+<td class="negative">$-98.40</td>
+<td class="positive">$469.16</td>
+<td class="total positive">$2756.54</td>
+</tr>
+<tr>
+<td>14</td>
+<td class="positive">$2830.90</td>
+<td class="negative">$-171.67</td>
+<td class="negative">$-69.85</td>
+<td class="positive">$197.55</td>
+<td class="negative">$-216.51</td>
+<td class="negative">$-245.48</td>
+<td class="negative">$-205.10</td>
+<td class="positive">$469.16</td>
+<td class="total positive">$2589.00</td>
+</tr>
+<tr>
+<td>20</td>
+<td class="positive">$3193.90</td>
+<td class="negative">$-155.98</td>
+<td class="negative">$-93.35</td>
+<td class="positive">$169.85</td>
+<td class="negative">$-142.64</td>
+<td class="negative">$-255.22</td>
+<td class="negative">$-190.05</td>
+<td class="positive">$590.66</td>
+<td class="total positive">$3117.17</td>
+</tr>
+<tr>
+<td>28</td>
+<td class="positive">$3193.90</td>
+<td class="negative">$-155.98</td>
+<td class="negative">$-161.31</td>
+<td class="positive">$195.95</td>
+<td class="negative">$-162.32</td>
+<td class="negative">$-246.04</td>
+<td class="negative">$-167.57</td>
+<td class="positive">$381.76</td>
+<td class="total positive">$2878.39</td>
+</tr>
+</table>
+</div>
+<h2>donchian_both</h2>
+<div class="table-wrapper">
+<table>
+<tr>
+<th>donchian_both</th>
+<th>2024/Q1</th>
+<th>2024/Q2</th>
+<th>2024/Q3</th>
+<th>2024/Q4</th>
+<th>2025/Q1</th>
+<th>2025/Q2</th>
+<th>2025/Q3</th>
+<th>2025/Q4</th>
+<th style="background-color: #28a745;">合計</th>
+</tr>
+<tr>
+<td>10</td>
+<td class="positive">$3751.10</td>
+<td class="negative">$-42.09</td>
+<td class="negative">$-193.86</td>
+<td class="positive">$292.32</td>
+<td class="positive">$51.16</td>
+<td class="negative">$-115.49</td>
+<td class="negative">$-200.65</td>
+<td class="negative">$-154.85</td>
+<td class="total positive">$3387.64</td>
+</tr>
+<tr>
+<td>15</td>
+<td class="positive">$2375.22</td>
+<td class="negative">$-96.93</td>
+<td class="negative">$-177.08</td>
+<td class="positive">$281.47</td>
+<td class="negative">$-105.01</td>
+<td class="negative">$-263.81</td>
+<td class="negative">$-194.05</td>
+<td class="negative">$-61.27</td>
+<td class="total positive">$1758.54</td>
+</tr>
+<tr>
+<td>20</td>
+<td class="positive">$3430.74</td>
+<td class="negative">$-143.99</td>
+<td class="negative">$-69.38</td>
+<td class="positive">$103.22</td>
+<td class="negative">$-212.07</td>
+<td class="negative">$-268.51</td>
+<td class="negative">$-194.02</td>
+<td class="negative">$-51.17</td>
+<td class="total positive">$2594.82</td>
+</tr>
+<tr>
+<td>25</td>
+<td class="positive">$2824.16</td>
+<td class="negative">$-175.10</td>
+<td class="negative">$-150.32</td>
+<td class="positive">$132.74</td>
+<td class="negative">$-224.35</td>
+<td class="negative">$-249.63</td>
+<td class="negative">$-192.38</td>
+<td class="positive">$338.61</td>
+<td class="total positive">$2303.73</td>
+</tr>
+<tr>
+<td>30</td>
+<td class="positive">$3193.90</td>
+<td class="negative">$-155.98</td>
+<td class="negative">$-161.31</td>
+<td class="positive">$195.95</td>
+<td class="negative">$-162.32</td>
+<td class="negative">$-246.04</td>
+<td class="negative">$-167.57</td>
+<td class="positive">$381.76</td>
+<td class="total positive">$2878.39</td>
+</tr>
+</table>
+</div>
+<h2>entry_times</h2>
+<div class="table-wrapper">
+<table>
+<tr>
+<th>entry_times</th>
+<th>2024/Q1</th>
+<th>2024/Q2</th>
+<th>2024/Q3</th>
+<th>2024/Q4</th>
+<th>2025/Q1</th>
+<th>2025/Q2</th>
+<th>2025/Q3</th>
+<th>2025/Q4</th>
+<th style="background-color: #28a745;">合計</th>
+</tr>
+<tr>
+<td>1</td>
+<td class="positive">$3193.90</td>
+<td class="negative">$-155.98</td>
+<td class="negative">$-161.31</td>
+<td class="positive">$195.95</td>
+<td class="negative">$-162.32</td>
+<td class="negative">$-246.04</td>
+<td class="negative">$-167.57</td>
+<td class="positive">$381.76</td>
+<td class="total positive">$2878.39</td>
+</tr>
+<tr>
+<td>2</td>
+<td class="positive">$3506.55</td>
+<td class="negative">$-144.61</td>
+<td class="negative">$-155.44</td>
+<td class="positive">$240.47</td>
+<td class="negative">$-145.33</td>
+<td class="negative">$-235.99</td>
+<td class="negative">$-167.57</td>
+<td class="positive">$372.88</td>
+<td class="total positive">$3270.96</td>
+</tr>
+<tr>
+<td>3</td>
+<td class="positive">$3600.82</td>
+<td class="negative">$-125.01</td>
+<td class="negative">$-99.49</td>
+<td class="positive">$288.54</td>
+<td class="negative">$-106.81</td>
+<td class="negative">$-224.53</td>
+<td class="negative">$-167.31</td>
+<td class="positive">$287.05</td>
+<td class="total positive">$3453.26</td>
+</tr>
+<tr>
+<td>4</td>
+<td class="positive">$3419.11</td>
+<td class="negative">$-75.08</td>
+<td class="negative">$-5.64</td>
+<td class="positive">$351.07</td>
+<td class="negative">$-74.03</td>
+<td class="negative">$-207.55</td>
+<td class="negative">$-162.17</td>
+<td class="positive">$258.30</td>
+<td class="total positive">$3504.01</td>
+</tr>
+<tr>
+<td>5</td>
+<td class="positive">$2533.72</td>
+<td class="negative">$-46.70</td>
+<td class="positive">$19.34</td>
+<td class="positive">$366.73</td>
+<td class="negative">$-45.14</td>
+<td class="negative">$-186.74</td>
+<td class="negative">$-154.39</td>
+<td class="positive">$225.80</td>
+<td class="total positive">$2712.62</td>
+</tr>
+</table>
+</div>
+<h2>stop_range</h2>
+<div class="table-wrapper">
+<table>
+<tr>
+<th>stop_range</th>
+<th>2024/Q1</th>
+<th>2024/Q2</th>
+<th>2024/Q3</th>
+<th>2024/Q4</th>
+<th>2025/Q1</th>
+<th>2025/Q2</th>
+<th>2025/Q3</th>
+<th>2025/Q4</th>
+<th style="background-color: #28a745;">合計</th>
+</tr>
+<tr>
+<td>1</td>
+<td class="positive">$2533.72</td>
+<td class="negative">$-46.70</td>
+<td class="positive">$19.34</td>
+<td class="positive">$366.73</td>
+<td class="negative">$-45.14</td>
+<td class="negative">$-186.74</td>
+<td class="negative">$-154.39</td>
+<td class="positive">$225.80</td>
+<td class="total positive">$2712.62</td>
+</tr>
+<tr>
+<td>2</td>
+<td class="positive">$811.15</td>
+<td class="negative">$-9.39</td>
+<td class="positive">$16.50</td>
+<td class="positive">$236.66</td>
+<td class="negative">$-62.44</td>
+<td class="positive">$69.64</td>
+<td class="negative">$-96.08</td>
+<td class="positive">$160.47</td>
+<td class="total positive">$1126.51</td>
+</tr>
+<tr>
+<td>3</td>
+<td class="positive">$402.73</td>
+<td class="negative">$-23.53</td>
+<td class="positive">$9.65</td>
+<td class="positive">$173.21</td>
+<td class="negative">$-61.25</td>
+<td class="positive">$29.55</td>
+<td class="negative">$-65.61</td>
+<td class="positive">$75.61</td>
+<td class="total positive">$540.36</td>
+</tr>
+</table>
+</div>
+<h2>stop_af_add</h2>
+<div class="table-wrapper">
+<table>
+<tr>
+<th>stop_af_add</th>
+<th>2024/Q1</th>
+<th>2024/Q2</th>
+<th>2024/Q3</th>
+<th>2024/Q4</th>
+<th>2025/Q1</th>
+<th>2025/Q2</th>
+<th>2025/Q3</th>
+<th>2025/Q4</th>
+<th style="background-color: #28a745;">合計</th>
+</tr>
+<tr>
+<td>0.01</td>
+<td class="positive">$402.73</td>
+<td class="negative">$-23.53</td>
+<td class="positive">$9.65</td>
+<td class="positive">$173.21</td>
+<td class="negative">$-61.25</td>
+<td class="positive">$29.55</td>
+<td class="negative">$-65.61</td>
+<td class="positive">$75.61</td>
+<td class="total positive">$540.36</td>
+</tr>
+<tr>
+<td>0.02</td>
+<td class="positive">$463.62</td>
+<td class="negative">$-16.11</td>
+<td class="negative">$-18.28</td>
+<td class="positive">$115.43</td>
+<td class="negative">$-86.52</td>
+<td class="negative">$-25.37</td>
+<td class="negative">$-49.40</td>
+<td class="positive">$83.84</td>
+<td class="total positive">$467.21</td>
+</tr>
+<tr>
+<td>0.03</td>
+<td class="positive">$412.08</td>
+<td class="negative">$-19.90</td>
+<td class="positive">$30.91</td>
+<td class="positive">$107.12</td>
+<td class="negative">$-6.63</td>
+<td class="negative">$-63.83</td>
+<td class="negative">$-54.44</td>
+<td class="positive">$61.84</td>
+<td class="total positive">$467.15</td>
+</tr>
+<tr>
+<td>0.05</td>
+<td class="positive">$420.68</td>
+<td class="negative">$-14.19</td>
+<td class="negative">$-37.15</td>
+<td class="positive">$80.19</td>
+<td class="negative">$-34.09</td>
+<td class="negative">$-72.08</td>
+<td class="negative">$-25.51</td>
+<td class="positive">$113.25</td>
+<td class="total positive">$431.10</td>
+</tr>
+</table>
+</div>
+
+    <div class="info-box" style="margin-top: 40px;">
+        <strong>凡例:</strong>
+        <div class="legend">
+            • 数値は各パラメータ値での期別損益（USD）
+            • 合計列は全期間（8四半期）の累計
+            • 緑色表示 = 利益 / 赤色表示 = 損失
+            • マウスホバーで行がハイライト
+        </div>
+    </div>
+</body>
+</html>

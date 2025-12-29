@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>パラメータスイープテスト - 分析レポート</title>
+    <style>
+        * { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 40px;
+        }
+        .info-box {
+            background-color: #e3f2fd;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        .card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .card-desc {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+        .summary-table th {
+            background-color: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+        }
+        .summary-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        .summary-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .recommended {
+            background-color: #fff59d !important;
+            font-weight: bold;
+        }
+        .positive { color: green; font-weight: bold; }
+        .negative { color: red; font-weight: bold; }
+        .footer {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            margin-top: 40px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        h2 {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 パラメータスイープテスト分析レポート</h1>
+        <p class="subtitle">2025年12月29日 実施</p>
+
+        <div class="info-box">
+            <strong>📊 テスト概要:</strong>
+            <br/>7個のパラメータについて複数値でのスイープテストを実施し、最適なパラメータセットを特定しました。
+            <br/>結果は期別マトリクスとシナリオ比較の形式で可視化しています。
+        </div>
+
+        <h2>📈 主要な分析ツール</h2>
+        <div class="grid">
+            <a href="parameter_sweep_heatmap.html" class="card">
+                <div class="card-title">🔥 パラメータヒートマップ</div>
+                <div class="card-desc">全パラメータの総利益とQ1+Q2損失を色分け表示</div>
+            </a>
+
+            <a href="parameter_sweep_quarterly_matrix.html" class="card">
+                <div class="card-title">📋 期別マトリクス</div>
+                <div class="card-desc">各パラメータ値での期別損益を詳細表示</div>
+            </a>
+
+            <a href="scenario_comparison_total.html" class="card">
+                <div class="card-title">💰 総利益比較</div>
+                <div class="card-desc">4つのシナリオの総利益を比較</div>
+            </a>
+
+            <a href="scenario_comparison_q1q2.html" class="card">
+                <div class="card-title">📉 Q1+Q2損失比較</div>
+                <div class="card-desc">4つのシナリオの2025年上半期損失を比較</div>
+            </a>
+
+            <a href="scenario_comparison_transition.html" class="card">
+                <div class="card-title">📊 期別推移</div>
+                <div class="card-desc">4つのシナリオの期別損益推移を比較</div>
+            </a>
+        </div>
+
+        <h2>🏆 推奨パラメータセット</h2>
+        <table class="summary-table">
+            <thead>
+                <tr>
+                    <th>シナリオ</th>
+                    <th>総利益</th>
+                    <th>Q1+Q2損失</th>
+                    <th>パラメータ</th>
+                    <th>評価</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="recommended">
+                    <td><strong>SET2（推奨）</strong></td>
+                    <td class="positive">$1,732.19</td>
+                    <td class="negative">-$102.78</td>
+                    <td>
+                        volatility_term=20<br/>
+                        donchian_buy/sell=25<br/>
+                        entry_times=3<br/>
+                        stop_range=2<br/>
+                        stop_af_add=0.01
+                    </td>
+                    <td>⭐⭐⭐<br/>両条件満足</td>
+                </tr>
+                <tr>
+                    <td><strong>CURRENT（現在値）</strong></td>
+                    <td>$1,410.98</td>
+                    <td class="negative">-$342.20</td>
+                    <td>
+                        volatility_term=14<br/>
+                        donchian_buy/sell=20<br/>
+                        entry_times=3<br/>
+                        stop_range=2<br/>
+                        stop_af_add=0.02
+                    </td>
+                    <td>⭐<br/>ベース</td>
+                </tr>
+                <tr>
+                    <td><strong>SET1（利益重視）</strong></td>
+                    <td class="positive">$3,188.69</td>
+                    <td class="negative">-$468.64</td>
+                    <td>
+                        volatility_term=28<br/>
+                        donchian_buy/sell=30<br/>
+                        entry_times=1<br/>
+                        stop_range=1<br/>
+                        stop_af_add=0.02
+                    </td>
+                    <td>⭐<br/>検討</td>
+                </tr>
+                <tr>
+                    <td><strong>SET3（保守型）</strong></td>
+                    <td>$428.69</td>
+                    <td class="negative">-$62.50</td>
+                    <td>
+                        volatility_term=14<br/>
+                        donchian_buy/sell=10<br/>
+                        entry_times=5<br/>
+                        stop_range=3<br/>
+                        stop_af_add=0.01
+                    </td>
+                    <td>⭐<br/>検討</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>✅ SET2推奨の根拠</h2>
+        <div class="info-box">
+            <strong>ユーザー条件:</strong> 「損失が低減かつ利益は現状維持または増益」
+            <br/><br/>
+            <strong>SET2の成果:</strong>
+            <ul>
+                <li><span class="positive">✅ 総利益: $1,410.98 → $1,732.19 (+$321.21, +22.8%)</span></li>
+                <li><span class="positive">✅ Q1+Q2損失: -$342.20 → -$102.78 (+$239.42削減, 70.0%改善)</span></li>
+                <li>✅ 両条件を同時に満たす唯一のセット</li>
+                <li>✅ 2025年Q2が初の黒字（+$34.58）を達成</li>
+            </ul>
+        </div>
+
+        <h2>📋 テスト対象パラメータ</h2>
+        <div class="info-box">
+            <strong>実施内容:</strong>
+            <ul>
+                <li>volatility_term: [7, 10, 14, 20, 28]</li>
+                <li>donchian_buy/sell_term: [10, 15, 20, 25, 30]</li>
+                <li>entry_times: [1, 2, 3, 4, 5]</li>
+                <li>stop_range: [1, 1.5, 2, 2.5, 3]</li>
+                <li>stop_af_add: [0.01, 0.02, 0.03, 0.05]</li>
+                <li>各テスト: run_quarterly_backtest.py を実行し結果を記録</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>このレポートは satosystem パラメータスイープテストの分析結果です。</p>
+            <p>各グラフはインタラクティブです。マウスを使って拡大・詳細確認が可能です。</p>
+        </div>
+    </div>
+</body>
+</html>
