@@ -831,43 +831,71 @@ class BitgetExchange(Exchange):
         
         return ohlcv_data
 
-    def fetch_ticker(self):
+    def fetch_ticker(self, symbol=None, params=None):
         """
         指定されたペアの最新の価格情報を取得します.
 
         Args:
-            symbol (str): 取得するペアのシンボル (例: 'BTC/USDT')
+            symbol (str): 取得するペアのシンボル (例: 'BTC/USDT'、デフォルトはconfig.iniの設定)
+            params (dict): 追加パラメータ (オプション)
 
         Returns:
-            dict: 最新の価格情報
+            float or dict: 引数なしの場合は価格（float）、引数ありの場合はticker辞書
         """
-        # バックテスト時のみダミー価格を返す
+        # 引数なしで呼ばれた場合は価格のみ返す（後方互換性）
+        return_price_only = (symbol is None and params is None)
+        
+        if params is None:
+            params = {}
+            
+        # バックテスト時はダミーticker辞書を返す
         # ホットテスト（ペーパートレード含む）は常に実API価格を使用
         if self.is_backtest_mode:
-            # ダミー価格生成
-            return 100000 + random.uniform(-1000, 1000)
+            # ダミー価格生成（ticker辞書形式で返す）
+            dummy_price = 100000 + random.uniform(-1000, 1000)
+            ticker = {
+                'symbol': 'BTC/USDT:USDT',
+                'timestamp': int(time.time() * 1000),
+                'datetime': datetime.now().isoformat(),
+                'high': dummy_price * 1.01,
+                'low': dummy_price * 0.99,
+                'bid': dummy_price * 0.999,
+                'ask': dummy_price * 1.001,
+                'last': dummy_price,
+                'close': dummy_price,
+                'baseVolume': 1000,
+                'quoteVolume': dummy_price * 1000,
+                'info': {}
+            }
+            return dummy_price if return_price_only else ticker
         
-        # マーケット変換
-        market_type = Config.get_market()
-        if market_type == 'BTC/USD':
-            symbol = "BTC/USDT"  # BitgetはUSD建てがない
-        elif market_type == 'BTC/USDT':
-            symbol = "BTC/USDT"
-        elif market_type == 'ETH/USD':
-            symbol = "ETH/USDT"  # BitgetはUSD建てがない
-        elif market_type == 'ETH/USDT':
-            symbol = "ETH/USDT"
-        else:
-            symbol = "BTC/USDT"  # デフォルト
+        # シンボルが指定されていない場合はconfigから取得
+        if symbol is None:
+            # マーケット変換
+            market_type = Config.get_market()
+            if market_type == 'BTC/USD':
+                symbol = "BTC/USDT"  # BitgetはUSD建てがない
+            elif market_type == 'BTC/USDT':
+                symbol = "BTC/USDT"
+            elif market_type == 'ETH/USD':
+                symbol = "ETH/USDT"  # BitgetはUSD建てがない
+            elif market_type == 'ETH/USDT':
+                symbol = "ETH/USDT"
+            else:
+                symbol = "BTC/USDT"  # デフォルト
         
         max_retries = 3
         retry_count = 0
         
+        # タイムアウト設定
+        if 'timeout' not in params:
+            params['timeout'] = 10000
+        
         while retry_count < max_retries:
             try:
-                ticker = self.exchange.fetch_ticker(symbol, params={'timeout': 10000})
-                price = ticker["last"]
-                return price
+                ticker = self.exchange.fetch_ticker(symbol, params=params)
+                # 引数なしの場合は価格のみ、ありの場合はticker辞書全体を返す
+                return ticker['last'] if return_price_only else ticker
             except (ccxt.BaseError, TimeoutError) as e:
                 retry_count += 1
                 if retry_count >= max_retries:
@@ -875,6 +903,166 @@ class BitgetExchange(Exchange):
                     raise
                 else:
                     self.logger.log(f"⚠️ Ticker取得リトライ ({retry_count}/{max_retries}): {str(e)}")
+                    time.sleep(1)
+    
+    def fetch_open_orders(self, symbol=None, params=None):
+        """
+        未決済注文を取得します.
+
+        Args:
+            symbol (str): 取得するペアのシンボル (例: 'BTC/USDT:USDT'、オプション)
+            params (dict): 追加パラメータ (オプション)
+
+        Returns:
+            list: 未決済注文のリスト
+        """
+        if params is None:
+            params = {}
+            
+        # バックテスト・ペーパートレード時はダミー注文を返す
+        if self.is_backtest_mode or self.is_papertrading_mode:
+            return [order for order in self.dummy_orders.values() if order['status'] == 'open']
+        
+        # シンボルが指定されていない場合はconfigから取得
+        if symbol is None:
+            market_type = Config.get_market()
+            if market_type == 'BTC/USD':
+                symbol = "BTC/USDT:USDT"
+            elif market_type == 'BTC/USDT':
+                symbol = "BTC/USDT:USDT"
+            elif market_type == 'ETH/USD':
+                symbol = "ETH/USDT:USDT"
+            elif market_type == 'ETH/USDT':
+                symbol = "ETH/USDT:USDT"
+            else:
+                symbol = "BTC/USDT:USDT"
+        
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                orders = self.exchange.fetch_open_orders(symbol, params=params)
+                return orders
+            except (ccxt.BaseError, TimeoutError) as e:
+                retry_count += 1
+                if retry_count >= max_retries:
+                    self.logger.log_error(f"未決済注文取得エラー(最大リトライ達成):{str(e)}")
+                    raise
+                else:
+                    self.logger.log(f"⚠️ 未決済注文取得リトライ ({retry_count}/{max_retries}): {str(e)}")
+                    time.sleep(1)
+    
+    def create_limit_order(self, symbol, side, amount, price, params=None):
+        """
+        指値注文を作成します.
+
+        Args:
+            symbol (str): 取引ペアのシンボル (例: 'BTC/USDT:USDT')
+            side (str): 'buy' または 'sell'
+            amount (float): 注文数量
+            price (float): 指値価格
+            params (dict): 追加パラメータ (オプション)
+
+        Returns:
+            dict: 注文情報
+        """
+        if params is None:
+            params = {}
+            
+        # バックテスト・ペーパートレード時はダミー注文を作成
+        if self.is_backtest_mode or self.is_papertrading_mode:
+            self.dummy_order_id += 1
+            order = {
+                'id': f'dummy_{self.dummy_order_id}',
+                'symbol': symbol,
+                'type': 'limit',
+                'side': side,
+                'amount': amount,
+                'price': price,
+                'status': 'open',
+                'timestamp': int(time.time() * 1000),
+                'datetime': datetime.now().isoformat(),
+                'filled': 0,
+                'remaining': amount,
+                'cost': 0,
+                'fee': {'cost': 0, 'currency': 'USDT'},
+                'info': {}
+            }
+            self.dummy_orders[order['id']] = order
+            self.logger.log(f"🎭 ダミー注文作成: ID={order['id']}, {side.upper()}, 数量={amount}, 価格={price:.2f}")
+            return order
+        
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                order = self.exchange.create_limit_order(symbol, side, amount, price, params=params)
+                self.logger.log(f"✅ 注文作成成功: ID={order['id']}, {side.upper()}, 数量={amount}, 価格={price:.2f}")
+                return order
+            except (ccxt.BaseError, TimeoutError) as e:
+                retry_count += 1
+                if retry_count >= max_retries:
+                    self.logger.log_error(f"注文作成エラー(最大リトライ達成):{str(e)}")
+                    raise
+                else:
+                    self.logger.log(f"⚠️ 注文作成リトライ ({retry_count}/{max_retries}): {str(e)}")
+                    time.sleep(1)
+    
+    def cancel_order(self, order_id, symbol=None, params=None):
+        """
+        注文をキャンセルします.
+
+        Args:
+            order_id (str): キャンセルする注文のID
+            symbol (str): 取引ペアのシンボル (例: 'BTC/USDT:USDT', オプション)
+            params (dict): 追加パラメータ (オプション)
+
+        Returns:
+            dict: キャンセル結果
+        """
+        if params is None:
+            params = {}
+            
+        # バックテスト・ペーパートレード時はダミー注文をキャンセル
+        if self.is_backtest_mode or self.is_papertrading_mode:
+            if order_id in self.dummy_orders:
+                self.dummy_orders[order_id]['status'] = 'canceled'
+                self.logger.log(f"🎭 ダミー注文キャンセル: ID={order_id}")
+                return self.dummy_orders[order_id]
+            else:
+                raise Exception(f"Order {order_id} not found")
+        
+        # シンボルが指定されていない場合はconfigから取得
+        if symbol is None:
+            market_type = Config.get_market()
+            if market_type == 'BTC/USD':
+                symbol = "BTC/USDT:USDT"
+            elif market_type == 'BTC/USDT':
+                symbol = "BTC/USDT:USDT"
+            elif market_type == 'ETH/USD':
+                symbol = "ETH/USDT:USDT"
+            elif market_type == 'ETH/USDT':
+                symbol = "ETH/USDT:USDT"
+            else:
+                symbol = "BTC/USDT:USDT"
+        
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                result = self.exchange.cancel_order(order_id, symbol, params=params)
+                self.logger.log(f"✅ 注文キャンセル成功: ID={order_id}")
+                return result
+            except (ccxt.BaseError, TimeoutError) as e:
+                retry_count += 1
+                if retry_count >= max_retries:
+                    self.logger.log_error(f"注文キャンセルエラー(最大リトライ達成):{str(e)}")
+                    raise
+                else:
+                    self.logger.log(f"⚠️ 注文キャンセルリトライ ({retry_count}/{max_retries}): {str(e)}")
                     time.sleep(1)
 
 
