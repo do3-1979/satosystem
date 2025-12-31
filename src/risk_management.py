@@ -13,6 +13,7 @@ from config import Config
 from logger import Logger
 from price_data_management import PriceDataManagement
 from bybit_exchange import BybitExchange
+from bitget_exchange import BitgetExchange
 from portfolio import Portfolio
 from new_indicators import NewIndicators
 import numpy as np
@@ -813,7 +814,13 @@ class RiskManagement:
 
 if __name__ == "__main__":
     # RiskManagement クラスの初期化
-    exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
+    # 取引所クラスを動的に選択
+    exchange_type = Config.get_exchange()
+    if exchange_type == 'bitget':
+        exchange = BitgetExchange(Config.get_api_key(), Config.get_api_secret(), Config.get_api_passphrase())
+    else:  # デフォルトは bybit
+        exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
+    
     portfolio = Portfolio()
     price_data_management = PriceDataManagement()
     risk_manager = RiskManagement(price_data_management, portfolio)

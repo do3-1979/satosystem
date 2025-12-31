@@ -28,6 +28,7 @@ aws_login.sh
 README_0816_サーバ移動用バックアップ.md
 ターミナル起動メモ
 src/.api_key
+src/.api_key_bak
 src/config.ini
 src/logs/*.json
 src/logs/*.zip

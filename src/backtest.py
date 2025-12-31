@@ -6,6 +6,7 @@ from configparser import ConfigParser
 from config import Config
 from price_data_management import PriceDataManagement
 from bybit_exchange import BybitExchange
+from bitget_exchange import BitgetExchange
 from trading_strategy import TradingStrategy
 from risk_management import RiskManagement
 from portfolio import Portfolio
@@ -430,7 +431,12 @@ def main():
         os.system("./replace_api_key.sh")
     
         # 取引所クラスを初期化
-        exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
+        # 取引所クラスを動的に選択
+        exchange_type = Config.get_exchange()
+        if exchange_type == 'bitget':
+            exchange = BitgetExchange(Config.get_api_key(), Config.get_api_secret(), Config.get_api_passphrase())
+        else:  # デフォルトは bybit
+            exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
         # 資産管理クラスを初期化（唯一であること TODO シングルトン化）
         portfolio = Portfolio()
         # 価格情報クラスを初期化

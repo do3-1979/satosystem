@@ -40,6 +40,26 @@ class Config:
         return cls.config['API']['api_secret']
 
     @classmethod
+    def get_api_passphrase(cls):
+        """
+        APIパスフレーズを取得します (Bitget用).
+
+        Returns:
+            str: APIパスフレーズ
+        """
+        return cls.config['API'].get('api_passphrase', '')
+
+    @classmethod
+    def get_exchange(cls):
+        """
+        使用する取引所を取得します.
+
+        Returns:
+            str: 取引所名 ('bybit' または 'bitget')
+        """
+        return cls.config['API'].get('exchange', 'bybit')
+
+    @classmethod
     def get_risk_percentage(cls):
         """
         リスク割合を取得します.
