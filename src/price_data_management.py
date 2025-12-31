@@ -575,7 +575,8 @@ class PriceDataManagement:
                 data_dict["data"] = cached_data
             else:
                 # サーバからデータを取得
-                self.logger.log(f"Bybitサーバからデータを取得 (start_epoch={start_epoch}, end_epoch={end_epoch}, time_frame={time_frame})")
+                exchange_name = Config.get_exchange()
+                self.logger.log(f"{exchange_name}サーバからデータを取得 (start_epoch={start_epoch}, end_epoch={end_epoch}, time_frame={time_frame})")
                 data_dict["data"] = self.exchange.fetch_ohlcv(start_epoch, end_epoch, time_frame)
                 # SQLiteキャッシュに保存
                 if data_dict["data"]:

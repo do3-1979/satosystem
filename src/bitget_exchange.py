@@ -82,11 +82,17 @@ class BitgetExchange(Exchange):
         self.dummy_order_id = 0  # 注文ID カウンタ
 
         # 設定可能なパラメタ：1,3,5,15,30,60,120,240,360,720,D,M,W
+        # Bitgetは 2h をサポートしていないため、120分の場合は1hを使用
+        # 参考: Bitget対応時間軸 [1min,3min,5min,15min,30min,1h,4h,6h,12h,1day,1week,1M]
         time_frame = Config.get_time_frame()
         if time_frame == 60:
             self.timeframe = '1h'
         elif time_frame == 120:
-            self.timeframe = '2h'
+            self.timeframe = '1h'  # Bitgetは2hをサポートしないため1hを使用（2本分を結合）
+            self.need_merge_candles = True  # 2本の1時間足を統合する必要がある
+        else:
+            self.timeframe = '1h'  # デフォルト
+            self.need_merge_candles = False
 
         # マーケット変換 (Bitget用)
         market_type = Config.get_market()
@@ -711,21 +717,23 @@ class BitgetExchange(Exchange):
             
             while retry_count < max_retries:
                 try:
+                    # Bitget API呼び出し
+                    since_ms = int(get_time * 1000)
                     ohlcv = self.exchange.fetch_ohlcv(
                         symbol = self.market,
                         timeframe = self.timeframe,
-                        since = int(get_time * 1000),
+                        since = since_ms,
                         params={'timeout': 10000}
                     )
                     break
                 except (ccxt.BaseError, TimeoutError) as e:
                     retry_count += 1
                     if retry_count >= max_retries:
-                        self.logger.log_error(f"価格取得エラー(最大リトライ達成):{str(e)}")
+                        self.logger.log_error(f"価格取得エラー(最大リトライ達成): symbol={self.market}, timeframe={self.timeframe}, since={since_ms} ({get_time}), error={str(e)}")
                         err_occuerd = True
                     else:
                         if err_occuerd == False:
-                            self.logger.log_error(f"価格取得エラー:{str(e)}")
+                            self.logger.log_error(f"価格取得エラー: symbol={self.market}, timeframe={self.timeframe}, since={since_ms}, error={str(e)}")
                             err_occuerd = True
                         time.sleep(server_retry_wait)
 

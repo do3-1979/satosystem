@@ -105,9 +105,9 @@ class Config:
         エントリー範囲を取得します.
 
         Returns:
-            int: エントリー範囲
+            float: エントリー範囲
         """
-        return int(cls.config['RiskManagement']['entry_range'])
+        return float(cls.config['RiskManagement']['entry_range'])
 
     @classmethod
     def get_stop_range(cls):
@@ -115,9 +115,9 @@ class Config:
         ストップ範囲を取得します.
 
         Returns:
-            int: ストップ範囲
+            float: ストップ範囲
         """
-        return int(cls.config['RiskManagement']['stop_range'])
+        return float(cls.config['RiskManagement']['stop_range'])
 
     @classmethod
     def get_stop_AF(cls):
