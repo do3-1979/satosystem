@@ -416,12 +416,12 @@ if __name__ == "__main__":
     # bot class test flag
     bot_order_test = False
     
-    # 取引所クラスを初期化（動的に選択）
-    exchange_type = Config.get_exchange()
+    # 注文執行用の取引所クラスを初期化（ハイブリッド構成）
+    exchange_type = Config.get_exchange_trade()
     if exchange_type == 'bitget':
-        exchange = BitgetExchange(Config.get_api_key(), Config.get_api_secret(), Config.get_api_passphrase())
+        exchange = BitgetExchange(Config.get_bitget_api_key(), Config.get_bitget_api_secret(), Config.get_bitget_api_passphrase())
     else:  # デフォルトは bybit
-        exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
+        exchange = BybitExchange(Config.get_bybit_api_key(), Config.get_bybit_api_secret())
 
     # 資産管理クラスを初期化
     portfolio = Portfolio()

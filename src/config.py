@@ -22,22 +22,22 @@ class Config:
     @classmethod
     def get_api_key(cls):
         """
-        APIキーを取得します.
+        APIキーを取得します (後方互換性のため、Bitgetキーを返す).
 
         Returns:
             str: APIキー
         """
-        return cls.config['API']['api_key']
+        return cls.config['API'].get('api_bitget_key', cls.config['API'].get('api_key', ''))
 
     @classmethod
     def get_api_secret(cls):
         """
-        APIシークレットを取得します.
+        APIシークレットを取得します (後方互換性のため、Bitgetシークレットを返す).
 
         Returns:
             str: APIシークレット
         """
-        return cls.config['API']['api_secret']
+        return cls.config['API'].get('api_bitget_secret', cls.config['API'].get('api_secret', ''))
 
     @classmethod
     def get_api_passphrase(cls):
@@ -47,17 +47,87 @@ class Config:
         Returns:
             str: APIパスフレーズ
         """
-        return cls.config['API'].get('api_passphrase', '')
+        return cls.config['API'].get('api_bitget_passphrase', cls.config['API'].get('api_passphrase', ''))
+    
+    @classmethod
+    def get_bitget_api_key(cls):
+        """
+        Bitget APIキーを取得します.
+
+        Returns:
+            str: Bitget APIキー
+        """
+        return cls.config['API'].get('api_bitget_key', '')
+    
+    @classmethod
+    def get_bitget_api_secret(cls):
+        """
+        Bitget APIシークレットを取得します.
+
+        Returns:
+            str: Bitget APIシークレット
+        """
+        return cls.config['API'].get('api_bitget_secret', '')
+    
+    @classmethod
+    def get_bitget_api_passphrase(cls):
+        """
+        Bitget APIパスフレーズを取得します.
+
+        Returns:
+            str: Bitget APIパスフレーズ
+        """
+        return cls.config['API'].get('api_bitget_passphrase', '')
+    
+    @classmethod
+    def get_bybit_api_key(cls):
+        """
+        Bybit APIキーを取得します.
+
+        Returns:
+            str: Bybit APIキー
+        """
+        return cls.config['API'].get('api_bybit_key', '')
+    
+    @classmethod
+    def get_bybit_api_secret(cls):
+        """
+        Bybit APIシークレットを取得します.
+
+        Returns:
+            str: Bybit APIシークレット
+        """
+        return cls.config['API'].get('api_bybit_secret', '')
 
     @classmethod
     def get_exchange(cls):
         """
-        使用する取引所を取得します.
+        使用する取引所を取得します (後方互換性のため).
 
         Returns:
             str: 取引所名 ('bybit' または 'bitget')
         """
-        return cls.config['API'].get('exchange', 'bybit')
+        return cls.config['API'].get('exchange_trade', cls.config['API'].get('exchange', 'bybit'))
+    
+    @classmethod
+    def get_exchange_data(cls):
+        """
+        価格データ取得用の取引所を取得します.
+
+        Returns:
+            str: 取引所名 ('bybit' または 'bitget')
+        """
+        return cls.config['API'].get('exchange_data', 'bybit')
+    
+    @classmethod
+    def get_exchange_trade(cls):
+        """
+        注文執行用の取引所を取得します.
+
+        Returns:
+            str: 取引所名 ('bybit' または 'bitget')
+        """
+        return cls.config['API'].get('exchange_trade', 'bitget')
 
     @classmethod
     def get_risk_percentage(cls):

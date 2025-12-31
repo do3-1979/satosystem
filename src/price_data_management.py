@@ -43,12 +43,12 @@ class PriceDataManagement:
         return cls._instance
 
     def initialize(self):
-        # 取引所クラスを動的に選択
-        exchange_type = Config.get_exchange()
+        # 価格データ取得用の取引所を使用（ハイブリッド構成）
+        exchange_type = Config.get_exchange_data()
         if exchange_type == 'bitget':
-            self.exchange = BitgetExchange(Config.get_api_key(), Config.get_api_secret(), Config.get_api_passphrase())
-        else:  # デフォルトは bybit
-            self.exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
+            self.exchange = BitgetExchange(Config.get_bitget_api_key(), Config.get_bitget_api_secret(), Config.get_bitget_api_passphrase())
+        else:  # デフォルトは bybit（価格データ取得用）
+            self.exchange = BybitExchange(Config.get_bybit_api_key(), Config.get_bybit_api_secret())
         
         self.logger = Logger()
         self.cache = OHLCVCache()  # OHLCVキャッシュを初期化
@@ -575,7 +575,7 @@ class PriceDataManagement:
                 data_dict["data"] = cached_data
             else:
                 # サーバからデータを取得
-                exchange_name = Config.get_exchange()
+                exchange_name = Config.get_exchange_data()
                 self.logger.log(f"{exchange_name}サーバからデータを取得 (start_epoch={start_epoch}, end_epoch={end_epoch}, time_frame={time_frame})")
                 data_dict["data"] = self.exchange.fetch_ohlcv(start_epoch, end_epoch, time_frame)
                 # SQLiteキャッシュに保存

@@ -814,12 +814,12 @@ class RiskManagement:
 
 if __name__ == "__main__":
     # RiskManagement クラスの初期化
-    # 取引所クラスを動的に選択
-    exchange_type = Config.get_exchange()
+    # 注文執行用の取引所クラスを動的に選択（ハイブリッド構成）
+    exchange_type = Config.get_exchange_trade()
     if exchange_type == 'bitget':
-        exchange = BitgetExchange(Config.get_api_key(), Config.get_api_secret(), Config.get_api_passphrase())
+        exchange = BitgetExchange(Config.get_bitget_api_key(), Config.get_bitget_api_secret(), Config.get_bitget_api_passphrase())
     else:  # デフォルトは bybit
-        exchange = BybitExchange(Config.get_api_key(), Config.get_api_secret())
+        exchange = BybitExchange(Config.get_bybit_api_key(), Config.get_bybit_api_secret())
     
     portfolio = Portfolio()
     price_data_management = PriceDataManagement()

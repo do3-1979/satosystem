@@ -2,7 +2,7 @@
 トレーディングボットのバックテスト結果を可視化するモジュール
 
 機能:
-- 2時間足ローソク足チャート + 1分足ティック価格の重ね表示
+- 設定タイムフレームのローソク足チャート + 1分足ティック価格の重ね表示
 - インタラクティブな拡大縮小・範囲変更
 - 指標(Donchian/PSAR/PVO等)の表示切替
 - ポジション開始・終了・損切値の可視化
@@ -22,6 +22,21 @@ import sys
 class Visualizer:
     def __init__(self):
         self.config = Config()
+        # タイムフレームをconfig.iniから取得
+        self.time_frame = self.config.get_time_frame()  # 240分 = 4時間
+        self.time_frame_hours = self.time_frame / 60
+        self.time_frame_label = self._get_timeframe_label(self.time_frame)
+    
+    def _get_timeframe_label(self, minutes):
+        """タイムフレーム（分）をラベル文字列に変換"""
+        if minutes < 60:
+            return f"{minutes}分足"
+        else:
+            hours = minutes / 60
+            if hours == int(hours):
+                return f"{int(hours)}時間足"
+            else:
+                return f"{hours}時間足"
         
     def detect_period_log_files(self, log_directory, start_time, end_time):
         """
@@ -241,8 +256,8 @@ class Visualizer:
         
         return combined, df_display, display_start_time, display_end_time
     
-    def resample_to_2h_candles(self, df):
-        """与えられた時系列を2時間足へ変換。ただし既に2時間以上のステップであれば再サンプリングせずそのまま返す。"""
+    def resample_to_candles(self, df):
+        """与えられた時系列を設定タイムフレームへ変換。ただし既に同等以上のステップであれば再サンプリングせずそのまま返す。"""
         if df is None or df.empty or 'real_time_dt' not in df.columns:
             return None
 
@@ -252,10 +267,10 @@ class Visualizer:
             deltas = pd.Series(times[1:]) - pd.Series(times[:-1])
             median_delta = deltas.median()
         else:
-            median_delta = timedelta(hours=2)
+            median_delta = timedelta(hours=self.time_frame_hours)
 
-        # 既に2時間以上の粒度ならそのままOHLC扱い
-        if median_delta >= timedelta(hours=2) and {'open_price','high_price','low_price','close_price'}.issubset(df.columns):
+        # 既に設定タイムフレーム以上の粒度ならそのままOHLC扱い
+        if median_delta >= timedelta(hours=self.time_frame_hours) and {'open_price','high_price','low_price','close_price'}.issubset(df.columns):
             # 重複を削除してから返す
             result = df[['real_time_dt','open_price','high_price','low_price','close_price']].copy()
             result = result.drop_duplicates(subset=['real_time_dt'], keep='first')
@@ -272,9 +287,11 @@ class Visualizer:
             'close_price': 'last',
             'Volume': 'sum' if 'Volume' in df_candle.columns else 'count'
         }
-        candles_2h = df_candle.resample('2h').agg(ohlc_dict).dropna()
-        candles_2h.reset_index(inplace=True)
-        return candles_2h
+        # タイムフレームに応じたリサンプリング
+        resample_rule = f'{int(self.time_frame_hours)}h' if self.time_frame_hours == int(self.time_frame_hours) else f'{int(self.time_frame)}T'
+        candles = df_candle.resample(resample_rule).agg(ohlc_dict).dropna()
+        candles.reset_index(inplace=True)
+        return candles
     
     def _normalize_series(self, series):
         """
@@ -298,7 +315,7 @@ class Visualizer:
         
         Args:
             df: 1分足データ (全指標含む)
-            candles_2h: 2時間足ローソク足データ
+            candles_2h: 設定タイムフレームのローソク足データ
             output_html: 出力HTMLファイルパス
             normalize_indicators: True=標準化, False=元の値 (デフォルト: True)
         """
@@ -328,7 +345,7 @@ class Visualizer:
                 high=candles_2h['high_price'],
                 low=candles_2h['low_price'],
                 close=candles_2h['close_price'],
-                name="2時間足",
+                name=self.time_frame_label,
                 visible=True,
                 xaxis="x",
                 yaxis="y"
@@ -770,12 +787,12 @@ class Visualizer:
         print(f"Loaded {len(df_calc)} records for calculation (including lookback period)")
         print(f"Display period: {len(df_display)} records")
         
-        # 2時間足ローソク足作成 (計算用データから作成)
-        print("Preparing 2-hour candles (no thinning)...")
-        candles_2h_calc = self.resample_to_2h_candles(df_calc)
+        # タイムフレームのローソク足作成 (計算用データから作成)
+        print(f"Preparing {self.time_frame_label} candles (no thinning)...")
+        candles_2h_calc = self.resample_to_candles(df_calc)
         
         if candles_2h_calc is not None:
-            print(f"Created {len(candles_2h_calc)} 2-hour candles (including lookback)")
+            print(f"Created {len(candles_2h_calc)} {self.time_frame_label} candles (including lookback)")
             # 表示用期間のみに絞る
             if 'real_time_dt' in candles_2h_calc.columns:
                 mask = (candles_2h_calc['real_time_dt'] >= display_start) & (candles_2h_calc['real_time_dt'] <= display_end)

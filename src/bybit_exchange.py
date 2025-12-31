@@ -81,6 +81,10 @@ class BybitExchange(Exchange):
             self.timeframe = '1h'
         elif time_frame == 120:
             self.timeframe = '2h'
+        elif time_frame == 240:
+            self.timeframe = '4h'
+        else:
+            self.timeframe = '1h'  # デフォルト
 
         # マーケット変換
         market_type = Config.get_market()

@@ -33,27 +33,37 @@ rm -f log.txt
 # 3: err.log の削除
 rm -f err.log
 
-# APIキーとシークレットを置換
-./replace_api_key.sh
+# APIキーとシークレットを置換（ハイブリッド構成対応）
+# 既にAPIキーが設定されている場合はスキップ
+api_bitget_key=$(grep '^api_bitget_key *= *' config.ini | awk -F' *= *' '{print $2}' | tr -d '\n\r')
+api_bybit_key=$(grep '^api_bybit_key *= *' config.ini | awk -F' *= *' '{print $2}' | tr -d '\n\r')
 
-# APIキーが正しく置換されたか確認（リトライ最大3回）
-retry_count=0
-max_retries=3
-while [ $retry_count -lt $max_retries ]; do
-    api_key=$(grep '^api_key *= *' config.ini | awk -F' *= *' '{print $2}' | tr -d '\n\r')
-    if [ "$api_key" != "YOUR_API_KEY" ] && [ -n "$api_key" ]; then
-        break
+# プレースホルダをチェック（YOUR_BITGET_API_KEY, YOUR_BYBIT_API_KEY, または空）
+if [ "$api_bitget_key" == "YOUR_BITGET_API_KEY" ] || [ "$api_bitget_key" == "YOUR_API_KEY" ] || [ -z "$api_bitget_key" ] || [ "$api_bybit_key" == "YOUR_BYBIT_API_KEY" ] || [ "$api_bybit_key" == "YOUR_API_KEY" ] || [ -z "$api_bybit_key" ]; then
+    ./replace_api_key.sh
+    
+    # APIキーが正しく置換されたか確認（リトライ最大3回）
+    retry_count=0
+    max_retries=3
+    while [ $retry_count -lt $max_retries ]; do
+        api_bitget_key=$(grep '^api_bitget_key *= *' config.ini | awk -F' *= *' '{print $2}' | tr -d '\n\r')
+        api_bybit_key=$(grep '^api_bybit_key *= *' config.ini | awk -F' *= *' '{print $2}' | tr -d '\n\r')
+        # 実際のAPIキーが設定されているか確認（プレースホルダでない）
+        if [ "$api_bitget_key" != "YOUR_BITGET_API_KEY" ] && [ "$api_bitget_key" != "YOUR_API_KEY" ] && [ -n "$api_bitget_key" ] && [ "$api_bybit_key" != "YOUR_BYBIT_API_KEY" ] && [ "$api_bybit_key" != "YOUR_API_KEY" ] && [ -n "$api_bybit_key" ]; then
+            break
+        fi
+        retry_count=$((retry_count + 1))
+        if [ $retry_count -lt $max_retries ]; then
+            sleep 0.5
+            ./replace_api_key.sh
+        fi
+    done
+    
+    # 最終確認
+    if [ "$api_bitget_key" == "YOUR_BITGET_API_KEY" ] || [ "$api_bitget_key" == "YOUR_API_KEY" ] || [ -z "$api_bitget_key" ] || [ "$api_bybit_key" == "YOUR_BYBIT_API_KEY" ] || [ "$api_bybit_key" == "YOUR_API_KEY" ] || [ -z "$api_bybit_key" ]; then
+        echo "❌ APIキーの置換に失敗しました"
+        exit 1
     fi
-    retry_count=$((retry_count + 1))
-    if [ $retry_count -lt $max_retries ]; then
-        sleep 0.5
-        ./replace_api_key.sh
-    fi
-done
-
-if [ "$api_key" == "YOUR_API_KEY" ] || [ -z "$api_key" ]; then
-    echo "❌ APIキーの置換に失敗しました"
-    exit 1
 fi
 
 # 4: python bot.py の実行
