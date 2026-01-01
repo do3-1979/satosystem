@@ -29,9 +29,9 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
 def get_quarters():
-    """2024/2Q から現在までの四半期リストを返す（2024/Q1 と未来の四半期は除外）"""
+    """2024/1Q から現在までの四半期リストを返す"""
     quarters = []
-    start = datetime(2024, 4, 1)  # 2024/Q2 から開始（Q1を除外）
+    start = datetime(2024, 1, 1)  # 2024/Q1 から開始
     # 2025/Q4は未来なので 11/30 までに制限
     end = datetime(2025, 11, 30)
     now = datetime.now()
