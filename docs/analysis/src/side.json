@@ -1,0 +1,103 @@
+{
+  "metadata": {
+    "source_file": "src/side.py",
+    "analyzed_at": "2026-01-01T00:00:00Z",
+    "python_version": "3.10",
+    "format_version": "2.0",
+    "analyzer_note": "トレード方向の型安全ユーティリティ。Enum + 正規化関数で複数表記対応。"
+  },
+  "file_overview": {
+    "purpose": "トレード方向（BUY/SELL/NONE）の型安全管理",
+    "lines_of_code": 34,
+    "dependency_count": 1,
+    "class_count": 1,
+    "function_count": 2,
+    "critical_methods": ["normalize_side", "to_exchange_side"],
+    "description": "Side は Enum で値を定義し、normalize_side/to_exchange_side で複数表記を統一。"
+  },
+  "classes": [
+    {
+      "class_name": "Side",
+      "line": 4,
+      "docstring": "トレード方向の Enum。BUY/SELL/NONE を定義。",
+      "responsibility": {
+        "primary": "トレード方向の型定義",
+        "secondary": [],
+        "scope": "UTILITY",
+        "criticality": "MEDIUM",
+        "testing_priority": 3,
+        "description": "Enum パターン。値を固定化して誤入力を防止。"
+      },
+      "inheritance": ["Enum"],
+      "attributes": [
+        {
+          "name": "BUY",
+          "type": "str",
+          "visibility": "public",
+          "description": "買いシグナル"
+        },
+        {
+          "name": "SELL",
+          "type": "str",
+          "visibility": "public",
+          "description": "売りシグナル"
+        },
+        {
+          "name": "NONE",
+          "type": "str",
+          "visibility": "public",
+          "description": "ポジションなし"
+        }
+      ],
+      "methods": []
+    }
+  ],
+  "functions": [
+    {
+      "name": "normalize_side",
+      "line": 9,
+      "function_type": "UTILITY",
+      "purpose": "任意の表記（'buy'/'BUY'/Side等）を内部表記（'BUY'/'SELL'/'NONE'）に統一",
+      "parameters": [
+        {"name": "value", "type": "str | Side | any"}
+      ],
+      "return_type": "str",
+      "logic": "型チェック → upper() 変換 → 値検証 → NONE フォールバック（低リスク）",
+      "criticality": "MEDIUM",
+      "performance": {"time_complexity": "O(1)", "space_complexity": "O(1)"}
+    },
+    {
+      "name": "to_exchange_side",
+      "line": 21,
+      "function_type": "UTILITY",
+      "purpose": "内部表記（'BUY'/'SELL'）を取引所API向けに 'buy'/'sell' に変換",
+      "parameters": [
+        {"name": "value", "type": "str | Side | any"}
+      ],
+      "return_type": "str",
+      "logic": "normalize_side() を呼び出し → 内部表記を lower-case に変換",
+      "criticality": "MEDIUM",
+      "performance": {"time_complexity": "O(1)", "space_complexity": "O(1)"}
+    }
+  ],
+  "summary": {
+    "architecture_score": 8.5,
+    "testability_score": 9.0,
+    "maintainability_score": 9.0,
+    "design_strengths": [
+      "Enum で値を固定化→入力値の正当性確保",
+      "normalize_side で複数表記対応→柔軟性維持",
+      "to_exchange_side で取引所互換性確保",
+      "低リスク戦略：不正値は NONE にフォールバック"
+    ],
+    "critical_issues": [
+      "normalize_side が大文字化のみ→'Sell' など別表記は認識不可",
+      "to_exchange_side が 'none' を返却→取引所APIで不正な可能性"
+    ],
+    "recommendations": [
+      "複数の表記パターン対応：'buy'/'BUY'/'Buy'/'long' を統一",
+      "to_exchange_side の 'none' を例外送出またはロギング",
+      "テスト: すべての表記パターン（大文字/小文字/混合）"
+    ]
+  }
+}

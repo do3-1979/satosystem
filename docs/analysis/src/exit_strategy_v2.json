@@ -1,0 +1,283 @@
+{
+  "metadata": {
+    "source_file": "src/exit_strategy_v2.py",
+    "analyzed_at": "2026-01-01T00:00:00Z",
+    "python_version": "3.10",
+    "format_version": "2.0",
+    "analyzer_note": "複合シグナルベースの出口戦略。4つのStage（強トレンド/トレンド減衰/モメンタム消失/ストップロス）で出口判定を実行。"
+  },
+  "file_overview": {
+    "purpose": "ポジション出口の複合シグナル判定エンジン",
+    "lines_of_code": 469,
+    "dependency_count": 1,
+    "class_count": 2,
+    "function_count": 0,
+    "critical_methods": ["evaluate_exit_condition", "_identify_stage", "_check_stop_loss"],
+    "description": "ExitStrategyV2 は ADX/PVO のシグナルベース Stage判定により、出口タイミングの最適化を実現。PortfolioExitExecutor は Portfolio との統合実行インターフェース。"
+  },
+  "classes": [
+    {
+      "class_name": "ExitStrategyV2",
+      "line": 22,
+      "docstring": "複合シグナルベースの出口戦略。Stage 1-4 をベースに、リアルタイムシグナルから最適な出口判定を実行。",
+      "responsibility": {
+        "primary": "ポジション出口判定の複合シグナルエンジン",
+        "secondary": ["リスク管理（ストップロス）", "利益確定戦略（部分利確）"],
+        "scope": "MODULE",
+        "criticality": "CRITICAL",
+        "testing_priority": 1,
+        "description": "Strategy パターン。4 つの Stage 戦略を条件分岐で切り替え。バックテスト・ホットテスト共通対応。"
+      },
+      "inheritance": [],
+      "attributes": [
+        {
+          "name": "ADX_STRONG_THRESHOLD",
+          "type": "int",
+          "visibility": "protected",
+          "description": "ADX強トレンド閾値（デフォルト 50）"
+        },
+        {
+          "name": "ADX_WEAK_THRESHOLD_LOW",
+          "type": "int",
+          "visibility": "protected",
+          "description": "ADX減衰下限（デフォルト 30）"
+        },
+        {
+          "name": "ADX_WEAK_THRESHOLD_HIGH",
+          "type": "int",
+          "visibility": "protected",
+          "description": "ADX減衰上限（デフォルト 50）"
+        },
+        {
+          "name": "PARTIAL_EXIT_RATIO",
+          "type": "float",
+          "visibility": "protected",
+          "description": "部分利確比率（デフォルト 0.5 = 50%）"
+        }
+      ],
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 24,
+          "method_type": "INIT",
+          "purpose": "ExitStrategyV2 初期化（閾値・設定パラメータセット）",
+          "criticality": "MEDIUM",
+          "parameters": []
+        },
+        {
+          "name": "evaluate_exit_condition",
+          "line": 40,
+          "method_type": "QUERY",
+          "purpose": "複合シグナルで出口判定実行（最優先: PSAR Stop Loss）",
+          "entry_conditions": [
+            "current_ohlcv: 現在のOHLCV + 指標",
+            "position_info: ポジション情報（quantity > 0）",
+            "entry_info: エントリー時の指標"
+          ],
+          "exit_outcomes": [
+            "{'should_exit': bool, 'exit_reason': str, 'close_ratio': float, 'stage': str, 'confidence': float}"
+          ],
+          "state_changes": [
+            "内部的には状態変更なし（Pure Query メソッド）"
+          ],
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "Exception",
+                "location": "全体の try-except で捕捉",
+                "recovery_strategy": "DEFAULT_HOLD を返却（安全フェイルセーフ）",
+                "fallback_action": "エラー時は保持判定（保守的）"
+              }
+            ],
+            "failure_modes": [
+              "データ型不整合：safe_get() で自動変換",
+              "ポジション量ゼロ：NO_POSITION 判定で早期終了",
+              "指標値欠落：デフォルト値 0 で継続"
+            ]
+          },
+          "testability": {
+            "difficulty": "MEDIUM",
+            "suggested_test_cases": [
+              "テスト1: Strong Trend（ADX>50, PVO>0）→ HOLD",
+              "テスト2: Weak Trend（30<ADX<50, PVO>0）→ 部分利確",
+              "テスト3: Momentum Exhausted（PVO<0 または ADX<30）→ 全出口",
+              "テスト4: PSAR Stop Loss（価格がPSARを割る）→ 無条件出口",
+              "テスト5: データ型エラー回復"
+            ]
+          },
+          "criticality": "CRITICAL",
+          "performance": {
+            "time_complexity": "O(1)",
+            "space_complexity": "O(1)",
+            "bottleneck": "なし（すべて単純比較）"
+          }
+        },
+        {
+          "name": "_identify_stage",
+          "line": 156,
+          "method_type": "UTILITY",
+          "purpose": "ADX/PVO の組み合わせから Stage を判定",
+          "entry_conditions": [
+            "entry_adx, entry_pvo, curr_adx, curr_pvo: 数値（コンバート試行）"
+          ],
+          "exit_outcomes": [
+            "'STRONG_TREND' | 'WEAK_TREND' | 'MOMENTUM_EXHAUSTED' | 'UNSTABLE'"
+          ],
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "ValueError, TypeError",
+                "location": "float() 変換失敗時",
+                "recovery_strategy": "デフォルト値 0 を設定",
+                "fallback_action": "継続（安全フェイルセーフ）"
+              }
+            ]
+          },
+          "criticality": "HIGH",
+          "performance": {
+            "time_complexity": "O(1)",
+            "space_complexity": "O(1)"
+          }
+        },
+        {
+          "name": "_check_stop_loss",
+          "line": 205,
+          "method_type": "QUERY",
+          "purpose": "PSAR Stop Loss チェック（最優先判定）",
+          "entry_conditions": [
+            "current_price, psar_price: 価格（辞書 or スカラー対応）",
+            "position_info: {'side': 'BUY' or 'SELL'}"
+          ],
+          "exit_outcomes": [
+            "bool: True = ストップ発動, False = 継続"
+          ],
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "ValueError, TypeError",
+                "location": "float() 変換失敗時",
+                "recovery_strategy": "値を 0 に設定（無効化）",
+                "fallback_action": "デフォルト False（ストップなし）"
+              }
+            ]
+          },
+          "criticality": "CRITICAL",
+          "performance": {
+            "time_complexity": "O(1)",
+            "space_complexity": "O(1)"
+          }
+        },
+        {
+          "name": "get_stage_description",
+          "line": 242,
+          "method_type": "QUERY",
+          "purpose": "Stage の日本語説明・推奨アクション・リスク レベルを返却",
+          "criticality": "LOW",
+          "parameters": [
+            {"name": "stage", "type": "str"}
+          ]
+        }
+      ]
+    },
+    {
+      "class_name": "PortfolioExitExecutor",
+      "line": 280,
+      "docstring": "Portfolio との統合実行器。ExitStrategyV2 の判定結果をポートフォリオ操作に変換。",
+      "responsibility": {
+        "primary": "出口判定と Portfolio 実行の統合",
+        "secondary": ["例外処理・ロギング"],
+        "scope": "MODULE",
+        "criticality": "HIGH",
+        "testing_priority": 2,
+        "description": "Executor パターン。ExitStrategyV2 出力を Portfolio API コールに翻訳。"
+      },
+      "inheritance": [],
+      "attributes": [
+        {
+          "name": "portfolio",
+          "type": "Portfolio",
+          "visibility": "protected",
+          "description": "ポートフォリオインスタンス"
+        },
+        {
+          "name": "exit_strategy",
+          "type": "ExitStrategyV2",
+          "visibility": "protected",
+          "description": "出口戦略インスタンス"
+        }
+      ],
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 288,
+          "method_type": "INIT",
+          "purpose": "Executor 初期化",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "execute_exit_decision",
+          "line": 300,
+          "method_type": "ACTION",
+          "purpose": "出口判定と実行の統合（全/部分ポジションクローズ）",
+          "entry_conditions": [
+            "current_ohlcv, position_info, entry_info: ExitStrategyV2 と同じ"
+          ],
+          "exit_outcomes": [
+            "{'executed': bool, 'decision': dict, 'result': dict}"
+          ],
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "Exception",
+                "location": "位置クローズ実行エラー",
+                "recovery_strategy": "catch して executed=False で返却",
+                "fallback_action": "実行失敗をクライアントに通知"
+              }
+            ]
+          },
+          "criticality": "CRITICAL",
+          "performance": {
+            "time_complexity": "O(1)",
+            "space_complexity": "O(1)"
+          }
+        },
+        {
+          "name": "_close_full_position",
+          "line": 331,
+          "method_type": "UTILITY",
+          "purpose": "全ポジションクローズ（実装: Portfolio 委譲）",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "_close_partial_position",
+          "line": 339,
+          "method_type": "UTILITY",
+          "purpose": "部分ポジションクローズの計算",
+          "criticality": "MEDIUM"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "architecture_score": 8.5,
+    "testability_score": 8.0,
+    "maintainability_score": 8.5,
+    "design_strengths": [
+      "4-Stage 分類：トレンド強度で戦略を動的切り替え",
+      "PSAR 最優先：リスク管理最上位",
+      "Safe Type Conversion：データ型の寛容性",
+      "複合エントリー条件：複数シグナル確認で誤発火低減"
+    ],
+    "critical_issues": [
+      "部分利確比率が固定（0.5）→ トレンド強度で動的調整すべき",
+      "PVO 反転判定が単純（閾値 0 のみ）→ より複雑な状態遷移検出が必要な場合あり",
+      "エントリー記録の使用が限定的→ より詳細な履歴追跡が有用な場合あり"
+    ],
+    "recommendations": [
+      "Stage 確信度スコア追加（0.0-1.0）で出口強度を段階化",
+      "Donchian/Bollinger Bands を Stage 判定に追加検討",
+      "バックテスト向け：各 Stage 遷移の履歴ログ出力機能",
+      "ホットテスト向け：リアルタイム Stage 表示ダッシュボード"
+    ]
+  }
+}

@@ -1,0 +1,210 @@
+{
+  "metadata": {
+    "source_file": "src/price_data_management.py",
+    "analyzed_at": "2026-01-01T00:00:00Z",
+    "python_version": "3.10",
+    "format_version": "2.0",
+    "analyzer_note": "価格データ・シグナル管理。Singleton。バックテスト・本番両対応、複数タイムフレーム管理。"
+  },
+  "file_overview": {
+    "purpose": "OHLCV価格データ・指標・シグナルの統合管理",
+    "lines_of_code": 812,
+    "dependency_count": 8,
+    "class_count": 1,
+    "function_count": 0,
+    "critical_methods": ["update_price_data", "update_price_data_backtest", "get_ohlcv_data", "get_ticker"],
+    "description": "PriceDataManagement は Singleton で、リアルタイム・バックテスト両モードで価格データ＋指標を管理。"
+  },
+  "classes": [
+    {
+      "class_name": "PriceDataManagement",
+      "line": 12,
+      "docstring": "価格データとトレードシグナルを管理。Singleton。複数タイムフレーム・バックテスト対応。",
+      "responsibility": {
+        "primary": "OHLCV・シグナル・指標の統一管理",
+        "secondary": ["バックテスト/本番切り替え", "複数タイムフレーム対応", "API リトライ管理"],
+        "scope": "DATA_LAYER",
+        "criticality": "CRITICAL",
+        "testing_priority": 1,
+        "description": "Singleton + Strategy パターン。fetch/parse の複雑性を統一インターフェースで抽象化。"
+      },
+      "inheritance": [],
+      "attributes": [
+        {
+          "name": "_instance",
+          "type": "PriceDataManagement",
+          "visibility": "private",
+          "description": "Singleton インスタンス"
+        },
+        {
+          "name": "exchange",
+          "type": "BybitExchange | BitgetExchange",
+          "visibility": "protected",
+          "description": "価格データ取得用の取引所インスタンス"
+        },
+        {
+          "name": "ohlcv_data",
+          "type": "List[Dict]",
+          "visibility": "protected",
+          "description": "複数タイムフレームの確定OHLCV（キャッシュ）"
+        },
+        {
+          "name": "latest_ohlcv_data",
+          "type": "List[Dict]",
+          "visibility": "protected",
+          "description": "未確定の最新足データ"
+        },
+        {
+          "name": "signals",
+          "type": "Dict",
+          "visibility": "protected",
+          "description": "シグナル（donchian/pvo）"
+        }
+      ],
+      "methods": [
+        {
+          "name": "__new__",
+          "line": 28,
+          "method_type": "INIT",
+          "purpose": "Singleton インスタンス生成",
+          "criticality": "HIGH"
+        },
+        {
+          "name": "initialize",
+          "line": 36,
+          "method_type": "INIT",
+          "purpose": "初期化（取引所・キャッシュ・タイムフレーム設定）",
+          "criticality": "HIGH"
+        },
+        {
+          "name": "get_ohlcv_data",
+          "line": 76,
+          "method_type": "QUERY",
+          "purpose": "確定済みOHLCVデータを取得",
+          "criticality": "HIGH"
+        },
+        {
+          "name": "get_ticker",
+          "line": 88,
+          "method_type": "QUERY",
+          "purpose": "現在のティッカー価格を取得",
+          "criticality": "HIGH"
+        },
+        {
+          "name": "get_latest_close_time",
+          "line": 96,
+          "method_type": "QUERY",
+          "purpose": "最新足の終値時刻を取得（epoch秒）",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "get_latest_ohlcv",
+          "line": 111,
+          "method_type": "QUERY",
+          "purpose": "未確定の最新足データを取得",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "get_volatility",
+          "line": 124,
+          "method_type": "QUERY",
+          "purpose": "現在のボラティリティを取得",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "calcurate_volatility",
+          "line": 131,
+          "method_type": "UTILITY",
+          "purpose": "ボラティリティを計算（高値-安値の平均）",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "update_price_data_backtest",
+          "line": 173,
+          "method_type": "ACTION",
+          "purpose": "バックテスト用に価格データを更新（時間ステップ進行）",
+          "entry_conditions": [
+            "バックテストモード有効"
+          ],
+          "exit_outcomes": [
+            "bool: 終了判定（True=backtest終了）"
+          ],
+          "criticality": "CRITICAL",
+          "performance": {
+            "time_complexity": "O(1)",
+            "space_complexity": "O(1)"
+          }
+        },
+        {
+          "name": "update_price_data",
+          "line": 443,
+          "method_type": "ACTION",
+          "purpose": "リアルタイム価格データを更新（API取得・指標計算）",
+          "entry_conditions": [
+            "本番モード有効、API認証"
+          ],
+          "exit_outcomes": [
+            "bool: 更新成功/失敗"
+          ],
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "APIError, TimeoutError",
+                "location": "fetch_ohlcv/fetch_latest 呼び出し時",
+                "recovery_strategy": "_fetch_with_retry() で 3 回リトライ（指数バックオフ）",
+                "fallback_action": "最後のリトライ失敗時は False 返却"
+              },
+              {
+                "exception_type": "KeyError, IndexError",
+                "location": "レスポンスデータパース時",
+                "recovery_strategy": "キー存在チェック＋ exception 記録",
+                "fallback_action": "データ検証失敗で False 返却"
+              }
+            ]
+          },
+          "criticality": "CRITICAL"
+        },
+        {
+          "name": "_fetch_with_retry",
+          "line": 362,
+          "method_type": "UTILITY",
+          "purpose": "API呼び出しをリトライ付きで実行（指数バックオフ）",
+          "parameters": [
+            {"name": "func", "type": "Callable"},
+            {"name": "args", "type": "tuple"},
+            {"name": "retries", "type": "int", "default": "3"}
+          ],
+          "logic": "最大 30 秒待機（1秒, 2秒, 4秒, ... 指数バックオフ）",
+          "criticality": "HIGH"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "architecture_score": 7.5,
+    "testability_score": 7.0,
+    "maintainability_score": 7.5,
+    "design_strengths": [
+      "Singleton：グローバル価格データアクセスで一貫性確保",
+      "デュアルモード対応：バックテスト/本番の統一インターフェース",
+      "複数タイムフレーム管理：主軸・PSAR用を並行管理",
+      "リトライ機構：指数バックオフで通信安定性向上",
+      "複合シグナル：Donchian + PVO をリアルタイム計算"
+    ],
+    "critical_issues": [
+      "812行の単一ファイル→責務過多（DATA + CALC + SIGNAL混在）",
+      "バックテスト用データが内部状態に依存（progress_time など）→デバッグ困難",
+      "複数タイムフレームの同期ロジックが複雑（update_price_data_backtest のフラグ管理）",
+      "指標計算（Donchian/PVO）が update_price_data に埋め込み→テスト分離困難",
+      "キャッシュ戦略が不明（ohlcv_data をいつ更新するか）"
+    ],
+    "recommendations": [
+      "責務分離：OHLCVManager / SignalCalculator / DataSync に分割",
+      "バックテスト State を明示化（BacktestContext クラス化）",
+      "指標計算を NewIndicators に完全委譲",
+      "メモリ効率化：古い足を削除する LRU Cache 導入",
+      "テスト: update_price_data_backtest の time_frame 進行正確性",
+      "テスト: 複数タイムフレームの同期タイミング"
+    ]
+  }
+}

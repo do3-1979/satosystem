@@ -1,0 +1,160 @@
+{
+  "metadata": {
+    "source_file": "src/trading_strategy.py",
+    "analyzed_at": "2026-01-01T00:00:00Z",
+    "python_version": "3.10",
+    "format_version": "2.0",
+    "analyzer_note": "トレード意思決定エンジン。複合条件ベースのエントリー・買い増し・出口判定。市場体制検出対応。"
+  },
+  "file_overview": {
+    "purpose": "トレードシグナル判定・意思決定・戦略切り替え",
+    "lines_of_code": 536,
+    "dependency_count": 7,
+    "class_count": 1,
+    "function_count": 0,
+    "critical_methods": ["evaluate_entry", "evaluate_add", "evaluate_exit", "make_trade_decision"],
+    "description": "TradingStrategy は複合条件ベースで Entry/Add/Exit を判定。市場体制・複数Strategy対応。"
+  },
+  "classes": [
+    {
+      "class_name": "TradingStrategy",
+      "line": 26,
+      "docstring": "トレード意思決定エンジン。エントリー・買い増し・出口条件を複合評価。",
+      "responsibility": {
+        "primary": "トレードシグナル判定・意思決定の統合",
+        "secondary": ["市場体制検出", "複数Strategy評価", "フィルター機能"],
+        "scope": "BUSINESS_LOGIC",
+        "criticality": "CRITICAL",
+        "testing_priority": 1,
+        "description": "Decision パターン。複数条件を組み合わせてトレード判定を実行。"
+      },
+      "inheritance": [],
+      "attributes": [
+        {
+          "name": "trade_decision",
+          "type": "Dict",
+          "visibility": "protected",
+          "description": "トレード判定結果（side/decision/ratio等）"
+        },
+        {
+          "name": "entry_record",
+          "type": "Dict",
+          "visibility": "protected",
+          "description": "エントリー時の指標記録"
+        },
+        {
+          "name": "current_market_regime",
+          "type": "str",
+          "visibility": "protected",
+          "description": "現在の市場体制（TRENDING_UP/DOWN, RANGING, TRANSITION）"
+        }
+      ],
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 39,
+          "method_type": "INIT",
+          "purpose": "TradingStrategy 初期化（価格・リスク・出口を依存注入）",
+          "criticality": "HIGH"
+        },
+        {
+          "name": "initialize_trade_decision",
+          "line": 52,
+          "method_type": "ACTION",
+          "purpose": "trade_decision 辞書を初期化",
+          "criticality": "LOW"
+        },
+        {
+          "name": "evaluate_entry",
+          "line": 61,
+          "method_type": "QUERY",
+          "purpose": "複合条件でエントリー判定（複数フィルター対応）",
+          "entry_conditions": [
+            "ポジション: NONE",
+            "シグナル: Donchian + PVO",
+            "フィルター: PVO/ADX/Volume/Volatility"
+          ],
+          "exit_outcomes": [
+            "trade_decision に side/decision を設定"
+          ],
+          "logic": "Donchian ブレイク検出 → 新指標Strategy確認 → 市場体制判定 → フィルター適用",
+          "criticality": "CRITICAL"
+        },
+        {
+          "name": "evaluate_add",
+          "line": 265,
+          "method_type": "QUERY",
+          "purpose": "買い増し（ピラミッディング）条件を判定",
+          "entry_conditions": [
+            "ポジション保有中"
+          ],
+          "logic": "価格変動がrange を超過したか判定",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "evaluate_exit",
+          "line": 289,
+          "method_type": "QUERY",
+          "purpose": "出口条件を判定（ハイブリッド: 従来型 + ExitStrategyV2）",
+          "entry_conditions": [
+            "ポジション保有中"
+          ],
+          "logic": "優先度1: 従来型ストップロス → 優先度2: ExitStrategyV2",
+          "criticality": "CRITICAL"
+        },
+        {
+          "name": "make_trade_decision",
+          "line": 387,
+          "method_type": "QUERY",
+          "purpose": "包括的なトレード判定（Entry/Add/Exit を段階的に評価）",
+          "entry_conditions": [],
+          "exit_outcomes": [
+            "trade_decision（最終判定結果）"
+          ],
+          "criticality": "CRITICAL"
+        },
+        {
+          "name": "_evaluate_new_indicator_strategy",
+          "line": 252,
+          "method_type": "UTILITY",
+          "purpose": "新指標Strategy（A/B/C）を評価",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "_evaluate_box_market_entry",
+          "line": 421,
+          "method_type": "UTILITY",
+          "purpose": "ボックス相場向けの平均回帰エントリー判定",
+          "criticality": "LOW"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "architecture_score": 7.5,
+    "testability_score": 7.0,
+    "maintainability_score": 7.5,
+    "design_strengths": [
+      "複合フィルター：5つのフィルター（PVO/ADX/Volume/Volatility/市場体制）を段階的に適用",
+      "市場体制検出：トレンド/ボックス相場を自動判定",
+      "複数Strategy対応：新指標(A/B/C)と従来型を共存",
+      "ハイブリッド出口：従来型+複合シグナルで出口精度向上",
+      "ポジションライフサイクル：Entry→Add→Exit を段階的に管理"
+    ],
+    "critical_issues": [
+      "536行の単一ファイル→責務過多（Entry/Add/Exit混在）",
+      "複合フィルターのorder が不明確→PVO→ADX→Volume→Volatility の優先度ルール不明",
+      "市場体制判定が複雑（新指標Strategy + フィルター + ボックス判定）→テスト困難",
+      "evaluate_add のrange計算が不完全（strategy_result を記録しない）",
+      "_evaluate_box_market_entry が実装途中（Bollinger Bands補助が不完全）"
+    ],
+    "recommendations": [
+      "Entry/Add/Exit を別クラスに分離（EntryStrategy/PyramidStrategy/ExitStrategy）",
+      "フィルター優先度を明示化（Filter Priority = [PVO, ADX, Volume, Volatility]）",
+      "市場体制判定ロジックを MarketRegimeDetector に完全委譲",
+      "複数Strategy の選択ルール明文化（C > B > A の優先度か、並行評価か）",
+      "テスト: フィルター各組み合わせ（2^5 = 32パターン）",
+      "テスト: 市場体制遷移時の判定変化"
+    ]
+  }
+}

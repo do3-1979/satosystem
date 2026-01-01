@@ -1,0 +1,205 @@
+{
+  "metadata": {
+    "source_file": "src/portfolio.py",
+    "analyzed_at": "2026-01-01T00:00:00Z",
+    "python_version": "3.10",
+    "format_version": "2.0",
+    "analyzer_note": "ポートフォリオ状態管理。複数市場対応、ポジション・損益・ドローダウン管理。"
+  },
+  "file_overview": {
+    "purpose": "保有ポジション・資金・損益の統合管理",
+    "lines_of_code": 252,
+    "dependency_count": 2,
+    "class_count": 1,
+    "function_count": 0,
+    "critical_methods": ["add_position_quantity", "clear_position_quantity", "calc_position_quantity", "get_profit_factor"],
+    "description": "Portfolio は複数市場対応で、ポジション→損益実現のライフサイクルを管理。ドローダウン追跡対応。"
+  },
+  "classes": [
+    {
+      "class_name": "Portfolio",
+      "line": 8,
+      "docstring": "ポートフォリオ状態管理クラス。保有通貨数量・資金・利損・ドローダウンを追跡。",
+      "responsibility": {
+        "primary": "ポジション・損益・資金の統一管理",
+        "secondary": ["複数市場対応", "ドローダウン計算", "ピラミッディング対応"],
+        "scope": "BUSINESS_LOGIC",
+        "criticality": "CRITICAL",
+        "testing_priority": 1,
+        "description": "State パターン。複数市場の独立したポジション状態を管理。"
+      },
+      "inheritance": [],
+      "attributes": [
+        {
+          "name": "market_type",
+          "type": "str",
+          "visibility": "protected",
+          "description": "市場タイプ（BTC/USD など）"
+        },
+        {
+          "name": "positions",
+          "type": "Dict[str, Dict]",
+          "visibility": "protected",
+          "description": "市場ごとのポジション情報"
+        },
+        {
+          "name": "profit",
+          "type": "float",
+          "visibility": "protected",
+          "description": "累積利益"
+        },
+        {
+          "name": "loss",
+          "type": "float",
+          "visibility": "protected",
+          "description": "累積損失"
+        },
+        {
+          "name": "funds",
+          "type": "float",
+          "visibility": "protected",
+          "description": "現在の資金"
+        },
+        {
+          "name": "funds_max",
+          "type": "float",
+          "visibility": "protected",
+          "description": "資金の最大値（ドローダウン計算用）"
+        },
+        {
+          "name": "drawdown",
+          "type": "float",
+          "visibility": "protected",
+          "description": "現在のドローダウン額"
+        }
+      ],
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 22,
+          "method_type": "INIT",
+          "purpose": "ポートフォリオ初期化（市場タイプに基づくポジション初期化）",
+          "criticality": "HIGH"
+        },
+        {
+          "name": "get_position_quantity",
+          "line": 36,
+          "method_type": "QUERY",
+          "purpose": "現在のポジション情報を取得（量・方向・価格）",
+          "return_type": "Dict",
+          "criticality": "HIGH"
+        },
+        {
+          "name": "get_position_side",
+          "line": 42,
+          "method_type": "QUERY",
+          "purpose": "ポジション方向を取得（BUY/SELL/NONE）",
+          "criticality": "HIGH"
+        },
+        {
+          "name": "get_position_price",
+          "line": 48,
+          "method_type": "QUERY",
+          "purpose": "エントリー平均価格を取得",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "get_profit_and_loss",
+          "line": 54,
+          "method_type": "QUERY",
+          "purpose": "現在の損益を計算（profit - loss）",
+          "criticality": "HIGH"
+        },
+        {
+          "name": "get_profit_factor",
+          "line": 60,
+          "method_type": "QUERY",
+          "purpose": "プロフィットファクターを計算（利益 / 損失）",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "add_position_quantity",
+          "line": 70,
+          "method_type": "ACTION",
+          "purpose": "ポジションを追加買い（ピラミッディング対応）",
+          "entry_conditions": [
+            "quantity: 追加量（> 0）",
+            "side: 方向（BUY/SELL）",
+            "price: エントリー価格"
+          ],
+          "exit_outcomes": [
+            "ポジション更新（新規 or 平均価格再計算）"
+          ],
+          "logic": "既存ポジションがない or 方向が異なる場合は新規。同一方向なら平均価格を再計算。",
+          "criticality": "CRITICAL"
+        },
+        {
+          "name": "calc_position_quantity",
+          "line": 103,
+          "method_type": "QUERY",
+          "purpose": "現在価格に対する損益を計算（未実現）",
+          "entry_conditions": [
+            "price: 現在の価格"
+          ],
+          "exit_outcomes": [
+            "tuple: (profit, loss)"
+          ],
+          "criticality": "HIGH"
+        },
+        {
+          "name": "clear_position_quantity",
+          "line": 125,
+          "method_type": "ACTION",
+          "purpose": "ポジションを全クローズ（損益実現）",
+          "entry_conditions": [
+            "price: クローズ価格"
+          ],
+          "exit_outcomes": [
+            "損益実現・ドローダウン更新・ポジション初期化"
+          ],
+          "logic": "損益計算→ 最大資金更新 → ドローダウン計算 → ポジション初期化",
+          "criticality": "CRITICAL"
+        },
+        {
+          "name": "get_drawdown",
+          "line": 72,
+          "method_type": "QUERY",
+          "purpose": "現在のドローダウン額を取得",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "get_drawdown_rate",
+          "line": 78,
+          "method_type": "QUERY",
+          "purpose": "ドローダウン率を計算（%）",
+          "criticality": "MEDIUM"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "architecture_score": 8.0,
+    "testability_score": 8.5,
+    "maintainability_score": 8.0,
+    "design_strengths": [
+      "複数市場対応：positions 辞書で拡張性確保",
+      "ピラミッディング対応：平均価格を動的再計算",
+      "ドローダウン追跡：資金最大値から現在値の差分計算",
+      "損益管理：実現損益 vs 未実現損益を分離"
+    ],
+    "critical_issues": [
+      "ポジション初期化が add_num を0にしている → 追加回数がリセット（意図不明）",
+      "get_position_quantity()が辞書を返却 → クライアントの型チェック負担増",
+      "プロフィットファクター計算で loss=0 の場合を 0 で返却 → 曖昧（inf vs 0）",
+      "複数市場対応だが Config で単一市場を選択 → マルチポジション戦略に非対応"
+    ],
+    "recommendations": [
+      "add_num の扱いを明確化（リセット vs 累積）",
+      "ポジション取得を型安全化（NamedTuple または @dataclass）",
+      "プロフィットファクター計算ルール明文化（loss=0 時の戻り値）",
+      "複数市場同時保有対応の検討（portfolio.add_position_with_symbol）",
+      "テスト: ピラミッディングの平均価格計算正確性",
+      "テスト: ドローダウン計算が複数ローの連続で正しく追跡"
+    ]
+  }
+}

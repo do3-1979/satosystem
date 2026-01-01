@@ -1,0 +1,168 @@
+{
+  "metadata": {
+    "source_file": "src/risk_management.py",
+    "analyzed_at": "2026-01-01T00:00:00Z",
+    "python_version": "3.10",
+    "format_version": "2.0",
+    "analyzer_note": "リスク管理エンジン。ポジションサイズ・ストップロス・テクニカル指標の統合管理。"
+  },
+  "file_overview": {
+    "purpose": "リスク管理パラメータ・ストップ値・指標計算の統合管理",
+    "lines_of_code": 846,
+    "dependency_count": 7,
+    "class_count": 1,
+    "function_count": 0,
+    "critical_methods": ["__calc_parabolic_sar", "__calc_adx", "get_stop_price", "evaluate_strategy_a_adx"],
+    "description": "RiskManagement は ポジションサイズ計算・PSAR/ADX 計算・複数 Strategy 評価を統合。"
+  },
+  "classes": [
+    {
+      "class_name": "RiskManagement",
+      "line": 15,
+      "docstring": "リスク管理戦略実装。ポジションサイズ・ストップロス・テクニカル指標を管理。",
+      "responsibility": {
+        "primary": "ポジションサイズ・リスク限定・指標計算の統合",
+        "secondary": ["パラボリックSAR計算", "ADX計算", "複数Strategy評価"],
+        "scope": "BUSINESS_LOGIC",
+        "criticality": "CRITICAL",
+        "testing_priority": 1,
+        "description": "Strategy + State パターン。複数テクニカル指標を並行計算し Strategy 判定に供給。"
+      },
+      "inheritance": [],
+      "attributes": [
+        {
+          "name": "risk_percentage",
+          "type": "float",
+          "visibility": "protected",
+          "description": "リスク許容度（%）"
+        },
+        {
+          "name": "position_size",
+          "type": "float",
+          "visibility": "protected",
+          "description": "計算されたポジションサイズ"
+        },
+        {
+          "name": "psar",
+          "type": "List[float]",
+          "visibility": "protected",
+          "description": "パラボリックSAR値リスト"
+        },
+        {
+          "name": "adx",
+          "type": "List[float]",
+          "visibility": "protected",
+          "description": "ADX値リスト"
+        }
+      ],
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 22,
+          "method_type": "INIT",
+          "purpose": "RiskManagement初期化（パラメータ・指標初期化）",
+          "criticality": "HIGH"
+        },
+        {
+          "name": "__calc_parabolic_sar",
+          "line": 332,
+          "method_type": "UTILITY",
+          "purpose": "Parabolic SAR を計算（トレンド追従型ストップ）",
+          "entry_conditions": [
+            "data: OHLCV リスト"
+          ],
+          "logic": "AF（加速因子）を動的更新しながら SAR を計算。強気/弱気モード切り替え。",
+          "criticality": "CRITICAL"
+        },
+        {
+          "name": "__calc_adx",
+          "line": 429,
+          "method_type": "UTILITY",
+          "purpose": "ADX （Average Directional Index）を計算",
+          "entry_conditions": [
+            "data: OHLCV リスト"
+          ],
+          "exit_outcomes": [
+            "self.adx, self.adx_bull, self.adx_bear を更新"
+          ],
+          "criticality": "CRITICAL"
+        },
+        {
+          "name": "get_psar",
+          "line": 66,
+          "method_type": "QUERY",
+          "purpose": "最新のParabolic SAR値を取得",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "get_adx",
+          "line": 95,
+          "method_type": "QUERY",
+          "purpose": "最新のADX値を取得",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "get_donchian_high",
+          "line": 115,
+          "method_type": "QUERY",
+          "purpose": "Donchian Channel 高値を計算",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "get_donchian_low",
+          "line": 165,
+          "method_type": "QUERY",
+          "purpose": "Donchian Channel 安値を計算",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "get_bb_upper",
+          "line": 215,
+          "method_type": "QUERY",
+          "purpose": "Bollinger Bands 上限を計算",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "get_bb_lower",
+          "line": 265,
+          "method_type": "QUERY",
+          "purpose": "Bollinger Bands 下限を計算",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "evaluate_strategy_a_adx",
+          "line": "後半部分（部分コード）",
+          "method_type": "QUERY",
+          "purpose": "Strategy A（ADXベース）を評価",
+          "criticality": "MEDIUM"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "architecture_score": 7.0,
+    "testability_score": 6.5,
+    "maintainability_score": 7.0,
+    "design_strengths": [
+      "複合指標：PSAR + ADX + Donchian + BB + RSI を統合",
+      "複数 Strategy：A（ADX）/ B（BB+RSI） / C（複合）を評価可能",
+      "ダミーモード対応：バックテスト/本番を動的切り替え",
+      "テクニカル指標は numpy で効率化"
+    ],
+    "critical_issues": [
+      "846行の単一ファイル→責務過多（SAR + ADX + Donchian + BB 計算混在）",
+      "PSAR計算の初期化が複雑（前回値継承で状態依存）→リセット時の不具合リスク",
+      "ADX計算でデータ不足時のデフォルト値が曖昧→NaN伝播リスク",
+      "Strategy A/B/C の評価ロジックが実装途中（evaluate_strategy_a_adx が途中で終了）",
+      "Donchian/BB/RSI 計算が冗長（numpy 効率化の余地大）"
+    ],
+    "recommendations": [
+      "指標計算を Indicators クラスに分離（PSAR / ADX / Donchian / BB 別々）",
+      "PSAR 初期化を明示化（reset vs restore の区別）",
+      "ADX データ不足時の戻り値ルール明文化（None vs 0 vs list of 0s）",
+      "Strategy A/B/C の完全実装＋テスト",
+      "numpy 活用による高速化（10倍以上期待可能）",
+      "テスト: PSAR/ADX が状態依存で正確に追跡される"
+    ]
+  }
+}

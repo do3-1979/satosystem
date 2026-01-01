@@ -1,0 +1,585 @@
+{
+  "metadata": {
+    "source_file": "src/bybit_exchange.py",
+    "analyzed_at": "2026-01-01T00:00:00Z",
+    "python_version": "3.10",
+    "format_version": "2.0",
+    "analyzer_note": "Bybit取引所API実装クラス。Exchange抽象クラス継承。実API + ダミー価格の3モード対応。"
+  },
+
+  "file_overview": {
+    "purpose": "Bybit取引所との API連携（口座残高取得、OHLCV取得、注文実行）",
+    "lines_of_code": 1033,
+    "dependency_count": 4,
+    "class_count": 1,
+    "function_count": 0,
+    "critical_methods": ["execute_entry_order", "execute_exit_order", "fetch_ohlcv", "fetch_latest_ohlcv"],
+    "description": "BybitExchange は Exchange 抽象クラスを継承し、ccxt ライブラリを通じて Bybit 取引所 API と連携。バックテスト（ダミー価格・ダミー取引）、ペーパートレード（実API価格・ダミー取引）、本番運用（実API価格・実取引）の3モードをサポート。指値→成行のフォールバック、リトライ、スリッページ管理を実装。"
+  },
+
+  "classes": [
+    {
+      "class_name": "BybitExchange",
+      "line": 51,
+      "docstring": "Bybit取引所との連携を行うクラス。Exchange クラスを継承し、Bybit取引所に特有のAPI実装と注文管理を提供。",
+
+      "responsibility": {
+        "primary": "Bybit取引所API呼び出し・OHLCV取得・注文実行・リトライ管理",
+        "secondary": [
+          "3モード対応（バックテスト/ペーパートレード/本番）",
+          "ダミー価格・ダミー取引の管理",
+          "注文のリトライ・フォールバック処理",
+          "スリッページ計算・調整",
+          "タイムフレーム・マーケットシンボル変換"
+        ],
+        "scope": "MODULE",
+        "criticality": "CRITICAL",
+        "testing_priority": 2,
+        "description": "Bot.run() から呼び出される取引所 API エンジン。Bot の注文実行指令を Bybit API へ変換・送信し、現在値・OHLCV・残高などの市場データを取得。エラーハンドリング・リトライロジック・スリッページ調整により、ネットワーク不安定環境での堅牢性を実現。"
+      },
+
+      "inheritance": ["Exchange"],
+
+      "attributes": [
+        {
+          "name": "exchange",
+          "type": "ccxt.bybit",
+          "visibility": "private",
+          "description": "ccxt ライブラリの Bybit インスタンス（実API呼び出し用）"
+        },
+        {
+          "name": "is_backtest_mode",
+          "type": "bool",
+          "visibility": "private",
+          "description": "バックテストモードフラグ（True = ダミー価格・ダミー取引）"
+        },
+        {
+          "name": "is_papertrading_mode",
+          "type": "bool",
+          "visibility": "private",
+          "description": "ペーパートレードモードフラグ（True = 実API価格・ダミー取引）"
+        },
+        {
+          "name": "is_live_trading_mode",
+          "type": "bool",
+          "visibility": "private",
+          "description": "本番運用モードフラグ（True = 実API価格・実取引）"
+        },
+        {
+          "name": "dummy_balance",
+          "type": "float",
+          "visibility": "private",
+          "description": "バックテスト/ペーパートレード用ダミー残高（初期値100USD）"
+        },
+        {
+          "name": "dummy_orders",
+          "type": "dict",
+          "visibility": "private",
+          "description": "ダミーモード時の注文履歴管理"
+        },
+        {
+          "name": "market",
+          "type": "str",
+          "visibility": "private",
+          "description": "取引シンボル（e.g. 'BTC/USD:BTC'）"
+        },
+        {
+          "name": "timeframe",
+          "type": "str",
+          "visibility": "private",
+          "description": "OHLCVのタイムフレーム（'1h', '2h', '4h'等）"
+        }
+      ],
+
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 57,
+          "method_type": "INIT",
+          "purpose": "BybitExchange インスタンスを初期化し、API認証・モード切り替え・設定値セットアップ",
+          "entry_conditions": [
+            "api_key, api_secret は有効な文字列",
+            "Config が初期化済み（get_back_test_mode, get_hot_test_dummy_mode等利用可能）",
+            "Logger が初期化可能な状態"
+          ],
+          "exit_outcomes": [
+            "BybitExchange インスタンスが完全に初期化され、API呼び出し可能",
+            "3モード判定完了（is_backtest_mode/is_papertrading_mode/is_live_trading_mode の1つが True）",
+            "初期化エラーの場合は例外を発生"
+          ],
+          "state_changes": [
+            "self.exchange = ccxt.bybit() が初期化（バックテスト時も実行）",
+            "self.is_backtest_mode, is_papertrading_mode, is_live_trading_mode が判定・設定",
+            "self.market, self.timeframe が Config から取得・変換",
+            "self.dummy_balance = 100.0, dummy_orders = {} が初期化"
+          ],
+          "criticality": "CRITICAL"
+        },
+
+        {
+          "name": "get_account_balance",
+          "line": 127,
+          "method_type": "QUERY",
+          "purpose": "口座の残高情報を取得（通貨別）",
+          "entry_conditions": [
+            "バックテスト/ペーパートレード: dummy_balance が設定済み",
+            "本番: API認証情報が有効、Bybit API 利用可能"
+          ],
+          "exit_outcomes": [
+            "成功: {'USDT': {'total': X, 'used': Y, 'free': Z}} 形式の残高 dict を返す",
+            "失敗: リトライ後に API エラーログ出力、結果の dict を返す"
+          ],
+          "state_changes": [
+            "ダミーモード時: 常に dummy_balance を 'USDT' キーで返す"
+          ],
+          "criticality": "HIGH"
+        },
+
+        {
+          "name": "get_account_balance_total",
+          "line": 147,
+          "method_type": "QUERY",
+          "purpose": "使用可能な証拠金残高を取得（単一数値）",
+          "entry_conditions": [
+            "バックテスト/ペーパートレード: dummy_balance が設定済み",
+            "本番: API認証情報が有効"
+          ],
+          "exit_outcomes": [
+            "成功: float 値（USD単位）を返す",
+            "失敗: リトライ後に API エラー、balance['USDT']['total'] を返す"
+          ],
+          "criticality": "HIGH"
+        },
+
+        {
+          "name": "get_market_symbol",
+          "line": 172,
+          "method_type": "QUERY",
+          "purpose": "現在の取引シンボルを返す",
+          "criticality": "LOW"
+        },
+
+        {
+          "name": "execute_order",
+          "line": 181,
+          "method_type": "ACTION",
+          "purpose": "DEPRECATED: 古い注文実行API（execute_entry_order/execute_exit_order へ置き換え）",
+          "criticality": "LOW",
+          "note": "後方互換性のためのみ残存。実装は execute_entry_order へ移行済み"
+        },
+
+        {
+          "name": "_calculate_entry_price",
+          "line": 231,
+          "method_type": "UTILITY",
+          "purpose": "エントリー指値価格を計算（スリッページ反映）",
+          "entry_conditions": [
+            "side = 'buy' or 'sell'",
+            "current_price > 0",
+            "slippage_percent >= 0"
+          ],
+          "exit_outcomes": [
+            "買い: current_price * (1 - slippage_percent/100) を返す",
+            "売り: current_price * (1 + slippage_percent/100) を返す"
+          ],
+          "criticality": "MEDIUM"
+        },
+
+        {
+          "name": "_calculate_exit_price",
+          "line": 252,
+          "method_type": "UTILITY",
+          "purpose": "決済指値価格を計算（ポジション側を考慮）",
+          "criticality": "MEDIUM"
+        },
+
+        {
+          "name": "_execute_market_order",
+          "line": 273,
+          "method_type": "ACTION",
+          "purpose": "成行注文を実行（リトライなし）",
+          "entry_conditions": [
+            "side = 'buy' or 'sell'",
+            "quantity > 0",
+            "self.exchange が有効な状態"
+          ],
+          "exit_outcomes": [
+            "成功: 注文 dict を返す",
+            "失敗: 例外を発生（呼び出し側でキャッチ）"
+          ],
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "ccxt.BaseError",
+                "location": "self.exchange.create_market_order() 呼び出し",
+                "recovery_strategy": "ABORT",
+                "fallback_action": "log_error 出力→例外発生"
+              },
+              {
+                "exception_type": "TimeoutError",
+                "location": "API call timeout",
+                "recovery_strategy": "ABORT",
+                "fallback_action": "log_error 出力→例外発生"
+              }
+            ]
+          },
+          "criticality": "CRITICAL"
+        },
+
+        {
+          "name": "_execute_market_order_final",
+          "line": 293,
+          "method_type": "ACTION",
+          "purpose": "最後のフォールバック成行注文（決済時に全リトライ失敗後）",
+          "entry_conditions": [
+            "side = 'buy' or 'sell'",
+            "quantity > 0"
+          ],
+          "exit_outcomes": [
+            "成功: 注文 dict を返す",
+            "失敗: 最大リトライ (max_retries=2) 後に例外を発生"
+          ],
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "ccxt.BaseError | TimeoutError",
+                "location": "create_market_order",
+                "recovery_strategy": "RETRY_UP_TO_2",
+                "fallback_action": "最終失敗時は例外を呼び出し側へ伝播"
+              }
+            ]
+          },
+          "criticality": "CRITICAL"
+        },
+
+        {
+          "name": "execute_entry_order",
+          "line": 316,
+          "method_type": "ACTION",
+          "purpose": "エントリー注文を実行（成行優先→失敗時は指値リトライ→最後は成行）",
+          "entry_conditions": [
+            "side = 'buy' or 'sell'",
+            "quantity > 0",
+            "current_price > 0"
+          ],
+          "exit_outcomes": [
+            "バックテスト: ダミーエントリー実行→ True を返す",
+            "本番/ペーパー: order dict を返す"
+          ],
+          "state_changes": [
+            "バックテスト: dummy_balance -= quantity * entry_price (デビット)"
+          ],
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "ccxt.BaseError",
+                "location": "成行注文失敗",
+                "recovery_strategy": "FALLBACK_TO_LIMIT",
+                "fallback_action": "_execute_entry_order_with_limit_retry へ移行"
+              }
+            ]
+          },
+          "criticality": "CRITICAL",
+          "testability": {
+            "difficulty": "HARD",
+            "suggested_test_cases": [
+              {
+                "name": "test_entry_backtest_mode",
+                "type": "UNIT",
+                "setup": "is_backtest_mode=True, quantity=1, current_price=50000",
+                "expected": "dummy_balance が減少、True返却"
+              },
+              {
+                "name": "test_entry_market_success",
+                "type": "INTEGRATION",
+                "setup": "exchange.create_market_order モック成功",
+                "expected": "order dict返却"
+              }
+            ]
+          }
+        },
+
+        {
+          "name": "_execute_entry_order_with_limit_retry",
+          "line": 357,
+          "method_type": "ACTION",
+          "purpose": "指値リトライロジック（スリッページ漸増・注文キャンセル・約定確認）",
+          "entry_conditions": [
+            "side, quantity, current_price は有効",
+            "成行注文がフォールバック時に呼び出される"
+          ],
+          "exit_outcomes": [
+            "約定成功: 指値で約定したorder dict を返す",
+            "全リトライ失敗: 成行で最終トライ→失敗時は例外を発生"
+          ],
+          "state_changes": [
+            "max_retries (デフォルト4) 回まで指値注文を更新",
+            "各リトライでスリッページを slippage_multiplier (デフォルト1.5) で拡大"
+          ],
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "ccxt.BaseError",
+                "location": "create_limit_order",
+                "recovery_strategy": "RETRY_WITH_BACKOFF",
+                "fallback_action": "スリッページ拡大→リトライ、全失敗時は成行へ"
+              }
+            ],
+            "failure_modes": [
+              {
+                "scenario": "指値が約定しない（スリッページ不足）",
+                "impact": "HIGH",
+                "handling": "スリッページ 1.5 倍ずつ拡大、最大4回リトライ"
+              },
+              {
+                "scenario": "キャンセル失敗（既に約定済み）",
+                "impact": "MEDIUM",
+                "handling": "ログ警告→次のリトライへ継続"
+              }
+            ]
+          },
+          "criticality": "CRITICAL"
+        },
+
+        {
+          "name": "execute_exit_order",
+          "line": 435,
+          "method_type": "ACTION",
+          "purpose": "決済注文を成行で実行（成行優先→失敗時は指値リトライ→最後は成行フォールバック）",
+          "entry_conditions": [
+            "side = 'buy' or 'sell'",
+            "quantity > 0"
+          ],
+          "exit_outcomes": [
+            "バックテスト: ダミー決済実行→ True を返す",
+            "本番/ペーパー: order dict を返す"
+          ],
+          "state_changes": [
+            "バックテスト: dummy_balance += quantity * exit_price (クレジット)"
+          ],
+          "criticality": "CRITICAL",
+          "testability": {
+            "difficulty": "HARD",
+            "suggested_test_cases": [
+              {
+                "name": "test_exit_backtest_mode",
+                "type": "UNIT",
+                "setup": "is_backtest_mode=True, quantity=1",
+                "expected": "dummy_balance が増加、True返却"
+              }
+            ]
+          }
+        },
+
+        {
+          "name": "_execute_exit_order_with_limit_retry",
+          "line": 465,
+          "method_type": "ACTION",
+          "purpose": "決済注文の指値リトライロジック（成行失敗時のフォールバック）",
+          "criticality": "CRITICAL"
+        },
+
+        {
+          "name": "_dummy_entry_order",
+          "line": 528,
+          "method_type": "ACTION",
+          "purpose": "ダミーエントリー注文（バックテスト・ペーパートレード時）",
+          "entry_conditions": [
+            "is_backtest_mode or is_papertrading_mode = True",
+            "quantity > 0, current_price > 0"
+          ],
+          "exit_outcomes": [
+            "常に True を返す（必ず成功したと仮定）"
+          ],
+          "state_changes": [
+            "dummy_balance -= quantity * entry_price"
+          ],
+          "criticality": "MEDIUM"
+        },
+
+        {
+          "name": "_dummy_exit_order",
+          "line": 540,
+          "method_type": "ACTION",
+          "purpose": "ダミー決済注文（バックテスト・ペーパートレード時）",
+          "entry_conditions": [
+            "is_backtest_mode or is_papertrading_mode = True"
+          ],
+          "exit_outcomes": [
+            "常に True を返す"
+          ],
+          "state_changes": [
+            "dummy_balance += quantity * random_exit_price（ランダムに±500USD変動）"
+          ],
+          "criticality": "MEDIUM"
+        },
+
+        {
+          "name": "get_nearest_epoch_time",
+          "line": 553,
+          "method_type": "UTILITY",
+          "purpose": "指定されたepoch時刻を奇数時刻（1,3,5,...,23）の最も近い値に丸める",
+          "criticality": "LOW"
+        },
+
+        {
+          "name": "fetch_ohlcv",
+          "line": 590,
+          "method_type": "QUERY",
+          "purpose": "指定期間の OHLCV データを Bybit API から取得（バックテスト時の大量データ取得用）",
+          "entry_conditions": [
+            "start_epoch < end_epoch",
+            "time_frame > 0"
+          ],
+          "exit_outcomes": [
+            "成功: OHLCV dict リスト [{close_time, close_time_dt, open_price, high_price, low_price, close_price, Volume}, ...] を返す",
+            "失敗: 最大リトライ後も取得失敗時は部分データを返す（スキップ）"
+          ],
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "ccxt.BaseError | TimeoutError",
+                "location": "self.exchange.fetch_ohlcv() 呼び出し",
+                "recovery_strategy": "RETRY_UP_TO_3",
+                "fallback_action": "その時間足をスキップ→次へ進む（スキップロジック）"
+              }
+            ],
+            "failure_modes": [
+              {
+                "scenario": "API レート制限超過",
+                "impact": "HIGH",
+                "handling": "指数バックオフ（最大30秒）でリトライ"
+              },
+              {
+                "scenario": "データの抜け漏れ",
+                "impact": "MEDIUM",
+                "handling": "TODO コメント記載（検証実装未了）"
+              }
+            ]
+          },
+          "performance": {
+            "time_complexity": "O(n) where n = (end_epoch - start_epoch) / time_frame",
+            "typical_execution_time_ms": 30000,
+            "bottlenecks": [
+              {
+                "operation": "for loop in fetch_ohlcv (全期間分)",
+                "current_time_ms": 30000,
+                "optimization_potential": "キャッシング→初回のみ API呼び出し、2回目以降はキャッシュ利用"
+              }
+            ]
+          },
+          "criticality": "HIGH",
+          "testability": {
+            "difficulty": "HARD",
+            "suggested_test_cases": [
+              {
+                "name": "test_fetch_ohlcv_backtest",
+                "type": "INTEGRATION",
+                "setup": "1週間分のOHLCVをAPI取得",
+                "expected": "複数の OHLCV dict を返す"
+              }
+            ]
+          }
+        },
+
+        {
+          "name": "fetch_latest_ohlcv",
+          "line": 719,
+          "method_type": "QUERY",
+          "purpose": "最新1本のOHLCVを取得（リアルタイム価格更新用）",
+          "entry_conditions": [
+            "time_frame > 0 (分単位)"
+          ],
+          "exit_outcomes": [
+            "バックテスト: ダミー価格 OHLCV list を返す",
+            "本番: 最新実 OHLCV を返す、失敗時は例外を発生"
+          ],
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "ccxt.BaseError | TimeoutError",
+                "location": "self.exchange.fetch_ohlcv()",
+                "recovery_strategy": "RETRY_UP_TO_3",
+                "fallback_action": "全リトライ失敗時は例外を発生（呼び出し側でハンドル）"
+              }
+            ]
+          },
+          "criticality": "HIGH",
+          "testability": {
+            "difficulty": "MEDIUM",
+            "suggested_test_cases": [
+              {
+                "name": "test_fetch_latest_ohlcv_dummy",
+                "type": "UNIT",
+                "setup": "is_backtest_mode=True",
+                "expected": "ダミー価格 OHLCV list (長さ1)"
+              }
+            ]
+          }
+        },
+
+        {
+          "name": "fetch_ticker",
+          "line": 773,
+          "method_type": "QUERY",
+          "purpose": "現在値を取得（単一数値）",
+          "entry_conditions": [
+            "self.exchange が有効な状態"
+          ],
+          "exit_outcomes": [
+            "バックテスト: ランダムダミー価格を返す",
+            "本番: float 現在値を返す"
+          ],
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "ccxt.BaseError | TimeoutError",
+                "location": "self.exchange.fetch_ticker()",
+                "recovery_strategy": "RETRY_UP_TO_3",
+                "fallback_action": "全リトライ失敗時は例外を発生"
+              }
+            ]
+          },
+          "criticality": "HIGH",
+          "performance": {
+            "typical_execution_time_ms": 500,
+            "bottlenecks": [
+              {
+                "operation": "fetch_ticker API 呼び出し",
+                "current_time_ms": 500,
+                "optimization_potential": "ローカルキャッシュ + 定期更新→毎回API呼び出しスキップ"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+
+  "summary": {
+    "architecture_score": 8.5,
+    "testability_score": 7.0,
+    "maintainability_score": 8.2,
+    "design_strengths": [
+      "指値→成行のフォールバック戦略により約定確実性を向上",
+      "スリッページ段階的拡大により最適な約定価格を追求",
+      "3モード（バックテスト/ペーパー/本番）を統一実装で対応",
+      "リトライロジックに指数バックオフを採用（API安定性向上）",
+      "注文キャンセルと約定確認により重複約定リスク軽減"
+    ],
+    "critical_issues": [
+      "OHLCV/Ticker キャッシング未実装→毎回 API 呼び出し（レート制限リスク）",
+      "ネットワーク断絶時の位置追跡機構がない（再開時にポジション不整合リスク）",
+      "ダミー決済価格がランダム→期待値と実績の乖離テスト困難",
+      "fetch_ohlcv スキップロジックで無音失敗→データ品質検証なし"
+    ],
+    "recommendations": [
+      "OHLCV キャッシュ層導入（PriceDataManagement 連携）",
+      "ポジション状態ブロードキャスト機構（EventBus）で同期取れ",
+      "決済シミュレーション用のダミー価格パターン テンプレート化",
+      "OHLCV 取得エラーで早期終了するか警告を出すかのオプション化",
+      "API レート制限の事前チェック（リクエスト前に残クォータ確認）",
+      "CircuitBreaker パターンで連続API失敗時に自動フェイルセーフ"
+    ]
+  }
+}

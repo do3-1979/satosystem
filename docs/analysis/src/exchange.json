@@ -1,0 +1,131 @@
+{
+  "metadata": {
+    "source_file": "src/exchange.py",
+    "analyzed_at": "2026-01-01T00:00:00Z",
+    "python_version": "3.10",
+    "format_version": "2.0",
+    "analyzer_note": "取引所API 抽象クラス。BybitExchange, BitgetExchange の基底クラス。"
+  },
+
+  "file_overview": {
+    "purpose": "取引所API の抽象インターフェース定義",
+    "lines_of_code": 38,
+    "dependency_count": 1,
+    "class_count": 1,
+    "function_count": 0,
+    "critical_methods": ["execute_order", "get_account_balance"],
+    "description": "Exchange は抽象基底クラス。全取引所実装（Bybit, Bitget 等）の共通インターフェースを定義。具体実装は BybitExchange/BitgetExchange が override。"
+  },
+
+  "classes": [
+    {
+      "class_name": "Exchange",
+      "line": 4,
+      "docstring": "取引所API 抽象クラス。API キー認証、注文発行、残高取得などのインターフェースを定義。",
+
+      "responsibility": {
+        "primary": "取引所API の共通インターフェース定義",
+        "secondary": [],
+        "scope": "MODULE",
+        "criticality": "HIGH",
+        "testing_priority": 1,
+        "description": "Template Method パターン。具体的な API 実装は各 Exchange サブクラスで override。"
+      },
+
+      "inheritance": [],
+
+      "attributes": [
+        {
+          "name": "api_key",
+          "type": "str",
+          "visibility": "protected",
+          "description": "取引所 API キー"
+        },
+        {
+          "name": "api_secret",
+          "type": "str",
+          "visibility": "protected",
+          "description": "取引所 API シークレット"
+        }
+      ],
+
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 11,
+          "method_type": "INIT",
+          "purpose": "Exchange 抽象クラスを初期化（API 認証情報保存）",
+          "criticality": "MEDIUM"
+        },
+
+        {
+          "name": "get_account_balance",
+          "line": 17,
+          "method_type": "QUERY",
+          "purpose": "口座残高を取得（抽象メソッド→各実装で override）",
+          "entry_conditions": [
+            "API 認証情報が有効"
+          ],
+          "exit_outcomes": [
+            "NotImplementedError を発生"
+          ],
+          "criticality": "CRITICAL",
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "NotImplementedError",
+                "location": "このメソッド呼び出し",
+                "recovery_strategy": "MUST_OVERRIDE",
+                "fallback_action": "サブクラスで override 必須"
+              }
+            ]
+          }
+        },
+
+        {
+          "name": "execute_order",
+          "line": 23,
+          "method_type": "ACTION",
+          "purpose": "注文を発行（抽象メソッド→各実装で override）",
+          "entry_conditions": [
+            "symbol, side, quantity, order_type は有効値"
+          ],
+          "exit_outcomes": [
+            "NotImplementedError を発生"
+          ],
+          "criticality": "CRITICAL",
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "NotImplementedError",
+                "location": "このメソッド呼び出し",
+                "recovery_strategy": "MUST_OVERRIDE",
+                "fallback_action": "サブクラスで override 必須"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+
+  "summary": {
+    "architecture_score": 9.0,
+    "testability_score": 7.0,
+    "maintainability_score": 9.0,
+    "design_strengths": [
+      "抽象基底クラスで統一インターフェース",
+      "多様な取引所対応を容易（BybitExchange, BitgetExchange）",
+      "Dependency Injection 対応可能"
+    ],
+    "critical_issues": [
+      "抽象メソッドが 2 つのみ→他の必要メソッド（fetch_ohlcv, fetch_ticker 等）は定義漏れ",
+      "docstring が大きいの実装説明不足→使用側で混乱"
+    ],
+    "recommendations": [
+      "全取引所メソッド（fetch_ohlcv, fetch_ticker, fetch_latest_ohlcv）を抽象定義に追加",
+      "@abstractmethod デコレータを使用（protocol/interface 更に明示）",
+      "実装クラスの チェックリスト作成（override 必須メソッド一覧）"
+    ]
+  }
+}

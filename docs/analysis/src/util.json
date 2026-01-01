@@ -1,0 +1,131 @@
+{
+  "metadata": {
+    "source_file": "src/util.py",
+    "analyzed_at": "2026-01-01T00:00:00Z",
+    "python_version": "3.10",
+    "format_version": "2.0",
+    "analyzer_note": "バックテスト結果・ログ分析ユーティリティ。Excel出力・グラフ生成・パラメータ抽出。"
+  },
+  "file_overview": {
+    "purpose": "バックテスト結果のExcel出力・分析・可視化",
+    "lines_of_code": 265,
+    "dependency_count": 6,
+    "class_count": 1,
+    "function_count": 0,
+    "critical_methods": ["extract_and_export_logs", "generate_line_chart", "extract_parameters_and_results"],
+    "description": "Util はログ集約・Excel 出力・グラフ生成で、バックテスト結果の分析を自動化。"
+  },
+  "classes": [
+    {
+      "class_name": "Util",
+      "line": 9,
+      "docstring": "バックテスト結果の集約・分析・可視化ユーティリティ。",
+      "responsibility": {
+        "primary": "バックテスト結果のExcel出力・分析・グラフ化",
+        "secondary": ["ログファイル集約", "パラメータ抽出"],
+        "scope": "UTILITY",
+        "criticality": "MEDIUM",
+        "testing_priority": 2,
+        "description": "Aggregator パターン。複数ログファイルを統合・加工して Excel/グラフを出力。"
+      },
+      "inheritance": [],
+      "attributes": [],
+      "methods": [
+        {
+          "name": "extract_and_export_logs",
+          "line": 10,
+          "method_type": "ACTION",
+          "purpose": "複数のZIP/JSONログを読み込み、加工してExcelに出力（グラフ付き）",
+          "entry_conditions": [
+            "log_directory: ログディレクトリ",
+            "num_logs: 読み込むログファイル数",
+            "start_time/end_time: フィルター期間（オプション）"
+          ],
+          "exit_outcomes": [
+            "output_excel_file: Excelファイル作成（Param/Data/Chart/PandLシート）"
+          ],
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "zipfile.BadZipFile, json.JSONDecodeError",
+                "location": "ファイル読み込み時",
+                "recovery_strategy": "ファイルをスキップして継続",
+                "fallback_action": "部分出力"
+              },
+              {
+                "exception_type": "KeyError",
+                "location": "DataFrame カラムアクセス時",
+                "recovery_strategy": "必須カラムリストで検証・フィルター",
+                "fallback_action": "欠落カラムを除外"
+              }
+            ]
+          },
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "generate_line_chart",
+          "line": 133,
+          "method_type": "UTILITY",
+          "purpose": "データをもとに折れ線グラフを生成（openpyxl）",
+          "parameters": [
+            {"name": "data", "type": "DataFrame"},
+            {"name": "column_name", "type": "str"},
+            {"name": "chart_sheet", "type": "Worksheet"}
+          ],
+          "criticality": "LOW"
+        },
+        {
+          "name": "generate_line_profit_and_loss",
+          "line": 110,
+          "method_type": "UTILITY",
+          "purpose": "損益推移グラフを生成",
+          "criticality": "LOW"
+        },
+        {
+          "name": "fetch_ohlcv_and_save_to_json",
+          "line": 176,
+          "method_type": "ACTION",
+          "purpose": "OHLCVデータをExchangeから取得しJSONに保存",
+          "criticality": "LOW"
+        },
+        {
+          "name": "extract_parameters_and_results",
+          "line": 190,
+          "method_type": "ACTION",
+          "purpose": "ログファイルからパラメータ・結果を抽出してExcelに出力",
+          "entry_conditions": [
+            "log_directory: log_*.txt ファイルが存在"
+          ],
+          "logic": "テキストファイルから keywords をgrep → Excelに出力",
+          "criticality": "MEDIUM"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "architecture_score": 6.5,
+    "testability_score": 6.0,
+    "maintainability_score": 6.5,
+    "design_strengths": [
+      "ログ集約自動化：複数ファイル統合で分析効率化",
+      "Excel出力：Param/Data/Chart/PandL を統合",
+      "グラフ生成：openpyxl で自動グラフ作成",
+      "柔軟なフィルター：期間・ファイル数を指定可能"
+    ],
+    "critical_issues": [
+      "単一クラスで複数責務（ログ抽出/Excel出力/グラフ生成）→SRP 違反",
+      "エラーハンドリングが粗い（WARN ログのみ）→失敗を見落としやすい",
+      "hardcoded カラムリスト（selected_columns）→スキーマ変更時メンテ煩雑",
+      "position_price=0 を min() で置き換え→グラフの見た目が歪む",
+      "ファイル形式判定が fragile（endswith('zip') or 'json'）→拡張子未設定時失敗"
+    ],
+    "recommendations": [
+      "LogAggregator / ExcelWriter / ChartGenerator に分離",
+      "エラーをException で throw → 呼び出し側で明示的に処理",
+      "schema 定義ファイル（JSON）化して動的に読み込み",
+      "position_price=0 の置き換え方法を改善（median or 外挿）",
+      "ファイル形式判定を zipfile.is_zipfile() で正確化",
+      "テスト: 複数ログ形式（ZIP/JSON）の統合"
+    ]
+  }
+}

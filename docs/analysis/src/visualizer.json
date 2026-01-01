@@ -1,0 +1,175 @@
+{
+  "metadata": {
+    "source_file": "src/visualizer.py",
+    "analyzed_at": "2026-01-01T00:00:00Z",
+    "python_version": "3.10",
+    "format_version": "2.0",
+    "analyzer_note": "バックテスト結果のインタラクティブチャート可視化。Plotly + ローソク足 + 指標重ね表示。"
+  },
+  "file_overview": {
+    "purpose": "バックテスト結果のHTML可視化・インタラクティブチャート生成",
+    "lines_of_code": 856,
+    "dependency_count": 7,
+    "class_count": 1,
+    "function_count": 0,
+    "critical_methods": ["load_logs_data", "create_interactive_chart", "resample_to_candles"],
+    "description": "Visualizer は Plotly で複数層のチャートを生成。ローソク足 + 指標 + ポジション情報を重ね表示。"
+  },
+  "classes": [
+    {
+      "class_name": "Visualizer",
+      "line": 15,
+      "docstring": "バックテスト結果をインタラクティブなHTML チャートに可視化。",
+      "responsibility": {
+        "primary": "バックテスト結果のHTML 可視化・分析",
+        "secondary": ["データ統合・リサンプリング", "指標表示"],
+        "scope": "PRESENTATION",
+        "criticality": "MEDIUM",
+        "testing_priority": 2,
+        "description": "Presenter パターン。Plotly で複雑なチャート構造を実現。"
+      },
+      "inheritance": [],
+      "attributes": [
+        {
+          "name": "time_frame",
+          "type": "int",
+          "visibility": "protected",
+          "description": "タイムフレーム（分）"
+        },
+        {
+          "name": "time_frame_label",
+          "type": "str",
+          "visibility": "protected",
+          "description": "タイムフレーム表示用ラベル"
+        }
+      ],
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 23,
+          "method_type": "INIT",
+          "purpose": "Visualizer 初期化（タイムフレーム設定）",
+          "criticality": "LOW"
+        },
+        {
+          "name": "_get_timeframe_label",
+          "line": 30,
+          "method_type": "UTILITY",
+          "purpose": "タイムフレーム（分）をラベル文字列に変換",
+          "criticality": "LOW"
+        },
+        {
+          "name": "detect_period_log_files",
+          "line": 41,
+          "method_type": "QUERY",
+          "purpose": "指定期間に含まれるZIPログファイルを自動検出",
+          "entry_conditions": [
+            "log_directory: ログディレクトリ",
+            "start_time/end_time: 期間（datetime or str）"
+          ],
+          "exit_outcomes": [
+            "List[str]: 期間内のZIPファイルパスリスト（時系列順）"
+          ],
+          "logic": "ファイル名から期間を正規表現で抽出 → 指定期間と重複確認 → ソート",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "load_logs_data",
+          "line": 96,
+          "method_type": "QUERY",
+          "purpose": "ログディレクトリから全データを読み込み（JSON/ZIP対応）",
+          "entry_conditions": [
+            "log_directory: ログディレクトリ",
+            "start_time/end_time: 表示期間",
+            "lookback_days: 計算用遡り日数"
+          ],
+          "exit_outcomes": [
+            "tuple: (全データDF, 表示用DF, start_time, end_time)"
+          ],
+          "logic": "複数ファイル統合 → 時系列ソート → 重複削除 → 期間フィルター",
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "zipfile.BadZipFile, json.JSONDecodeError",
+                "location": "ファイル読み込み時",
+                "recovery_strategy": "WARN ログ出力してスキップ",
+                "fallback_action": "部分データで継続"
+              },
+              {
+                "exception_type": "KeyError",
+                "location": "DataFrame カラムアクセス時",
+                "recovery_strategy": "real_time_dt が存在するか確認",
+                "fallback_action": "raw_time_dt から生成"
+              }
+            ]
+          },
+          "criticality": "CRITICAL"
+        },
+        {
+          "name": "resample_to_candles",
+          "line": 230,
+          "method_type": "UTILITY",
+          "purpose": "時系列データを設定タイムフレームのOHLC に変換",
+          "entry_conditions": [
+            "df: 1分足データ"
+          ],
+          "exit_outcomes": [
+            "DataFrame: リサンプリング後のローソク足データ"
+          ],
+          "logic": "既存粒度推定 → 必要に応じてresample() → 重複削除",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "_normalize_series",
+          "line": 260,
+          "method_type": "UTILITY",
+          "purpose": "時系列を Z-score 正規化（平均0、標準偏差1）",
+          "criticality": "LOW"
+        },
+        {
+          "name": "create_interactive_chart",
+          "line": 273,
+          "method_type": "ACTION",
+          "purpose": "インタラクティブなHTML チャートを生成（4層サブプロット）",
+          "entry_conditions": [
+            "df: 全データ（1分足）",
+            "candles_2h: ローソク足データ"
+          ],
+          "exit_outcomes": [
+            "output_html: 可視化HTML ファイル作成"
+          ],
+          "logic": "make_subplots(4行1列) で4つの層を作成 → 各指標をトレースに追加 → 背景色で状態を表示",
+          "criticality": "CRITICAL"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "architecture_score": 7.0,
+    "testability_score": 6.0,
+    "maintainability_score": 6.5,
+    "design_strengths": [
+      "インタラクティブ性：Plotly により zoom/pan/hover が可能",
+      "複層構造：価格/出来高/指標/損益の4層を統合",
+      "自動期間検出：ZIPファイルから期間を自動抽出",
+      "計算用期間遡り：20日遡ってから表示期間で切り抽出（計算精度確保）",
+      "リサンプリング対応：既存粒度を推定して効率的に変換"
+    ],
+    "critical_issues": [
+      "856行の単一ファイル→責務過多（ファイル読み込み/リサンプリング/グラフ生成混在）",
+      "期間フィルター処理が複雑（calc_start_time vs display_start_time の2段階）→バグリスク",
+      "ファイル形式検出が脆弱（endswith() 判定）→ZIP vs JSON の区別が曖昧",
+      "position_change の計算が遅い（diff().fillna()）→大規模データで性能問題",
+      "背景色表示ロジックが複雑（has_position / position_change による制御）→テスト困難"
+    ],
+    "recommendations": [
+      "DataLoader / ChartBuilder に責務分離",
+      "期間フィルター処理を簡潔化（1段階で統一）",
+      "zipfile.is_zipfile() で正確な形式検出",
+      "position_change を事前計算の位置トラッキング（mask 方式）に置き換え",
+      "背景色表示を専用メソッド化（add_position_background()）",
+      "テスト: 複数期間・複数ファイルの統合動作",
+      "テスト: ローソク足への自動リサンプリング"
+    ]
+  }
+}

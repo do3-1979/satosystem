@@ -1,0 +1,287 @@
+{
+  "metadata": {
+    "source_file": "src/event.py",
+    "analyzed_at": "2026-01-01T00:00:00Z",
+    "python_version": "3.10",
+    "format_version": "2.0",
+    "analyzer_note": "イベント駆動型パターン実装。Event + EventType定数 + EventBus（Pub/Sub）"
+  },
+
+  "file_overview": {
+    "purpose": "イベント駆動アーキテクチャの基盤。モジュール間の疎結合通信",
+    "lines_of_code": 70,
+    "dependency_count": 1,
+    "class_count": 3,
+    "function_count": 0,
+    "critical_methods": ["EventBus.emit", "EventBus.subscribe"],
+    "description": "Event（単純なイベント構造体）、EventType（イベント種類定数）、EventBus（Pub/Sub）の3要素。Bot.run() から ENTRY_SIGNAL/EXIT_SIGNAL/ORDER_EXECUTED 等のイベントを emit し、他モジュール（Portfolio, Logger 等）が subscribe して反応。同期呼び出しのみ（副作用回避）。"
+  },
+
+  "classes": [
+    {
+      "class_name": "Event",
+      "line": 16,
+      "docstring": "イベント構造体。type と data を保持。",
+
+      "responsibility": {
+        "primary": "イベント情報の単純な容器",
+        "secondary": [],
+        "scope": "MODULE",
+        "criticality": "LOW",
+        "testing_priority": 1
+      },
+
+      "inheritance": [],
+
+      "attributes": [
+        {
+          "name": "event_type",
+          "type": "str",
+          "visibility": "public",
+          "description": "イベント種類（'ENTRY_SIGNAL', 'EXIT_SIGNAL' 等）"
+        },
+        {
+          "name": "data",
+          "type": "Any",
+          "visibility": "public",
+          "description": "イベント関連データ（dict or その他）"
+        }
+      ],
+
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 18,
+          "method_type": "INIT",
+          "purpose": "Event インスタンスを生成",
+          "criticality": "LOW"
+        }
+      ]
+    },
+
+    {
+      "class_name": "EventType",
+      "line": 26,
+      "docstring": "イベント種類定数",
+
+      "responsibility": {
+        "primary": "イベント型の統一管理（マジックストリング排除）",
+        "secondary": [],
+        "scope": "GLOBAL",
+        "criticality": "MEDIUM",
+        "testing_priority": 1
+      },
+
+      "inheritance": [],
+
+      "attributes": [
+        {
+          "name": "TICK",
+          "type": "str",
+          "visibility": "static",
+          "description": "最新ティック価格取得"
+        },
+        {
+          "name": "ENTRY_SIGNAL",
+          "type": "str",
+          "visibility": "static",
+          "description": "エントリーシグナル発生"
+        },
+        {
+          "name": "ADD_SIGNAL",
+          "type": "str",
+          "visibility": "static",
+          "description": "ナンピン（追加エントリー）シグナル"
+        },
+        {
+          "name": "EXIT_SIGNAL",
+          "type": "str",
+          "visibility": "static",
+          "description": "決済シグナル"
+        },
+        {
+          "name": "ORDER_SUBMITTED",
+          "type": "str",
+          "visibility": "static",
+          "description": "注文送信"
+        },
+        {
+          "name": "ORDER_EXECUTED",
+          "type": "str",
+          "visibility": "static",
+          "description": "注文約定"
+        },
+        {
+          "name": "PORTFOLIO_UPDATED",
+          "type": "str",
+          "visibility": "static",
+          "description": "ポートフォリオ更新"
+        },
+        {
+          "name": "RISK_UPDATED",
+          "type": "str",
+          "visibility": "static",
+          "description": "リスク指標更新"
+        },
+        {
+          "name": "LOOP_ERROR",
+          "type": "str",
+          "visibility": "static",
+          "description": "メインループエラー発生"
+        }
+      ],
+
+      "methods": []
+    },
+
+    {
+      "class_name": "EventBus",
+      "line": 38,
+      "docstring": "シンプルな Pub/Sub メッセージング。同期呼び出しのみ。",
+
+      "responsibility": {
+        "primary": "イベントのパブリッシュ・サブスクライブ管理",
+        "secondary": [
+          "ハンドラー登録/削除",
+          "例外スワローイング（独立性維持）"
+        ],
+        "scope": "GLOBAL",
+        "criticality": "HIGH",
+        "testing_priority": 2,
+        "description": "Event パターンの中心。Bot.run() から emit() 呼び出しで全 subscriber に通知。各 handler は独立実行（例外を吸収）。アクティベーション: Bot が emit → all subscribers 同期呼び出し。"
+      },
+
+      "inheritance": [],
+
+      "attributes": [
+        {
+          "name": "_handlers",
+          "type": "Dict[str, List[Callable[[Event], None]]]",
+          "visibility": "private",
+          "description": "イベント種別ごとのハンドラーリスト"
+        }
+      ],
+
+      "methods": [
+        {
+          "name": "__init__",
+          "line": 42,
+          "method_type": "INIT",
+          "purpose": "EventBus インスタンスを初期化",
+          "criticality": "LOW"
+        },
+
+        {
+          "name": "subscribe",
+          "line": 45,
+          "method_type": "ACTION",
+          "purpose": "指定イベント種別のハンドラーを登録",
+          "entry_conditions": [
+            "event_type は str",
+            "handler は Callable[[Event], None]"
+          ],
+          "exit_outcomes": [
+            "_handlers に event_type → handler を追加"
+          ],
+          "state_changes": [
+            "_handlers[event_type] にハンドラーを append"
+          ],
+          "criticality": "MEDIUM"
+        },
+
+        {
+          "name": "unsubscribe",
+          "line": 48,
+          "method_type": "ACTION",
+          "purpose": "指定イベント種別のハンドラーを削除",
+          "entry_conditions": [
+            "event_type, handler は登録済み"
+          ],
+          "exit_outcomes": [
+            "handler が _handlers から削除される"
+          ],
+          "state_changes": [
+            "_handlers[event_type] からハンドラーを除去、空になれば辞書エントリ削除"
+          ],
+          "criticality": "MEDIUM"
+        },
+
+        {
+          "name": "emit",
+          "line": 52,
+          "method_type": "ACTION",
+          "purpose": "イベントを発火（全 subscriber を同期呼び出し）",
+          "entry_conditions": [
+            "event_type は str",
+            "data は Any"
+          ],
+          "exit_outcomes": [
+            "全登録ハンドラーが同期実行される",
+            "ハンドラー内の例外は吸収される"
+          ],
+          "state_changes": [
+            "各ハンドラーが呼び出される（副作用は各ハンドラー内）"
+          ],
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "Exception",
+                "location": "handler(ev) 呼び出し内",
+                "recovery_strategy": "SWALLOW",
+                "fallback_action": "例外を無視、次のハンドラーへ継続"
+              }
+            ]
+          },
+          "criticality": "HIGH",
+          "testability": {
+            "difficulty": "MEDIUM",
+            "suggested_test_cases": [
+              {
+                "name": "test_emit_no_handlers",
+                "type": "UNIT",
+                "setup": "emit() をハンドラーなしで呼び出し",
+                "expected": "エラーなく完了"
+              },
+              {
+                "name": "test_emit_single_handler",
+                "type": "UNIT",
+                "setup": "subscribe() で 1 つハンドラーを登録後 emit()",
+                "expected": "ハンドラーが呼び出される"
+              },
+              {
+                "name": "test_emit_exception_swallowed",
+                "type": "UNIT",
+                "setup": "ハンドラー内で例外を発生、emit() 呼び出し",
+                "expected": "例外は吸収、別ハンドラーは実行継続"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+
+  "summary": {
+    "architecture_score": 8.5,
+    "testability_score": 8.0,
+    "maintainability_score": 8.8,
+    "design_strengths": [
+      "Pub/Sub パターンで疎結合を実現",
+      "EventType 定数で マジックストリング排除",
+      "例外スワローイングでハンドラー独立性を維持",
+      "シンプルで理解しやすい実装"
+    ],
+    "critical_issues": [
+      "同期呼び出しのため、重い handler があるとメインループがブロック",
+      "ハンドラー実行順序が不定（dict iteration）→ 順序に依存する処理が危険",
+      "例外スワローイングで silent failure → デバッグが困難"
+    ],
+    "recommendations": [
+      "メインループ vs 重い handler を分離（async/await 導入検討）",
+      "ハンドラー実行順序を明示的に制御（priority フィールド追加）",
+      "handler 例外は logging で記録（silent を避ける）",
+      "EventType を Enum に変更（タイプセーフティ向上）",
+      "イベントタイムスタンプ追加（デバッグ・監視用）"
+    ]
+  }
+}

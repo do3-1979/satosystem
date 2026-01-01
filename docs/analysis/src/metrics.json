@@ -1,0 +1,117 @@
+{
+  "metadata": {
+    "source_file": "src/metrics.py",
+    "analyzed_at": "2026-01-01T00:00:00Z",
+    "python_version": "3.10",
+    "format_version": "2.0",
+    "analyzer_note": "バックテスト性能メトリクス計算ユーティリティ。PnL履歴とトレード結果から統計指標を算出。"
+  },
+  "file_overview": {
+    "purpose": "バックテスト結果の統計分析・性能指標計算",
+    "lines_of_code": 71,
+    "dependency_count": 3,
+    "class_count": 0,
+    "function_count": 4,
+    "critical_methods": ["compute_metrics", "_incremental_returns", "_sharpe", "_max_drawdown"],
+    "description": "Metrics は純粋な関数型ユーティリティモジュール。PnL/トレード結果から Sharpe/Drawdown/Win-Rate等を計算。"
+  },
+  "functions": [
+    {
+      "name": "_incremental_returns",
+      "line": 8,
+      "function_type": "UTILITY",
+      "purpose": "累積PnLから増分リターンを計算",
+      "parameters": [
+        {"name": "pnl_history", "type": "List[float]", "description": "累積PnL値リスト"}
+      ],
+      "return_type": "List[float]",
+      "logic": "pnl_history[i+1] - pnl_history[i] の差分を計算",
+      "criticality": "MEDIUM",
+      "performance": {"time_complexity": "O(n)", "space_complexity": "O(n)"}
+    },
+    {
+      "name": "_sharpe",
+      "line": 15,
+      "function_type": "UTILITY",
+      "purpose": "シャープレシオを計算（無リスク利率0%想定）",
+      "parameters": [
+        {"name": "returns", "type": "List[float]", "description": "増分リターンリスト"}
+      ],
+      "return_type": "float",
+      "logic": "(平均リターン / 標本標準偏差) * sqrt(n)",
+      "error_handling": {
+        "exceptions": [
+          {
+            "exception_type": "ZeroDivisionError",
+            "location": "標準偏差=0時",
+            "recovery_strategy": "0.0を返却",
+            "fallback_action": "シャープレシオ計算スキップ"
+          }
+        ]
+      },
+      "criticality": "MEDIUM",
+      "performance": {"time_complexity": "O(n)", "space_complexity": "O(1)"}
+    },
+    {
+      "name": "_max_drawdown",
+      "line": 27,
+      "function_type": "UTILITY",
+      "purpose": "最大ドローダウンを計算（ピーク to トラフ）",
+      "parameters": [
+        {"name": "pnl_history", "type": "List[float]", "description": "累積PnL値リスト"}
+      ],
+      "return_type": "float",
+      "logic": "各時点でのピークから現在値までの最大落ち込み",
+      "criticality": "HIGH",
+      "performance": {"time_complexity": "O(n)", "space_complexity": "O(1)"}
+    },
+    {
+      "name": "compute_metrics",
+      "line": 37,
+      "function_type": "QUERY",
+      "purpose": "総合パフォーマンスメトリクス計算",
+      "parameters": [
+        {"name": "pnl_history", "type": "List[float]", "description": "累積PnL値リスト"},
+        {"name": "trade_results", "type": "List[bool]", "description": "トレード結果（True=Win, False=Loss）"}
+      ],
+      "return_type": "Dict[str, float]",
+      "logic": "上記4関数の結果を統合して8指標を返却",
+      "return_fields": {
+        "total_pnl": "累積損益",
+        "profit_factor": "利益和 / 損失和",
+        "max_drawdown": "最大ドローダウン額",
+        "max_drawdown_rate": "最大ドローダウン率（%）",
+        "sharpe": "シャープレシオ",
+        "win_rate": "勝率（%）",
+        "trades": "総トレード数",
+        "samples": "リターンサンプル数"
+      },
+      "criticality": "CRITICAL",
+      "performance": {"time_complexity": "O(n)", "space_complexity": "O(1)"}
+    }
+  ],
+  "summary": {
+    "architecture_score": 9.0,
+    "testability_score": 9.5,
+    "maintainability_score": 9.0,
+    "design_strengths": [
+      "純粋関数型：副作用なし、テスト容易",
+      "シンプル実装：NumPy等の依存なし（計算正確）",
+      "包括的指標：7つの主要パフォーマンス指標をカバー",
+      "エラーハンドリング：ZeroDivision対応"
+    ],
+    "critical_issues": [
+      "無リスク利率が固定（0%）→ 実運用では調整が必要な場合あり",
+      "Profit Factor の計算が損失和=0の場合未定義 → 全勝利時にエラー",
+      "シャープレシオのスケーリング（sqrt(n)）が日次化されない → タイムフレーム依存",
+      "Max Drawdown が複数ピークの場合、最後のピーク基準 → 連続性未保証"
+    ],
+    "recommendations": [
+      "無リスク利率をパラメータ化（デフォルト=0%）",
+      "Profit Factor の分母=0対応（inf or 0 返却ルール明文化）",
+      "シャープレシオを年率化オプション追加（252営業日想定）",
+      "テスト: edge case (全勝/全敗/単一トレード)",
+      "ドローダウン期間の追跡機能（何期間保持しているか）"
+    ]
+  }
+}

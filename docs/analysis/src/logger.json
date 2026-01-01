@@ -1,0 +1,233 @@
+{
+  "metadata": {
+    "source_file": "src/logger.py",
+    "analyzed_at": "2026-01-01T00:00:00Z",
+    "python_version": "3.10",
+    "format_version": "2.0",
+    "analyzer_note": "ログ管理システム。シングルトンパターンでログファイル・コンソール・JSON出力を統合管理。"
+  },
+  "file_overview": {
+    "purpose": "ボット動作・トレード履歴・エラーの統合ログ管理",
+    "lines_of_code": 162,
+    "dependency_count": 5,
+    "class_count": 1,
+    "function_count": 0,
+    "critical_methods": ["log", "log_error", "log_trade_data", "compress_logs"],
+    "description": "Logger はシングルトンパターンで実装。python logging + JSON 出力 + ZIP 圧縮の3層構造でログを管理。"
+  },
+  "classes": [
+    {
+      "class_name": "Logger",
+      "line": 8,
+      "docstring": "ログ情報を収集・記録するシングルトンクラス。ファイル・コンソール・JSON形式で出力可能。",
+      "responsibility": {
+        "primary": "全ボット・トレードログの統一管理",
+        "secondary": ["ログファイル圧縮", "エラーハンドリング"],
+        "scope": "SYSTEM",
+        "criticality": "HIGH",
+        "testing_priority": 2,
+        "description": "Singleton パターン。Python logging フレームワーク + カスタム JSON/ZIP ハンドラで統合ログ管理。"
+      },
+      "inheritance": [],
+      "attributes": [
+        {
+          "name": "_instance",
+          "type": "Logger",
+          "visibility": "private",
+          "description": "シングルトンインスタンス"
+        },
+        {
+          "name": "log_file",
+          "type": "str",
+          "visibility": "protected",
+          "description": "ログファイルパス"
+        },
+        {
+          "name": "logger",
+          "type": "logging.Logger",
+          "visibility": "protected",
+          "description": "Python logging インスタンス"
+        },
+        {
+          "name": "log_directory",
+          "type": "str",
+          "visibility": "protected",
+          "description": "ログディレクトリ（デフォルト: logs/）"
+        },
+        {
+          "name": "current_log_file",
+          "type": "TextIO",
+          "visibility": "protected",
+          "description": "現在のJSONログファイルハンドル"
+        }
+      ],
+      "methods": [
+        {
+          "name": "__new__",
+          "line": 11,
+          "method_type": "INIT",
+          "purpose": "シングルトンインスタンスを生成・取得",
+          "criticality": "HIGH",
+          "parameters": []
+        },
+        {
+          "name": "_initialize",
+          "line": 25,
+          "method_type": "INIT",
+          "purpose": "Logger初期化（logging設定・ハンドラセット）",
+          "entry_conditions": [
+            "Config が有効（log_file, log_dir）"
+          ],
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "OSError",
+                "location": "ディレクトリ作成失敗時",
+                "recovery_strategy": "作成を試行し失敗時も継続",
+                "fallback_action": "デフォルトディレクトリで運用"
+              }
+            ]
+          },
+          "criticality": "HIGH"
+        },
+        {
+          "name": "log",
+          "line": 55,
+          "method_type": "ACTION",
+          "purpose": "INFO ログを出力（コンソール + ファイル）",
+          "entry_conditions": [
+            "message: ログメッセージ（str）"
+          ],
+          "exit_outcomes": [
+            "ログ出力完了"
+          ],
+          "criticality": "HIGH",
+          "performance": {
+            "time_complexity": "O(1)",
+            "space_complexity": "O(1)"
+          }
+        },
+        {
+          "name": "log_error",
+          "line": 65,
+          "method_type": "ACTION",
+          "purpose": "ERROR ログを出力（コンソール + ファイル）",
+          "entry_conditions": [
+            "message: エラーメッセージ（str）"
+          ],
+          "criticality": "HIGH"
+        },
+        {
+          "name": "open_log_file",
+          "line": 72,
+          "method_type": "ACTION",
+          "purpose": "タイムスタンプ付きJSONログファイルを開く",
+          "entry_conditions": [],
+          "exit_outcomes": [
+            "current_log_file が開かれた状態"
+          ],
+          "criticality": "MEDIUM",
+          "performance": {
+            "time_complexity": "O(1)",
+            "space_complexity": "O(1)"
+          }
+        },
+        {
+          "name": "close_log_file",
+          "line": 79,
+          "method_type": "ACTION",
+          "purpose": "JSONログファイルを正しくクローズ（JSON形式整形）",
+          "entry_conditions": [
+            "current_log_file が開いている"
+          ],
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "IOError",
+                "location": "ファイルシーク・書き込み失敗",
+                "recovery_strategy": "silent close（エラー出力なし）",
+                "fallback_action": "ファイルを無視してクローズ"
+              }
+            ]
+          },
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "log_trade_data",
+          "line": 88,
+          "method_type": "ACTION",
+          "purpose": "トレードデータをJSONログに追記",
+          "entry_conditions": [
+            "trade_data: トレード情報（dict）"
+          ],
+          "exit_outcomes": [
+            "JSONログにレコード追記"
+          ],
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "IOError, json.JSONDecodeError",
+                "location": "ファイル書き込み時",
+                "recovery_strategy": "エラーを記録し継続",
+                "fallback_action": "ログ出力スキップ"
+              }
+            ]
+          },
+          "criticality": "HIGH"
+        },
+        {
+          "name": "compress_logs",
+          "line": 94,
+          "method_type": "ACTION",
+          "purpose": "JSON ログファイルを ZIP に圧縮・削除",
+          "entry_conditions": [
+            "log_directory に JSON ファイルが存在"
+          ],
+          "exit_outcomes": [
+            "ZIP ファイル作成・元ファイル削除"
+          ],
+          "error_handling": {
+            "exceptions": [
+              {
+                "exception_type": "zipfile.BadZipFile, OSError",
+                "location": "ZIP作成・ファイル削除時",
+                "recovery_strategy": "カウント増分で別ファイル名を試行",
+                "fallback_action": "既存ZIPがある場合は別名保存"
+              }
+            ]
+          },
+          "criticality": "MEDIUM",
+          "performance": {
+            "time_complexity": "O(n)",
+            "space_complexity": "O(n)",
+            "bottleneck": "ディスク I/O（ZIP 圧縮）"
+          }
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "architecture_score": 8.0,
+    "testability_score": 7.5,
+    "maintainability_score": 8.5,
+    "design_strengths": [
+      "シングルトン：グローバルログアクセスで一貫性確保",
+      "複合出力：ファイル + コンソール + JSON で柔軟対応",
+      "自動圧縮：ディスク容量の自動管理",
+      "エラー耐性：ハンドラ欠落時も継続稼働"
+    ],
+    "critical_issues": [
+      "JSONファイル形式が不完全（最後のカンマ削除が粗い）→ JSON パーサ失敗リスク",
+      "ディレクトリ権限エラーが silent → 圧縮失敗に気づきにくい",
+      "ログレベルがINFO/ERROR のみ → DEBUG/WARN がない",
+      "concurrent write 対応なし → マルチスレッド環境で問題の可能性"
+    ],
+    "recommendations": [
+      "JSON形式を json.dump() で統一・修復（JSONDecoder対応）",
+      "ログレベルを logging.DEBUG/WARN/CRITICAL に拡張",
+      "ファイルロッキング機構導入（multiprocessing 対応）",
+      "ログローテーション機能追加（サイズ/時間ベース）",
+      "テスト: compress_logs() の成功/失敗シナリオ"
+    ]
+  }
+}
