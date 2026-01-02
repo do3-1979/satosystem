@@ -16,7 +16,7 @@ SRC_DIR = os.path.join(WORKSPACE_ROOT, "src")
 sys.path.insert(0, SRC_DIR)
 
 # 分析結果ファイル
-ANALYSIS_FILE = os.path.join(WORKSPACE_ROOT, "docs/analysis/bybit_exchange.json")
+ANALYSIS_FILE = os.path.join(WORKSPACE_ROOT, "docs/analysis/src/bybit_exchange.json")
 
 
 def load_analysis():
@@ -38,10 +38,12 @@ def test_bybit_exchange_methods():
     """BybitExchange の主要メソッドが存在することを確認"""
     try:
         from bybit_exchange import BybitExchange
+        import inspect
         analysis = load_analysis()
         
         expected_methods = {m["name"] for m in analysis["classes"][0]["methods"]}
-        actual_methods = {m for m in dir(BybitExchange) if not m.startswith("_") or m == "__init__"}
+        # inspect.getmembers を使って private メソッドも検出
+        actual_methods = {name for name, _ in inspect.getmembers(BybitExchange, predicate=inspect.isfunction)}
         
         missing = expected_methods - actual_methods
         if missing:

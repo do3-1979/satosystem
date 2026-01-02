@@ -16,7 +16,7 @@ SRC_DIR = os.path.join(WORKSPACE_ROOT, "src")
 sys.path.insert(0, SRC_DIR)
 
 # 分析結果ファイル
-ANALYSIS_FILE = os.path.join(WORKSPACE_ROOT, "docs/analysis/price_data_management.json")
+ANALYSIS_FILE = os.path.join(WORKSPACE_ROOT, "docs/analysis/src/price_data_management.json")
 
 
 def load_analysis():
@@ -38,13 +38,12 @@ def test_price_data_management_methods():
     """PriceDataManagement の主要メソッドが存在することを確認"""
     try:
         from price_data_management import PriceDataManagement
+        import inspect
         analysis = load_analysis()
         
         expected_methods = {m["name"] for m in analysis["classes"][0]["methods"]}
-        # __ で始まるプライベートメソッドは Python の name mangling の対象
-        # 例: __evaluate_pvo → _PriceDataManagement__evaluate_pvo のため、テスト比較から除外
-        expected_methods = {m for m in expected_methods if not m.startswith("__")}
-        actual_methods = {m for m in dir(PriceDataManagement) if not m.startswith("_") or m in ["__new__", "__init__"]}
+        # inspect.getmembers を使ってすべての関数を検出（name mangling も含む）
+        actual_methods = {name for name, _ in inspect.getmembers(PriceDataManagement, predicate=inspect.isfunction)}
         
         missing = expected_methods - actual_methods
         if missing:

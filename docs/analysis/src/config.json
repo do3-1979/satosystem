@@ -6,23 +6,25 @@
     "format_version": "2.0",
     "analyzer_note": "設定管理クラス。config.ini から全トレード・リスク・市場パラメータを読み込む中央管理層。"
   },
-
   "file_overview": {
     "purpose": "config.ini から設定値を読み込み、全システムに設定を配信",
     "lines_of_code": 1032,
     "dependency_count": 3,
     "class_count": 1,
     "function_count": 0,
-    "critical_methods": ["get_api_key", "get_back_test_mode", "get_market", "get_time_frame"],
+    "critical_methods": [
+      "get_api_key",
+      "get_back_test_mode",
+      "get_market",
+      "get_time_frame"
+    ],
     "description": "Config は static クラス。configparser で config.ini を初期化時に読み込む。Bot、Strategy、RiskManagement、BybitExchange など全モジュールがこのクラスを参照して設定値を取得。エントリー範囲、ストップ価格、マーケット、リスク率など約60個のパラメータを管理。"
   },
-
   "classes": [
     {
       "class_name": "Config",
       "line": 18,
       "docstring": "ボットの設定情報を格納するクラス。config.ini から設定値を読み込む。",
-
       "responsibility": {
         "primary": "config.ini から全設定値を読み込み、各モジュールへ配信",
         "secondary": [
@@ -41,9 +43,7 @@
         "testing_priority": 0,
         "description": "システム全体の心臓部。全モジュールがこのクラスを参照。config.ini の内容が不整合だと全取引が失敗。Static クラスなので初期化は自動。変更管理と検証が重要。"
       },
-
       "inheritance": [],
-
       "attributes": [
         {
           "name": "config",
@@ -58,80 +58,79 @@
           "description": "config.ini のファイルパス（スクリプトと同一ディレクトリ）"
         }
       ],
-
       "methods": [
         {
           "name": "get_api_key",
           "line": 28,
           "method_type": "QUERY",
           "purpose": "Bitget API キーを取得（後方互換性のため、Bitget がデフォルト）",
-          "criticality": "CRITICAL"
+          "criticality": "CRITICAL",
+          "is_classmethod": true
         },
-
         {
           "name": "get_api_secret",
           "line": 36,
           "method_type": "QUERY",
           "purpose": "Bitget API シークレットを取得",
-          "criticality": "CRITICAL"
+          "criticality": "CRITICAL",
+          "is_classmethod": true
         },
-
         {
           "name": "get_api_passphrase",
           "line": 44,
           "method_type": "QUERY",
           "purpose": "Bitget API パスフレーズを取得",
-          "criticality": "HIGH"
+          "criticality": "HIGH",
+          "is_classmethod": true
         },
-
         {
           "name": "get_bybit_api_key",
           "line": 87,
           "method_type": "QUERY",
           "purpose": "Bybit API キーを取得",
-          "criticality": "CRITICAL"
+          "criticality": "CRITICAL",
+          "is_classmethod": true
         },
-
         {
           "name": "get_bybit_api_secret",
           "line": 95,
           "method_type": "QUERY",
           "purpose": "Bybit API シークレットを取得",
-          "criticality": "CRITICAL"
+          "criticality": "CRITICAL",
+          "is_classmethod": true
         },
-
         {
           "name": "get_exchange",
           "line": 102,
           "method_type": "QUERY",
           "purpose": "使用する取引所を取得（'bybit' or 'bitget'）",
-          "criticality": "HIGH"
+          "criticality": "HIGH",
+          "is_classmethod": true
         },
-
         {
           "name": "get_exchange_trade",
           "line": 118,
           "method_type": "QUERY",
           "purpose": "注文執行用の取引所を取得（デフォルト 'bitget'）",
-          "criticality": "CRITICAL"
+          "criticality": "CRITICAL",
+          "is_classmethod": true
         },
-
         {
           "name": "get_exchange_data",
           "line": 110,
           "method_type": "QUERY",
           "purpose": "価格データ取得用の取引所を取得（デフォルト 'bybit'）",
-          "criticality": "CRITICAL"
+          "criticality": "CRITICAL",
+          "is_classmethod": true
         },
-
         {
           "name": "get_market",
           "line": 225,
           "method_type": "QUERY",
           "purpose": "取引マーケットを取得（'BTC/USD', 'ETH/USDT' 等）",
-          "criticality": "CRITICAL"
+          "criticality": "CRITICAL",
+          "is_classmethod": true
         },
-
         {
           "name": "get_time_frame",
           "line": 239,
@@ -143,9 +142,9 @@
           "exit_outcomes": [
             "int 値（1, 5, 15, 60, 120, 240 等）を返す"
           ],
-          "criticality": "CRITICAL"
+          "criticality": "CRITICAL",
+          "is_classmethod": true
         },
-
         {
           "name": "get_back_test_mode",
           "line": 530,
@@ -174,137 +173,137 @@
                 "expected": "get_back_test_mode() が 0 を返す"
               }
             ]
-          }
+          },
+          "is_classmethod": true
         },
-
         {
           "name": "get_hot_test_dummy_mode",
           "line": 540,
           "method_type": "QUERY",
           "purpose": "ホットテスト時の取引モード（1=ペーパートレード, 0=本番）",
-          "criticality": "CRITICAL"
+          "criticality": "CRITICAL",
+          "is_classmethod": true
         },
-
         {
           "name": "get_risk_percentage",
           "line": 126,
           "method_type": "QUERY",
           "purpose": "リスク割合を取得（%）",
-          "criticality": "CRITICAL"
+          "criticality": "CRITICAL",
+          "is_classmethod": true
         },
-
         {
           "name": "get_account_balance",
           "line": 133,
           "method_type": "QUERY",
           "purpose": "アカウント残高を取得（USD）",
-          "criticality": "CRITICAL"
+          "criticality": "CRITICAL",
+          "is_classmethod": true
         },
-
         {
           "name": "get_leverage",
           "line": 140,
           "method_type": "QUERY",
           "purpose": "レバレッジを取得（int）",
-          "criticality": "HIGH"
+          "criticality": "HIGH",
+          "is_classmethod": true
         },
-
         {
           "name": "get_entry_times",
           "line": 147,
           "method_type": "QUERY",
           "purpose": "分割エントリーの回数を取得",
-          "criticality": "HIGH"
+          "criticality": "HIGH",
+          "is_classmethod": true
         },
-
         {
           "name": "get_entry_range",
           "line": 154,
           "method_type": "QUERY",
           "purpose": "エントリー価格範囲（%）を取得",
-          "criticality": "HIGH"
+          "criticality": "HIGH",
+          "is_classmethod": true
         },
-
         {
           "name": "get_stop_range",
           "line": 161,
           "method_type": "QUERY",
           "purpose": "ストップロス価格範囲（%）を取得",
-          "criticality": "CRITICAL"
+          "criticality": "CRITICAL",
+          "is_classmethod": true
         },
-
         {
           "name": "get_stop_AF",
           "line": 168,
           "method_type": "QUERY",
           "purpose": "SAR（Parabolic SAR）のアクセラレーションファクター（AF）を取得",
-          "criticality": "MEDIUM"
+          "criticality": "MEDIUM",
+          "is_classmethod": true
         },
-
         {
           "name": "get_stop_AF_add",
           "line": 176,
           "method_type": "QUERY",
           "purpose": "SAR AF の増加量を取得",
-          "criticality": "MEDIUM"
+          "criticality": "MEDIUM",
+          "is_classmethod": true
         },
-
         {
           "name": "get_stop_AF_max",
           "line": 184,
           "method_type": "QUERY",
           "purpose": "SAR AF の最大値を取得",
-          "criticality": "MEDIUM"
+          "criticality": "MEDIUM",
+          "is_classmethod": true
         },
-
         {
           "name": "get_donchian_buy_term",
           "line": 311,
           "method_type": "QUERY",
           "purpose": "ドンチャン高値（買いシグナル）の期間を取得",
-          "criticality": "CRITICAL"
+          "criticality": "CRITICAL",
+          "is_classmethod": true
         },
-
         {
           "name": "get_donchian_sell_term",
           "line": 318,
           "method_type": "QUERY",
           "purpose": "ドンチャン低値（売りシグナル）の期間を取得",
-          "criticality": "CRITICAL"
+          "criticality": "CRITICAL",
+          "is_classmethod": true
         },
-
         {
           "name": "get_pvo_s_term",
           "line": 325,
           "method_type": "QUERY",
           "purpose": "PVO（Percentage Volume Oscillator）の短期線周期を取得",
-          "criticality": "MEDIUM"
+          "criticality": "MEDIUM",
+          "is_classmethod": true
         },
-
         {
           "name": "get_pvo_l_term",
           "line": 332,
           "method_type": "QUERY",
           "purpose": "PVO の長期線周期を取得",
-          "criticality": "MEDIUM"
+          "criticality": "MEDIUM",
+          "is_classmethod": true
         },
-
         {
           "name": "get_pvo_threshold",
           "line": 339,
           "method_type": "QUERY",
           "purpose": "PVO フィルター閾値を取得",
-          "criticality": "MEDIUM"
+          "criticality": "MEDIUM",
+          "is_classmethod": true
         },
-
         {
           "name": "get_volatility_term",
           "line": 304,
           "method_type": "QUERY",
           "purpose": "ボラティリティ計算期間を取得",
-          "criticality": "MEDIUM"
+          "criticality": "MEDIUM",
+          "is_classmethod": true
         },
-
         {
           "name": "get_enable_pvo_filter",
           "line": 549,
@@ -316,25 +315,25 @@
           "exit_outcomes": [
             "0 or 1 を返す（デフォルト 0）"
           ],
-          "criticality": "MEDIUM"
+          "criticality": "MEDIUM",
+          "is_classmethod": true
         },
-
         {
           "name": "get_enable_adx_filter",
           "line": 559,
           "method_type": "QUERY",
           "purpose": "ADX フィルターの有効/無効を取得",
-          "criticality": "MEDIUM"
+          "criticality": "MEDIUM",
+          "is_classmethod": true
         },
-
         {
           "name": "get_enable_market_regime_detection",
           "line": 703,
           "method_type": "QUERY",
           "purpose": "市場体制検出機能の有効/無効を取得",
-          "criticality": "MEDIUM"
+          "criticality": "MEDIUM",
+          "is_classmethod": true
         },
-
         {
           "name": "is_dummy_mode",
           "line": 795,
@@ -366,49 +365,49 @@
                 "expected": "is_dummy_mode() が True を返す"
               }
             ]
-          }
+          },
+          "is_classmethod": true
         },
-
         {
           "name": "get_entry_slippage",
           "line": 818,
           "method_type": "QUERY",
           "purpose": "エントリー時の基本スリッページを取得（%）",
-          "criticality": "MEDIUM"
+          "criticality": "MEDIUM",
+          "is_classmethod": true
         },
-
         {
           "name": "get_slippage_multiplier",
           "line": 827,
           "method_type": "QUERY",
           "purpose": "スリッページ増加の倍率を取得（リトライ時）",
-          "criticality": "MEDIUM"
+          "criticality": "MEDIUM",
+          "is_classmethod": true
         },
-
         {
           "name": "get_max_entry_retries",
           "line": 836,
           "method_type": "QUERY",
           "purpose": "エントリー時の最大リトライ回数を取得",
-          "criticality": "MEDIUM"
+          "criticality": "MEDIUM",
+          "is_classmethod": true
         },
-
         {
           "name": "get_max_exit_retries",
           "line": 845,
           "method_type": "QUERY",
           "purpose": "決済時の最大リトライ回数を取得",
-          "criticality": "MEDIUM"
+          "criticality": "MEDIUM",
+          "is_classmethod": true
         },
-
         {
           "name": "get_bot_operation_cycle",
           "line": 413,
           "method_type": "QUERY",
           "purpose": "ボット動作サイクル時間を取得（秒）",
-          "criticality": "MEDIUM"
+          "criticality": "MEDIUM",
+          "is_classmethod": true
         },
-
         {
           "name": "get_start_epoch",
           "line": 271,
@@ -420,9 +419,9 @@
           "exit_outcomes": [
             "int（Unix timestamp）を返す"
           ],
-          "criticality": "HIGH"
+          "criticality": "HIGH",
+          "is_classmethod": true
         },
-
         {
           "name": "get_end_epoch",
           "line": 282,
@@ -431,17 +430,17 @@
           "exit_outcomes": [
             "end_time が 'None' or 空の場合は 9999999999 を返す"
           ],
-          "criticality": "HIGH"
+          "criticality": "HIGH",
+          "is_classmethod": true
         },
-
         {
           "name": "get_server_retry_wait",
           "line": 405,
           "method_type": "QUERY",
           "purpose": "API リトライ待機時間を取得（秒）",
-          "criticality": "MEDIUM"
+          "criticality": "MEDIUM",
+          "is_classmethod": true
         },
-
         {
           "name": "get_test_initial_max_term",
           "line": 421,
@@ -456,52 +455,52 @@
           "state_changes": [
             "内部計算：max(volatility_term, donchian_buy/sell_term, pvo_s_term, psar_term) を返す"
           ],
-          "criticality": "MEDIUM"
+          "criticality": "MEDIUM",
+          "is_classmethod": true
         },
-
         {
           "name": "__str__",
           "line": 848,
           "method_type": "UTILITY",
           "purpose": "全設定値を見やすく文字列化（デバッグ用）",
-          "criticality": "LOW"
+          "criticality": "LOW",
+          "is_classmethod": false
         },
-
         {
           "name": "to_dict",
           "line": 876,
           "method_type": "UTILITY",
           "purpose": "全設定値を dict に変換（ログ・API レスポンス用）",
-          "criticality": "LOW"
+          "criticality": "LOW",
+          "is_classmethod": false
         },
-
         {
           "name": "get_config_bool",
           "line": 916,
           "method_type": "UTILITY",
           "purpose": "設定値を bool として取得（'1', 'true', 'yes', 'on' の判定）",
-          "criticality": "LOW"
+          "criticality": "LOW",
+          "is_classmethod": true
         },
-
         {
           "name": "get_config_int",
           "line": 930,
           "method_type": "UTILITY",
           "purpose": "設定値を int として取得（エラーキャッチ付き）",
-          "criticality": "LOW"
+          "criticality": "LOW",
+          "is_classmethod": true
         },
-
         {
           "name": "get_config_float",
           "line": 943,
           "method_type": "UTILITY",
           "purpose": "設定値を float として取得（エラーキャッチ付き）",
-          "criticality": "LOW"
+          "criticality": "LOW",
+          "is_classmethod": true
         }
       ]
     }
   ],
-
   "summary": {
     "architecture_score": 9.0,
     "testability_score": 8.5,

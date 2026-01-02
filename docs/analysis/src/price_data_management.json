@@ -12,7 +12,12 @@
     "dependency_count": 8,
     "class_count": 1,
     "function_count": 0,
-    "critical_methods": ["update_price_data", "update_price_data_backtest", "get_ohlcv_data", "get_ticker"],
+    "critical_methods": [
+      "update_price_data",
+      "update_price_data_backtest",
+      "get_ohlcv_data",
+      "get_ticker"
+    ],
     "description": "PriceDataManagement は Singleton で、リアルタイム・バックテスト両モードで価格データ＋指標を管理。"
   },
   "classes": [
@@ -22,7 +27,11 @@
       "docstring": "価格データとトレードシグナルを管理。Singleton。複数タイムフレーム・バックテスト対応。",
       "responsibility": {
         "primary": "OHLCV・シグナル・指標の統一管理",
-        "secondary": ["バックテスト/本番切り替え", "複数タイムフレーム対応", "API リトライ管理"],
+        "secondary": [
+          "バックテスト/本番切り替え",
+          "複数タイムフレーム対応",
+          "API リトライ管理"
+        ],
         "scope": "DATA_LAYER",
         "criticality": "CRITICAL",
         "testing_priority": 1,
@@ -63,6 +72,34 @@
       ],
       "methods": [
         {
+          "name": "_PriceDataManagement__calc_ema",
+          "line": 0,
+          "signature": "def _PriceDataManagement__calc_ema(...)",
+          "description": "Auto-detected method _PriceDataManagement__calc_ema",
+          "visibility": "private"
+        },
+        {
+          "name": "_PriceDataManagement__calcurate_pvo",
+          "line": 0,
+          "signature": "def _PriceDataManagement__calcurate_pvo(...)",
+          "description": "Auto-detected method _PriceDataManagement__calcurate_pvo",
+          "visibility": "private"
+        },
+        {
+          "name": "_PriceDataManagement__evaluate_donchian",
+          "line": 0,
+          "signature": "def _PriceDataManagement__evaluate_donchian(...)",
+          "description": "Auto-detected method _PriceDataManagement__evaluate_donchian",
+          "visibility": "private"
+        },
+        {
+          "name": "_PriceDataManagement__evaluate_pvo",
+          "line": 0,
+          "signature": "def _PriceDataManagement__evaluate_pvo(...)",
+          "description": "Auto-detected method _PriceDataManagement__evaluate_pvo",
+          "visibility": "private"
+        },
+        {
           "name": "__new__",
           "line": 28,
           "method_type": "INIT",
@@ -70,46 +107,34 @@
           "criticality": "HIGH"
         },
         {
-          "name": "initialize",
-          "line": 36,
-          "method_type": "INIT",
-          "purpose": "初期化（取引所・キャッシュ・タイムフレーム設定）",
+          "name": "_fetch_with_retry",
+          "line": 362,
+          "method_type": "UTILITY",
+          "purpose": "API呼び出しをリトライ付きで実行（指数バックオフ）",
+          "parameters": [
+            {
+              "name": "func",
+              "type": "Callable"
+            },
+            {
+              "name": "args",
+              "type": "tuple"
+            },
+            {
+              "name": "retries",
+              "type": "int",
+              "default": "3"
+            }
+          ],
+          "logic": "最大 30 秒待機（1秒, 2秒, 4秒, ... 指数バックオフ）",
           "criticality": "HIGH"
         },
         {
-          "name": "get_ohlcv_data",
-          "line": 76,
-          "method_type": "QUERY",
-          "purpose": "確定済みOHLCVデータを取得",
-          "criticality": "HIGH"
-        },
-        {
-          "name": "get_ticker",
-          "line": 88,
-          "method_type": "QUERY",
-          "purpose": "現在のティッカー価格を取得",
-          "criticality": "HIGH"
-        },
-        {
-          "name": "get_latest_close_time",
-          "line": 96,
-          "method_type": "QUERY",
-          "purpose": "最新足の終値時刻を取得（epoch秒）",
-          "criticality": "MEDIUM"
-        },
-        {
-          "name": "get_latest_ohlcv",
-          "line": 111,
-          "method_type": "QUERY",
-          "purpose": "未確定の最新足データを取得",
-          "criticality": "MEDIUM"
-        },
-        {
-          "name": "get_volatility",
-          "line": 124,
-          "method_type": "QUERY",
-          "purpose": "現在のボラティリティを取得",
-          "criticality": "MEDIUM"
+          "name": "append_ohlcv_data_by_time_frame",
+          "line": 0,
+          "signature": "def append_ohlcv_data_by_time_frame(...)",
+          "description": "Auto-detected method append_ohlcv_data_by_time_frame",
+          "visibility": "public"
         },
         {
           "name": "calcurate_volatility",
@@ -119,21 +144,137 @@
           "criticality": "MEDIUM"
         },
         {
-          "name": "update_price_data_backtest",
-          "line": 173,
-          "method_type": "ACTION",
-          "purpose": "バックテスト用に価格データを更新（時間ステップ進行）",
-          "entry_conditions": [
-            "バックテストモード有効"
-          ],
-          "exit_outcomes": [
-            "bool: 終了判定（True=backtest終了）"
-          ],
-          "criticality": "CRITICAL",
-          "performance": {
-            "time_complexity": "O(1)",
-            "space_complexity": "O(1)"
-          }
+          "name": "del_ohlcv_data_by_time_frame",
+          "line": 0,
+          "signature": "def del_ohlcv_data_by_time_frame(...)",
+          "description": "Auto-detected method del_ohlcv_data_by_time_frame",
+          "visibility": "public"
+        },
+        {
+          "name": "get_back_test_ohlcv_data",
+          "line": 0,
+          "signature": "def get_back_test_ohlcv_data(...)",
+          "description": "Auto-detected method get_back_test_ohlcv_data",
+          "visibility": "public"
+        },
+        {
+          "name": "get_back_test_ohlcv_data_by_time_frame",
+          "line": 0,
+          "signature": "def get_back_test_ohlcv_data_by_time_frame(...)",
+          "description": "Auto-detected method get_back_test_ohlcv_data_by_time_frame",
+          "visibility": "public"
+        },
+        {
+          "name": "get_latest_close_time",
+          "line": 96,
+          "method_type": "QUERY",
+          "purpose": "最新足の終値時刻を取得（epoch秒）",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "get_latest_close_time_dt",
+          "line": 0,
+          "signature": "def get_latest_close_time_dt(...)",
+          "description": "Auto-detected method get_latest_close_time_dt",
+          "visibility": "public"
+        },
+        {
+          "name": "get_latest_ohlcv",
+          "line": 111,
+          "method_type": "QUERY",
+          "purpose": "未確定の最新足データを取得",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "get_latest_volume",
+          "line": 0,
+          "signature": "def get_latest_volume(...)",
+          "description": "Auto-detected method get_latest_volume",
+          "visibility": "public"
+        },
+        {
+          "name": "get_ohlcv_data",
+          "line": 76,
+          "method_type": "QUERY",
+          "purpose": "確定済みOHLCVデータを取得",
+          "criticality": "HIGH"
+        },
+        {
+          "name": "get_ohlcv_data_by_time_frame",
+          "line": 0,
+          "signature": "def get_ohlcv_data_by_time_frame(...)",
+          "description": "Auto-detected method get_ohlcv_data_by_time_frame",
+          "visibility": "public"
+        },
+        {
+          "name": "get_signals",
+          "line": 0,
+          "signature": "def get_signals(...)",
+          "description": "Auto-detected method get_signals",
+          "visibility": "public"
+        },
+        {
+          "name": "get_ticker",
+          "line": 88,
+          "method_type": "QUERY",
+          "purpose": "現在のティッカー価格を取得",
+          "criticality": "HIGH"
+        },
+        {
+          "name": "get_volatility",
+          "line": 124,
+          "method_type": "QUERY",
+          "purpose": "現在のボラティリティを取得",
+          "criticality": "MEDIUM"
+        },
+        {
+          "name": "initialise_back_test_ohlcv_data",
+          "line": 0,
+          "signature": "def initialise_back_test_ohlcv_data(...)",
+          "description": "Auto-detected method initialise_back_test_ohlcv_data",
+          "visibility": "public"
+        },
+        {
+          "name": "initialize",
+          "line": 36,
+          "method_type": "INIT",
+          "purpose": "初期化（取引所・キャッシュ・タイムフレーム設定）",
+          "criticality": "HIGH"
+        },
+        {
+          "name": "set_ohlcv_data_by_time_frame",
+          "line": 0,
+          "signature": "def set_ohlcv_data_by_time_frame(...)",
+          "description": "Auto-detected method set_ohlcv_data_by_time_frame",
+          "visibility": "public"
+        },
+        {
+          "name": "show_latest_ohlcv",
+          "line": 0,
+          "signature": "def show_latest_ohlcv(...)",
+          "description": "Auto-detected method show_latest_ohlcv",
+          "visibility": "public"
+        },
+        {
+          "name": "show_latest_signals",
+          "line": 0,
+          "signature": "def show_latest_signals(...)",
+          "description": "Auto-detected method show_latest_signals",
+          "visibility": "public"
+        },
+        {
+          "name": "show_latest_ticker",
+          "line": 0,
+          "signature": "def show_latest_ticker(...)",
+          "description": "Auto-detected method show_latest_ticker",
+          "visibility": "public"
+        },
+        {
+          "name": "show_latest_volume",
+          "line": 0,
+          "signature": "def show_latest_volume(...)",
+          "description": "Auto-detected method show_latest_volume",
+          "visibility": "public"
         },
         {
           "name": "update_price_data",
@@ -165,17 +306,21 @@
           "criticality": "CRITICAL"
         },
         {
-          "name": "_fetch_with_retry",
-          "line": 362,
-          "method_type": "UTILITY",
-          "purpose": "API呼び出しをリトライ付きで実行（指数バックオフ）",
-          "parameters": [
-            {"name": "func", "type": "Callable"},
-            {"name": "args", "type": "tuple"},
-            {"name": "retries", "type": "int", "default": "3"}
+          "name": "update_price_data_backtest",
+          "line": 173,
+          "method_type": "ACTION",
+          "purpose": "バックテスト用に価格データを更新（時間ステップ進行）",
+          "entry_conditions": [
+            "バックテストモード有効"
           ],
-          "logic": "最大 30 秒待機（1秒, 2秒, 4秒, ... 指数バックオフ）",
-          "criticality": "HIGH"
+          "exit_outcomes": [
+            "bool: 終了判定（True=backtest終了）"
+          ],
+          "criticality": "CRITICAL",
+          "performance": {
+            "time_complexity": "O(1)",
+            "space_complexity": "O(1)"
+          }
         }
       ]
     }

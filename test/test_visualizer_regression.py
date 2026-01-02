@@ -16,7 +16,7 @@ SRC_DIR = os.path.join(WORKSPACE_ROOT, "src")
 sys.path.insert(0, SRC_DIR)
 
 # 分析結果ファイル
-ANALYSIS_FILE = os.path.join(WORKSPACE_ROOT, "docs/analysis/visualizer.json")
+ANALYSIS_FILE = os.path.join(WORKSPACE_ROOT, "docs/analysis/src/visualizer.json")
 
 
 def load_analysis():
