@@ -486,14 +486,27 @@
           "name": "fetch_latest_ohlcv",
           "line": 719,
           "method_type": "QUERY",
-          "purpose": "最新1本のOHLCVを取得（リアルタイム価格更新用）",
+          "purpose": "最新1本のOHLCVを取得（リアルタイム価格更新用）。指定されたタイムフレームの確定済み最新足を返す",
+          "parameters": [
+            {
+              "name": "time_frame",
+              "type": "int",
+              "description": "タイムフレーム（分単位）。config.ini の time_frame（デフォルト240分）が渡される。ホットテスト時は毎60秒サイクルで呼び出し"
+            }
+          ],
           "entry_conditions": [
-            "time_frame > 0 (分単位)"
+            "time_frame > 0 (分単位)",
+            "config.ini の time_frame 設定値が渡される（240分足が標準）"
           ],
           "exit_outcomes": [
-            "バックテスト: ダミー価格 OHLCV list を返す",
-            "本番: 最新実 OHLCV を返す、失敗時は例外を発生"
+            "バックテスト: ダミー価格 OHLCV list を返す（長さ1）",
+            "本番/ペーパートレード: Bybit API /v5/market/kline から最新1本の実 OHLCV を返す、失敗時は例外を発生"
           ],
+          "implementation_details": {
+            "backtest_mode": "ランダムダミー価格を生成し、{close_time, close_time_dt, open_price, high_price, low_price, close_price, Volume} 形式で返す",
+            "live_mode": "self.exchange.fetch_ohlcv(symbol, timeframe, params) で最新200本取得、最後の1本 (ohlcv[-1]) を抽出",
+            "retry_strategy": "指数バックオフ (1秒→2秒→4秒、最大30秒)"
+          },
           "error_handling": {
             "exceptions": [
               {
@@ -511,8 +524,14 @@
               {
                 "name": "test_fetch_latest_ohlcv_dummy",
                 "type": "UNIT",
-                "setup": "is_backtest_mode=True",
+                "setup": "is_backtest_mode=True, time_frame=240",
                 "expected": "ダミー価格 OHLCV list (長さ1)"
+              },
+              {
+                "name": "test_fetch_latest_ohlcv_live",
+                "type": "INTEGRATION",
+                "setup": "is_live_trading_mode=True, Bybit API mock",
+                "expected": "最新1本の OHLCV list 返却"
               }
             ]
           }

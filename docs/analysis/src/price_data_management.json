@@ -53,9 +53,9 @@
         },
         {
           "name": "ohlcv_data",
-          "type": "List[Dict]",
+          "type": "List[Dict{time_frame, data}]",
           "visibility": "protected",
-          "description": "複数タイムフレームの確定OHLCV（キャッシュ）"
+          "description": "複数タイムフレームの確定OHLCV（キャッシュ）。config.ini の time_frame（デフォルト240分）と psar_time_frame（デフォルト240分）の2つを保持。構造: [{'time_frame': 240, 'data': [...]}, {'time_frame': 240, 'data': [...]}]"
         },
         {
           "name": "latest_ohlcv_data",
