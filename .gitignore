@@ -38,6 +38,7 @@ src/ohlcv_data
 
 # 一時レポート（分析・検証用）
 report_tmp/
+report_hottest/
 src/output_configs
 ohlcv_data/
 ohlcv_data/*.db
