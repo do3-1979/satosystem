@@ -90,6 +90,8 @@ fi
 if [ "$back_test" = "1" ]; then
     # バックテストモード
     echo "📊 バックテストモード$bg_flag"
+    # 古いバックテストログを削除
+    rm -f logs/latest_backtest.log
     log_file="logs/latest_backtest.log"
     if [ "$bg_mode" = "1" ]; then
         # バックグラウンド実行: nohup + disown で親プロセスから切り離し
@@ -124,6 +126,8 @@ if [ "$back_test" = "1" ]; then
 elif [ "$hot_test_dummy_mode" = "1" ]; then
     # ホットテスト（ダミー取引）モード
     echo "🎭 ホットテスト（ペーパートレード）モード$bg_flag"
+    # 古いダミー取引ログを削除
+    rm -f logs/latest_hot_test_dummy.log
     log_file="logs/latest_hot_test_dummy.log"
     if [ "$bg_mode" = "1" ]; then
         # バックグラウンド実行: nohup + disown で親プロセスから切り離し
@@ -158,6 +162,8 @@ elif [ "$hot_test_dummy_mode" = "1" ]; then
 else
     # ホットテスト（本番取引）モード
     echo "🚀 ホットテスト（本番取引）モード$bg_flag"
+    # 古い本番取引ログを削除
+    rm -f logs/latest_hot_test_live.log
     log_file="logs/latest_hot_test_live.log"
     echo "⚠️  WARNING: 本番取引モードで実行します。注意してください！"
     read -p "本当に実行しますか？ (yes/no): " confirm
