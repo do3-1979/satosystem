@@ -8,7 +8,7 @@
   },
   "file_overview": {
     "purpose": "OHLCV価格データ・指標・シグナルの統合管理",
-    "lines_of_code": 812,
+    "lines_of_code": 836,
     "dependency_count": 8,
     "class_count": 1,
     "function_count": 0,
@@ -278,15 +278,20 @@
         },
         {
           "name": "update_price_data",
-          "line": 443,
+          "line": 408,
           "method_type": "ACTION",
-          "purpose": "リアルタイム価格データを更新（API取得・指標計算）",
+          "purpose": "リアルタイム価格データを更新（API取得・指標計算・ホットテスト対応）",
           "entry_conditions": [
             "本番モード有効、API認証"
           ],
           "exit_outcomes": [
             "bool: 更新成功/失敗"
           ],
+          "implementation_notes": {
+            "hottest_support": "ホットテスト時は現在時刻から『過去N期間』のデータを自動取得（config.iniに依存しない）",
+            "unconfirmed_candle_handling": "fetch_ohlcv()の最後のエントリ（未確定足）を除外し、確定足のみを使用",
+            "epoch_logic": "ホットテスト: now - (volatility_term + 10) * time_frame * 60 ～ now；バックテスト: config値"
+          },
           "error_handling": {
             "exceptions": [
               {
@@ -303,7 +308,12 @@
               }
             ]
           },
-          "criticality": "CRITICAL"
+          "criticality": "CRITICAL",
+          "recent_changes": [
+            "2026-01-04: ホットテスト時のボラティリティ固定問題を修正（issue #volatile_fixed）",
+            "2026-01-04: 未確定足除外ロジック追加（fetch_ohlcv最後エントリを除外）",
+            "2026-01-04: ボラティリティ計算を確定足のみから実行"
+          ]
         },
         {
           "name": "update_price_data_backtest",

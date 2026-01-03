@@ -151,9 +151,13 @@ class PriceDataManagement:
             int: ボラティリティ
         """
         volatility_term = Config.get_volatility_term()
-        high_sum = sum(i['high_price'] for i in ohlcv_data[-1 * volatility_term :])
-        low_sum = sum(i['low_price'] for i in ohlcv_data[-1 * volatility_term :])
-        volatility = (high_sum - low_sum) / volatility_term
+        # 最新N期間の各足における高値と安値の差（True Range相当）の平均を計算
+        tr_values = []
+        for i in ohlcv_data[-1 * volatility_term:]:
+            tr = i['high_price'] - i['low_price']
+            tr_values.append(tr)
+        
+        volatility = sum(tr_values) / len(tr_values) if tr_values else 0
         return volatility
 
     def show_latest_ticker(self):
@@ -408,9 +412,19 @@ class PriceDataManagement:
         """
         try:
             # 価格データの更新
-            # TODO 本番では開始・終端時間はコンフィグ取得ではなく自動計算　終端は今　開始は必要期間をさかのぼって取得
-            start_epoch = Config.get_start_epoch()
-            end_epoch = Config.get_end_epoch()
+            # ホットテスト時は現在時刻を基準に取得、バックテスト時はコンフィグから取得
+            if Config.get_back_test_mode() == 0:  # ホットテスト時
+                # 現在時刻
+                now = int(time.time())
+                # 過去N期間分のデータを取得
+                # ボラティリティ計算に必要な期間（14期間）+ 安全マージン
+                volatility_term = Config.get_volatility_term()
+                lookback_minutes = (volatility_term + 10) * self.time_frame  # 余裕を持たせる
+                start_epoch = now - (lookback_minutes * 60)
+                end_epoch = now
+            else:  # バックテスト時
+                start_epoch = Config.get_start_epoch()
+                end_epoch = Config.get_end_epoch()
             
             # --------------------------------------------
             # データの更新(15分) ※常に最新で入れ替える
@@ -428,8 +442,9 @@ class PriceDataManagement:
                 return False
 
             # --------------------------------------------
-            # データの更新(120分)
+            # データの更新(240分)
             # 確定した最新値を取得（リトライ付き）
+            # ※ fetch_ohlcv()の最後のエントリは「未確定足」を含むため除外
             # --------------------------------------------
             try:
                 tmp_ohlcv_data_1 = self._fetch_with_retry(
@@ -443,7 +458,17 @@ class PriceDataManagement:
                     self.logger.log_error("fetch_ohlcv: 空リスト返却（データがありません）")
                     return False
                 
-                last_ohlcv_data = tmp_ohlcv_data_1[-1]
+                # ✅ 修正: fetch_ohlcv()の最後のエントリ（未確定足）を除外
+                # Bybit APIは現在実行中の240分足（未確定）まで含めて返す
+                # → 確定足のみを使用する場合は最後から2番目を取得
+                if len(tmp_ohlcv_data_1) > 1:
+                    # 最新の確定足は「1つ前」
+                    last_ohlcv_data = tmp_ohlcv_data_1[-2]
+                    confirmed_data = tmp_ohlcv_data_1[:-1]  # 未確定足を除外
+                else:
+                    # データが1件のみの場合は、それが確定足と判断
+                    last_ohlcv_data = tmp_ohlcv_data_1[-1]
+                    confirmed_data = tmp_ohlcv_data_1
             except IndexError as e:
                 self.logger.log_error(f"120分足データ取得エラー: リスト が空です: {e}")
                 return False
@@ -493,46 +518,46 @@ class PriceDataManagement:
             # 初回の処理
             if self.prev_close_time == 0:            
                 self.prev_close_time = last_ohlcv_data['close_time']
-                # 初回のみ初期化
-                self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data_1, self.time_frame)
-                self.volatility = self.calcurate_volatility(tmp_ohlcv_data_1)
+                # 初回のみ初期化（確定足のみを使用）
+                self.set_ohlcv_data_by_time_frame(confirmed_data, self.time_frame)
+                self.volatility = self.calcurate_volatility(confirmed_data)
                 return True
 
-            # donchianシグナル演算は常時実施
-            ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
-            dc, high, low = self.__evaluate_donchian(ohlcv_data, self.ticker)
-            
-            if dc == 'BUY':
-                self.signals['donchian']['signal'] = True
-                self.signals['donchian']['side'] = 'BUY'
-            elif dc == 'SELL':
-                self.signals['donchian']['signal'] = True
-                self.signals['donchian']['side'] = 'SELL'
-            else:
-                self.signals['donchian']['signal'] = False
-                self.signals['donchian']['side'] = 'None'
-
-            self.signals['donchian']['info']['highest'] = high
-            self.signals['donchian']['info']['lowest'] = low
-
-            # PVO update: 常時実施（毎回）
-            volume = self.volume
-            ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
-            pvo, value = self.__evaluate_pvo(ohlcv_data, volume)
-            self.signals['pvo']['signal'] = pvo
-            self.signals['pvo']['info']['value'] = value
-
-            # データの更新時
+            # データの更新時（240分足が確定した時のみシグナル再計算）
             if self.prev_close_time < last_ohlcv_data['close_time']:
-                # update volatility
-                self.volatility = self.calcurate_volatility(tmp_ohlcv_data_1)
+                # ✅ 修正: 確定足のみでボラティリティを計算
+                self.volatility = self.calcurate_volatility(confirmed_data)
                 # update last data
                 self.prev_close_time = last_ohlcv_data['close_time']
                 # 最新行を追加し、最古を削除する
                 # バックテストの場合は、2h経過時にデータ一覧を追加してからシグナル再計算する
                 self.append_ohlcv_data_by_time_frame(last_ohlcv_data, self.time_frame)
                 # 最新行を追加し、最古を削除する
-                self.del_ohlcv_data_by_time_frame(self.time_frame)   
+                self.del_ohlcv_data_by_time_frame(self.time_frame)
+                
+                # 確定足のリストからシグナルを計算（240分足確定時のみ）
+                signal_calc_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
+                
+                # Donchianシグナル：確定足のみから計算
+                dc, high, low = self.__evaluate_donchian(signal_calc_data, self.ticker)
+                
+                if dc == 'BUY':
+                    self.signals['donchian']['signal'] = True
+                    self.signals['donchian']['side'] = 'BUY'
+                elif dc == 'SELL':
+                    self.signals['donchian']['signal'] = True
+                    self.signals['donchian']['side'] = 'SELL'
+                else:
+                    self.signals['donchian']['signal'] = False
+                    self.signals['donchian']['side'] = 'None'
+
+                self.signals['donchian']['info']['highest'] = high
+                self.signals['donchian']['info']['lowest'] = low
+
+                # PVO：確定足のボリュームのみから計算（240分足確定時のみ）
+                pvo, value = self.__evaluate_pvo(signal_calc_data, None)
+                self.signals['pvo']['signal'] = pvo
+                self.signals['pvo']['info']['value'] = value
 
             return True
             
@@ -747,8 +772,8 @@ class PriceDataManagement:
         Price Volume Oscillator（PVO）を計算するメソッドです。
 
         Args:
-            ohlcv_data (list): OHLCVデータのリスト
-            volume (float): 出来高
+            ohlcv_data (list): OHLCVデータのリスト（確定足のみ）
+            volume (float): 出来高（使用しません - 確定足のボリュームのみを使用）
 
         Returns:
             float: PVOの値
@@ -758,11 +783,10 @@ class PriceDataManagement:
         pvo_l_term = Config.get_pvo_l_term()
         volume_data = []
 
+        # 確定足のボリュームのみを使用
         data_len = max(pvo_s_term, pvo_l_term)
         for i in ohlcv_data[(-1 * data_len) :]:
             volume_data.append(i['Volume'])
-
-        volume_data.append(volume)
         short_ema = self.__calc_ema(pvo_s_term, volume_data)
         long_ema = self.__calc_ema(pvo_l_term, volume_data)
         pvo_value = ((short_ema - long_ema) * 100 / long_ema)
