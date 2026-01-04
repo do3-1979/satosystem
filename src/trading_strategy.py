@@ -53,6 +53,9 @@ class TradingStrategy:
         self.current_market_regime = 'TRANSITION'  # 現在の市場体制
         self.market_regime_confidence = 0.0
         
+        # 新指標の状態変化を追跡（ログ重複排除用）
+        self.last_strategy_signal = None  # 前回のstrategy signal
+        
         self.initialize_trade_decision()
  
     def initialize_trade_decision(self):
@@ -111,18 +114,24 @@ class TradingStrategy:
             if signals["donchian"]["signal"] == True:
                 desired_side = signals["donchian"]["side"]
                 allow_entry = True
-
+                
+                # === 【条件一覧】===
+                conditions_list = []
+                conditions_list.append(f"PVO信号: ✓")
+                conditions_list.append(f"Donchian: {desired_side}")
                 if use_new_strategy:
                     if strategy_side is None:
-                        # 新指標が沈黙ならベースライン許可（フィルタのみとして扱う）
-                        self.logger.log(f"[条件判定:ENTRY] 新指標シグナルなし→ベースライン許可 (donchian={desired_side})")
+                        conditions_list.append(f"新指標: なし（ベースライン許可）")
                     elif strategy_side == desired_side:
-                        self.logger.log(f"[条件判定:ENTRY] {desired_side} エントリー条件成立（新指標一致）")
+                        conditions_list.append(f"新指標: {strategy_side} （✓一致）")
                     else:
-                        self.logger.log(f"[条件判定:ENTRY] 新指標が逆方向のためエントリー見送り (donchian={desired_side}, strategy={strategy_side})")
+                        conditions_list.append(f"新指標: {strategy_side} （✗矛盾）")
                         allow_entry = False
-                else:
-                    self.logger.log(f"[条件判定:ENTRY] {desired_side} のエントリー条件成立しました")
+                
+                # ログ出力（矛盾がある場合はここで終了）
+                if not allow_entry:
+                    self.logger.log(f"[条件一覧] " + " | ".join(conditions_list))
+                    self.logger.log(f"[最終判定] ✗ エントリー見送り（新指標が逆方向）")
 
                 # =========== 市場体制判定 ===========
                 enable_market_regime_detection = Config.get_enable_market_regime_detection()
@@ -183,53 +192,76 @@ class TradingStrategy:
                         self.logger.log(f"[市場体制判定エラー] {str(e)}")
 
                 # =========== フィルター機能 ===========
+                filter_results = []
+                
                 # PVO フィルター
                 enable_pvo_filter = Config.get_enable_pvo_filter()
-                if allow_entry and enable_pvo_filter:
+                if enable_pvo_filter:
                     pvo_value = signals["pvo"]["info"].get("value", 0)
                     pvo_threshold = Config.get_pvo_threshold()
                     if pvo_value <= pvo_threshold:
-                        self.logger.log(f"[フィルター:ENTRY] PVO フィルター失敗 (PVO={pvo_value:.4f} <= {pvo_threshold})")
-                        allow_entry = False
+                        filter_results.append(f"PVO: ✗ ({pvo_value:.4f} <= {pvo_threshold})")
+                        if allow_entry:
+                            allow_entry = False
                     else:
-                        self.logger.log(f"[フィルター:ENTRY] PVO フィルター成功 (PVO={pvo_value:.4f} > {pvo_threshold})")
+                        filter_results.append(f"PVO: ✓ ({pvo_value:.4f} > {pvo_threshold})")
                 
                 # ADX フィルター
                 enable_adx_filter = Config.get_enable_adx_filter()
                 adx_threshold = Config.get_adx_filter_threshold()
-                if allow_entry and enable_adx_filter:
+                if enable_adx_filter:
                     adx_value = self.risk_manager.get_adx() if hasattr(self.risk_manager, 'get_adx') else 0
                     if adx_value < adx_threshold:
-                        self.logger.log(f"[フィルター:ENTRY] ADX フィルター失敗 (ADX={adx_value:.2f} < {adx_threshold})")
-                        allow_entry = False
+                        filter_results.append(f"ADX: ✗ ({adx_value:.2f} < {adx_threshold})")
+                        if allow_entry:
+                            allow_entry = False
                     else:
-                        self.logger.log(f"[フィルター:ENTRY] ADX フィルター成功 (ADX={adx_value:.2f} >= {adx_threshold})")
+                        filter_results.append(f"ADX: ✓ ({adx_value:.2f} >= {adx_threshold})")
                 
                 # Volume フィルター
                 enable_volume_filter = Config.get_enable_volume_filter()
                 volume_threshold = Config.get_volume_filter_threshold()
-                if allow_entry and enable_volume_filter:
+                if enable_volume_filter:
                     volume_value = self.price_data_management.get_latest_volume()
                     if volume_value < volume_threshold:
-                        self.logger.log(f"[フィルター:ENTRY] Volume フィルター失敗 (Volume={volume_value:.0f} < {volume_threshold:.0f})")
-                        allow_entry = False
+                        filter_results.append(f"Volume: ✗ ({volume_value:.0f} < {volume_threshold:.0f})")
+                        if allow_entry:
+                            allow_entry = False
                     else:
-                        self.logger.log(f"[フィルター:ENTRY] Volume フィルター成功 (Volume={volume_value:.0f} >= {volume_threshold:.0f})")
+                        filter_results.append(f"Volume: ✓ ({volume_value:.0f} >= {volume_threshold:.0f})")
                 
                 # Volatility フィルター
                 enable_volatility_filter = Config.get_enable_volatility_filter()
                 volatility_threshold = Config.get_volatility_filter_threshold()
-                if allow_entry and enable_volatility_filter:
+                if enable_volatility_filter:
                     volatility_value = self.price_data_management.get_latest_volatility()
                     if volatility_value > volatility_threshold:
-                        self.logger.log(f"[フィルター:ENTRY] Volatility フィルター失敗 (Volatility={volatility_value:.2f} > {volatility_threshold:.2f})")
-                        allow_entry = False
+                        filter_results.append(f"Volatility: ✗ ({volatility_value:.2f} > {volatility_threshold:.2f})")
+                        if allow_entry:
+                            allow_entry = False
                     else:
-                        self.logger.log(f"[フィルター:ENTRY] Volatility フィルター成功 (Volatility={volatility_value:.2f} <= {volatility_threshold:.2f})")
-
+                        filter_results.append(f"Volatility: ✓ ({volatility_value:.2f} <= {volatility_threshold:.2f})")
+                
+                
+                # フィルター結果を出力
+                if filter_results:
+                    self.logger.log(f"[フィルタ一覧] " + " | ".join(filter_results))
+                
+                # 最終判定を出力
                 if allow_entry:
+                    self.logger.log(f"[最終判定] ✅ エントリー許可 ({desired_side})")
                     side = desired_side
                     decision = "ENTRY"
+                else:
+                    # 見送り理由を判定
+                    if not strategy_result:
+                        reason = "戦略無し"
+                    elif filter_results:
+                        failed_filters = [f for f in filter_results if "✗" in f]
+                        reason = "フィルター不合格" if failed_filters else "条件不満"
+                    else:
+                        reason = "その他"
+                    self.logger.log(f"[最終判定] ✗ エントリー見送り（{reason}）")
 
         # エントリ条件がない場合はNONEで初期化する
         self.trade_decision["side"] = side
@@ -277,7 +309,19 @@ class TradingStrategy:
                         normalized = 'SELL'
                     
                     if normalized:
-                        self.logger.log(f"[新指標] {strategy_name}: {signal}")
+                        # 状態が変化した場合のみログ出力（重複排除）
+                        signal_key = f"{strategy_name}:{normalized}"
+                        if signal_key != self.last_strategy_signal:
+                            strategy_name_display = strategy_name.split('_')[1].upper()
+                            # 条件の詳細を抽出して表示
+                            conditions = result.get('conditions', {})
+                            condition_str = ", ".join([f"{k}={v}" for k, v in conditions.items()]) if conditions else ""
+                            if condition_str:
+                                self.logger.log(f"[新指標] strategy_{strategy_name_display}: {signal} ({condition_str})")
+                            else:
+                                self.logger.log(f"[新指標] strategy_{strategy_name_display}: {signal}")
+                            self.last_strategy_signal = signal_key
+                        
                         return {
                             'signal': normalized,
                             'raw_signal': signal,
@@ -285,6 +329,11 @@ class TradingStrategy:
                             'confidence': 0.7 if normalized != 'NONE' else 0.0,
                             'details': result
                         }
+            
+            # すべてのStrategyがNONEの場合、状態を記録
+            if self.last_strategy_signal is not None:
+                self.logger.log(f"[新指標] 全Strategy: NONE（シグナル消滅）")
+                self.last_strategy_signal = None
             
             return None
             
