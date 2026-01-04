@@ -12,91 +12,127 @@ import configparser
 from datetime import datetime
 import pytz
 import os
+import json
 
 class Config:
     config = configparser.ConfigParser()
     # config.ini のパスを動的に決定（スクリプトのディレクトリを基準）
     config_path = os.path.join(os.path.dirname(__file__), 'config.ini')
     config.read(config_path, encoding="utf-8_sig")
+    
+    # .api_key ファイルからAPIキーを読み込む
+    api_keys = {}
+    api_key_path = os.path.join(os.path.dirname(__file__), '.api_key')
+    if os.path.exists(api_key_path):
+        try:
+            with open(api_key_path, 'r', encoding='utf-8') as f:
+                api_keys = json.load(f)
+        except Exception as e:
+            print(f"⚠️  .api_key ファイルの読み込みエラー: {e}")
+            api_keys = {}
 
     @classmethod
     def get_api_key(cls):
         """
         APIキーを取得します (後方互換性のため、Bitgetキーを返す).
+        .api_key から優先的に読み込み、なければ config.ini から読み込む.
 
         Returns:
             str: APIキー
         """
+        if cls.api_keys and 'api_bitget_key' in cls.api_keys:
+            return cls.api_keys['api_bitget_key']
         return cls.config['API'].get('api_bitget_key', cls.config['API'].get('api_key', ''))
 
     @classmethod
     def get_api_secret(cls):
         """
         APIシークレットを取得します (後方互換性のため、Bitgetシークレットを返す).
+        .api_key から優先的に読み込み、なければ config.ini から読み込む.
 
         Returns:
             str: APIシークレット
         """
+        if cls.api_keys and 'api_bitget_secret' in cls.api_keys:
+            return cls.api_keys['api_bitget_secret']
         return cls.config['API'].get('api_bitget_secret', cls.config['API'].get('api_secret', ''))
 
     @classmethod
     def get_api_passphrase(cls):
         """
         APIパスフレーズを取得します (Bitget用).
+        .api_key から優先的に読み込み、なければ config.ini から読み込む.
 
         Returns:
             str: APIパスフレーズ
         """
+        if cls.api_keys and 'api_bitget_passphrase' in cls.api_keys:
+            return cls.api_keys['api_bitget_passphrase']
         return cls.config['API'].get('api_bitget_passphrase', cls.config['API'].get('api_passphrase', ''))
     
     @classmethod
     def get_bitget_api_key(cls):
         """
         Bitget APIキーを取得します.
+        .api_key から優先的に読み込み、なければ config.ini から読み込む.
 
         Returns:
             str: Bitget APIキー
         """
+        if cls.api_keys and 'api_bitget_key' in cls.api_keys:
+            return cls.api_keys['api_bitget_key']
         return cls.config['API'].get('api_bitget_key', '')
     
     @classmethod
     def get_bitget_api_secret(cls):
         """
         Bitget APIシークレットを取得します.
+        .api_key から優先的に読み込み、なければ config.ini から読み込む.
 
         Returns:
             str: Bitget APIシークレット
         """
+        if cls.api_keys and 'api_bitget_secret' in cls.api_keys:
+            return cls.api_keys['api_bitget_secret']
         return cls.config['API'].get('api_bitget_secret', '')
     
     @classmethod
     def get_bitget_api_passphrase(cls):
         """
         Bitget APIパスフレーズを取得します.
+        .api_key から優先的に読み込み、なければ config.ini から読み込む.
 
         Returns:
             str: Bitget APIパスフレーズ
         """
+        if cls.api_keys and 'api_bitget_passphrase' in cls.api_keys:
+            return cls.api_keys['api_bitget_passphrase']
         return cls.config['API'].get('api_bitget_passphrase', '')
     
     @classmethod
     def get_bybit_api_key(cls):
         """
         Bybit APIキーを取得します.
+        .api_key から優先的に読み込み、なければ config.ini から読み込む.
 
         Returns:
             str: Bybit APIキー
         """
+        if cls.api_keys and 'api_bybit_key' in cls.api_keys:
+            return cls.api_keys['api_bybit_key']
         return cls.config['API'].get('api_bybit_key', '')
     
     @classmethod
     def get_bybit_api_secret(cls):
         """
         Bybit APIシークレットを取得します.
+        .api_key から優先的に読み込み、なければ config.ini から読み込む.
 
         Returns:
             str: Bybit APIシークレット
         """
+        if cls.api_keys and 'api_bybit_secret' in cls.api_keys:
+            return cls.api_keys['api_bybit_secret']
         return cls.config['API'].get('api_bybit_secret', '')
 
     @classmethod

@@ -1,0 +1,7 @@
+{
+  "api_bitget_key": "YOUR_BITGET_API_KEY_HERE",
+  "api_bitget_secret": "YOUR_BITGET_API_SECRET_HERE",
+  "api_bitget_passphrase": "YOUR_BITGET_PASSPHRASE_HERE",
+  "api_bybit_key": "YOUR_BYBIT_API_KEY_HERE",
+  "api_bybit_secret": "YOUR_BYBIT_API_SECRET_HERE"
+}

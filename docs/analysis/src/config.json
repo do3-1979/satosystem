@@ -8,7 +8,7 @@
   },
   "file_overview": {
     "purpose": "config.ini から設定値を読み込み、全システムに設定を配信",
-    "lines_of_code": 1032,
+    "lines_of_code": 1068,
     "dependency_count": 3,
     "class_count": 1,
     "function_count": 0,
@@ -18,7 +18,7 @@
       "get_market",
       "get_time_frame"
     ],
-    "description": "Config は static クラス。configparser で config.ini を初期化時に読み込む。Bot、Strategy、RiskManagement、BybitExchange など全モジュールがこのクラスを参照して設定値を取得。エントリー範囲、ストップ価格、マーケット、リスク率など約60個のパラメータを管理。"
+    "description": "Config は static クラス。configparser で config.ini を初期化時に読み込む。Bot、Strategy、RiskManagement、BybitExchange など全モジュールがこのクラスを参照して設定値を取得。エントリー範囲、ストップ価格、マーケット、リスク率など約60個のパラメータを管理。.api_key（JSON形式）からAPIキーを読み込む機能を追加（TODO 36 実装）。"
   },
   "classes": [
     {
@@ -56,6 +56,12 @@
           "type": "str",
           "visibility": "class_static",
           "description": "config.ini のファイルパス（スクリプトと同一ディレクトリ）"
+        },
+        {
+          "name": "api_keys",
+          "type": "dict",
+          "visibility": "class_static",
+          "description": ".api_key（JSON形式）から読み込まれたAPIキー辞書（TODO 36 実装）。Bitget/Bybit の api_key, api_secret, api_passphrase を含む。"
         }
       ],
       "methods": [

@@ -174,9 +174,9 @@ def run_backtest(year, q, start_str, end_str):
     os.chdir(SRC_DIR)
     
     try:
-        # bot_run.sh を実行
+        # bot.py を直接実行（bot_run.sh は削除済み）
         result = subprocess.run(
-            ['bash', './bot_run.sh'],
+            ['python', 'bot.py'],
             capture_output=True,
             text=True,
             timeout=600

@@ -1,0 +1,305 @@
+{
+  "metadata": {
+    "source_file": "src/new_indicators.py",
+    "analyzed_at": "2026-01-04T00:00:00Z",
+    "python_version": "3.10",
+    "format_version": "2.0",
+    "analyzer_note": "Level 1 フォーマット - Phase 22a-22c 戦略提案（実装済み、未有効化）"
+  },
+
+  "file_overview": {
+    "purpose": "Bollinger Bands, RSI, SMA, MACD などの新指標計算",
+    "lines_of_code": 309,
+    "dependency_count": 2,
+    "class_count": 1,
+    "function_count": 0,
+    "critical_methods": ["calc_bollinger_bands", "calc_rsi", "calc_sma", "calc_macd"],
+    "description": "NewIndicators は既存の PVO/ADX と同様の構造で Bollinger Bands, RSI, SMA, MACD などの指標を計算。Phase 22a-22c の改善戦略（Strategy A/B/C）の提案に基づいて実装。config.ini でフラグ制御可能だが、2025年の成績改善が確認されず、有効化検討中。"
+  },
+
+  "classes": [
+    {
+      "class_name": "NewIndicators",
+      "line": 18,
+      "docstring": "新指標計算クラス。Bollinger Bands, RSI, SMA, MACD を計算。",
+
+      "responsibility": {
+        "primary": "複数の技術指標の計算・キャッシング",
+        "secondary": [
+          "Bollinger Bands による volatility 確認",
+          "RSI による過買い/過売り検出",
+          "SMA による トレンド確認",
+          "MACD によるモメンタム検出",
+          "指標値のゲッター提供（キャッシング）"
+        ],
+        "scope": "ANALYSIS",
+        "criticality": "MEDIUM",
+        "testing_priority": 3,
+        "description": "元々は Phase 0 から提案されていた追加指標。Strategy A（市場レジーム検出）、Strategy B（Bollinger+RSI+SMA）、Strategy C（複合戦略）の実装に使用される予定。ただし ACTION_LIST の進捗から、有効化検討中の状態。"
+      },
+
+      "inheritance": [],
+
+      "attributes": [
+        {
+          "name": "bb_upper",
+          "type": "float | None",
+          "visibility": "private",
+          "description": "Bollinger Bands 上限"
+        },
+        {
+          "name": "bb_lower",
+          "type": "float | None",
+          "visibility": "private",
+          "description": "Bollinger Bands 下限"
+        },
+        {
+          "name": "bb_middle",
+          "type": "float | None",
+          "visibility": "private",
+          "description": "Bollinger Bands 中央（SMA）"
+        },
+        {
+          "name": "rsi",
+          "type": "float | None",
+          "visibility": "private",
+          "description": "RSI 値（0-100）"
+        },
+        {
+          "name": "sma_fast",
+          "type": "float | None",
+          "visibility": "private",
+          "description": "短期 SMA"
+        },
+        {
+          "name": "sma_slow",
+          "type": "float | None",
+          "visibility": "private",
+          "description": "長期 SMA"
+        },
+        {
+          "name": "macd",
+          "type": "float | None",
+          "visibility": "private",
+          "description": "MACD"
+        },
+        {
+          "name": "macd_signal",
+          "type": "float | None",
+          "visibility": "private",
+          "description": "MACD シグナル"
+        }
+      ],
+
+      "methods": [
+        {
+          "name": "__init__",
+          "signature": "(self) -> None",
+          "line": 23,
+          "return_type": "None",
+          "description": "初期化。指標値をすべて None で初期化。",
+          "responsibility": "インスタンス初期化",
+          "testing_priority": 3,
+          "criticality": "LOW"
+        },
+        {
+          "name": "calc_bollinger_bands",
+          "signature": "(self, close_data, period=20, num_std=2.0) -> tuple",
+          "line": 36,
+          "return_type": "tuple[float, float, float] | tuple[None, None, None]",
+          "description": "Bollinger Bands を計算。upper, middle, lower を返す。",
+          "responsibility": "BBの計算・キャッシング",
+          "testing_priority": 2,
+          "criticality": "MEDIUM",
+          "parameters": {
+            "close_data": "終値データ（list）",
+            "period": "計算期間（デフォルト 20）",
+            "num_std": "シグマ倍数（デフォルト 2.0）"
+          }
+        },
+        {
+          "name": "calc_rsi",
+          "signature": "(self, close_data, period=14) -> float | None",
+          "line": 75,
+          "return_type": "float | None",
+          "description": "RSI（Relative Strength Index）を計算。過買い/過売り判定に使用。",
+          "responsibility": "RSI計算・キャッシング",
+          "testing_priority": 2,
+          "criticality": "MEDIUM",
+          "parameters": {
+            "close_data": "終値データ（list）",
+            "period": "計算期間（デフォルト 14）"
+          },
+          "notes": "RSI > 70 = 過買い、RSI < 30 = 過売り"
+        },
+        {
+          "name": "calc_sma",
+          "signature": "(self, close_data, period_fast=12, period_slow=26) -> tuple",
+          "line": 130,
+          "return_type": "tuple[float | None, float | None]",
+          "description": "単純移動平均（SMA）を計算。短期・長期を同時に計算。",
+          "responsibility": "SMA計算・キャッシング",
+          "testing_priority": 2,
+          "criticality": "MEDIUM",
+          "parameters": {
+            "close_data": "終値データ（list）",
+            "period_fast": "短期期間（デフォルト 12）",
+            "period_slow": "長期期間（デフォルト 26）"
+          }
+        },
+        {
+          "name": "calc_macd",
+          "signature": "(self, close_data, fast=12, slow=26, signal=9) -> tuple",
+          "line": 160,
+          "return_type": "tuple[float | None, float | None, float | None]",
+          "description": "MACD（Moving Average Convergence Divergence）を計算。",
+          "responsibility": "MACD計算・キャッシング",
+          "testing_priority": 2,
+          "criticality": "MEDIUM",
+          "parameters": {
+            "close_data": "終値データ（list）",
+            "fast": "短期 EMA 期間（デフォルト 12）",
+            "slow": "長期 EMA 期間（デフォルト 26）",
+            "signal": "シグナル期間（デフォルト 9）"
+          },
+          "notes": "モメンタム検出に使用。MACD > シグナル = 上昇シグナル"
+        },
+        {
+          "name": "get_bb_upper",
+          "signature": "(self) -> float",
+          "line": 59,
+          "return_type": "float",
+          "description": "キャッシュされた BB 上限を取得。",
+          "responsibility": "ゲッター",
+          "testing_priority": 3,
+          "criticality": "LOW"
+        },
+        {
+          "name": "get_bb_lower",
+          "signature": "(self) -> float",
+          "line": 63,
+          "return_type": "float",
+          "description": "キャッシュされた BB 下限を取得。",
+          "responsibility": "ゲッター",
+          "testing_priority": 3,
+          "criticality": "LOW"
+        },
+        {
+          "name": "get_bb_middle",
+          "signature": "(self) -> float",
+          "line": 67,
+          "return_type": "float",
+          "description": "キャッシュされた BB 中央を取得。",
+          "responsibility": "ゲッター",
+          "testing_priority": 3,
+          "criticality": "LOW"
+        },
+        {
+          "name": "get_rsi",
+          "signature": "(self) -> float",
+          "line": 125,
+          "return_type": "float",
+          "description": "キャッシュされた RSI を取得。",
+          "responsibility": "ゲッター",
+          "testing_priority": 3,
+          "criticality": "LOW"
+        },
+        {
+          "name": "get_sma_fast",
+          "signature": "(self) -> float",
+          "line": 154,
+          "return_type": "float",
+          "description": "キャッシュされた短期 SMA を取得。",
+          "responsibility": "ゲッター",
+          "testing_priority": 3,
+          "criticality": "LOW"
+        },
+        {
+          "name": "get_sma_slow",
+          "signature": "(self) -> float",
+          "line": 158,
+          "return_type": "float",
+          "description": "キャッシュされた長期 SMA を取得。",
+          "responsibility": "ゲッター",
+          "testing_priority": 3,
+          "criticality": "LOW"
+        },
+        {
+          "name": "get_macd",
+          "signature": "(self) -> float",
+          "line": 200,
+          "return_type": "float",
+          "description": "キャッシュされた MACD を取得。",
+          "responsibility": "ゲッター",
+          "testing_priority": 3,
+          "criticality": "LOW"
+        }
+      ],
+
+      "dependencies": [
+        {
+          "module": "numpy",
+          "usage": "配列計算・平均・標準偏差・差分",
+          "criticality": "CRITICAL"
+        },
+        {
+          "module": "config.Config",
+          "usage": "設定値読み込み（未使用）",
+          "criticality": "LOW"
+        }
+      ],
+
+      "design_notes": [
+        "既存の PVO/ADX と同様の構造（計算後キャッシング）",
+        "Phase 22 の Strategy B（Bollinger+RSI+SMA）、Strategy C（複合戦略）の実装に使用予定",
+        "現在は実装完了、有効化検討中の状態",
+        "config.ini での制御フラグ設定可能（未実装）"
+      ]
+    }
+  ],
+
+  "integration_status": {
+    "current": "IMPLEMENTED, NOT ENABLED",
+    "usage_phase": "Phase 22b (Strategy B) / Phase 22c (Strategy C)",
+    "config_flag": "未実装（制御フラグなし）",
+    "trading_strategy_integration": "trading_strategy.py で使用可能だが、enable フラグが存在しない"
+  },
+
+  "strategy_application": {
+    "strategy_a": {
+      "name": "市場レジーム検出（ADX）",
+      "usage": "新指標不使用",
+      "status": "✅ Implemented & Active"
+    },
+    "strategy_b": {
+      "name": "Bollinger+RSI+SMA 指標確認",
+      "usage": "calc_bollinger_bands, calc_rsi, calc_sma",
+      "status": "✅ Implemented (PROGRESS)"
+    },
+    "strategy_c": {
+      "name": "複合戦略（Strategy A+B）",
+      "usage": "Strategy B の指標 + ADX",
+      "status": "✅ Implemented (PROGRESS)"
+    }
+  },
+
+  "implementation_status": "✅ COMPLETE（実装は完了、有効化は検討中）",
+  "test_coverage": "PARTIAL (unit test あり、trading_strategy.py での統合テスト未確認)",
+  "known_issues": [
+    "trading_strategy.py との統合が明確でない",
+    "config.ini でのフラグ制御が未実装",
+    "2025年の成績改善効果が確認されていない"
+  ],
+  "improvement_areas": [
+    "trading_strategy.py への統合・有効化フラグ追加",
+    "パラメータの最適化（期間値の調整）",
+    "バックテストによる効果検証"
+  ],
+
+  "historical_notes": {
+    "phase": "Phase 22a-22c（改善戦略）",
+    "action_list_entry": "No.22b, 22c",
+    "current_status": "実装完了、有効化待機",
+    "next_steps": "trading_strategy.py との統合、バックテストでの効果検証"
+  }
+}

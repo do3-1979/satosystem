@@ -1,0 +1,217 @@
+{
+  "metadata": {
+    "source_file": "src/bitget_exchange.py",
+    "analyzed_at": "2026-01-04T00:00:00Z",
+    "python_version": "3.10",
+    "format_version": "2.0",
+    "analyzer_note": "Level 1 フォーマット - Bitget 特有の機能実装、マージロジック対応"
+  },
+
+  "file_overview": {
+    "purpose": "Bitget 取引所 API との連携・注文実行・口座管理",
+    "lines_of_code": 1123,
+    "dependency_count": 5,
+    "class_count": 1,
+    "function_count": 0,
+    "critical_methods": ["execute_order", "get_account_balance", "fetch_latest_ohlcv"],
+    "description": "BitgetExchange は Exchange クラスを継承し、Bitget 取引所に特有の実装を行う。CCXT ライブラリを使用した API 連携、ダミー取引モード（バックテスト/ペーパートレード）のサポート、マージキャンドル機能（4時間足生成）を提供。"
+  },
+
+  "classes": [
+    {
+      "class_name": "BitgetExchange",
+      "line": 51,
+      "docstring": "Bitget 取引所との連携クラス。Exchange クラスを継承し、CCXT ライブラリを通じて Bitget の API を実行。",
+
+      "responsibility": {
+        "primary": "Bitget API の実装・注文実行・口座管理",
+        "secondary": [
+          "ダミー取引モード実装（バックテスト・ペーパートレード）",
+          "4時間足キャンドルのマージ（Bitget が 2h をサポートしないため）",
+          "時間軸変換（Python 設定値 → CCXT タイムフレーム）",
+          "パスフレーズ管理（Bitget 特有）",
+          "取引ペア正規化",
+          "エラーハンドリング（API レート制限・接続失敗）"
+        ],
+        "scope": "REGIONAL",
+        "criticality": "CRITICAL",
+        "testing_priority": 1,
+        "description": "BitgetExchange は BybitExchange と異なり Bitget 特有の仕様に対応。バックテスト（ダミー取引）から本番運用（実API取引）まで、3 つのモードをサポート。"
+      },
+
+      "inheritance": ["Exchange"],
+
+      "attributes": [
+        {
+          "name": "api_key",
+          "type": "str",
+          "visibility": "private",
+          "description": "Bitget API キー"
+        },
+        {
+          "name": "api_secret",
+          "type": "str",
+          "visibility": "private",
+          "description": "Bitget API シークレット"
+        },
+        {
+          "name": "passphrase",
+          "type": "str",
+          "visibility": "private",
+          "description": "Bitget API パスフレーズ（必須）"
+        },
+        {
+          "name": "is_dummy_mode",
+          "type": "bool",
+          "visibility": "private",
+          "description": "バックテストモード判定フラグ"
+        },
+        {
+          "name": "is_live_trading_mode",
+          "type": "bool",
+          "visibility": "private",
+          "description": "本番取引モード判定フラグ"
+        },
+        {
+          "name": "is_papertrading_mode",
+          "type": "bool",
+          "visibility": "private",
+          "description": "ペーパートレードモード判定フラグ"
+        },
+        {
+          "name": "need_merge_candles",
+          "type": "bool",
+          "visibility": "private",
+          "description": "キャンドルマージ必要フラグ（2h 未対応のため）"
+        },
+        {
+          "name": "timeframe",
+          "type": "str",
+          "visibility": "private",
+          "description": "CCXT 形式のタイムフレーム（'1h', '4h' など）"
+        },
+        {
+          "name": "dummy_balance",
+          "type": "float",
+          "visibility": "private",
+          "description": "ダミー取引用残高"
+        },
+        {
+          "name": "dummy_orders",
+          "type": "dict",
+          "visibility": "private",
+          "description": "ダミー注文履歴"
+        }
+      ],
+
+      "methods": [
+        {
+          "name": "__init__",
+          "signature": "(self, api_key, api_secret, passphrase=None) -> None",
+          "line": 55,
+          "return_type": "None",
+          "description": "初期化。API クレデンシャル、モード判定、ダミー取引初期化を実施。",
+          "responsibility": "CCXT インスタンス生成、設定値読み込み",
+          "testing_priority": 2,
+          "criticality": "CRITICAL"
+        },
+        {
+          "name": "execute_order",
+          "signature": "(self, symbol, side, quantity, price, order_type, **kwargs) -> dict | None",
+          "line": 150,
+          "return_type": "dict | None",
+          "description": "注文を実行。バックテスト/ペーパートレード時はダミー実装、本番取引時は実 API 呼び出し。",
+          "responsibility": "ENTRY/ADD/EXIT 注文実行",
+          "testing_priority": 1,
+          "criticality": "CRITICAL"
+        },
+        {
+          "name": "get_account_balance",
+          "signature": "(self) -> dict | None",
+          "line": 220,
+          "return_type": "dict | None",
+          "description": "口座残高を取得。バックテスト時はダミー値、本番時は実 API 結果を返す。",
+          "responsibility": "ポジションサイジング・残高確認用",
+          "testing_priority": 2,
+          "criticality": "CRITICAL"
+        },
+        {
+          "name": "fetch_latest_ohlcv",
+          "signature": "(self, symbol, timeframe) -> list | None",
+          "line": 280,
+          "return_type": "list | None",
+          "description": "OHLCV データを取得。マージキャンドル機能対応。",
+          "responsibility": "価格データ取得",
+          "testing_priority": 2,
+          "criticality": "CRITICAL"
+        },
+        {
+          "name": "_merge_candles",
+          "signature": "(self, candles, merge_count=2) -> list",
+          "line": 350,
+          "return_type": "list",
+          "description": "複数のキャンドルをマージ（4時間足生成など）。",
+          "responsibility": "4時間足生成（1時間足 4 本 → 4時間足 1 本）",
+          "testing_priority": 3,
+          "criticality": "HIGH"
+        }
+      ],
+
+      "dependencies": [
+        {
+          "module": "ccxt",
+          "usage": "Bitget API への CCXT ラッパー",
+          "criticality": "CRITICAL"
+        },
+        {
+          "module": "config.Config",
+          "usage": "API キー、モード設定読み込み",
+          "criticality": "CRITICAL"
+        },
+        {
+          "module": "exchange.Exchange",
+          "usage": "基本インターフェース継承",
+          "criticality": "HIGH"
+        },
+        {
+          "module": "logger.Logger",
+          "usage": "エラーログ記録",
+          "criticality": "MEDIUM"
+        }
+      ],
+
+      "design_notes": [
+        "Bitget API パスフレーズ（passphrase）の管理が BybitExchange と異なる",
+        "2h キャンドルをサポートしないため、1h → 4h のマージロジックを実装",
+        "ダミー取引モードで実 API を呼び出さず、ローカルで取引シミュレート",
+        "バックテストでは価格をダミー値で返し、本番取引では実 API 値を使用"
+      ]
+    }
+  ],
+
+  "mode_support": {
+    "backtest": {
+      "description": "ダミー取引（back_test=1）",
+      "implementation": "execute_order, get_account_balance がダミー値を返す",
+      "status": "✅ Fully Implemented"
+    },
+    "papertrading": {
+      "description": "ペーパートレード（back_test=0, hot_test_dummy_mode=1）",
+      "implementation": "実 API 価格、ダミー取引",
+      "status": "✅ Fully Implemented"
+    },
+    "live_trading": {
+      "description": "本番取引（back_test=0, hot_test_dummy_mode=0）",
+      "implementation": "実 API を通じて実取引実行",
+      "status": "✅ Fully Implemented"
+    }
+  },
+
+  "implementation_status": "✅ COMPLETE",
+  "test_coverage": "PARTIAL (bitget_exchange_regression_test.py で基本検証)",
+  "known_issues": [],
+  "improvement_areas": [
+    "エラーハンドリングの詳細化（API レート制限検出）",
+    "パフォーマンス最適化（キャンドルマージキャッシング）"
+  ]
+}

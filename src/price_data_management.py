@@ -459,17 +459,7 @@ class PriceDataManagement:
                     self.logger.log_error("fetch_ohlcv: 空リスト返却（データがありません）")
                     return False
                 
-                # ✅ 修正: fetch_ohlcv()の最後のエントリ（未確定足）を除外
-                # Bybit APIは現在実行中の240分足（未確定）まで含めて返す
-                # → 確定足のみを使用する場合は最後から2番目を取得
-                if len(tmp_ohlcv_data_1) > 1:
-                    # 最新の確定足は「1つ前」
-                    last_ohlcv_data = tmp_ohlcv_data_1[-2]
-                    confirmed_data = tmp_ohlcv_data_1[:-1]  # 未確定足を除外
-                else:
-                    # データが1件のみの場合は、それが確定足と判断
-                    last_ohlcv_data = tmp_ohlcv_data_1[-1]
-                    confirmed_data = tmp_ohlcv_data_1
+                last_ohlcv_data = tmp_ohlcv_data_1[-1]
             except IndexError as e:
                 self.logger.log_error(f"120分足データ取得エラー: リスト が空です: {e}")
                 return False
@@ -519,46 +509,46 @@ class PriceDataManagement:
             # 初回の処理
             if self.prev_close_time == 0:            
                 self.prev_close_time = last_ohlcv_data['close_time']
-                # 初回のみ初期化（確定足のみを使用）
-                self.set_ohlcv_data_by_time_frame(confirmed_data, self.time_frame)
-                self.volatility = self.calcurate_volatility(confirmed_data)
+                # 初回のみ初期化
+                self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data_1, self.time_frame)
+                self.volatility = self.calcurate_volatility(tmp_ohlcv_data_1)
                 return True
 
-            # データの更新時（240分足が確定した時のみシグナル再計算）
+            # donchianシグナル演算は常時実施
+            ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
+            dc, high, low = self.__evaluate_donchian(ohlcv_data, self.ticker)
+            
+            if dc == 'BUY':
+                self.signals['donchian']['signal'] = True
+                self.signals['donchian']['side'] = 'BUY'
+            elif dc == 'SELL':
+                self.signals['donchian']['signal'] = True
+                self.signals['donchian']['side'] = 'SELL'
+            else:
+                self.signals['donchian']['signal'] = False
+                self.signals['donchian']['side'] = 'None'
+
+            self.signals['donchian']['info']['highest'] = high
+            self.signals['donchian']['info']['lowest'] = low
+
+            # PVO update: 常時実施（毎回）
+            volume = self.volume
+            ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
+            pvo, value = self.__evaluate_pvo(ohlcv_data, volume)
+            self.signals['pvo']['signal'] = pvo
+            self.signals['pvo']['info']['value'] = value
+
+            # データの更新時
             if self.prev_close_time < last_ohlcv_data['close_time']:
-                # ✅ 修正: 確定足のみでボラティリティを計算
-                self.volatility = self.calcurate_volatility(confirmed_data)
+                # update volatility
+                self.volatility = self.calcurate_volatility(tmp_ohlcv_data_1)
                 # update last data
                 self.prev_close_time = last_ohlcv_data['close_time']
                 # 最新行を追加し、最古を削除する
                 # バックテストの場合は、2h経過時にデータ一覧を追加してからシグナル再計算する
                 self.append_ohlcv_data_by_time_frame(last_ohlcv_data, self.time_frame)
                 # 最新行を追加し、最古を削除する
-                self.del_ohlcv_data_by_time_frame(self.time_frame)
-                
-                # 確定足のリストからシグナルを計算（240分足確定時のみ）
-                signal_calc_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
-                
-                # Donchianシグナル：確定足のみから計算
-                dc, high, low = self.__evaluate_donchian(signal_calc_data, self.ticker)
-                
-                if dc == 'BUY':
-                    self.signals['donchian']['signal'] = True
-                    self.signals['donchian']['side'] = 'BUY'
-                elif dc == 'SELL':
-                    self.signals['donchian']['signal'] = True
-                    self.signals['donchian']['side'] = 'SELL'
-                else:
-                    self.signals['donchian']['signal'] = False
-                    self.signals['donchian']['side'] = 'None'
-
-                self.signals['donchian']['info']['highest'] = high
-                self.signals['donchian']['info']['lowest'] = low
-
-                # PVO：確定足のボリュームのみから計算（240分足確定時のみ）
-                pvo, value = self.__evaluate_pvo(signal_calc_data, None)
-                self.signals['pvo']['signal'] = pvo
-                self.signals['pvo']['info']['value'] = value
+                self.del_ohlcv_data_by_time_frame(self.time_frame)   
 
             return True
             

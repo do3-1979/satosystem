@@ -32,6 +32,7 @@ src/.api_key_bak
 src/config.ini
 src/logs/*.json
 src/logs/*.zip
+src/logs/*.pid
 logs/*.json
 logs/*.zip
 src/ohlcv_data
