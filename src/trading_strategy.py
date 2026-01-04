@@ -127,11 +127,6 @@ class TradingStrategy:
                     else:
                         conditions_list.append(f"新指標: {strategy_side} （✗矛盾）")
                         allow_entry = False
-                
-                # ログ出力（矛盾がある場合はここで終了）
-                if not allow_entry:
-                    self.logger.log(f"[条件一覧] " + " | ".join(conditions_list))
-                    self.logger.log(f"[最終判定] ✗ エントリー見送り（新指標が逆方向）")
 
                 # =========== 市場体制判定 ===========
                 enable_market_regime_detection = Config.get_enable_market_regime_detection()
@@ -247,18 +242,18 @@ class TradingStrategy:
                 if filter_results:
                     self.logger.log(f"[フィルタ一覧] " + " | ".join(filter_results))
                 
-                # 最終判定を出力
+                # 最終判定を出力（条件一覧 + フィルタ一覧 の総合判定）
+                self.logger.log(f"[条件一覧] " + " | ".join(conditions_list))
                 if allow_entry:
                     self.logger.log(f"[最終判定] ✅ エントリー許可 ({desired_side})")
                     side = desired_side
                     decision = "ENTRY"
                 else:
                     # 見送り理由を判定
-                    if not strategy_result:
-                        reason = "戦略無し"
-                    elif filter_results:
-                        failed_filters = [f for f in filter_results if "✗" in f]
-                        reason = "フィルター不合格" if failed_filters else "条件不満"
+                    if not strategy_result or (use_new_strategy and strategy_side and strategy_side != desired_side):
+                        reason = "新指標が逆方向"
+                    elif filter_results and any("✗" in f for f in filter_results):
+                        reason = "フィルター不合格"
                     else:
                         reason = "その他"
                     self.logger.log(f"[最終判定] ✗ エントリー見送り（{reason}）")
