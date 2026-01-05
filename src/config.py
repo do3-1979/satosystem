@@ -422,6 +422,16 @@ class Config:
         return int(cls.config['Strategy']['pvo_threshold'])
 
     @classmethod
+    def get_volatility_max(cls):
+        """
+        Volatility上限を取得します.
+
+        Returns:
+            int: Volatility上限（デフォルト: 9999）
+        """
+        return int(cls.config['Strategy'].get('volatility_max', 9999))
+
+    @classmethod
     def get_lot_limit_lower(cls):
         """
         最小ロット数計算倍率を取得します.

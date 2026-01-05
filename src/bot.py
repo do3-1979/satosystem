@@ -39,6 +39,7 @@ from portfolio import Portfolio
 from order import Order
 from event import EventBus, EventType
 from metrics import compute_metrics
+from trade_logger import TradeLogger
 
 class Bot:
     def __init__(self, exchange, strategy, risk_management, price_data_management, portfolio):
@@ -57,6 +58,8 @@ class Bot:
         self.logger = Logger()
         # 軽量イベントバス（外部への副作用なし）
         self.events = EventBus()
+        # トレードログ記録
+        self.trade_logger = TradeLogger(Config.get_log_dir_name())
 
         self.market_type = Config.get_market()
         self.bot_operation_cycle = Config.get_bot_operation_cycle()
@@ -149,8 +152,16 @@ class Bot:
                             with open(summary_path, 'w', encoding='utf-8') as f:
                                 json.dump(metrics, f, ensure_ascii=False, indent=2)
                             self.logger.log(f"バックテストサマリ出力: {summary_path}")
+                            
+                            # トレードログを JSON で保存
+                            trade_log_path = self.trade_logger.save_trades_json(f"trade_log_{ts}.json")
+                            if trade_log_path:
+                                self.logger.log(f"トレードログ出力: {trade_log_path}")
+                                # トレードログの統計情報を表示
+                                stats = self.trade_logger.get_statistics()
+                                self.logger.log(f"トレード統計: 総数={stats['total_trades']}, 完了={stats['completed_trades']}, 勝={stats['wins']}, 負={stats['losses']}, 勝率={stats['win_rate']:.1f}%")
                         except Exception as e:
-                            self.logger.log_error(f"バックテストメトリクス出力失敗: {e}")
+                            self.logger.log_error(f"バックテストメトリクス/トレードログ出力失敗: {e}")
                         
                         self.logger.close_log_file()
                         self.logger.log("--- BOT END -------------------------------------------")
@@ -233,14 +244,75 @@ class Bot:
                     # portfolio更新
                     # --------------------------------------------
                     if trade_decision["decision"] == "EXIT":
+                        exit_price = price
+                        pnl = self.portfolio.get_profit_and_loss()
                         self.portfolio.clear_position_quantity(price)
                         # EXITで確定した損益を勝敗判定 (正なら勝ち)
-                        pnl = self.portfolio.get_profit_and_loss()
                         self.trade_results.append(pnl >= 0)
+                        
+                        # トレードログ: EXIT記録
+                        try:
+                            entry_time = self.price_data_management.get_latest_close_time()
+                            entry_time_dt = self.price_data_management.get_latest_close_time_dt()
+                            current_price = self.price_data_management.get_ticker()
+                            signals = self.price_data_management.get_signals()
+                            
+                            exit_data = {
+                                'timestamp': entry_time,
+                                'close_time_dt': entry_time_dt,
+                                'price': exit_price,
+                                'pnl_usd': pnl,
+                                'pnl_pct': (pnl / self.portfolio.get_position_price() * 100) if self.portfolio.get_position_price() > 0 else 0,
+                                'max_drawdown_usd': self.portfolio.get_drawdown(),
+                                'max_drawdown_pct': self.portfolio.get_drawdown_rate(),
+                                'bars_held': getattr(self.risk_management, 'bars_held', 0),
+                                'duration_minutes': 0,  # 計算は後で
+                                'reason': trade_decision.get('exit_reason', 'STOP_LOSS'),
+                                'cumulative_pnl': self.portfolio.get_profit_and_loss()
+                            }
+                            self.trade_logger.log_exit(exit_data)
+                        except Exception as e:
+                            self.logger.log_error(f"トレードログEXIT記録失敗: {e}")
+                            
                     elif trade_decision["decision"] == "ENTRY" or trade_decision["decision"] == "ADD":
                         self.portfolio.add_position_quantity(quantity, trade_decision["side"], price)
                         # 前回のエントリ価格を更新
                         self.risk_management.update_last_entry_price(price)
+                        
+                        # トレードログ: ENTRY記録
+                        if trade_decision["decision"] == "ENTRY":  # 初回エントリーのみ
+                            try:
+                                entry_time = self.price_data_management.get_latest_close_time()
+                                entry_time_dt = self.price_data_management.get_latest_close_time_dt()
+                                signals = self.price_data_management.get_signals()
+                                
+                                entry_data = {
+                                    'timestamp': entry_time,
+                                    'close_time_dt': entry_time_dt,
+                                    'side': trade_decision["side"],
+                                    'price': price,
+                                    'pvo_signal': signals['pvo']['signal'],
+                                    'pvo_value': signals['pvo']['info'].get('value', 0),
+                                    'pvo_threshold': Config.get_pvo_threshold(),
+                                    'adx_value': self.risk_management.get_adx() if hasattr(self.risk_management, 'get_adx') else 0,
+                                    'adx_threshold': Config.get_adx_filter_threshold(),
+                                    'adx_filter_pass': (self.risk_management.get_adx() >= Config.get_adx_filter_threshold()) if hasattr(self.risk_management, 'get_adx') else False,
+                                    'volume': self.price_data_management.get_latest_volume(),
+                                    'volume_threshold': Config.get_volume_filter_threshold(),
+                                    'volume_filter_pass': self.price_data_management.get_latest_volume() >= Config.get_volume_filter_threshold(),
+                                    'volatility': self.price_data_management.get_volatility(),
+                                    'volatility_threshold': Config.get_volatility_filter_threshold(),
+                                    'volatility_filter_pass': self.price_data_management.get_volatility() <= Config.get_volatility_filter_threshold(),
+                                    'pvo_filter_pass': signals['pvo']['info'].get('value', 0) > Config.get_pvo_threshold(),
+                                    'donchian_signal': signals['donchian']['signal'],
+                                    'strategy_signal': getattr(self.strategy, 'current_strategy_signal', 'NONE'),
+                                    'market_regime': getattr(self.strategy, 'current_market_regime', 'UNKNOWN'),
+                                    'market_confidence': getattr(self.strategy, 'market_regime_confidence', 0.0)
+                                }
+                                self.trade_logger.log_entry(entry_data)
+                            except Exception as e:
+                                self.logger.log_error(f"トレードログENTRY記録失敗: {e}")
+                        
                     # ポートフォリオ更新イベント
                     self.events.emit(EventType.PORTFOLIO_UPDATED, self.portfolio.get_position_quantity())
                     #self.logger.log(f"ポートフォリオ更新: {self.portfolio.get_position_quantity()}")

@@ -29,11 +29,12 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
 def get_quarters():
-    """2024/1Q から現在までの四半期リストを返す"""
+    """2024/1Q ～ 2025/4Q までの四半期リストを返す"""
     quarters = []
-    start = datetime(2024, 1, 1)  # 2024/Q1 から開始
-    # 2025/Q4は未来なので 11/30 までに制限
-    end = datetime(2025, 11, 30)
+    start = datetime(2024, 1, 1)   # 2024/Q1 から開始
+    end = datetime(2025, 12, 31)   # 2025/Q4 まで（フルカバレッジ）
+    
+    # 現在日時が終了日より前の場合は、現在日時を終了日とする
     now = datetime.now()
     if now < end:
         end = now
@@ -173,13 +174,18 @@ def run_backtest(year, q, start_str, end_str):
     
     os.chdir(SRC_DIR)
     
+    # 環境変数でログディレクトリを指定（Q別ロギング用）
+    env = os.environ.copy()
+    env['QUARTERLY_LOG_PREFIX'] = f"Q{q}_{year}"
+    
     try:
         # bot.py を直接実行（bot_run.sh は削除済み）
         result = subprocess.run(
             ['python', 'bot.py'],
             capture_output=True,
             text=True,
-            timeout=600
+            timeout=600,
+            env=env
         )
         
         if result.returncode != 0:
@@ -219,6 +225,28 @@ def run_backtest(year, q, start_str, end_str):
         else:
             print(f"   ⚠️  ログファイル形式が不正です")
             return None
+        
+        # Trade Log ファイルを Q別ディレクトリにコピー
+        trade_log_files = glob.glob('logs/trade_log_*.json')
+        if trade_log_files:
+            quarterly_logs_dir = os.path.join(WORKSPACE_ROOT, "logs/quarterly")
+            os.makedirs(quarterly_logs_dir, exist_ok=True)
+            
+            copied_count = 0
+            for trade_log in trade_log_files:
+                try:
+                    basename = os.path.basename(trade_log)
+                    # ファイル名に Q情報を挿入: trade_log_YYYYMMDD_HHMMSS.json → Q1_2024_trade_log_YYYYMMDD_HHMMSS.json
+                    new_basename = f"Q{q}_{year}_{basename}"
+                    dest = os.path.join(quarterly_logs_dir, new_basename)
+                    shutil.copy2(trade_log, dest)
+                    copied_count += 1
+                except Exception as e:
+                    print(f"   ⚠️  Trade Log コピーエラー: {e}")
+            
+            # コピー完了を1行で表示
+            if copied_count > 0:
+                print(f"   📁 Trade Log を {copied_count} 件バックアップ")
         
         print(f"   ✅ バックテスト完了")
         print(f"      - 総損益: {metrics.get('total_pnl', 'N/A')} USD")
@@ -319,6 +347,10 @@ def main():
     
     print(f"\n対象四半期: {len(quarters)}\n")
     
+    # ログディレクトリを表示
+    quarterly_logs_dir = os.path.join(WORKSPACE_ROOT, "logs/quarterly")
+    print(f"📁 ログ出力先: {quarterly_logs_dir}\n")
+    
     for year, q in quarters:
         q_start, q_end = get_quarter_dates(year, q)
         start_str = q_start.strftime("%Y/%m/%d %H:%M")
@@ -347,6 +379,17 @@ def main():
     # 結果をファイルに保存
     output_file = save_results(results)
     print(f"✅ 結果を保存しました: {output_file}")
+    
+    # ログファイルの確認
+    print(f"\n📊 Q別ログファイル確認:")
+    if os.path.exists(quarterly_logs_dir):
+        log_files = sorted(os.listdir(quarterly_logs_dir))
+        if log_files:
+            for log_file in log_files:
+                file_size = os.path.getsize(os.path.join(quarterly_logs_dir, log_file)) / 1024
+                print(f"  ✓ {log_file} ({file_size:.1f} KB)")
+        else:
+            print(f"  (ログファイルなし)")
     
     return results
 

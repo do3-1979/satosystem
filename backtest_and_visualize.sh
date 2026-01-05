@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # backtest_and_visualize.sh
-# bot_run.sh 実行後、自動的にグラフを生成・表示するスクリプト
+# bot.py 実行後、自動的にグラフを生成・表示するスクリプト
 
 # ワークスペースルートを取得
 WORKSPACE_ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -79,19 +79,19 @@ fi
 if [ $VIZ_ONLY -eq 0 ]; then
     if [ $QUIET -eq 0 ]; then
         echo "📊 Step 1: バックテスト実行中..."
-        echo "実行中: bash $SRC_DIR/bot_run.sh"
+        echo "実行中: python3 bot.py"
         echo ""
     fi
 
-    if [ ! -f "$SRC_DIR/bot_run.sh" ]; then
-        echo "❌ エラー: bot_run.sh が見つかりません"
-        echo "   期待位置: $SRC_DIR/bot_run.sh"
+    if [ ! -f "$SRC_DIR/bot.py" ]; then
+        echo "❌ エラー: bot.py が見つかりません"
+        echo "   期待位置: $SRC_DIR/bot.py"
         exit 1
     fi
 
-    # bot_run.sh を実行（SRC_DIR から実行）
+    # bot.py を直接実行（SRC_DIR から実行）
     cd "$SRC_DIR"
-    bash ./bot_run.sh
+    python3 bot.py
     EXIT_CODE=$?
     cd "$WORKSPACE_ROOT"
 

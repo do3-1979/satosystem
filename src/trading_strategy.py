@@ -53,6 +53,11 @@ class TradingStrategy:
         self.current_market_regime = 'TRANSITION'  # 現在の市場体制
         self.market_regime_confidence = 0.0
         
+        # Strategy Signal の状態保持（トレードログ記録用）
+        self.current_strategy_signal = 'NONE'  # 現在の Strategy Signal (BUY/SELL/NONE)
+        self.current_strategy_name = 'NONE'     # 現在の Strategy 名 (A/B/C/NONE)
+        self.current_strategy_confidence = 0.0  # 現在の Strategy の信頼度
+        
         # 新指標の状態変化を追跡（ログ重複排除用）
         self.last_strategy_signal = None  # 前回のstrategy signal
         
@@ -100,6 +105,11 @@ class TradingStrategy:
         ])
         strategy_side = None
         if strategy_result:
+            # Strategy Signal の状態を保持（トレードログ記録用）
+            self.current_strategy_signal = strategy_result.get('signal', 'NONE')
+            self.current_strategy_name = strategy_result.get('strategy', 'NONE')
+            self.current_strategy_confidence = strategy_result.get('confidence', 0.0)
+            
             raw_signal = strategy_result.get('signal', 'NONE')
             if raw_signal in ['BUY', 'SELL']:
                 strategy_side = raw_signal
@@ -107,6 +117,11 @@ class TradingStrategy:
                 strategy_side = 'BUY'
             elif raw_signal == 'BEAR':
                 strategy_side = 'SELL'
+        else:
+            # Strategy Signal が NONE の場合
+            self.current_strategy_signal = 'NONE'
+            self.current_strategy_name = 'NONE'
+            self.current_strategy_confidence = 0.0
         
         # PVO有効範囲チェック
         if signals["pvo"]["signal"] == True:
