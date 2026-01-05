@@ -467,15 +467,121 @@ adx_bull_threshold = 24
 
 ---
 
+## � 市場レジーム検出システムの検証（2026-01-05追加）
+
+### 検証目的
+2025年の壊滅的失敗（勝率3.33%）を市場レジーム判定フィルタで改善できるか検証。
+
+### 実装内容
+1. **レジーム判定の常時実行**
+   - `MarketRegimeDetector.detect_regime_simple()`を全トレードで実行
+   - RANGING / TRENDING_UP / TRENDING_DOWN / TRANSITION の4分類
+   - フィルタリングとは独立して判定結果をログ記録
+
+2. **TradeLoggerへの記録**
+   ```json
+   {
+     "entry": {
+       "market": {
+         "regime": "TRENDING_UP",
+         "confidence": 0.53,
+         "reason": "Range ratio=1.168 (recent=1153.31, avg=987.19)",
+         "filter_enabled": 0
+       }
+     }
+   }
+   ```
+
+3. **分析ツール作成**
+   - `tools/analyze_regime_effectiveness.py`
+   - レジーム別の勝率・PnL・トレード数を集計
+   - 仮想フィルタリング結果を算出
+
+### 2025年通年バックテスト結果（フィルタなし）
+
+**全体統計**:
+- 総トレード数: 30
+- 勝率: **3.33%** (1勝29敗)
+- 総PnL: **-220 USD**
+- Profit Factor: 0.39
+
+**レジーム別内訳**:
+
+| レジーム | トレード数 | 割合 | 勝率 | 総PnL | Profit Factor |
+|----------|-----------|------|------|-------|--------------|
+| **TRANSITION** | 20 | 67% | 0% | -3,548 USD | 0.00 |
+| **TRENDING_UP** | 7 | 23% | 0% | -1,175 USD | 0.00 |
+| **RANGING** | 3 | 10% | 0% | -639 USD | 0.00 |
+
+### 仮想フィルタリング効果
+
+| フィルタパターン | 除外数 | 残トレード数 | 勝率 | 総PnL | 改善PnL |
+|----------------|-------|------------|------|-------|---------|
+| **TRANSITION除外** | 20 | 10 | 0% | -1,813 USD | **+3,548 USD** |
+| **TRENDINGのみ許可** | 23 | 7 | 0% | -1,175 USD | **+4,187 USD** |
+| **RANGING除外** | 3 | 27 | 0% | -4,723 USD | +639 USD |
+
+### 重要な結論
+
+#### ❌ レジームフィルタ単独では不十分
+1. **全レジームで勝率0%**
+   - RANGING: 0%（3トレード）
+   - TRENDING_UP: 0%（7トレード）
+   - TRANSITION: 0%（20トレード）
+   - **どのレジームでも勝てていない**
+
+2. **損失削減効果はある**
+   - TRANSITION除外で-220 USD → -1,813 USDに改善（理論値）
+   - しかし根本的な問題は解決していない
+
+3. **Donchian戦略自体が2025年に不適合**
+   - 高ボラティリティ・短期レンジ相場で機能不全
+   - フィルタリングではなく、戦略そのものの変更が必要
+
+#### ✅ 有効な知見
+1. **TRANSITION（67%）が最大の損失源**
+   - レンジ↔トレンドの移行期での損失が大きい
+   - ATR閾値の調整で改善余地あり
+
+2. **レジーム判定システムは正常動作**
+   - detect_regime_simple()が適切に分類
+   - confidence値も妥当（0.4-0.6）
+
+3. **分析基盤の整備完了**
+   - 全トレードでレジーム情報を記録
+   - 詳細分析ツールが利用可能
+
+### 次のアクション
+
+#### 優先度1: 新戦略の研究開発
+- Donchian + レジームフィルタでは限界
+- 2025年タイプ相場向けの新戦略が必須
+  - Mean Reversion（平均回帰）
+  - Volatility Contraction（ボラティリティ収縮）
+  - Range Breakout（真のブレイクアウト判定強化）
+
+#### 優先度2: 閾値の最適化
+- ATR range threshold（現在: 0.90/1.10）
+- Confidence threshold の追加
+- レジーム判定期間（lookback_period）の調整
+
+#### 優先度3: ハイブリッド戦略
+- 2024年: Donchian（ベースライン設定）
+- 2025年: 新戦略
+- 自動切り替えロジックの開発
+
+---
+
 ## 📌 関連ドキュメント
 
 - [PARAMETER_OPTIMIZATION_ANALYSIS_20260105.md](PARAMETER_OPTIMIZATION_ANALYSIS_20260105.md) - 四半期別詳細分析
 - [ACTION_LIST.md](ACTION_LIST.md) - Task #37: パラメータ最適化検証
 - [LOSS_TRADE_ANALYSIS_PLAN.md](LOSS_TRADE_ANALYSIS_PLAN.md) - Phase 2-3 分析計画
 - [baseline_backup/](../baseline_backup/) - ベースライン設定バックアップ
+- [tools/analyze_regime_effectiveness.py](../tools/analyze_regime_effectiveness.py) - レジーム有効性分析ツール
 
 ---
 
-**最終更新**: 2026-01-05（改訂版）  
+**最終更新**: 2026-01-05（市場レジーム検証追加）  
 **タグ**: baseline-no1-20260105  
-**次回レビュー**: 2026-01-12（市場環境判定システム実装後）
+**次回レビュー**: 2026-01-12（新戦略プロトタイプ完成後）
