@@ -307,7 +307,9 @@ class Bot:
                                     'donchian_signal': signals['donchian']['signal'],
                                     'strategy_signal': getattr(self.strategy, 'current_strategy_signal', 'NONE'),
                                     'market_regime': getattr(self.strategy, 'current_market_regime', 'UNKNOWN'),
-                                    'market_confidence': getattr(self.strategy, 'market_regime_confidence', 0.0)
+                                    'market_regime_confidence': getattr(self.strategy, 'market_regime_confidence', 0.0),
+                                    'market_regime_reason': getattr(self.strategy, 'current_market_regime_reason', ''),
+                                    'market_regime_filter_enabled': Config.get_enable_market_regime_detection()
                                 }
                                 self.trade_logger.log_entry(entry_data)
                             except Exception as e:

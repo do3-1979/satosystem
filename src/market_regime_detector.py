@@ -47,10 +47,10 @@ class MarketRegimeDetector:
         tr_values = []
         for i in range(len(ohlcv_data) - period, len(ohlcv_data)):
             candle = ohlcv_data[i]
-            high = candle['high']
-            low = candle['low']
-            close = candle['close'] if i > 0 else ohlcv_data[i-1]['close']
-            prev_close = ohlcv_data[i-1]['close'] if i > 0 else candle['close']
+            high = candle['high_price']
+            low = candle['low_price']
+            close = candle['close_price'] if i > 0 else ohlcv_data[i-1]['close_price']
+            prev_close = ohlcv_data[i-1]['close_price'] if i > 0 else candle['close_price']
             
             tr = max(
                 high - low,
@@ -165,9 +165,9 @@ class MarketRegimeDetector:
                 tr_sum = 0
                 for j in range(1, len(subset)):
                     candle = subset[j]
-                    prev_close = subset[j - 1]['close']
-                    high = candle['high']
-                    low = candle['low']
+                    prev_close = subset[j - 1]['close_price']
+                    high = candle['high_price']
+                    low = candle['low_price']
                     
                     tr = max(
                         high - low,
@@ -231,7 +231,7 @@ class MarketRegimeDetector:
                 prev_candle = period[i-1]
                 
                 # 高値-安値の幅
-                range_val = candle['high'] - candle['low']
+                range_val = candle['high_price'] - candle['low_price']
                 ranges.append(range_val)
             
             if ranges:
@@ -254,10 +254,10 @@ class MarketRegimeDetector:
         range_ratio = recent_range / overall_range
         
         # スイング判定
-        recent_high = max([c['high'] for c in recent_period])
-        recent_low = min([c['low'] for c in recent_period])
-        previous_high = max([c['high'] for c in previous_period])
-        previous_low = min([c['low'] for c in previous_period])
+        recent_high = max([c['high_price'] for c in recent_period])
+        recent_low = min([c['low_price'] for c in recent_period])
+        previous_high = max([c['high_price'] for c in previous_period])
+        previous_low = min([c['low_price'] for c in previous_period])
         
         higher_high = recent_high > previous_high
         higher_low = recent_low > previous_low
@@ -309,8 +309,8 @@ class MarketRegimeDetector:
         recent = ohlcv_data[-lookback_period:]
         
         # 直近のHigh と Lowを取得
-        highs = [c['high'] for c in recent]
-        lows = [c['low'] for c in recent]
+        highs = [c['high_price'] for c in recent]
+        lows = [c['low_price'] for c in recent]
         
         # 最初と最後の半分で比較
         mid_point = len(recent) // 2

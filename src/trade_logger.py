@@ -100,7 +100,9 @@ class TradeLogger:
                 },
                 "market": {
                     "regime": entry_data.get('market_regime', 'UNKNOWN'),
-                    "confidence": entry_data.get('market_confidence', 0.0)
+                    "confidence": entry_data.get('market_regime_confidence', 0.0),
+                    "reason": entry_data.get('market_regime_reason', ''),
+                    "filter_enabled": entry_data.get('market_regime_filter_enabled', 0)
                 }
             },
             "exit": None,
