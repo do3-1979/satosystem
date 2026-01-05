@@ -54,3 +54,11 @@ docs/regression_test_results/
 # Ignore quarterly backtest results (grow unboundedly)
 docs/quarterly_backtest_results/
 
+# Ignore trades folder
+trades/
+
+# Ignore baseline backup
+baseline_backup/
+
+# Ignore quarterly logs (backtest generated files)
+logs/quarterly/
