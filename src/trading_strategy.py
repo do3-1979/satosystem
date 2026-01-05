@@ -18,6 +18,7 @@ from risk_management import RiskManagement
 from portfolio import Portfolio
 from exit_strategy_v2 import ExitStrategyV2
 from market_regime_detector import MarketRegimeDetector
+from vcp_strategy import VCPStrategy
 from datetime import datetime
 
 class TradingStrategy:
@@ -53,6 +54,12 @@ class TradingStrategy:
         self.current_market_regime = 'TRANSITION'  # 現在の市場体制
         self.market_regime_confidence = 0.0
         self.current_market_regime_reason = ''  # 判定理由
+        
+        # VCP戦略の初期化
+        self.vcp_strategy = VCPStrategy()
+        self.vcp_signal_latest = 0
+        self.vcp_confidence_latest = 0.0
+        self.vcp_reason_latest = ''
         
         # Strategy Signal の状態保持（トレードログ記録用）
         self.current_strategy_signal = 'NONE'  # 現在の Strategy Signal (BUY/SELL/NONE)
@@ -126,6 +133,38 @@ class TradingStrategy:
         
         # PVO有効範囲チェック
         if signals["pvo"]["signal"] == True:
+            
+            # =========== VCP戦略シグナル評価（Donchian判定前に実行） ===========
+            # OHLCV データを取得
+            try:
+                ohlcv_data = self.price_data_management.get_ohlcv_data_by_time_frame(
+                    Config.get_time_frame()
+                )
+                
+                donchian_high = self.risk_manager.get_donchian_high()
+                donchian_low = self.risk_manager.get_donchian_low()
+                current_price = self.price_data_management.get_ticker()
+                
+                vcp_result = self.vcp_strategy.evaluate_entry(
+                    candles=ohlcv_data if ohlcv_data else [],
+                    donchian_high=donchian_high,
+                    donchian_low=donchian_low,
+                    current_price=current_price
+                )
+                
+                # VCP結果をstrategyに保存（bot.pyからアクセスするため）
+                self.vcp_signal_latest = vcp_result['signal']
+                self.vcp_confidence_latest = vcp_result['confidence']
+                self.vcp_reason_latest = vcp_result['reason']
+                
+                if vcp_result['signal'] != 0:
+                    self.logger.log(f"[VCP戦略] シグナル={vcp_result['signal']}, 信頼度={vcp_result['confidence']:.2f}, 理由={vcp_result['reason']}")
+            except Exception as e:
+                self.logger.log(f"[VCP戦略エラー] {str(e)}")
+                self.vcp_signal_latest = 0
+                self.vcp_confidence_latest = 0.0
+                self.vcp_reason_latest = ''
+            
             # ドンチャンチャネルブレイク発生
             if signals["donchian"]["signal"] == True:
                 desired_side = signals["donchian"]["side"]
@@ -168,6 +207,7 @@ class TradingStrategy:
                         self.current_market_regime = 'UNKNOWN'
                         self.market_regime_confidence = 0.0
                         self.current_market_regime_reason = 'データ不足'
+                # =========== 市場体制判定エラーはログするが、エントリー判定は続行 ===========
                 except Exception as e:
                     # 市場体制判定エラーはログするが、エントリー判定は続行
                     self.logger.log(f"[市場体制判定エラー] {str(e)}")

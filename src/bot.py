@@ -309,7 +309,10 @@ class Bot:
                                     'market_regime': getattr(self.strategy, 'current_market_regime', 'UNKNOWN'),
                                     'market_regime_confidence': getattr(self.strategy, 'market_regime_confidence', 0.0),
                                     'market_regime_reason': getattr(self.strategy, 'current_market_regime_reason', ''),
-                                    'market_regime_filter_enabled': Config.get_enable_market_regime_detection()
+                                    'market_regime_filter_enabled': Config.get_enable_market_regime_detection(),
+                                    'vcp_signal': getattr(self.strategy, 'vcp_signal_latest', 0),
+                                    'vcp_confidence': getattr(self.strategy, 'vcp_confidence_latest', 0.0),
+                                    'vcp_reason': getattr(self.strategy, 'vcp_reason_latest', '')
                                 }
                                 self.trade_logger.log_entry(entry_data)
                             except Exception as e:

@@ -1,0 +1,77 @@
+{
+  "file_name": "vcp_strategy.py",
+  "purpose": "VCP (Volatility Contraction Pattern) 戦略実装",
+  "description": "ボラティリティ収縮パターンを検出し、ブレイクアウト時にエントリーする戦略。ATR収縮検出とDonchianブレイク確認を組み合わせる。",
+  "classes": [
+    {
+      "name": "VCPStrategy",
+      "purpose": "VCP戦略の検出・評価クラス",
+      "key_methods": [
+        "detect_vcp",
+        "evaluate_entry",
+        "_calculate_atr"
+      ]
+    }
+  ],
+  "methods": [
+    {
+      "name": "detect_vcp",
+      "purpose": "VCP（ボラティリティ収縮パターン）を検出",
+      "parameters": ["candles"],
+      "returns": "dict with detected, confidence, reason, current_atr, avg_atr, contraction_ratio"
+    },
+    {
+      "name": "evaluate_entry",
+      "purpose": "VCP戦略のエントリー判定",
+      "parameters": ["candles", "donchian_high", "donchian_low", "current_price"],
+      "returns": "dict with signal, confidence, reason"
+    },
+    {
+      "name": "_calculate_atr",
+      "purpose": "ATR (Average True Range) を計算",
+      "parameters": ["candles"],
+      "returns": "float ATR値"
+    }
+  ],
+  "key_features": [
+    "ATR収縮検出（現在ATR < 平均ATR × contraction_ratio）",
+    "Donchianブレイクアウト確認",
+    "信頼度計算（収縮が強いほど高信頼度）",
+    "configurable parameters (ratio, lookback, threshold, min_confidence)"
+  ],
+  "dependencies": [
+    "logger.Logger",
+    "config.Config",
+    "statistics"
+  ],
+  "usage": "trading_strategy.py から呼び出され、PVOシグナル有効時にVCP評価を実行",
+  "recent_changes": [
+    {
+      "date": "2026-01-05",
+      "description": "VCP戦略実装完了。評価の結果、2025年で逆効果（勝率22.7%, -11,537 USD）のため無効化推奨。2024年は効果あり（+3,329 USD）だが、全期間で-8,209 USD。高ボラティリティ市場では機能せず。",
+      "impact": "enable_vcp_strategy=0 に設定し無効化"
+    }
+  ],
+  "evaluation_results": {
+    "2025": {
+      "trades": 44,
+      "win_rate": 22.7,
+      "pnl": -11537.3,
+      "verdict": "逆効果"
+    },
+    "2024": {
+      "trades": 11,
+      "win_rate": 36.4,
+      "pnl": 3328.6,
+      "verdict": "効果あり"
+    },
+    "all_period": {
+      "trades": 55,
+      "win_rate": 25.5,
+      "pnl": -8208.7,
+      "verdict": "全期間で逆効果"
+    }
+  },
+  "status": "実装完了・評価完了・無効化推奨",
+  "notes": "2025年高ボラティリティ市場に期待して開発したが、実際には逆効果。VCP未適用トレードの方がパフォーマンスが良好（2025年: +101,193 USD, 勝率45.1%）"
+}

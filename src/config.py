@@ -772,6 +772,79 @@ class Config:
         except (KeyError, ValueError):
             return 0.7  # デフォルト: 30%削減（70%のサイズ）
 
+    # ========================================
+    # VCPStrategy セクション
+    # ========================================
+
+    @classmethod
+    def get_enable_vcp_strategy(cls):
+        """
+        VCP戦略の有効/無効を取得します.
+
+        Returns:
+            int: 1=有効, 0=無効
+        """
+        try:
+            return int(cls.config['VCPStrategy']['enable_vcp_strategy'])
+        except (KeyError, ValueError):
+            return 0  # デフォルト: 無効
+
+    @classmethod
+    def get_vcp_contraction_ratio(cls):
+        """
+        VCP検出のATR収縮率閾値を取得します.
+
+        Returns:
+            float: 収縮率（デフォルト0.75 = 75%以下に収縮）
+        """
+        try:
+            return float(cls.config['VCPStrategy']['vcp_contraction_ratio'])
+        except (KeyError, ValueError):
+            return 0.75
+
+    @classmethod
+    def get_vcp_lookback_period(cls):
+        """
+        VCP検出のルックバック期間を取得します.
+
+        Returns:
+            int: 期間（デフォルト20）
+        """
+        try:
+            return int(cls.config['VCPStrategy']['vcp_lookback_period'])
+        except (KeyError, ValueError):
+            return 20
+
+    @classmethod
+    def get_vcp_breakout_threshold(cls):
+        """
+        VCPブレイクアウト閾値を取得します.
+
+        Returns:
+            float: 閾値（デフォルト1.02 = 2%超過）
+        """
+        try:
+            return float(cls.config['VCPStrategy']['vcp_breakout_threshold'])
+        except (KeyError, ValueError):
+            return 1.02
+
+    @classmethod
+    def get_vcp_min_confidence(cls):
+        """
+        VCP最低信頼度を取得します.
+
+        Returns:
+            float: 信頼度（デフォルト0.6）
+        """
+        try:
+            return float(cls.config['VCPStrategy']['vcp_min_confidence'])
+        except (KeyError, ValueError):
+            return 0.6
+
+    # ========================================
+    # OrderExecution セクション
+    # ========================================
+
     @classmethod
     def get_entry_slippage(cls):
         """
