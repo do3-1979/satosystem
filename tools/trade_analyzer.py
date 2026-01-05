@@ -3,415 +3,523 @@
 """
 trade_analyzer.py
 
-抽出されたトレード情報を分析し、
-損失パターン、因果関係、改善提案を生成します。
+抽出したトレードメタデータを分析し、因果関係マトリックスと損失パターンを検出。
+
+フェーズ2実装：損失トレード分析の根本原因特定
 """
 
-import pandas as pd
 import json
+import csv
 from pathlib import Path
-from typing import Dict, List, Tuple
-from dataclasses import dataclass
-from collections import defaultdict
+from typing import Dict, List, Tuple, Optional
+from dataclasses import dataclass, asdict
+from statistics import mean, stdev, median
+from datetime import datetime
 import sys
 
-# Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'src'))
+# Add tools to path
+sys.path.insert(0, str(Path(__file__).parent))
+
+from trade_extractor import Trade, EntryPoint, ExitPoint, TradeResult
+
+
+@dataclass
+class FilterCondition:
+    """フィルター条件の集計"""
+    filter_name: str
+    pass_count: int  # フィルター合格したトレード数
+    fail_count: int  # フィルター不合格のトレード数
+    
+    # フィルター合格時の成績
+    pass_win_count: int
+    pass_lose_count: int
+    pass_win_rate: float
+    pass_avg_pnl: float
+    pass_pf: float  # Profit Factor
+    
+    # フィルター不合格時の成績
+    fail_win_count: int
+    fail_lose_count: int
+    fail_win_rate: float
+    fail_avg_pnl: float
+    fail_pf: float
+    
+    # 効果（合格時PnLと不合格時PnLの差）
+    improvement_usd: float
 
 
 @dataclass
 class LossPattern:
     """損失パターン"""
     pattern_id: str
-    description: str
-    condition: Dict  # 該当条件
-    affected_trades: int
-    avg_loss_usd: float
-    avg_loss_pct: float
-    frequency_pct: float
-    severity_score: float  # 0-100 (高いほど危険)
+    pattern_description: str
+    matching_trades: List[str]  # trade_id リスト
+    occurrence_count: int
+    occurrence_rate: float  # 全トレードに対する割合
+    
+    # パターンが発生した場合の成績
+    total_pnl: float
+    avg_pnl: float
+    worst_pnl: float
+    win_rate: float
 
 
-@dataclass
-class ImprovementHypothesis:
-    """改善仮説"""
-    hypothesis_id: str
-    title: str
-    description: str
-    target_pattern: str
-    expected_loss_reduction: float
-    expected_win_rate_improvement: float
-    implementation_complexity: str  # LOW/MEDIUM/HIGH
-    risk_level: str  # LOW/MEDIUM/HIGH
+class CausalityMatrix:
+    """因果関係マトリックス生成"""
+    
+    def __init__(self, trades: List[Trade]):
+        self.trades = trades
+        self.matrix: Dict[str, FilterCondition] = {}
+    
+    def build(self) -> Dict[str, FilterCondition]:
+        """因果関係マトリックスを構築"""
+        filters = [
+            ('pvo_filter_pass', 'PVO Filter (>10)'),
+            ('adx_filter_pass', 'ADX Filter (>=31)'),
+            ('volume_filter_pass', 'Volume Filter'),
+            ('volatility_filter_pass', 'Volatility Filter (<100)'),
+        ]
+        
+        for filter_key, filter_name in filters:
+            # フィルター合格/不合格でトレード分類
+            pass_trades = [t for t in self.trades if getattr(t.entry, filter_key, False)]
+            fail_trades = [t for t in self.trades if not getattr(t.entry, filter_key, False)]
+            
+            # 合格時の成績
+            pass_wins = [t for t in pass_trades if t.result.pnl_usd > 0]
+            pass_loses = [t for t in pass_trades if t.result.pnl_usd < 0]
+            pass_win_rate = len(pass_wins) / len(pass_trades) * 100 if pass_trades else 0
+            pass_avg_pnl = mean([t.result.pnl_usd for t in pass_trades]) if pass_trades else 0
+            pass_pf = self._calculate_pf(pass_trades)
+            
+            # 不合格時の成績
+            fail_wins = [t for t in fail_trades if t.result.pnl_usd > 0]
+            fail_loses = [t for t in fail_trades if t.result.pnl_usd < 0]
+            fail_win_rate = len(fail_wins) / len(fail_trades) * 100 if fail_trades else 0
+            fail_avg_pnl = mean([t.result.pnl_usd for t in fail_trades]) if fail_trades else 0
+            fail_pf = self._calculate_pf(fail_trades)
+            
+            # 改善効果
+            improvement = pass_avg_pnl - fail_avg_pnl
+            
+            condition = FilterCondition(
+                filter_name=filter_name,
+                pass_count=len(pass_trades),
+                fail_count=len(fail_trades),
+                pass_win_count=len(pass_wins),
+                pass_lose_count=len(pass_loses),
+                pass_win_rate=pass_win_rate,
+                pass_avg_pnl=pass_avg_pnl,
+                pass_pf=pass_pf,
+                fail_win_count=len(fail_wins),
+                fail_lose_count=len(fail_loses),
+                fail_win_rate=fail_win_rate,
+                fail_avg_pnl=fail_avg_pnl,
+                fail_pf=fail_pf,
+                improvement_usd=improvement
+            )
+            
+            self.matrix[filter_key] = condition
+        
+        return self.matrix
+    
+    def _calculate_pf(self, trades: List[Trade]) -> float:
+        """Profit Factor を計算"""
+        if not trades:
+            return 0
+        
+        wins = sum(t.result.pnl_usd for t in trades if t.result.pnl_usd > 0)
+        loses = abs(sum(t.result.pnl_usd for t in trades if t.result.pnl_usd < 0))
+        
+        if loses == 0:
+            return 99.99 if wins > 0 else 0
+        
+        return wins / loses
+    
+    def print_matrix(self):
+        """マトリックスをテーブル表示"""
+        print("\n📊 因果関係マトリックス")
+        print("=" * 120)
+        print(f"{'Filter':<25} | {'Pass':<8} | {'Fail':<8} | {'Pass WR%':<10} | {'Fail WR%':<10} | {'Improvement USD':<15}")
+        print("-" * 120)
+        
+        for condition in self.matrix.values():
+            print(f"{condition.filter_name:<25} | {condition.pass_count:<8} | {condition.fail_count:<8} | "
+                  f"{condition.pass_win_rate:>8.1f}% | {condition.fail_win_rate:>8.1f}% | {condition.improvement_usd:>+14.2f}")
+
+
+class PatternDetector:
+    """損失パターン検出"""
+    
+    def __init__(self, trades: List[Trade]):
+        self.trades = trades
+        self.patterns: List[LossPattern] = []
+    
+    def detect(self) -> List[LossPattern]:
+        """損失パターンを検出"""
+        patterns = []
+        
+        # パターン1: PVO信号がない時の損失
+        patterns.append(self._detect_low_pvo_pattern())
+        
+        # パターン2: ADX が低い時の損失
+        patterns.append(self._detect_low_adx_pattern())
+        
+        # パターン3: ドローダウンが深い時の損失
+        patterns.append(self._detect_deep_drawdown_pattern())
+        
+        # パターン4: 短期保有での損失
+        patterns.append(self._detect_short_hold_pattern())
+        
+        # パターン5: 連続損失パターン
+        patterns.append(self._detect_consecutive_loss_pattern())
+        
+        self.patterns = [p for p in patterns if p is not None]
+        return self.patterns
+    
+    def _detect_low_pvo_pattern(self) -> Optional[LossPattern]:
+        """PVO値が閾値以下の場合の損失パターン"""
+        matching_trades = [t for t in self.trades if t.entry.pvo_filter_value < 50 and t.result.pnl_usd < 0]
+        
+        if len(matching_trades) < 2:
+            return None
+        
+        return LossPattern(
+            pattern_id='low_pvo',
+            pattern_description='PVO < 50 での損失（シグナル弱い）',
+            matching_trades=[t.entry.timestamp for t in matching_trades],
+            occurrence_count=len(matching_trades),
+            occurrence_rate=len(matching_trades) / len(self.trades) * 100,
+            total_pnl=sum(t.result.pnl_usd for t in matching_trades),
+            avg_pnl=mean([t.result.pnl_usd for t in matching_trades]),
+            worst_pnl=min([t.result.pnl_usd for t in matching_trades]),
+            win_rate=len([t for t in matching_trades if t.result.pnl_usd > 0]) / len(matching_trades) * 100
+        )
+    
+    def _detect_low_adx_pattern(self) -> Optional[LossPattern]:
+        """ADX値が閾値以下の場合の損失パターン"""
+        matching_trades = [t for t in self.trades if t.entry.adx_filter_value < 25 and t.result.pnl_usd < 0]
+        
+        if len(matching_trades) < 2:
+            return None
+        
+        return LossPattern(
+            pattern_id='low_adx',
+            pattern_description='ADX < 25 での損失（トレンド弱い）',
+            matching_trades=[t.entry.timestamp for t in matching_trades],
+            occurrence_count=len(matching_trades),
+            occurrence_rate=len(matching_trades) / len(self.trades) * 100,
+            total_pnl=sum(t.result.pnl_usd for t in matching_trades),
+            avg_pnl=mean([t.result.pnl_usd for t in matching_trades]),
+            worst_pnl=min([t.result.pnl_usd for t in matching_trades]),
+            win_rate=len([t for t in matching_trades if t.result.pnl_usd > 0]) / len(matching_trades) * 100
+        )
+    
+    def _detect_deep_drawdown_pattern(self) -> Optional[LossPattern]:
+        """深いドローダウンが発生した時の損失パターン"""
+        matching_trades = [t for t in self.trades if t.result.max_drawdown_pct <= -1.0 and t.result.pnl_usd < 0]
+        
+        if len(matching_trades) < 2:
+            return None
+        
+        return LossPattern(
+            pattern_id='deep_drawdown',
+            pattern_description='ドローダウン > 1% での損失（大きい変動）',
+            matching_trades=[t.entry.timestamp for t in matching_trades],
+            occurrence_count=len(matching_trades),
+            occurrence_rate=len(matching_trades) / len(self.trades) * 100,
+            total_pnl=sum(t.result.pnl_usd for t in matching_trades),
+            avg_pnl=mean([t.result.pnl_usd for t in matching_trades]),
+            worst_pnl=min([t.result.pnl_usd for t in matching_trades]),
+            win_rate=len([t for t in matching_trades if t.result.pnl_usd > 0]) / len(matching_trades) * 100
+        )
+    
+    def _detect_short_hold_pattern(self) -> Optional[LossPattern]:
+        """短期保有での損失パターン"""
+        matching_trades = [t for t in self.trades if t.result.bars_held <= 2 and t.result.pnl_usd < 0]
+        
+        if len(matching_trades) < 2:
+            return None
+        
+        return LossPattern(
+            pattern_id='short_hold',
+            pattern_description='短期保有（1-2bars）での損失（タイミング悪い）',
+            matching_trades=[t.entry.timestamp for t in matching_trades],
+            occurrence_count=len(matching_trades),
+            occurrence_rate=len(matching_trades) / len(self.trades) * 100,
+            total_pnl=sum(t.result.pnl_usd for t in matching_trades),
+            avg_pnl=mean([t.result.pnl_usd for t in matching_trades]),
+            worst_pnl=min([t.result.pnl_usd for t in matching_trades]),
+            win_rate=len([t for t in matching_trades if t.result.pnl_usd > 0]) / len(matching_trades) * 100
+        )
+    
+    def _detect_consecutive_loss_pattern(self) -> Optional[LossPattern]:
+        """連続損失パターン"""
+        # 連続して3回以上損失しているトレード列を検出
+        consecutive_losses = []
+        current_loss_streak = []
+        
+        for trade in self.trades:
+            if trade.result.pnl_usd < 0:
+                current_loss_streak.append(trade)
+            else:
+                if len(current_loss_streak) >= 3:
+                    consecutive_losses.extend(current_loss_streak)
+                current_loss_streak = []
+        
+        if len(current_loss_streak) >= 3:
+            consecutive_losses.extend(current_loss_streak)
+        
+        if not consecutive_losses:
+            return None
+        
+        return LossPattern(
+            pattern_id='consecutive_loss',
+            pattern_description='連続損失パターン（3回以上連続）',
+            matching_trades=[t.entry.timestamp for t in consecutive_losses],
+            occurrence_count=len(consecutive_losses),
+            occurrence_rate=len(consecutive_losses) / len(self.trades) * 100,
+            total_pnl=sum(t.result.pnl_usd for t in consecutive_losses),
+            avg_pnl=mean([t.result.pnl_usd for t in consecutive_losses]),
+            worst_pnl=min([t.result.pnl_usd for t in consecutive_losses]),
+            win_rate=len([t for t in consecutive_losses if t.result.pnl_usd > 0]) / len(consecutive_losses) * 100
+        )
+    
+    def print_patterns(self):
+        """損失パターンをテーブル表示"""
+        print("\n🔴 損失パターン検出")
+        print("=" * 100)
+        
+        for pattern in self.patterns:
+            print(f"\n【{pattern.pattern_id.upper()}】{pattern.pattern_description}")
+            print(f"  発生件数: {pattern.occurrence_count} / {len(self.trades)} ({pattern.occurrence_rate:.1f}%)")
+            print(f"  累計PnL: {pattern.total_pnl:+.2f} USD")
+            print(f"  平均PnL: {pattern.avg_pnl:+.2f} USD")
+            print(f"  最悪PnL: {pattern.worst_pnl:+.2f} USD")
+            print(f"  勝率: {pattern.win_rate:.1f}%")
+
+
+class ImprovementSuggestion:
+    """改善案生成"""
+    
+    @staticmethod
+    def generate(matrix: Dict[str, FilterCondition], patterns: List[LossPattern], 
+                 trades: List[Trade]) -> List[Dict]:
+        """改善案を自動生成"""
+        suggestions = []
+        
+        # 改善案1: PVO フィルター強化
+        pvo_condition = matrix.get('pvo_filter_pass')
+        if pvo_condition and pvo_condition.improvement_usd > 0:
+            suggestions.append({
+                'id': 'A1',
+                'title': 'PVO 閾値引き上げ',
+                'description': f'PVO > 10 → PVO > 50 に引き上げ',
+                'expected_improvement_usd': pvo_condition.improvement_usd * pvo_condition.pass_count,
+                'implementation_effort': 'LOW',
+                'risk': 'MEDIUM',
+                'impact': f'{pvo_condition.improvement_usd:.2f} USD/trade 改善',
+                'notes': f'合格時勝率: {pvo_condition.pass_win_rate:.1f}% → 不合格時: {pvo_condition.fail_win_rate:.1f}%'
+            })
+        
+        # 改善案2: ADX フィルター強化
+        adx_condition = matrix.get('adx_filter_pass')
+        if adx_condition and adx_condition.improvement_usd > 0:
+            suggestions.append({
+                'id': 'A2',
+                'title': 'ADX 閾値引き上げ',
+                'description': f'ADX >= 31 → ADX >= 40 に引き上げ',
+                'expected_improvement_usd': adx_condition.improvement_usd * adx_condition.pass_count,
+                'implementation_effort': 'LOW',
+                'risk': 'MEDIUM',
+                'impact': f'{adx_condition.improvement_usd:.2f} USD/trade 改善',
+                'notes': f'合格時勝率: {adx_condition.pass_win_rate:.1f}% → 不合格時: {adx_condition.fail_win_rate:.1f}%'
+            })
+        
+        # 改善案3: 低PVO時エントリー禁止
+        low_pvo_pattern = next((p for p in patterns if p.pattern_id == 'low_pvo'), None)
+        if low_pvo_pattern:
+            suggestions.append({
+                'id': 'B1',
+                'title': 'PVO < 50 時のエントリー禁止',
+                'description': 'PVO値が低い相場では取引をスキップ',
+                'expected_improvement_usd': abs(low_pvo_pattern.total_pnl),
+                'implementation_effort': 'MEDIUM',
+                'risk': 'LOW',
+                'impact': f'{abs(low_pvo_pattern.total_pnl):.2f} USD 損失削減',
+                'notes': f'発生率: {low_pvo_pattern.occurrence_rate:.1f}%, 勝率: {low_pvo_pattern.win_rate:.1f}%'
+            })
+        
+        # 改善案4: 低ADX時エントリー禁止
+        low_adx_pattern = next((p for p in patterns if p.pattern_id == 'low_adx'), None)
+        if low_adx_pattern:
+            suggestions.append({
+                'id': 'B2',
+                'title': 'ADX < 25 時のエントリー禁止',
+                'description': 'トレンドが形成されていない相場では取引をスキップ',
+                'expected_improvement_usd': abs(low_adx_pattern.total_pnl),
+                'implementation_effort': 'MEDIUM',
+                'risk': 'LOW',
+                'impact': f'{abs(low_adx_pattern.total_pnl):.2f} USD 損失削減',
+                'notes': f'発生率: {low_adx_pattern.occurrence_rate:.1f}%, 勝率: {low_adx_pattern.win_rate:.1f}%'
+            })
+        
+        # 優先度付け（期待改善額でソート）
+        suggestions.sort(key=lambda x: x['expected_improvement_usd'], reverse=True)
+        
+        return suggestions
+    
+    @staticmethod
+    def print_suggestions(suggestions: List[Dict]):
+        """改善案をテーブル表示"""
+        print("\n💡 改善案（優先度順）")
+        print("=" * 130)
+        print(f"{'ID':<5} | {'Title':<30} | {'Expected USD':<15} | {'Effort':<10} | {'Risk':<10} | {'Impact':<30}")
+        print("-" * 130)
+        
+        for suggestion in suggestions:
+            print(f"{suggestion['id']:<5} | {suggestion['title']:<30} | {suggestion['expected_improvement_usd']:>+14.2f} | "
+                  f"{suggestion['implementation_effort']:<10} | {suggestion['risk']:<10} | {suggestion['impact']:<30}")
 
 
 class TradeAnalyzer:
-    """トレード分析エンジン"""
+    """メイン分析エンジン"""
     
-    def __init__(self, trades_csv_path: str):
-        self.df = pd.read_csv(trades_csv_path)
-        self.loss_patterns: List[LossPattern] = []
-        self.hypotheses: List[ImprovementHypothesis] = []
+    def __init__(self, trades_json_path: str):
+        self.trades_json_path = Path(trades_json_path)
+        self.trades: List[Trade] = []
+        self._load_trades()
     
-    def identify_loss_patterns(self) -> List[LossPattern]:
-        """損失パターンを特定"""
+    def _load_trades(self):
+        """JSON から Trade オブジェクトを再構築"""
+        with open(self.trades_json_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
         
-        patterns = []
-        lose_df = self.df[self.df['pnl_usd'] < 0]
-        total_trades = len(self.df)
-        
-        # パターン 1: ADX が低い場合
-        low_adx = lose_df[lose_df['adx_value'] < 20]
-        if len(low_adx) > 0:
-            pattern = LossPattern(
-                pattern_id="P001",
-                description="ADX が低い (< 20) 時のエントリー",
-                condition={"adx": "< 20"},
-                affected_trades=len(low_adx),
-                avg_loss_usd=low_adx['pnl_usd'].mean(),
-                avg_loss_pct=low_adx['pnl_pct'].mean(),
-                frequency_pct=(len(low_adx) / total_trades * 100),
-                severity_score=self._calculate_severity(low_adx)
+        for trade_data in data.get('trades', []):
+            entry_data = trade_data['entry']
+            exit_data = trade_data['exit']
+            result_data = trade_data['result']
+            
+            entry = EntryPoint(**entry_data)
+            exit_point = ExitPoint(**exit_data)
+            result = TradeResult(**result_data)
+            
+            trade = Trade(
+                trade_id=trade_data['trade_id'],
+                entry=entry,
+                exit=exit_point,
+                result=result
             )
-            patterns.append(pattern)
-        
-        # パターン 2: PVO が低い場合
-        low_pvo = lose_df[lose_df['pvo_value'] < 50]
-        if len(low_pvo) > 0:
-            pattern = LossPattern(
-                pattern_id="P002",
-                description="PVO が低い (< 50) 時のエントリー",
-                condition={"pvo": "< 50"},
-                affected_trades=len(low_pvo),
-                avg_loss_usd=low_pvo['pnl_usd'].mean(),
-                avg_loss_pct=low_pvo['pnl_pct'].mean(),
-                frequency_pct=(len(low_pvo) / total_trades * 100),
-                severity_score=self._calculate_severity(low_pvo)
-            )
-            patterns.append(pattern)
-        
-        # パターン 3: RANGING での損失
-        ranging_loss = lose_df[lose_df['market_regime'] == 'RANGING']
-        if len(ranging_loss) > 0:
-            pattern = LossPattern(
-                pattern_id="P003",
-                description="RANGING (ボックス相場) での損失",
-                condition={"market_regime": "RANGING"},
-                affected_trades=len(ranging_loss),
-                avg_loss_usd=ranging_loss['pnl_usd'].mean(),
-                avg_loss_pct=ranging_loss['pnl_pct'].mean(),
-                frequency_pct=(len(ranging_loss) / total_trades * 100),
-                severity_score=self._calculate_severity(ranging_loss)
-            )
-            patterns.append(pattern)
-        
-        # パターン 4: Strategy 不一致
-        mismatch = lose_df[lose_df['strategy_match'] == False]
-        if len(mismatch) > 0:
-            pattern = LossPattern(
-                pattern_id="P004",
-                description="Strategy と Donchian が矛盾している",
-                condition={"strategy_match": False},
-                affected_trades=len(mismatch),
-                avg_loss_usd=mismatch['pnl_usd'].mean(),
-                avg_loss_pct=mismatch['pnl_pct'].mean(),
-                frequency_pct=(len(mismatch) / total_trades * 100),
-                severity_score=self._calculate_severity(mismatch)
-            )
-            patterns.append(pattern)
-        
-        # パターン 5: 高ボラティリティ
-        high_vol = lose_df[lose_df['volatility_value'] > 2.0]
-        if len(high_vol) > 0:
-            pattern = LossPattern(
-                pattern_id="P005",
-                description="高ボラティリティ (> 2.0) での損失",
-                condition={"volatility": "> 2.0"},
-                affected_trades=len(high_vol),
-                avg_loss_usd=high_vol['pnl_usd'].mean(),
-                avg_loss_pct=high_vol['pnl_pct'].mean(),
-                frequency_pct=(len(high_vol) / total_trades * 100),
-                severity_score=self._calculate_severity(high_vol)
-            )
-            patterns.append(pattern)
-        
-        # 重要度でソート
-        patterns.sort(key=lambda p: p.severity_score, reverse=True)
-        self.loss_patterns = patterns
-        
-        return patterns
+            
+            self.trades.append(trade)
     
-    def generate_hypotheses(self) -> List[ImprovementHypothesis]:
-        """改善仮説を生成"""
+    def analyze(self):
+        """総合分析を実行"""
+        print(f"\n{'='*120}")
+        print(f"🔍 トレード分析開始")
+        print(f"{'='*120}")
+        print(f"対象トレード数: {len(self.trades)}")
         
-        hypotheses = []
-        win_df = self.df[self.df['pnl_usd'] > 0]
-        lose_df = self.df[self.df['pnl_usd'] < 0]
+        # 因果関係マトリックス構築
+        print("\n【Step 1】因果関係マトリックス構築...")
+        matrix = CausalityMatrix(self.trades)
+        matrix.build()
+        matrix.print_matrix()
         
-        # 仮説 1: ADX 閾値を上げる
-        if len(lose_df[lose_df['adx_value'] < 20]) > 5:
-            hypotheses.append(ImprovementHypothesis(
-                hypothesis_id="H001",
-                title="ADX 閾値を 20 → 30 に引き上げ",
-                description="トレンド判定を厳しくして、弱いトレンドでのエントリーを避ける",
-                target_pattern="P001",
-                expected_loss_reduction=500.0,
-                expected_win_rate_improvement=5.0,
-                implementation_complexity="LOW",
-                risk_level="LOW"
-            ))
+        # 損失パターン検出
+        print("\n【Step 2】損失パターン検出...")
+        detector = PatternDetector(self.trades)
+        patterns = detector.detect()
+        detector.print_patterns()
         
-        # 仮説 2: PVO 閾値を上げる
-        if len(lose_df[lose_df['pvo_value'] < 50]) > 5:
-            hypotheses.append(ImprovementHypothesis(
-                hypothesis_id="H002",
-                title="PVO 閾値を 10 → 100 に引き上げ",
-                description="モメンタムが弱いシグナルを除外",
-                target_pattern="P002",
-                expected_loss_reduction=300.0,
-                expected_win_rate_improvement=3.0,
-                implementation_complexity="LOW",
-                risk_level="MEDIUM"
-            ))
+        # 改善案生成
+        print("\n【Step 3】改善案生成...")
+        suggestions = ImprovementSuggestion.generate(matrix.matrix, patterns, self.trades)
+        ImprovementSuggestion.print_suggestions(suggestions)
         
-        # 仮説 3: RANGING でのエントリー禁止
-        if len(lose_df[lose_df['market_regime'] == 'RANGING']) > 5:
-            hypotheses.append(ImprovementHypothesis(
-                hypothesis_id="H003",
-                title="RANGING でのエントリー禁止",
-                description="ボックス相場ではトレードしない",
-                target_pattern="P003",
-                expected_loss_reduction=450.0,
-                expected_win_rate_improvement=8.0,
-                implementation_complexity="MEDIUM",
-                risk_level="MEDIUM"
-            ))
+        # 結果を JSON 保存
+        self._save_analysis_results(matrix, patterns, suggestions)
         
-        # 仮説 4: Strategy 不一致時のエントリー禁止
-        if len(lose_df[lose_df['strategy_match'] == False]) > 5:
-            hypotheses.append(ImprovementHypothesis(
-                hypothesis_id="H004",
-                title="Strategy 不一致時のエントリー禁止",
-                description="複数シグナルが矛盾している場合は見送る",
-                target_pattern="P004",
-                expected_loss_reduction=200.0,
-                expected_win_rate_improvement=4.0,
-                implementation_complexity="LOW",
-                risk_level="LOW"
-            ))
-        
-        self.hypotheses = hypotheses
-        return hypotheses
+        return matrix, patterns, suggestions
     
-    def create_causality_matrix(self) -> pd.DataFrame:
-        """因果関係マトリックスを生成"""
+    def _save_analysis_results(self, matrix: CausalityMatrix, patterns: List[LossPattern], 
+                               suggestions: List[Dict]):
+        """分析結果を JSON 保存"""
+        output_dir = Path(__file__).parent.parent / 'docs' / 'analysis'
+        output_dir.mkdir(exist_ok=True, parents=True)
         
-        conditions = [
-            ('pvo_value', [0, 50, 100, 500, 1000]),  # PVO 値
-            ('adx_value', [0, 20, 30, 50]),  # ADX 値
-            ('volatility_value', [0, 1.0, 2.0, 3.0]),  # ボラティリティ
-            ('market_regime', ['RANGING', 'TRENDING_UP', 'TRENDING_DOWN']),  # 市場体制
-        ]
-        
-        matrix_data = []
-        
-        for col_name, ranges in conditions:
-            if col_name == 'market_regime':
-                for regime in ranges:
-                    subset = self.df[self.df[col_name] == regime]
-                    row = self._calculate_metrics(subset, regime)
-                    matrix_data.append(row)
-            else:
-                for i in range(len(ranges) - 1):
-                    low, high = ranges[i], ranges[i + 1]
-                    subset = self.df[(self.df[col_name] >= low) & (self.df[col_name] < high)]
-                    if len(subset) > 0:
-                        label = f"{col_name}: {low} - {high}"
-                        row = self._calculate_metrics(subset, label)
-                        matrix_data.append(row)
-        
-        return pd.DataFrame(matrix_data)
-    
-    def _calculate_severity(self, loss_df: pd.DataFrame) -> float:
-        """損失の深刻度スコアを計算 (0-100)"""
-        if len(loss_df) == 0:
-            return 0.0
-        
-        avg_loss = abs(loss_df['pnl_usd'].mean())
-        frequency = len(loss_df) / len(self.df)
-        
-        # 損失 + 頻度 の加重平均
-        severity = min(100, (avg_loss / 100) + (frequency * 50))
-        return severity
-    
-    def _calculate_metrics(self, subset: pd.DataFrame, label: str) -> Dict:
-        """サブセットのメトリクスを計算"""
-        
-        total = len(subset)
-        wins = len(subset[subset['pnl_usd'] > 0])
-        losses = len(subset[subset['pnl_usd'] < 0])
-        
-        win_rate = (wins / total * 100) if total > 0 else 0
-        avg_pnl = subset['pnl_usd'].mean() if total > 0 else 0
-        
-        return {
-            'condition': label,
-            'total_trades': total,
-            'wins': wins,
-            'losses': losses,
-            'win_rate_pct': win_rate,
-            'avg_pnl_usd': avg_pnl,
-            'total_pnl_usd': subset['pnl_usd'].sum(),
+        analysis_data = {
+            'metadata': {
+                'analysis_timestamp': datetime.now().isoformat(),
+                'total_trades': len(self.trades),
+                'source_file': str(self.trades_json_path),
+            },
+            'causality_matrix': [
+                {
+                    'filter_name': condition.filter_name,
+                    'pass_count': condition.pass_count,
+                    'pass_win_rate': round(condition.pass_win_rate, 2),
+                    'pass_avg_pnl': round(condition.pass_avg_pnl, 2),
+                    'fail_count': condition.fail_count,
+                    'fail_win_rate': round(condition.fail_win_rate, 2),
+                    'fail_avg_pnl': round(condition.fail_avg_pnl, 2),
+                    'improvement_usd': round(condition.improvement_usd, 2),
+                }
+                for condition in matrix.matrix.values()
+            ],
+            'loss_patterns': [
+                {
+                    'pattern_id': pattern.pattern_id,
+                    'description': pattern.pattern_description,
+                    'occurrence_count': pattern.occurrence_count,
+                    'occurrence_rate': round(pattern.occurrence_rate, 2),
+                    'total_pnl': round(pattern.total_pnl, 2),
+                    'avg_pnl': round(pattern.avg_pnl, 2),
+                    'worst_pnl': round(pattern.worst_pnl, 2),
+                    'win_rate': round(pattern.win_rate, 2),
+                }
+                for pattern in patterns
+            ],
+            'improvement_suggestions': suggestions
         }
-    
-    def generate_html_report(self, output_path: str):
-        """HTML レポートを生成"""
         
-        html_content = f"""
-        <!DOCTYPE html>
-        <html lang="ja">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>損失トレード分析レポート</title>
-            <style>
-                * {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }}
-                body {{ margin: 20px; background: #f5f5f5; }}
-                h1 {{ color: #333; border-bottom: 3px solid #007bff; padding-bottom: 10px; }}
-                h2 {{ color: #555; margin-top: 30px; }}
-                table {{ border-collapse: collapse; width: 100%; background: white; margin: 10px 0; }}
-                th, td {{ border: 1px solid #ddd; padding: 10px; text-align: left; }}
-                th {{ background: #007bff; color: white; }}
-                tr:hover {{ background: #f9f9f9; }}
-                .pattern {{ background: #fff3cd; padding: 10px; margin: 10px 0; border-left: 4px solid #ff6b6b; }}
-                .hypothesis {{ background: #d4edda; padding: 10px; margin: 10px 0; border-left: 4px solid #28a745; }}
-                .severity-high {{ color: #ff4444; font-weight: bold; }}
-                .severity-medium {{ color: #ff9933; font-weight: bold; }}
-                .severity-low {{ color: #44aa44; font-weight: bold; }}
-            </style>
-        </head>
-        <body>
-            <h1>🔍 損失トレード分析レポート</h1>
-            <p>生成時刻: {pd.Timestamp.now()}</p>
-            
-            <h2>📊 トレード統計</h2>
-            <table>
-                <tr>
-                    <th>指標</th>
-                    <th>値</th>
-                </tr>
-                <tr>
-                    <td>総トレード数</td>
-                    <td>{len(self.df)}</td>
-                </tr>
-                <tr>
-                    <td>勝ちトレード</td>
-                    <td>{len(self.df[self.df['pnl_usd'] > 0])}</td>
-                </tr>
-                <tr>
-                    <td>負けトレード</td>
-                    <td>{len(self.df[self.df['pnl_usd'] < 0])}</td>
-                </tr>
-                <tr>
-                    <td>勝率</td>
-                    <td>{len(self.df[self.df['pnl_usd'] > 0]) / len(self.df) * 100:.1f}%</td>
-                </tr>
-                <tr>
-                    <td>総利益</td>
-                    <td>{self.df['pnl_usd'].sum():.2f} USD</td>
-                </tr>
-            </table>
-            
-            <h2>⚠️ 検出された損失パターン</h2>
-        """
-        
-        for pattern in self.loss_patterns[:10]:  # Top 10
-            severity_class = self._get_severity_class(pattern.severity_score)
-            html_content += f"""
-            <div class="pattern">
-                <h3>[{pattern.pattern_id}] {pattern.description}</h3>
-                <p>
-                    <strong>影響度:</strong> <span class="{severity_class}">{pattern.severity_score:.1f}/100</span><br>
-                    <strong>該当トレード:</strong> {pattern.affected_trades} ({pattern.frequency_pct:.1f}%)<br>
-                    <strong>平均損失:</strong> {pattern.avg_loss_usd:.2f} USD ({pattern.avg_loss_pct:.2f}%)<br>
-                </p>
-            </div>
-            """
-        
-        html_content += "<h2>💡 改善仮説</h2>"
-        for hyp in self.hypotheses[:10]:
-            html_content += f"""
-            <div class="hypothesis">
-                <h3>[{hyp.hypothesis_id}] {hyp.title}</h3>
-                <p>{hyp.description}</p>
-                <p>
-                    <strong>期待される損失削減:</strong> {hyp.expected_loss_reduction:.0f} USD<br>
-                    <strong>期待される勝率向上:</strong> {hyp.expected_win_rate_improvement:.1f}%<br>
-                    <strong>実装難易度:</strong> {hyp.implementation_complexity}<br>
-                    <strong>リスク:</strong> {hyp.risk_level}<br>
-                </p>
-            </div>
-            """
-        
-        html_content += """
-        </body>
-        </html>
-        """
-        
+        output_path = output_dir / 'trade_analysis_results.json'
         with open(output_path, 'w', encoding='utf-8') as f:
-            f.write(html_content)
+            json.dump(analysis_data, f, ensure_ascii=False, indent=2)
         
-        print(f"✓ HTML レポート生成: {output_path}")
-    
-    def _get_severity_class(self, score: float) -> str:
-        if score >= 70:
-            return 'severity-high'
-        elif score >= 40:
-            return 'severity-medium'
-        else:
-            return 'severity-low'
+        print(f"\n✓ 分析結果保存: {output_path}")
 
 
 def main():
     """メイン処理"""
+    # 最新の抽出トレード JSON を取得
+    analysis_dir = Path(__file__).parent.parent / 'docs' / 'analysis' / 'trades'
     
-    csv_path = Path(__file__).parent.parent / 'analysis' / 'trades_with_metadata.csv'
-    
-    if not csv_path.exists():
-        print(f"✗ トレード CSV が見つかりません: {csv_path}")
-        print("  まず trade_extractor.py を実行してください")
+    if not analysis_dir.exists():
+        print(f"✗ 抽出トレード JSON が見つかりません: {analysis_dir}")
         return
     
-    print(f"📖 トレードデータを読み込み中: {csv_path}")
+    trade_json_files = sorted(analysis_dir.glob('trades_*.json'), reverse=True)
     
-    analyzer = TradeAnalyzer(str(csv_path))
+    if not trade_json_files:
+        print(f"✗ トレード JSON ファイルが見つかりません")
+        return
     
-    print("\n🔍 損失パターンを特定中...")
-    patterns = analyzer.identify_loss_patterns()
+    trades_json = trade_json_files[0]
+    print(f"📖 トレードメタデータ読み込み: {trades_json.name}")
     
-    print(f"✓ {len(patterns)} 個のパターンを検出")
-    for pattern in patterns:
-        print(f"  [{pattern.pattern_id}] {pattern.description}")
-        print(f"      影響度: {pattern.severity_score:.1f}/100, 該当: {pattern.affected_trades} 件")
-    
-    print("\n💡 改善仮説を生成中...")
-    hypotheses = analyzer.generate_hypotheses()
-    
-    print(f"✓ {len(hypotheses)} 個の仮説を提案")
-    for hyp in hypotheses:
-        print(f"  [{hyp.hypothesis_id}] {hyp.title}")
-    
-    print("\n📊 因果関係マトリックスを生成中...")
-    matrix_df = analyzer.create_causality_matrix()
-    
-    # CSV で保存
-    matrix_path = Path(__file__).parent.parent / 'analysis' / 'causality_matrix.csv'
-    matrix_df.to_csv(matrix_path, index=False, encoding='utf-8')
-    print(f"✓ マトリックス保存: {matrix_path}")
-    
-    # HTML レポート生成
-    html_path = Path(__file__).parent.parent / 'analysis' / 'loss_trade_analysis_report.html'
-    analyzer.generate_html_report(str(html_path))
+    try:
+        analyzer = TradeAnalyzer(str(trades_json))
+        analyzer.analyze()
+        
+        print(f"\n{'='*120}")
+        print(f"✅ 分析完了")
+        print(f"{'='*120}")
+        
+    except Exception as e:
+        print(f"✗ エラーが発生しました: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 if __name__ == '__main__':
