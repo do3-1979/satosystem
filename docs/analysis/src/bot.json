@@ -6,23 +6,23 @@
     "format_version": "2.0",
     "analyzer_note": "Level 1 フォーマット完全実装 - 責務・目的定義、エラーハンドリング、テストケース提案を含む"
   },
-
   "file_overview": {
     "purpose": "トレード実行ループ制御・注文実行・ポジション管理・メトリクス集計",
     "lines_of_code": 452,
     "dependency_count": 13,
     "class_count": 1,
     "function_count": 0,
-    "critical_methods": ["run", "execute_order"],
+    "critical_methods": [
+      "run",
+      "execute_order"
+    ],
     "description": "Bot は全体のオーケストレーター。PriceDataManagement, TradingStrategy, RiskManagement, Portfolio を統合制御。バックテスト（back_test=1）/ ペーパートレード（hot_test_dummy_mode=1）/ 本番運用（back_test=0, hot_test_dummy_mode=0）の3モードに対応。"
   },
-
   "classes": [
     {
       "class_name": "Bot",
       "line": 52,
       "docstring": "メインのボットクラス。Exchange、TradingStrategy、Portfolio、RiskManagement などのクラスを組み合わせてトレード実行と監視を行う。",
-
       "responsibility": {
         "primary": "トレード実行ループの制御・注文実行・ポジション更新・メトリクス集計",
         "secondary": [
@@ -38,9 +38,7 @@
         "testing_priority": 1,
         "description": "Bot はシステム全体の心臓。他モジュール（Strategy, RiskManagement, Portfolio, Exchange）の統合制御を担い、ループごとに取引判定→注文実行→ポジション更新→ログ記録を繰り返す。バックテスト結果の集計・メトリクス計算もこのクラスで行う。"
       },
-
       "inheritance": [],
-
       "attributes": [
         {
           "name": "exchange",
@@ -97,7 +95,6 @@
           "description": "約定履歴（勝率計算用。True=勝ち, False=負け）"
         }
       ],
-
       "methods": [
         {
           "name": "__init__",
@@ -120,7 +117,6 @@
           ],
           "criticality": "CRITICAL"
         },
-
         {
           "name": "run",
           "line": 84,
@@ -145,7 +141,6 @@
             "EventBus 経由で複数イベントが発火"
           ],
           "criticality": "CRITICAL",
-
           "error_handling": {
             "exceptions": [
               {
@@ -191,7 +186,6 @@
               }
             ]
           },
-
           "testability": {
             "difficulty": "HARD",
             "suggested_test_cases": [
@@ -215,7 +209,6 @@
               }
             ]
           },
-
           "performance": {
             "time_complexity": "O(1) per iteration",
             "typical_execution_time_ms": 2500,
@@ -233,7 +226,6 @@
             ]
           }
         },
-
         {
           "name": "show_trade_data",
           "line": 76,
@@ -241,7 +233,6 @@
           "purpose": "取引ループの進捗をコンソール出力（デバッグ用）",
           "criticality": "LOW"
         },
-
         {
           "name": "execute_order",
           "line": 390,
@@ -257,7 +248,6 @@
             "エラー→False戻す"
           ],
           "criticality": "CRITICAL",
-
           "error_handling": {
             "exceptions": [
               {
@@ -274,7 +264,6 @@
               }
             ]
           },
-
           "testability": {
             "difficulty": "MEDIUM",
             "suggested_test_cases": [
@@ -296,7 +285,6 @@
       ]
     }
   ],
-
   "summary": {
     "architecture_score": 8.2,
     "testability_score": 7.5,
@@ -322,5 +310,29 @@
       "ポジションstate machine導入（local vs exchange同期）",
       "設定検証メソッド追加"
     ]
-  }
+  },
+  "recent_changes": [
+    {
+      "date": "2026-01-05",
+      "description": "TradeLogger entry_dataにmarket_regime_reason, market_regime_confidenceフィールド追加。market_regimeからmarket_regime_confidence/market_regime_filter_enabledへのキー名修正。",
+      "commit": "30fb5fd, ac79f43",
+      "affected_methods": [
+        "run (ENTRY記録部分)"
+      ],
+      "lines_changed": "～310-315"
+    },
+    {
+      "date": "2026-01-04",
+      "description": "TradeLogger統合。ENTRY/EXIT時に自動的にlog_entry/log_exitを呼び出す実装。PVO, ADX, Volume, Volatility, Market Regime情報を記録。",
+      "commit": "7b5c82c",
+      "affected_methods": [
+        "__init__",
+        "run (ENTRY/EXIT記録)"
+      ],
+      "lines_changed": "～244-313",
+      "new_dependencies": [
+        "trade_logger.py (TradeLogger)"
+      ]
+    }
+  ]
 }

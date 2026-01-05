@@ -306,6 +306,199 @@ def test_exit_strategy_v2_integration():
 
 def test_backtest_script_normalize_option():
     """
+    テスト: backtest_and_visualize.sh の normalize オプション検証
+    """
+    print("\n[Test] backtest_and_visualize.sh の normalize オプション検証")
+    script_path = os.path.join(WORKSPACE_ROOT, "backtest_and_visualize.sh")
+    
+    if not os.path.exists(script_path):
+        log_result("backtest_normalize_option", False, "スクリプトが見つかりません")
+        print("   ❌ スクリプトが見つかりません")
+        return
+    
+    try:
+        result = subprocess.run(
+            ["bash", script_path, "normalize"],
+            cwd=WORKSPACE_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=300
+        )
+        
+        passed = result.returncode == 0
+        log_result("backtest_normalize_option", passed, result.stderr if not passed else "OK")
+        
+        if passed:
+            print("   ✅ normalizeオプション正常")
+        else:
+            print(f"   ❌ normalizeオプション失敗")
+            print(f"      stderr: {result.stderr[:200]}")
+    
+    except subprocess.TimeoutExpired:
+        log_result("backtest_normalize_option", False, "タイムアウト")
+        print("   ❌ タイムアウト（300秒超過）")
+    except Exception as e:
+        log_result("backtest_normalize_option", False, str(e))
+        print(f"   ❌ 例外発生: {e}")
+
+
+def test_trade_logger_integration():
+    """
+    テスト: TradeLoggerの統合動作確認
+    - log_entry/log_exit が正常に動作するか
+    - market_regime情報が正しく記録されるか
+    - JSON出力が正常に行われるか
+    """
+    print("\n[Test] TradeLogger統合動作確認")
+    
+    try:
+        from trade_logger import TradeLogger
+        import tempfile
+        import shutil
+        
+        # 一時ディレクトリでテスト
+        temp_dir = tempfile.mkdtemp()
+        logger = TradeLogger(log_dir=temp_dir)
+        
+        # エントリー記録
+        entry_data = {
+            'timestamp': 1735689600,
+            'close_time_dt': '2025/01/01 00:00',
+            'side': 'BUY',
+            'price': 100000,
+            'pvo_signal': True,
+            'pvo_value': 50.0,
+            'pvo_threshold': 10,
+            'adx_value': 35.0,
+            'adx_threshold': 25,
+            'adx_filter_pass': True,
+            'volume': 10000,
+            'volume_threshold': 5000,
+            'volume_filter_pass': True,
+            'volatility': 500,
+            'volatility_threshold': 1000,
+            'volatility_filter_pass': True,
+            'pvo_filter_pass': True,
+            'donchian_signal': 'BUY',
+            'strategy_signal': 'BUY',
+            'market_regime': 'TRENDING_UP',
+            'market_regime_confidence': 0.75,
+            'market_regime_reason': 'Test regime',
+            'market_regime_filter_enabled': 0
+        }
+        logger.log_entry(entry_data)
+        
+        # エグジット記録
+        exit_data = {
+            'timestamp': 1735776000,
+            'close_time_dt': '2025/01/02 00:00',
+            'price': 101000,
+            'pnl_usd': 100.0,
+            'pnl_pct': 1.0,
+            'max_drawdown_usd': 50.0,
+            'max_drawdown_pct': 0.5,
+            'bars_held': 6,
+            'duration_minutes': 1440,
+            'reason': 'SIGNAL_REVERSAL',
+            'cumulative_pnl': 100.0
+        }
+        logger.log_exit(exit_data)
+        
+        # JSON保存
+        filepath = logger.save_trades_json()
+        
+        # 検証
+        checks_passed = True
+        
+        if filepath is None or not os.path.exists(filepath):
+            print("   ❌ JSON保存失敗")
+            checks_passed = False
+        else:
+            with open(filepath, 'r') as f:
+                data = json.load(f)
+            
+            # メタデータ確認
+            if 'metadata' not in data or 'trades' not in data:
+                print("   ❌ JSON構造が不正")
+                checks_passed = False
+            elif data['metadata']['total_trades'] != 1:
+                print("   ❌ トレード数が不一致")
+                checks_passed = False
+            elif not data['trades'][0]['entry']['market'].get('reason'):
+                print("   ❌ market_regime_reason が記録されていない")
+                checks_passed = False
+            elif 'filter_enabled' not in data['trades'][0]['entry']['market']:
+                print("   ❌ market_regime_filter_enabled が記録されていない")
+                checks_passed = False
+            else:
+                print("   ✅ TradeLogger正常動作（entry/exit/JSON出力）")
+                print(f"      - market_regime: {data['trades'][0]['entry']['market']['regime']}")
+                print(f"      - confidence: {data['trades'][0]['entry']['market']['confidence']}")
+                print(f"      - reason: {data['trades'][0]['entry']['market']['reason']}")
+                print(f"      - filter_enabled: {data['trades'][0]['entry']['market']['filter_enabled']}")
+        
+        # クリーンアップ
+        shutil.rmtree(temp_dir)
+        
+        log_result("trade_logger_integration", checks_passed, "OK" if checks_passed else "Failed")
+        
+    except Exception as e:
+        log_result("trade_logger_integration", False, str(e))
+        print(f"   ❌ 例外発生: {e}")
+
+
+def test_market_regime_detector_ohlcv_keys():
+    """
+    テスト: MarketRegimeDetectorのOHLCV keyアクセス確認
+    - high_price, low_price, close_price が正しく使用されているか
+    - detect_regime_simple が正常動作するか
+    """
+    print("\n[Test] MarketRegimeDetector OHLCV key確認")
+    
+    try:
+        from market_regime_detector import MarketRegimeDetector
+        
+        # テスト用OHLCVデータ（正しいkey名）
+        ohlcv_data = [
+            {'close_time': i * 3600, 'open_price': 100 + i, 'high_price': 105 + i, 
+             'low_price': 95 + i, 'close_price': 100 + i, 'Volume': 1000}
+            for i in range(50)
+        ]
+        
+        detector = MarketRegimeDetector(atr_period=14, atr_ma_period=28, lookback_period=20)
+        
+        # detect_regime_simpleテスト
+        result = detector.detect_regime_simple(ohlcv_data, lookback_period=20)
+        
+        checks_passed = True
+        
+        if 'regime' not in result:
+            print("   ❌ 'regime' キーが結果に含まれていない")
+            checks_passed = False
+        elif 'confidence' not in result:
+            print("   ❌ 'confidence' キーが結果に含まれていない")
+            checks_passed = False
+        elif 'reason' not in result:
+            print("   ❌ 'reason' キーが結果に含まれていない")
+            checks_passed = False
+        elif result['regime'] not in ['RANGING', 'TRENDING_UP', 'TRENDING_DOWN', 'TRANSITION']:
+            print(f"   ❌ 不正なregime値: {result['regime']}")
+            checks_passed = False
+        else:
+            print("   ✅ MarketRegimeDetector正常動作")
+            print(f"      - regime: {result['regime']}")
+            print(f"      - confidence: {result['confidence']:.2f}")
+            print(f"      - reason: {result['reason']}")
+        
+        log_result("market_regime_detector_ohlcv_keys", checks_passed, "OK" if checks_passed else "Failed")
+        
+    except Exception as e:
+        log_result("market_regime_detector_ohlcv_keys", False, str(e))
+        print(f"   ❌ 例外発生: {e}")
+
+
+def test_backtest_script_normalize_option():
+    """
     修正: backtest_and_visualize.sh - 標準化オプション機能の確認
     """
     test_name = "backtest_script_normalize_option"
@@ -573,6 +766,10 @@ if __name__ == "__main__":
     # test_visualizer_dual_pnl()
     # test_exit_strategy_v2_integration()
     # test_backtest_script_normalize_option()
+    
+    # === 2026-01-05 追加: TradeLogger & MarketRegimeDetector テスト ===
+    test_trade_logger_integration()
+    test_market_regime_detector_ohlcv_keys()
     
     # 新しい個別ファイルテスト実行
     run_individual_test_modules()

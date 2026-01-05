@@ -6,23 +6,24 @@
     "format_version": "2.0",
     "analyzer_note": "Level 1 フォーマット - ACTION_LIST Task 34 で無効化確定"
   },
-
   "file_overview": {
     "purpose": "市場体制（ボックス相場 vs トレンド相場）の判定・検出",
     "lines_of_code": 355,
     "dependency_count": 2,
     "class_count": 1,
     "function_count": 0,
-    "critical_methods": ["detect_regime", "detect_regime_simple", "calculate_atr"],
+    "critical_methods": [
+      "detect_regime",
+      "detect_regime_simple",
+      "calculate_atr"
+    ],
     "description": "MarketRegimeDetector は ATR（平均真実値幅）とスイング構造を用いて市場体制を判定。ボックス相場（RANGING）と各種トレンド環境（TRENDING_UP/DOWN）を識別。ただし ACTION_LIST No.34 で機能的な効果が実証されず、無効化が確定。"
   },
-
   "classes": [
     {
       "class_name": "MarketRegimeDetector",
       "line": 19,
       "docstring": "市場体制（ボックス相場 vs トレンド相場）を判定するクラス。",
-
       "responsibility": {
         "primary": "ATR・スイング構造による市場体制の判定",
         "secondary": [
@@ -36,9 +37,7 @@
         "testing_priority": 3,
         "description": "元々は Phase 0 改善戦略の一部として実装されたが、ACTION_LIST No.34 で効果なし（独立的な利益改善ゼロ）として無効化確定。現在は 'enable_market_regime_detection=0' として未使用。"
       },
-
       "inheritance": [],
-
       "attributes": [
         {
           "name": "atr_period",
@@ -65,7 +64,6 @@
           "description": "ATR 値の履歴"
         }
       ],
-
       "methods": [
         {
           "name": "__init__",
@@ -140,7 +138,6 @@
           "criticality": "MEDIUM"
         }
       ],
-
       "dependencies": [
         {
           "module": "statistics (stdlib)",
@@ -148,7 +145,6 @@
           "criticality": "LOW"
         }
       ],
-
       "design_notes": [
         "ATR 比率 < 0.75 → RANGING（ボックス相場）",
         "ATR 比率 > 1.25 → TRENDING（トレンド相場）",
@@ -157,14 +153,12 @@
       ]
     }
   ],
-
   "integration_status": {
     "current": "DISABLED",
     "config_flag": "enable_market_regime_detection = 0",
     "reason": "ACTION_LIST No.34 で独立的な効果なし（ADX との併用でも改善ゼロ）。無効化確定。",
     "backtest_results": "効果実証：失敗（2025Q赤字削減に貢献なし）"
   },
-
   "implementation_status": "✅ COMPLETE（ただし無効化）",
   "test_coverage": "PARTIAL (unit test なし、backtest で無効化確認)",
   "known_issues": [
@@ -176,11 +170,24 @@
     "複合判定ルールの最適化",
     "ただし ACTION_LIST No.34 の結論から、時間投資の優先度は低い"
   ],
-
   "historical_notes": {
     "task_34": "季節性フィルター・マーケットレジーム検出の無効化確定",
     "test_date": "2025-12-21",
     "finding": "enable_market_regime_detection=1 単独では効果ゼロ。ADX との併用でも追加改善なし。",
     "conclusion": "実装上機能していない（またはロジックが市場で有効でない）→ 無効化確定"
-  }
+  },
+  "recent_changes": [
+    {
+      "date": "2026-01-05",
+      "description": "OHLCV keyアクセス修正（high→high_price, low→low_price, close→close_price）。price_data_management.pyから返されるdict構造に合わせて全メソッド更新。",
+      "commit": "30fb5fd",
+      "affected_methods": [
+        "detect_regime",
+        "_calculate_atr",
+        "detect_regime_simple",
+        "_detect_swing_direction"
+      ],
+      "lines_changed": "47-52, 165-170, 231-235, 254-260, 309-313"
+    }
+  ]
 }

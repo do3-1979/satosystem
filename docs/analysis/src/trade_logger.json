@@ -1,0 +1,239 @@
+{
+  "file": "trade_logger.py",
+  "description": "トレードログ記録システム。エントリー・エグジット情報をJSON形式でlogs/に保存。Phase 2以降の分析基盤。",
+  "classes": [
+    {
+      "name": "TradeLogger",
+      "line": 18,
+      "description": "トレード情報をJSON形式で記録・管理するクラス",
+      "responsibility": "エントリー・エグジット記録、JSON出力、統計情報計算",
+      "state": {
+        "log_dir": "ログディレクトリパス（デフォルト: logs）",
+        "quarterly_prefix": "四半期別ログプリフィックス（QUARTERLY_LOG_PREFIX環境変数から取得）",
+        "trades": "完了したトレードのリスト",
+        "current_trade": "進行中のトレード情報（dict or None）",
+        "trade_counter": "トレードID生成用カウンター"
+      }
+    }
+  ],
+  "methods": [
+    {
+      "name": "__init__",
+      "line": 21,
+      "class": "TradeLogger",
+      "method_type": "INITIALIZATION",
+      "purpose": "TradeLoggerの初期化。ログディレクトリ作成、環境変数からQ別プリフィックス取得",
+      "parameters": [
+        {
+          "name": "log_dir",
+          "type": "str",
+          "default": "logs",
+          "description": "ログ出力ディレクトリ"
+        }
+      ],
+      "criticality": "HIGH"
+    },
+    {
+      "name": "log_entry",
+      "line": 41,
+      "class": "TradeLogger",
+      "method_type": "COMMAND",
+      "purpose": "エントリー情報を記録。current_tradeを新規作成",
+      "entry_conditions": [
+        "entry_data辞書にtimestamp, side, priceなどが含まれる"
+      ],
+      "exit_outcomes": [
+        "成功: current_tradeが作成され、trade_counter++",
+        "entry_dataが不完全でも記録（デフォルト値使用）"
+      ],
+      "parameters": [
+        {
+          "name": "entry_data",
+          "type": "dict",
+          "description": "エントリー情報（timestamp, side, price, filters, market regimeなど）"
+        }
+      ],
+      "recorded_fields": {
+        "entry": {
+          "timestamp": "ISO形式の時刻",
+          "close_time_dt": "人間が読める形式の時刻",
+          "side": "BUY/SELL",
+          "price": "エントリー価格",
+          "signals": "pvo_signal, donchian_signal, strategy_signal",
+          "filters": "pvo, adx, volume, volatilityの各フィルター状態",
+          "market": "regime, confidence, reason, filter_enabled"
+        }
+      },
+      "criticality": "HIGH"
+    },
+    {
+      "name": "log_exit",
+      "line": 112,
+      "class": "TradeLogger",
+      "method_type": "COMMAND",
+      "purpose": "エグジット情報を記録し、current_tradeをtradesに追加",
+      "entry_conditions": [
+        "current_trade is not None（エントリー記録済み）"
+      ],
+      "exit_outcomes": [
+        "成功: current_tradeにexit/result情報追加、tradesに追加、current_trade=None",
+        "失敗: current_trade is Noneの場合は何もしない（early return）"
+      ],
+      "parameters": [
+        {
+          "name": "exit_data",
+          "type": "dict",
+          "description": "エグジット情報（timestamp, price, pnl_usd, pnl_pct, reason, bars_heldなど）"
+        }
+      ],
+      "recorded_fields": {
+        "exit": {
+          "timestamp": "ISO形式の時刻",
+          "close_time_dt": "人間が読める形式の時刻",
+          "price": "エグジット価格",
+          "reason": "STOP_LOSS/SIGNAL_REVERSAL/EXIT_STRATEGY"
+        },
+        "result": {
+          "pnl_usd": "損益（USD）",
+          "pnl_pct": "損益（%）",
+          "max_drawdown_usd": "最大DD（USD）",
+          "max_drawdown_pct": "最大DD（%）",
+          "bars_held": "保有バー数",
+          "duration_minutes": "保有分数",
+          "cumulative_pnl": "累積損益",
+          "win": "pnl_usd >= 0"
+        }
+      },
+      "criticality": "HIGH"
+    },
+    {
+      "name": "save_trades_json",
+      "line": 155,
+      "class": "TradeLogger",
+      "method_type": "COMMAND",
+      "purpose": "全トレードをJSON形式でファイルに保存",
+      "entry_conditions": [
+        "tradesリストに1件以上のトレード存在（空でも保存可能）"
+      ],
+      "exit_outcomes": [
+        "成功: logs/trade_log_YYYYMMDDHHMMSS.json（またはQ別プリフィックス付き）に保存、filepath返却",
+        "失敗: 例外発生時はNone返却"
+      ],
+      "parameters": [
+        {
+          "name": "filename",
+          "type": "str",
+          "default": "None",
+          "description": "保存先ファイル名（省略時は自動生成）"
+        }
+      ],
+      "output_format": {
+        "metadata": {
+          "generated_at": "ISO timestamp",
+          "total_trades": "総トレード数",
+          "completed_trades": "完了トレード数",
+          "quarterly_prefix": "Q別プリフィックス（あれば）"
+        },
+        "trades": "トレードオブジェクトの配列"
+      },
+      "criticality": "HIGH"
+    },
+    {
+      "name": "get_trades",
+      "line": 189,
+      "class": "TradeLogger",
+      "method_type": "QUERY",
+      "purpose": "記録された全トレードを取得",
+      "criticality": "MEDIUM"
+    },
+    {
+      "name": "get_current_trade",
+      "line": 198,
+      "class": "TradeLogger",
+      "method_type": "QUERY",
+      "purpose": "進行中のトレード情報を取得（None可能性あり）",
+      "criticality": "MEDIUM"
+    },
+    {
+      "name": "get_trade_count",
+      "line": 207,
+      "class": "TradeLogger",
+      "method_type": "QUERY",
+      "purpose": "完了したトレード数を取得",
+      "criticality": "LOW"
+    },
+    {
+      "name": "get_statistics",
+      "line": 216,
+      "class": "TradeLogger",
+      "method_type": "QUERY",
+      "purpose": "統計情報（勝率、PnL、トレード数など）を計算",
+      "exit_outcomes": [
+        "completed trades = 0の場合: 全項目0の辞書返却",
+        "completed trades > 0の場合: 実際の統計情報返却"
+      ],
+      "output": {
+        "total_trades": "総トレード数",
+        "completed_trades": "完了トレード数",
+        "wins": "勝ちトレード数",
+        "losses": "負けトレード数",
+        "win_rate": "勝率（%）",
+        "total_pnl": "総損益",
+        "avg_pnl": "平均損益"
+      },
+      "criticality": "MEDIUM"
+    }
+  ],
+  "dependencies": [
+    "json (標準ライブラリ)",
+    "os (標準ライブラリ)",
+    "datetime (標準ライブラリ)",
+    "time (標準ライブラリ)"
+  ],
+  "external_dependencies": [],
+  "integration_points": [
+    {
+      "component": "bot.py",
+      "interaction": "TradeLoggerインスタンスを作成し、ENTRY/EXIT時にlog_entry/log_exitを呼び出す",
+      "line_in_bot": "～244-313"
+    },
+    {
+      "component": "quarterly backtest",
+      "interaction": "QUARTERLY_LOG_PREFIX環境変数を設定してQ別ログファイル生成"
+    },
+    {
+      "component": "Phase 2-4分析ツール",
+      "interaction": "保存されたtrade_log_*.jsonを読み込んで分析"
+    }
+  ],
+  "key_features": [
+    "四半期別ログプリフィックス対応（環境変数QUARTERLY_LOG_PREFIX）",
+    "市場レジーム情報記録（regime, confidence, reason, filter_enabled）",
+    "フィルター状態の詳細記録（pvo, adx, volume, volatility）",
+    "メモリ内バッファリング（tradesリスト）",
+    "自動ファイル名生成（タイムスタンプベース）"
+  ],
+  "data_flow": [
+    "1. bot.pyがTradeLogger()をインスタンス化",
+    "2. エントリー時: log_entry(entry_data) → current_trade作成",
+    "3. エグジット時: log_exit(exit_data) → current_tradeにexit/result追加 → tradesに追加",
+    "4. バックテスト終了時: save_trades_json() → logs/trade_log_*.json出力",
+    "5. 分析ツールがJSONファイルを読み込んで後処理"
+  ],
+  "error_handling": {
+    "log_exit without log_entry": "early return（何もしない）",
+    "save_trades_json exception": "例外キャッチしてNone返却、エラーメッセージ出力"
+  },
+  "critical_paths": [
+    "bot.py ENTRY → log_entry() → current_trade作成",
+    "bot.py EXIT → log_exit() → tradesリスト追加",
+    "bot.py 終了時 → save_trades_json() → JSON出力"
+  ],
+  "recent_changes": [
+    {
+      "date": "2026-01-05",
+      "description": "市場レジーム情報フィールド追加（market.regime, market.confidence, market.reason, market.filter_enabled）",
+      "commit": "30fb5fd"
+    }
+  ]
+}
