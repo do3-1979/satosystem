@@ -312,7 +312,13 @@ class Bot:
                                     'market_regime_filter_enabled': Config.get_enable_market_regime_detection(),
                                     'vcp_signal': getattr(self.strategy, 'vcp_signal_latest', 0),
                                     'vcp_confidence': getattr(self.strategy, 'vcp_confidence_latest', 0.0),
-                                    'vcp_reason': getattr(self.strategy, 'vcp_reason_latest', '')
+                                    'vcp_reason': getattr(self.strategy, 'vcp_reason_latest', ''),
+                                    
+                                    # Mean Reversion Strategy (Phase 1評価中)
+                                    'mean_reversion_signal': getattr(self.strategy, 'mr_signal_latest', False),
+                                    'bb_position': getattr(self.strategy, 'mr_bb_position_latest', 0.0),
+                                    'rsi_value': getattr(self.strategy, 'mr_rsi_latest', None),
+                                    'mr_reason': getattr(self.strategy, 'mr_reason_latest', '')
                                 }
                                 self.trade_logger.log_entry(entry_data)
                             except Exception as e:
@@ -490,6 +496,19 @@ class Bot:
             return False
 
 if __name__ == "__main__":
+    # コマンドライン引数処理: python src/bot.py test 2024-01-01 2024-03-31
+    if len(sys.argv) >= 4 and sys.argv[1] == "test":
+        # バックテストモード: 日付範囲を動的に設定
+        start_date = sys.argv[2]  # YYYY-MM-DD
+        end_date = sys.argv[3]    # YYYY-MM-DD
+        
+        # Config に日付を設定（実行時上書き）
+        Config._override_start_time = f"{start_date.replace('-', '/')} 00:00"
+        Config._override_end_time = f"{end_date.replace('-', '/')} 23:59"
+        
+        # デバッグ用
+        print(f"[バックテスト期間] {Config.get_start_time()} ~ {Config.get_end_time()}")
+    
     # bot class test flag
     bot_order_test = False
     

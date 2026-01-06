@@ -108,6 +108,12 @@ class TradeLogger:
                     "signal": entry_data.get('vcp_signal', 0),
                     "confidence": entry_data.get('vcp_confidence', 0.0),
                     "reason": entry_data.get('vcp_reason', '')
+                },
+                "mean_reversion": {
+                    "signal": entry_data.get('mean_reversion_signal', False),
+                    "bb_position": entry_data.get('bb_position', 0.0),
+                    "rsi_value": entry_data.get('rsi_value', None),
+                    "reason": entry_data.get('mr_reason', '')
                 }
             },
             "exit": None,

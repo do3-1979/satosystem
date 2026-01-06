@@ -19,6 +19,7 @@ from portfolio import Portfolio
 from exit_strategy_v2 import ExitStrategyV2
 from market_regime_detector import MarketRegimeDetector
 from vcp_strategy import VCPStrategy
+from mean_reversion_strategy import MeanReversionStrategy
 from datetime import datetime
 
 class TradingStrategy:
@@ -60,6 +61,13 @@ class TradingStrategy:
         self.vcp_signal_latest = 0
         self.vcp_confidence_latest = 0.0
         self.vcp_reason_latest = ''
+        
+        # Mean Reversion戦略の初期化
+        self.mean_reversion_strategy = MeanReversionStrategy()
+        self.mr_signal_latest = False
+        self.mr_bb_position_latest = 0.0
+        self.mr_rsi_latest = None
+        self.mr_reason_latest = ''
         
         # Strategy Signal の状態保持（トレードログ記録用）
         self.current_strategy_signal = 'NONE'  # 現在の Strategy Signal (BUY/SELL/NONE)
@@ -165,15 +173,102 @@ class TradingStrategy:
                 self.vcp_confidence_latest = 0.0
                 self.vcp_reason_latest = ''
             
-            # ドンチャンチャネルブレイク発生
-            if signals["donchian"]["signal"] == True:
-                desired_side = signals["donchian"]["side"]
-                allow_entry = True
-                
-                # === 【条件一覧】===
-                conditions_list = []
-                conditions_list.append(f"PVO信号: ✓")
-                conditions_list.append(f"Donchian: {desired_side}")
+            # ========================================
+            # 共通初期化
+            # ========================================
+            allow_entry = False
+            desired_side = None
+            conditions_list = []
+            
+            # ========================================
+            # Mean Reversion 戦略評価 (Phase 1評価中)
+            # ========================================
+            enable_mr = Config.get_enable_mean_reversion_strategy()
+            if enable_mr:
+                try:
+                    ohlcv_data = self.price_data_management.get_ohlcv_data_by_time_frame(
+                        Config.get_time_frame()
+                    )
+                    current_price = self.price_data_management.get_ticker()
+                    
+                    mr_result = self.mean_reversion_strategy.evaluate_entry(
+                        candles=ohlcv_data if ohlcv_data else [],
+                        current_price=current_price
+                    )
+                    
+                    # Mean Reversion結果をstrategyに保存（bot.pyからアクセスするため）
+                    self.mr_signal_latest = mr_result['signal']
+                    self.mr_bb_position_latest = mr_result['bb_position']
+                    self.mr_rsi_latest = mr_result['rsi']
+                    self.mr_reason_latest = mr_result['reason']
+                    
+                    # ⚠️ Phase 1評価中: Mean ReversionシグナルがTrueの場合はエントリー
+                    if mr_result['signal']:
+                        self.logger.log(
+                            f"[Mean Reversion戦略] ✅ エントリーシグナル: {mr_result['reason']}"
+                        )
+                        # DonchianではなくMean Reversionをメインシグナルとして使用
+                        # 逆張りエントリー = BUYのみ (BB下限到達時)
+                        desired_side = "BUY"
+                        allow_entry = True
+                        
+                        # Mean Reversion専用条件チェック
+                        conditions_list = [
+                            f"PVO信号: ✓",
+                            f"Mean Reversion: ✓ (BB={mr_result['bb_position']:.2f}, RSI={mr_result['rsi']:.1f})"
+                        ]
+                except Exception as e:
+                    self.logger.log(f"[Mean Reversion戦略エラー] {str(e)}")
+                    self.mr_signal_latest = False
+                    self.mr_bb_position_latest = 0.0
+                    self.mr_rsi_latest = None
+                    self.mr_reason_latest = ''
+            
+            # ========================================
+            # Donchian ブレイクアウト戦略
+            # ========================================
+            # ⚠️ Phase 1評価中: Mean Reversionが有効な場合はDonchianを無効化
+            else:
+                # ドンチャンチャネルブレイク発生
+                if signals["donchian"]["signal"] == True:
+                    desired_side = signals["donchian"]["side"]
+                    allow_entry = True
+                    
+                    # === Range Breakout Enhanced (Task 38c) ===
+                    enable_rbe = Config.get_enable_range_breakout_enhanced()
+                    if enable_rbe:
+                        # ブレイク強度確認
+                        current_price = self.price_data_management.get_ticker()
+                        donchian_high = self.risk_manager.get_donchian_high()
+                        donchian_low = self.risk_manager.get_donchian_low()
+                        
+                        breakout_valid = self._validate_breakout_strength(
+                            current_price, donchian_high, donchian_low, desired_side
+                        )
+                        
+                        if not breakout_valid:
+                            allow_entry = False
+                            self.logger.log(f"[Range Breakout Enhanced] ✗ ブレイク強度不足")
+                        
+                        # 相対出来高確認
+                        if allow_entry:
+                            volume_valid = self._validate_relative_volume()
+                            if not volume_valid:
+                                allow_entry = False
+                                self.logger.log(f"[Range Breakout Enhanced] ✗ 出来高不足")
+                    
+                    # === 【条件一覧】===
+                    conditions_list = []
+                    conditions_list.append(f"PVO信号: ✓")
+                    if enable_rbe and allow_entry:
+                        conditions_list.append(f"Donchian: {desired_side} (Enhanced ✓)")
+                    else:
+                        conditions_list.append(f"Donchian: {desired_side}")
+            
+            # ========================================
+            # 新指標チェック（Donchian使用時のみ）
+            # ========================================
+            if not enable_mr and allow_entry:
                 if use_new_strategy:
                     if strategy_side is None:
                         conditions_list.append(f"新指標: なし（ベースライン許可）")
@@ -182,7 +277,11 @@ class TradingStrategy:
                     else:
                         conditions_list.append(f"新指標: {strategy_side} （✗矛盾）")
                         allow_entry = False
-
+            
+            # ========================================
+            # 市場体制判定とフィルター（Mean Reversion/Donchian共通）
+            # ========================================
+            if allow_entry:
                 # =========== 市場体制判定（常に実行してログ記録、フィルタは別制御） ===========
                 # OHLCV データを取得
                 try:
@@ -556,6 +655,118 @@ class TradingStrategy:
             self.evaluate_exit()
  
         return self.trade_decision
+    
+    # ========================================
+    # Range Breakout Enhanced メソッド (Task 38c)
+    # ========================================
+    
+    def _validate_breakout_strength(self, current_price, donchian_high, donchian_low, side):
+        """
+        ブレイク強度を検証します.
+        
+        Args:
+            current_price: 現在価格
+            donchian_high: Donchian高値
+            donchian_low: Donchian安値
+            side: エントリー方向 ('BUY' or 'SELL')
+        
+        Returns:
+            bool: ブレイクが有効な場合True
+        """
+        threshold_percent = Config.get_breakout_threshold_percent()
+        
+        if side == "BUY":
+            # 高値ブレイク: 現在価格がDonchian高値の threshold_percent 以上上にある
+            breakout_distance = (current_price - donchian_high) / donchian_high * 100
+            is_valid = breakout_distance >= threshold_percent
+            
+            if is_valid:
+                self.logger.log(
+                    f"[Breakout強度] ✓ BUY: {breakout_distance:.2f}% (閾値: {threshold_percent}%)"
+                )
+            else:
+                self.logger.log(
+                    f"[Breakout強度] ✗ BUY: {breakout_distance:.2f}% < {threshold_percent}%"
+                )
+            
+            return is_valid
+            
+        elif side == "SELL":
+            # 安値ブレイク: 現在価格がDonchian安値の threshold_percent 以上下にある
+            breakout_distance = (donchian_low - current_price) / donchian_low * 100
+            is_valid = breakout_distance >= threshold_percent
+            
+            if is_valid:
+                self.logger.log(
+                    f"[Breakout強度] ✓ SELL: {breakout_distance:.2f}% (閾値: {threshold_percent}%)"
+                )
+            else:
+                self.logger.log(
+                    f"[Breakout強度] ✗ SELL: {breakout_distance:.2f}% < {threshold_percent}%"
+                )
+            
+            return is_valid
+        
+        return False
+    
+    def _validate_relative_volume(self):
+        """
+        相対出来高を検証します.
+        
+        Returns:
+            bool: 相対出来高が閾値以上の場合True
+        """
+        try:
+            # 現在の出来高を取得
+            current_ohlcv = self.price_data_management.get_latest_ohlcv()
+            current_volume = current_ohlcv.get('Volume', 0)  # 大文字V
+            
+            if current_volume == 0:
+                self.logger.log(f"[相対出来高] ✗ 現在出来高がゼロ")
+                return False
+            
+            # 過去N期間のOHLCVデータを取得
+            lookback = Config.get_relative_volume_lookback()
+            ohlcv_data = self.price_data_management.get_ohlcv_data_by_time_frame(
+                Config.get_time_frame()
+            )
+            
+            if not ohlcv_data or len(ohlcv_data) < lookback:
+                self.logger.log(f"[相対出来高] ⚠️ データ不足（期間={len(ohlcv_data) if ohlcv_data else 0}）")
+                return True  # データ不足時は通過させる
+            
+            # 平均出来高を計算
+            recent_volumes = [candle.get('Volume', 0) for candle in ohlcv_data[-lookback:]]  # 大文字V
+            avg_volume = sum(recent_volumes) / len(recent_volumes)
+            
+            if avg_volume == 0:
+                self.logger.log(f"[相対出来高] ⚠️ 平均出来高がゼロ")
+                return True
+            
+            # 相対出来高を計算
+            relative_volume = current_volume / avg_volume
+            threshold = Config.get_relative_volume_threshold()
+            
+            is_valid = relative_volume >= threshold
+            
+            if is_valid:
+                self.logger.log(
+                    f"[相対出来高] ✓ {relative_volume:.2f}x (閾値: {threshold}x)"
+                )
+            else:
+                self.logger.log(
+                    f"[相対出来高] ✗ {relative_volume:.2f}x < {threshold}x"
+                )
+            
+            return is_valid
+            
+        except Exception as e:
+            self.logger.log(f"[相対出来高エラー] {str(e)}")
+            return True  # エラー時は通過させる
+    
+    # ========================================
+    # 既存メソッド
+    # ========================================
     
     def _evaluate_box_market_entry(self):
         """

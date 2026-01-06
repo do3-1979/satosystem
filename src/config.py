@@ -30,6 +30,10 @@ class Config:
         except Exception as e:
             print(f"⚠️  .api_key ファイルの読み込みエラー: {e}")
             api_keys = {}
+    
+    # 実行時の上書き設定（bot.pyからコマンドライン引数で設定）
+    _override_start_time = None
+    _override_end_time = None
 
     @classmethod
     def get_api_key(cls):
@@ -315,6 +319,9 @@ class Config:
         Returns:
             str: 開始時刻 (フォーマット: "YYYY/M/D H:mm")
         """
+        # 実行時上書きがあればそれを優先
+        if cls._override_start_time is not None:
+            return cls._override_start_time
         return cls.config['Period']['start_time']
 
     @classmethod
@@ -325,6 +332,9 @@ class Config:
         Returns:
             str: 終了時刻 (フォーマット: "YYYY/M/D H:mm")
         """
+        # 実行時上書きがあればそれを優先
+        if cls._override_end_time is not None:
+            return cls._override_end_time
         return cls.config['Period']['end_time']
 
     @classmethod
@@ -840,6 +850,170 @@ class Config:
             return float(cls.config['VCPStrategy']['vcp_min_confidence'])
         except (KeyError, ValueError):
             return 0.6
+
+    # ========================================
+    # MeanReversionStrategy セクション
+    # ========================================
+
+    @classmethod
+    def get_enable_mean_reversion_strategy(cls):
+        """
+        Mean Reversion戦略の有効/無効を取得します.
+
+        Returns:
+            int: 1=有効, 0=無効（デフォルト0）
+        """
+        try:
+            return int(cls.config['MeanReversionStrategy']['enable_mean_reversion_strategy'])
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_bb_period(cls):
+        """
+        Bollinger Band期間を取得します.
+
+        Returns:
+            int: BB期間（デフォルト20）
+        """
+        try:
+            return int(cls.config['MeanReversionStrategy']['bb_period'])
+        except (KeyError, ValueError):
+            return 20
+
+    @classmethod
+    def get_bb_std_dev(cls):
+        """
+        Bollinger Band標準偏差倍率を取得します.
+
+        Returns:
+            float: 標準偏差倍率（デフォルト2.0）
+        """
+        try:
+            return float(cls.config['MeanReversionStrategy']['bb_std_dev'])
+        except (KeyError, ValueError):
+            return 2.0
+
+    @classmethod
+    def get_rsi_period(cls):
+        """
+        RSI期間を取得します.
+
+        Returns:
+            int: RSI期間（デフォルト14）
+        """
+        try:
+            return int(cls.config['MeanReversionStrategy']['rsi_period'])
+        except (KeyError, ValueError):
+            return 14
+
+    @classmethod
+    def get_rsi_oversold_threshold(cls):
+        """
+        RSI売られすぎ閾値を取得します.
+
+        Returns:
+            float: RSI閾値（デフォルト30.0）
+        """
+        try:
+            return float(cls.config['MeanReversionStrategy']['rsi_oversold_threshold'])
+        except (KeyError, ValueError):
+            return 30.0
+
+    # ========================================
+    # RangeBreakoutEnhanced セクション (Task 38c)
+    # ========================================
+
+    @classmethod
+    def get_enable_range_breakout_enhanced(cls):
+        """
+        Range Breakout Enhanced有効化フラグを取得します.
+
+        Returns:
+            int: 有効化フラグ（1=有効, 0=無効, デフォルト0）
+        """
+        try:
+            return int(cls.config['RangeBreakoutEnhanced']['enable_range_breakout_enhanced'])
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_breakout_threshold_percent(cls):
+        """
+        ブレイク確認閾値（%）を取得します.
+
+        Returns:
+            float: ブレイク閾値（デフォルト1.5）
+        """
+        try:
+            return float(cls.config['RangeBreakoutEnhanced']['breakout_threshold_percent'])
+        except (KeyError, ValueError):
+            return 1.5
+
+    @classmethod
+    def get_relative_volume_threshold(cls):
+        """
+        相対出来高閾値（倍率）を取得します.
+
+        Returns:
+            float: 相対出来高閾値（デフォルト1.5）
+        """
+        try:
+            return float(cls.config['RangeBreakoutEnhanced']['relative_volume_threshold'])
+        except (KeyError, ValueError):
+            return 1.5
+
+    @classmethod
+    def get_relative_volume_lookback(cls):
+        """
+        相対出来高計算期間を取得します.
+
+        Returns:
+            int: 計算期間（デフォルト20）
+        """
+        try:
+            return int(cls.config['RangeBreakoutEnhanced']['relative_volume_lookback'])
+        except (KeyError, ValueError):
+            return 20
+
+    @classmethod
+    def get_enable_atr_normalization(cls):
+        """
+        ATR正規化有効化フラグを取得します.
+
+        Returns:
+            int: 有効化フラグ（1=有効, 0=無効, デフォルト0）
+        """
+        try:
+            return int(cls.config['RangeBreakoutEnhanced']['enable_atr_normalization'])
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_atr_breakout_multiplier(cls):
+        """
+        ATRブレイク倍率を取得します.
+
+        Returns:
+            float: ATR倍率（デフォルト2.0）
+        """
+        try:
+            return float(cls.config['RangeBreakoutEnhanced']['atr_breakout_multiplier'])
+        except (KeyError, ValueError):
+            return 2.0
+
+    @classmethod
+    def get_range_detection_atr_multiplier(cls):
+        """
+        レンジ相場判定ATR倍率を取得します.
+
+        Returns:
+            float: ATR倍率（デフォルト3.0）
+        """
+        try:
+            return float(cls.config['RangeBreakoutEnhanced']['range_detection_atr_multiplier'])
+        except (KeyError, ValueError):
+            return 3.0
 
     # ========================================
     # OrderExecution セクション
