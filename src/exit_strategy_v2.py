@@ -34,6 +34,18 @@ class ExitStrategyV2:
         # 部分利確の設定
         self.PARTIAL_EXIT_RATIO = 0.5       # Stage 2での利確比率
         self.MFE_TARGET_RATIO = 0.7         # MFEの目標到達率
+        
+        # Trailing Profit Target設定（Task 39a）
+        self.trailing_profit_enabled = True
+        self.profit_tier1_threshold = 0.02   # 2%
+        self.profit_tier1_stop_multiplier = 1.5
+        self.profit_tier2_threshold = 0.05   # 5%
+        self.profit_tier2_stop_multiplier = 1.0
+        self.profit_tier3_threshold = 0.10   # 10%
+        self.profit_tier3_stop_multiplier = 0.8
+        
+        # Trailing Stop状態を保持
+        self.trailing_stops = {}  # {trade_id: trailing_stop_price}
     
     def evaluate_exit_condition(self, current_ohlcv, position_info, entry_info):
         """
@@ -92,6 +104,16 @@ class ExitStrategyV2:
             entry_price = safe_get(entry_info.get('entry_price', position_info.get('entry_price', 0)))
             entry_adx = safe_get(entry_info.get('entry_adx', 0))
             entry_pvo = safe_get(entry_info.get('entry_pvo', 0))
+            
+            # Trailing Profit Target チェック（最優先）
+            if self.trailing_profit_enabled:
+                trailing_check = self._check_trailing_profit_target(
+                    current_price, entry_price, 
+                    safe_get(current_ohlcv.get('volatility', 0)),
+                    position_info
+                )
+                if trailing_check['should_exit']:
+                    return trailing_check
             
             # Stage判定
             stage = self._identify_stage(entry_adx, entry_pvo, current_adx, current_pvo)
@@ -289,6 +311,98 @@ class ExitStrategyV2:
             'action': '不明',
             'risk_level': '不明',
         })
+    
+    def _check_trailing_profit_target(self, current_price, entry_price, volatility, position_info):
+        """
+        トレーリング利益確定ターゲットをチェック
+        
+        Args:
+            current_price: 現在価格
+            entry_price: エントリー価格
+            volatility: ボラティリティ
+            position_info: ポジション情報
+            
+        Returns:
+            dict: 出口判定結果
+        """
+        position_id = position_info.get('id', 'default')
+        side = position_info.get('side', 'BUY')
+        
+        # 含み益率を計算
+        if side == 'BUY':
+            profit_pct = (current_price - entry_price) / entry_price
+        else:  # SELL
+            profit_pct = (entry_price - current_price) / entry_price
+        
+        # どのティアに該当するか判定
+        active_tier = None
+        stop_multiplier = None
+        
+        if profit_pct >= self.profit_tier3_threshold:
+            active_tier = 3
+            stop_multiplier = self.profit_tier3_stop_multiplier
+        elif profit_pct >= self.profit_tier2_threshold:
+            active_tier = 2
+            stop_multiplier = self.profit_tier2_stop_multiplier
+        elif profit_pct >= self.profit_tier1_threshold:
+            active_tier = 1
+            stop_multiplier = self.profit_tier1_stop_multiplier
+        
+        # ティアに到達している場合のみトレーリングストップを更新
+        if active_tier is not None:
+            # トレーリングストップを計算
+            trailing_distance = volatility * stop_multiplier
+            
+            if side == 'BUY':
+                new_trailing_stop = current_price - trailing_distance
+            else:  # SELL
+                new_trailing_stop = current_price + trailing_distance
+            
+            # 既存のトレーリングストップを更新（常に有利な方向へのみ）
+            if position_id not in self.trailing_stops:
+                self.trailing_stops[position_id] = {
+                    'stop_price': new_trailing_stop,
+                    'tier': active_tier,
+                    'max_profit_pct': profit_pct
+                }
+            else:
+                # BUYの場合：ストップを上げる方向のみ、SELLの場合：ストップを下げる方向のみ
+                old_stop = self.trailing_stops[position_id]['stop_price']
+                if (side == 'BUY' and new_trailing_stop > old_stop) or \
+                   (side == 'SELL' and new_trailing_stop < old_stop):
+                    self.trailing_stops[position_id] = {
+                        'stop_price': new_trailing_stop,
+                        'tier': active_tier,
+                        'max_profit_pct': profit_pct
+                    }
+        
+        # トレーリングストップに到達したかチェック
+        if position_id in self.trailing_stops:
+            trailing_stop = self.trailing_stops[position_id]['stop_price']
+            tier = self.trailing_stops[position_id]['tier']
+            max_profit = self.trailing_stops[position_id]['max_profit_pct']
+            
+            should_exit = False
+            if side == 'BUY' and current_price <= trailing_stop:
+                should_exit = True
+            elif side == 'SELL' and current_price >= trailing_stop:
+                should_exit = True
+            
+            if should_exit:
+                # トレーリングストップをクリア
+                del self.trailing_stops[position_id]
+                
+                return {
+                    'should_exit': True,
+                    'stage': 'TRAILING_PROFIT_TARGET',
+                    'exit_ratio': 1.0,
+                    'reason': f'利益確定Tier{tier} (最大利益: {max_profit*100:.2f}%, トレーリングストップ到達)',
+                    'description': f'含み益が{max_profit*100:.2f}%に達した後、トレーリングストップ({trailing_stop:.2f})まで押し戻されました',
+                    'confidence': 0.9,
+                }
+        
+        # トレーリングストップ未到達
+        return {'should_exit': False}
 
 
 class PortfolioExitExecutor:
