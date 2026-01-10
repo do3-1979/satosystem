@@ -1,0 +1,141 @@
+{
+  "file_name": "mean_reversion_strategy.py",
+  "purpose": "Mean Reversion (平均回帰) 戦略実装 - BB 2σ逸脱 + RSI<30でレンジ相場の反転を狙う逆張り戦略",
+  "status": "implemented_not_adopted",
+  "line_count": 250,
+  "dependencies": [
+    "config.py",
+    "logger.py",
+    "statistics"
+  ],
+  "classes": [
+    {
+      "name": "MeanReversionStrategy",
+      "purpose": "Bollinger Bands + RSI による平均回帰エントリーシグナル生成",
+      "methods": [
+        {
+          "name": "__init__",
+          "params": ["config", "logger"],
+          "returns": "None",
+          "description": "MeanReversionStrategy初期化 - configとloggerを受け取る"
+        },
+        {
+          "name": "calculate_bollinger_bands",
+          "params": ["candles", "period=20", "std_dev=2.0"],
+          "returns": "tuple(upper, middle, lower)",
+          "description": "Bollinger Bands計算 - 上限、中間、下限を返す"
+        },
+        {
+          "name": "calculate_rsi",
+          "params": ["candles", "period=14"],
+          "returns": "float",
+          "description": "RSI (Relative Strength Index) 計算 - 0-100の値を返す"
+        },
+        {
+          "name": "evaluate_entry",
+          "params": ["candles", "current_price"],
+          "returns": "dict",
+          "description": "エントリーシグナル評価 - {'signal': bool, 'bb_position': float, 'rsi': float, 'reason': str} を返す"
+        }
+      ]
+    }
+  ],
+  "key_features": [
+    "Bollinger Bands (20期間, 2.0σ) による価格逸脱検出",
+    "RSI (14期間) による売られすぎ判定 (< 30)",
+    "BB下限タッチ + RSI < 30 でLONGエントリーシグナル生成",
+    "dict形式のOHLCVデータ対応 (candle['close_price'])",
+    "BB逸脱率のログ出力 (デバッグ用)"
+  ],
+  "integration": {
+    "config_section": "[MeanReversionStrategy]",
+    "enable_flag": "enable_mean_reversion_strategy",
+    "parameters": [
+      "bb_period = 20",
+      "bb_std_dev = 2.0",
+      "rsi_period = 14",
+      "rsi_oversold_threshold = 30"
+    ],
+    "trading_strategy_integration": "Lines 175-218 in trading_strategy.py",
+    "log_fields": [
+      "mean_reversion_signal",
+      "bb_position",
+      "rsi_value",
+      "mr_reason"
+    ]
+  },
+  "evaluation_results": {
+    "phase": "Phase 1",
+    "evaluation_date": "2026-01-07",
+    "test_period": "2025 Q1 (2025-01-01 ~ 2025-03-31)",
+    "metrics": {
+      "profit_factor": 0.07,
+      "win_rate": 7.14,
+      "total_trades": 14,
+      "net_profit": -198,
+      "max_drawdown": 213.69,
+      "sharpe_ratio": -2.367
+    },
+    "target_criteria": {
+      "profit_factor": ">0.8",
+      "win_rate": ">40%",
+      "total_trades": ">10"
+    },
+    "decision": "NO-GO (不採用)",
+    "reasons": [
+      "Profit Factor 0.07 << 0.8 (目標の8.75%)",
+      "Win Rate 7.14% << 40% (目標の17.9%)",
+      "ADXフィルター無効化でトレンド相場でも逆張りエントリー",
+      "RSI<30だけでは売られすぎ判定が不十分",
+      "BB下限タッチの反転シグナルとしての弱さ"
+    ]
+  },
+  "recent_changes": [
+    {
+      "date": "2026-01-05",
+      "commit": "initial_implementation",
+      "description": "Mean Reversion戦略の初期実装 - BB + RSI による平均回帰シグナル生成",
+      "changes": [
+        "MeanReversionStrategyクラス作成",
+        "calculate_bollinger_bands(), calculate_rsi(), evaluate_entry() メソッド実装",
+        "config.ini に [MeanReversionStrategy] セクション追加",
+        "config.py に5つのgetterメソッド追加"
+      ]
+    },
+    {
+      "date": "2026-01-07",
+      "commit": "debugging_and_evaluation",
+      "description": "実装デバッグと Phase 1 評価完了",
+      "changes": [
+        "config.ini インライン・コメント問題修正",
+        "OHLCV data access 修正 (candle[4] → candle['close_price'])",
+        "Logger method signature 修正",
+        "Side normalization 修正 (LONG → BUY)",
+        "Filter integration architecture 修正",
+        "Q1 2025 バックテスト実行・評価",
+        "NO-GO判定・enable_mean_reversion_strategy=0 に設定"
+      ]
+    }
+  ],
+  "lessons_learned": [
+    "逆張り戦略はトレンド判定（ADX）なしでは極めて危険",
+    "240分足では反転シグナルの精度が低い（60分足の方が適切か）",
+    "BB + RSI だけでは不十分、出来高・ADX・マルチタイムフレーム確認が必須",
+    "config.ini のインライン・コメントは int() パース失敗を引き起こす",
+    "normalize_side() は 'LONG' を 'NONE' に変換する（'BUY'/'SELL'のみ有効）"
+  ],
+  "future_considerations": [
+    "ADXフィルター（ADX<25）の再有効化",
+    "RSI閾値の厳格化（20-25）",
+    "BB逸脱率の厳格化（1.5%以上）",
+    "エグジット戦略の改善（BB中心線到達で決済）",
+    "タイムフレームの変更（240分 → 60分）",
+    "マルチタイムフレーム確認の追加"
+  ],
+  "notes": [
+    "実装コードは保持されるが、enable_mean_reversion_strategy=0 で無効化",
+    "将来の参考資料として src/mean_reversion_strategy.py は残存",
+    "評価レポート: docs/analysis/mean_reversion_q1_evaluation.md",
+    "ACTION_LIST.md Task 38b で DONE に移動済み"
+  ]
+}
