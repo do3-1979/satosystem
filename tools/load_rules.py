@@ -27,16 +27,16 @@ def display_rules(rules):
     # 重大ルール
     if 'critical_rules' in rules:
         print("🚨 重大ルール:")
-        for rule in rules['critical_rules']:
-            print(f"  • {rule['title']}")
-            print(f"    {rule['description']}")
+        cr = rules['critical_rules']['commit_and_push_authorization']
+        print(f"  • {cr['title']}")
+        print(f"    {cr['rule']}")
         print()
     
     # ドキュメント管理
     if 'document_management' in rules:
-        print("📚 ドキュメント管理:")
+        print("📚 必須ドキュメント:")
         for item in rules['document_management']['required_files']:
-            print(f"  • {item}")
+            print(f"  • {item['file']}")
         print()
     
     # 実行モード
@@ -50,11 +50,12 @@ def display_rules(rules):
     if 'quality_metrics' in rules:
         metrics = rules['quality_metrics']['current']
         print(f"✅ 品質指標 ({metrics['date']}):")
-        print(f"  • レグレッションテスト: {metrics['regression_tests']}")
-        print(f"  • 四半期テスト: {metrics['quarterly_tests']}")
-        print(f"  • 累積損益: {metrics['cumulative_pnl']}")
+        print(f"  • {metrics['regression_tests']}")
+        print(f"  • {metrics['quarterly_tests']}")
+        print(f"  • {metrics['cumulative_pnl']}")
         print()
     
+    print("🔧 コマンド: python3 tools/load_rules.py")
     print("=" * 80)
 
 
