@@ -3,7 +3,7 @@
     "name": "satosystem gen2",
     "description": "Bitcoin auto-trading system - Donchian Breakout + PVO + ADX filter",
     "branch": "gen2",
-    "last_updated": "2026-01-31",
+    "last_updated": "2026-02-01",
     "baseline_performance": {
       "cumulative_pnl_usd": 904.35,
       "period": "2024-2025 (8 quarters)",
@@ -11,9 +11,9 @@
     }
   },
   "latest_commit": {
-    "hash": "d830d1f",
-    "date": "2026-01-31",
-    "message": "docs: 一時レポート13ファイル削除 + ACTION_LIST詳細セクション削除（379行→99行短縮）",
+    "hash": "79bef2f",
+    "date": "2026-02-01",
+    "message": "chore: commands/フォルダ新設 + DEVELOPMENT_RULES.json強化 + prj-helpコマンド追加",
     "changes": {
       "files_changed": 14,
       "lines_added": 4,
@@ -46,13 +46,6 @@
       ],
       "next_priority": [
         {
-          "task_id": "39b",
-          "title": "Two-Tier Entry System 実装",
-          "description": "高確度/中確度の二段階エントリー",
-          "expected_benefit": "+$300-600/年",
-          "priority": "★★★★★"
-        },
-        {
           "task_id": "39c",
           "title": "Multi-Timeframe Integration 実装",
           "description": "1h/4h/1d三重確認",
@@ -69,6 +62,12 @@
       ]
     },
     "recently_completed": [
+      {
+        "task_id": "39b",
+        "title": "Two-Tier Entry System 実装",
+        "date": "2026-02-01",
+        "description": "Two-Tier Entry System実装完了: +378.27 USD改善（+41.8%）、トレード機会+36件"
+      },
       {
         "task_id": "33",
         "title": "ドキュメント整理",

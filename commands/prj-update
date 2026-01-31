@@ -1,0 +1,159 @@
+#!/bin/bash
+# prj-update - PROGRESS.json更新コマンド
+# プロジェクト全体の進捗状況をPROGRESS.jsonに自動反映
+
+set -e
+
+# プロジェクトルート確認
+if [ ! -f "PROGRESS.json" ]; then
+    echo "❌ エラー: プロジェクトルートから実行してください"
+    exit 1
+fi
+
+# 引数チェック
+if [ $# -eq 0 ]; then
+    echo "🔄 PROGRESS.json更新ツール"
+    echo "=========================================="
+    echo ""
+    echo "使用方法:"
+    echo "  ./commands/prj-update commit              # 最新コミット情報を反映"
+    echo "  ./commands/prj-update status              # 現在のプロジェクト状況を表示"
+    echo "  ./commands/prj-update task-complete <ID>  # タスク完了を記録"
+    echo "  ./commands/prj-update task-start <ID>     # タスク開始を記録"
+    echo ""
+    echo "例:"
+    echo "  ./commands/prj-update commit"
+    echo "  ./commands/prj-update status"
+    echo "  ./commands/prj-update task-complete 39b"
+    echo "  ./commands/prj-update task-start 39c"
+    echo ""
+    exit 0
+fi
+
+COMMAND=$1
+shift
+
+case $COMMAND in
+    commit)
+        echo "📝 最新コミット情報をPROGRESS.jsonに反映..."
+        python3 tools/update_progress.py --commit
+        ;;
+    
+    status)
+        echo "📊 プロジェクト現在状況"
+        echo "=========================================="
+        python3 -c "
+import json
+with open('PROGRESS.json', 'r') as f:
+    data = json.load(f)
+
+print(f\"\\n🎯 プロジェクト: {data['project']['name']}\")
+print(f\"📈 ベースライン: {data['project']['baseline_performance']['cumulative_pnl_usd']} USD\")
+print(f\"📅 最終更新: {data['project']['last_updated']}\")
+
+print(f\"\\n🚀 作業中タスク ({len(data['current_status']['active_tasks']['in_progress'])}):\")
+for task in data['current_status']['active_tasks']['in_progress']:
+    print(f\"  [{task['task_id']}] {task['title']}\")
+    print(f\"       ステータス: {task['status']}\")
+    print(f\"       優先度: {task['priority']}\")
+
+print(f\"\\n📋 次の優先タスク ({len(data['current_status']['active_tasks']['next_priority'])}):\")
+for task in data['current_status']['active_tasks']['next_priority'][:3]:
+    print(f\"  [{task['task_id']}] {task['title']}\")
+    print(f\"       期待利益: {task.get('expected_benefit', 'N/A')}\")
+    print(f\"       優先度: {task['priority']}\")
+
+print(f\"\\n✅ 最近完了 ({len(data['current_status']['recently_completed'])}):\")
+for task in data['current_status']['recently_completed'][:3]:
+    print(f\"  [{task['task_id']}] {task['title']} ({task['date']})\")
+
+print(f\"\\n💾 最新コミット:\")
+print(f\"  {data['latest_commit']['hash']} - {data['latest_commit']['message']}\")
+print(f\"  日付: {data['latest_commit']['date']}\")
+"
+        ;;
+    
+    task-complete)
+        if [ $# -eq 0 ]; then
+            echo "❌ エラー: タスクIDを指定してください"
+            echo "例: ./commands/prj-update task-complete 39b"
+            exit 1
+        fi
+        
+        TASK_ID=$1
+        
+        # タスク情報をPROGRESS.jsonから取得
+        TASK_DESC=$(python3 -c "
+import json
+import sys
+
+task_id = sys.argv[1]
+
+with open('PROGRESS.json', 'r') as f:
+    data = json.load(f)
+
+# in_progressから検索
+for task in data['current_status']['active_tasks']['in_progress']:
+    if task['task_id'] == task_id:
+        print(f\"{task['title']}: 実装完了\")
+        sys.exit(0)
+
+# next_priorityから検索
+for task in data['current_status']['active_tasks']['next_priority']:
+    if task['task_id'] == task_id:
+        print(f\"{task['title']}: 実装完了\")
+        sys.exit(0)
+
+print(f\"Task {task_id} 実装完了\")
+" $TASK_ID)
+        
+        echo "✅ タスク完了を記録: $TASK_ID"
+        python3 tools/update_progress.py --task-complete "$TASK_ID" --description "$TASK_DESC"
+        ;;
+    
+    task-start)
+        if [ $# -eq 0 ]; then
+            echo "❌ エラー: タスクIDを指定してください"
+            echo "例: ./commands/prj-update task-start 39c"
+            exit 1
+        fi
+        
+        TASK_ID=$1
+        
+        # タスク情報をPROGRESS.jsonから取得
+        TASK_DESC=$(python3 -c "
+import json
+import sys
+
+task_id = sys.argv[1]
+
+with open('PROGRESS.json', 'r') as f:
+    data = json.load(f)
+
+# next_priorityから検索
+for task in data['current_status']['active_tasks']['next_priority']:
+    if task['task_id'] == task_id:
+        print(f\"{task['title']}: 実装開始\")
+        sys.exit(0)
+
+print(f\"Task {task_id} 実装開始\")
+" $TASK_ID)
+        
+        echo "🚀 タスク開始を記録: $TASK_ID"
+        python3 tools/update_progress.py --task-start "$TASK_ID" --description "$TASK_DESC"
+        ;;
+    
+    *)
+        echo "❌ エラー: 不明なコマンド '$COMMAND'"
+        echo ""
+        echo "使用可能なコマンド:"
+        echo "  commit         - 最新コミット情報を反映"
+        echo "  status         - 現在のプロジェクト状況を表示"
+        echo "  task-complete  - タスク完了を記録"
+        echo "  task-start     - タスク開始を記録"
+        exit 1
+        ;;
+esac
+
+echo ""
+echo "=========================================="
