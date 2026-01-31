@@ -1,0 +1,264 @@
+{
+  "version": "2.0",
+  "last_updated": "2026-01-31",
+  "description": "satosystem gen2プロジェクトの開発ルール・ワークフロー定義",
+  
+  "critical_rules": {
+    "commit_and_push_authorization": {
+      "title": "コミット・プッシュの許可取得",
+      "severity": "CRITICAL",
+      "rule": "すべてのコミットとプッシュは、ユーザーの明示的な許可を得た後にのみ実行する",
+      "reasons": [
+        "セキュリティ: APIキーがconfig.iniに含まれている場合、意図しないプッシュで認証情報が公開される危険性",
+        "意図確認: 修正内容がユーザー指定の要件に合致しているか、事前にレビューを受ける必要",
+        "エラー回避: テスト未実施のコードが公開されることを防止"
+      ],
+      "workflow": [
+        {
+          "step": 1,
+          "action": "修正作業完了時",
+          "detail": "git statusで変更ファイルを確認し、ユーザーに報告"
+        },
+        {
+          "step": 2,
+          "action": "コミット前の確認",
+          "detail": "変更内容の要約、テスト結果などを提示し、ユーザーから「OK」を得る"
+        },
+        {
+          "step": 3,
+          "action": "プッシュ前の確認",
+          "detail": "コミットメッセージがユーザーの意図に合致しているか確認を得る"
+        },
+        {
+          "step": 4,
+          "action": "実行",
+          "detail": "ユーザーの明示的な指示を受けて、初めてコミット・プッシュを実行"
+        }
+      ],
+      "prohibited_actions": [
+        "ユーザーの許可なくコミットすること",
+        "複数の変更を一度にコミット・プッシュすること（ファイルごと、機能ごとに分割）",
+        "テスト未実施の状態でプッシュすること",
+        "APIキーがconfig.iniに含まれた状態でプッシュすること（bot_run.shで置換されるまで待機）"
+      ]
+    }
+  },
+  
+  "documentation_management": {
+    "core_documents": [
+      {
+        "file": "docs/DEVELOPMENT_RULES.md",
+        "purpose": "本ルールを収録し、すべてのメンバーが参照する",
+        "required": true
+      },
+      {
+        "file": "docs/ARCHITECTURE_OVERVIEW.md",
+        "purpose": "プロジェクト全体の概要および主要コンポーネントの役割を記述",
+        "required": true
+      },
+      {
+        "file": "docs/ACTION_LIST.md",
+        "purpose": "TODO/PROGRESS/DONEのセクションを含み、作業課題と進捗を常に更新",
+        "required": true
+      }
+    ],
+    "workflow": [
+      {
+        "phase": "設計変更前",
+        "action": "上記3つのドキュメントを読み、必要であれば内容を更新してから作業を始める"
+      },
+      {
+        "phase": "ソースコード変更前",
+        "action": "docs/analysisにある分析成果物（JSON）を読み込み、現行実装との整合性を確認する"
+      }
+    ],
+    "temporary_reports": {
+      "directory": "report_tmp/",
+      "policy": "カテゴリ別フォルダを作成して保存",
+      "git_management": false,
+      "cleanup": "不要になった報告書は随時削除",
+      "migration": {
+        "useful_info": "ARCHITECTURE_OVERVIEW.mdに転記",
+        "tasks": "ACTION_LIST.mdに追記"
+      }
+    }
+  },
+  
+  "development_workflow": {
+    "phase_1": {
+      "name": "gen2ブランチの完全な分析",
+      "goal": "現行コードの構成と既知の不具合を明らかにする",
+      "output": [
+        "docs/analysis/*.json",
+        "ARCHITECTURE_OVERVIEW.md"
+      ]
+    },
+    "phase_2": {
+      "name": "課題管理",
+      "goal": "必要な変更・レビュー項目を記録し、優先度付きで整理",
+      "document": "ACTION_LIST.md",
+      "process": "ユーザー指定の順に一件ずつ、レビュー・修正・テスト・検証を実施"
+    },
+    "phase_3": {
+      "name": "マスターコミットのレビューと移植",
+      "goal": "nextarch（およびmaster相当）のコミットを逐次レビュー",
+      "process": "必要な修正をgen2に移植する前にレグレッションテストを導入・実行し、不具合が再発しないことを確認"
+    }
+  },
+  
+  "quality_assurance": {
+    "testing": {
+      "regression_tests": {
+        "requirement": "プロジェクトの主要機能を網羅するレグレッションテストを設計",
+        "execution": "変更を取り込む前には必ず通す",
+        "results_storage": "report_tmp/に一時保存",
+        "documentation": "まとめるべき内容はARCHITECTURE_OVERVIEW.mdに記載"
+      },
+      "current_metrics": {
+        "date": "2025-12-29",
+        "regression_tests": {
+          "total": 54,
+          "passed": 53,
+          "success_rate": "97.8%",
+          "status": "✅ PASS"
+        },
+        "quarterly_tests": {
+          "period": "2024Q2～2025Q4",
+          "quarters": 7,
+          "cumulative_pnl_usd": 374.95,
+          "note": "Q1除外",
+          "status": "✅ PASS"
+        },
+        "data_type_validation": {
+          "issue": "ExitStrategyV2修正によりbgmodeエラー完全解決",
+          "status": "✅ RESOLVED"
+        },
+        "parameter_optimization": {
+          "final_parameters": {
+            "volatility_term": 28,
+            "donchian_term": 32,
+            "entry_times": 3,
+            "stop_range": 2
+          },
+          "status": "✅ CONFIRMED"
+        }
+      }
+    }
+  },
+  
+  "communication": {
+    "document_updates": {
+      "requirement": "ドキュメント更新や課題追加は必ずACTION_LIST.mdを通じて記録",
+      "review_process": "レビューで明示的に取り上げる",
+      "progress_tracking": {
+        "statuses": ["TODO", "PROGRESS", "DONE"],
+        "requirement": "進捗は明示的にステータスで示す"
+      }
+    },
+    "design_review": {
+      "evidence": "docs/analysisのJSONを根拠資料として提示"
+    }
+  },
+  
+  "execution_modes": {
+    "overview": "satosystemは3つの異なる実行モードをサポート",
+    "modes": [
+      {
+        "name": "バックテスト",
+        "back_test": 1,
+        "hot_test_dummy_mode": 1,
+        "purpose": "過去データで戦略検証",
+        "trading": "ダミー取引",
+        "data_source": "過去データ",
+        "log_file": "src/logs/latest_backtest.log"
+      },
+      {
+        "name": "ペーパートレード",
+        "back_test": 0,
+        "hot_test_dummy_mode": 1,
+        "purpose": "ライブ市場で検証",
+        "trading": "ダミー取引",
+        "data_source": "ライブデータ",
+        "log_file": "src/logs/latest_hot_test_dummy.log"
+      },
+      {
+        "name": "本番取引",
+        "back_test": 0,
+        "hot_test_dummy_mode": 0,
+        "purpose": "実際の取引実行",
+        "trading": "実取引",
+        "data_source": "ライブデータ",
+        "log_file": "src/logs/latest_hot_test_live.log",
+        "confirmation_required": true,
+        "warning_message": "⚠️  WARNING: 本番取引モードで実行します。注意してください！"
+      }
+    ],
+    "configuration": {
+      "file": "src/config.ini",
+      "section": "[Backtest]",
+      "parameters": [
+        {
+          "name": "back_test",
+          "values": {
+            "1": "バックテスト",
+            "0": "ホットテスト"
+          }
+        },
+        {
+          "name": "hot_test_dummy_mode",
+          "values": {
+            "1": "ダミー取引（ペーパーテスト）",
+            "0": "本番取引"
+          }
+        },
+        {
+          "name": "generate_interactive_graph",
+          "values": {
+            "1": "バックテスト後にインタラクティブグラフを自動生成"
+          }
+        }
+      ]
+    },
+    "execution": {
+      "recommended": "bash src/bot_run.sh",
+      "direct": "python src/bot.py",
+      "bot_run_logic": [
+        "back_test == 1 → バックテストモード（ダミー取引）",
+        "back_test == 0 && hot_test_dummy_mode == 1 → ペーパートレード（ダミー取引）",
+        "back_test == 0 && hot_test_dummy_mode == 0 → 本番取引（実取引、確認プロンプト有）"
+      ],
+      "dummy_mode_detection": "is_dummy_mode = (back_test == 1) or (back_test == 0 and hot_test_dummy_mode == 1)"
+    },
+    "recommended_flow": [
+      {
+        "phase": 1,
+        "mode": "バックテスト",
+        "config": "back_test=1",
+        "purpose": "戦略開発フェーズ"
+      },
+      {
+        "phase": 2,
+        "mode": "ペーパートレード",
+        "config": "back_test=0, hot_test_dummy_mode=1",
+        "purpose": "ライブ検証フェーズ"
+      },
+      {
+        "phase": 3,
+        "mode": "本番取引",
+        "config": "back_test=0, hot_test_dummy_mode=0",
+        "purpose": "運用開始フェーズ",
+        "note": "本番取引では確認プロンプトが表示されます"
+      }
+    ]
+  },
+  
+  "metadata": {
+    "schema_version": "2.0",
+    "compatible_with": ["PROGRESS.json", "ACTION_LIST.md", "ARCHITECTURE_OVERVIEW.md"],
+    "auto_load": {
+      "enabled": false,
+      "planned": true,
+      "trigger": "プロジェクト起動時"
+    }
+  }
+}
