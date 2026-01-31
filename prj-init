@@ -1,0 +1,55 @@
+#!/bin/bash
+# プロジェクト初期化スクリプト
+# 使用方法: ./prj-init または source prj-init
+
+echo "🚀 satosystem gen2 - プロジェクト初期化"
+echo "=========================================="
+echo ""
+
+# プロジェクトルート確認
+if [ ! -f "PROGRESS.json" ] || [ ! -f "DEVELOPMENT_RULES.json" ]; then
+    echo "❌ エラー: プロジェクトルートから実行してください"
+    exit 1
+fi
+
+# 開発ルール表示
+echo "📋 開発ルール読み込み中..."
+python3 tools/load_development_rules.py
+
+echo ""
+echo "=========================================="
+echo "📊 現在の進捗状況"
+echo "=========================================="
+
+# PROGRESS.jsonから重要情報を抽出
+python3 -c "
+import json
+with open('PROGRESS.json', 'r') as f:
+    data = json.load(f)
+    
+print(f\"✅ ベースライン: {data['project']['baseline_performance']['cumulative_pnl_usd']} USD\")
+print(f\"📅 最終更新: {data['project']['last_updated']}\")
+print(f\"🔧 最新コミット: {data['latest_commit']['hash']} - {data['latest_commit']['message'][:60]}...\")
+print()
+print('📌 作業中タスク:')
+for task in data['current_status']['active_tasks']['in_progress'][:3]:
+    print(f\"  • {task['task_id']}: {task['title']}\")
+print()
+print('🎯 次の優先タスク:')
+for task in data['current_status']['active_tasks']['next_priority'][:3]:
+    print(f\"  • {task['task_id']}: {task['title']} ({task['priority']})\")
+"
+
+echo ""
+echo "=========================================="
+echo "✅ プロジェクト初期化完了"
+echo ""
+echo "📚 参考ドキュメント:"
+echo "  • docs/ACTION_LIST.md - タスク一覧"
+echo "  • docs/DEVELOPMENT_RULES.md - 開発ルール詳細"
+echo "  • PROGRESS.json - 進捗状況"
+echo ""
+echo "🔧 便利コマンド:"
+echo "  • python3 tools/update_progress.py --commit"
+echo "  • python3 tools/load_development_rules.py"
+echo "=========================================="
