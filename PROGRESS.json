@@ -1,0 +1,189 @@
+{
+  "project": {
+    "name": "satosystem gen2",
+    "description": "Bitcoin auto-trading system - Donchian Breakout + PVO + ADX filter",
+    "branch": "gen2",
+    "last_updated": "2026-01-31",
+    "baseline_performance": {
+      "cumulative_pnl_usd": 904.35,
+      "period": "2024-2025 (8 quarters)",
+      "baseline_file": "baseline_backup/BASELINE_904.35USD_20251221.json"
+    }
+  },
+  "latest_commit": {
+    "hash": "d830d1f",
+    "date": "2026-01-31",
+    "message": "docs: 一時レポート13ファイル削除 + ACTION_LIST詳細セクション削除（379行→99行短縮）",
+    "changes": {
+      "files_changed": 14,
+      "lines_added": 4,
+      "lines_deleted": 4208,
+      "description": "ドキュメント整理 - 一時レポート13ファイル削除、ACTION_LIST.mdを478行→99行に短縮"
+    }
+  },
+  "current_status": {
+    "phase": "Phase 2 - パラメータ最適化・2026年戦略実装",
+    "active_tasks": {
+      "in_progress": [
+        {
+          "task_id": "22b",
+          "title": "Strategy B: 指標確認（Bollinger+RSI+SMA）",
+          "status": "実装完了、有効化待機",
+          "priority": "★★★★☆"
+        },
+        {
+          "task_id": "22c",
+          "title": "Strategy C: 複合戦略（A+B）",
+          "status": "実装完了、有効化待機",
+          "priority": "★★★★☆"
+        },
+        {
+          "task_id": "20b",
+          "title": "マルチタイムフレーム ADX 確認",
+          "status": "設計中 (2025年度対応)",
+          "priority": "★★★★☆"
+        }
+      ],
+      "next_priority": [
+        {
+          "task_id": "39b",
+          "title": "Two-Tier Entry System 実装",
+          "description": "高確度/中確度の二段階エントリー",
+          "expected_benefit": "+$300-600/年",
+          "priority": "★★★★★"
+        },
+        {
+          "task_id": "39c",
+          "title": "Multi-Timeframe Integration 実装",
+          "description": "1h/4h/1d三重確認",
+          "expected_benefit": "+$400-700/年",
+          "priority": "★★★★★"
+        },
+        {
+          "task_id": "39d",
+          "title": "Time-Based Exit 実装",
+          "description": "72時間保有で強制決済",
+          "expected_benefit": "+$100-200/年",
+          "priority": "★★★★☆"
+        }
+      ]
+    },
+    "recently_completed": [
+      {
+        "task_id": "33",
+        "title": "ドキュメント整理",
+        "date": "2026-01-31",
+        "description": "docs/一時レポート削除 - PLAN/REPORT/CHECKLIST系13ファイル削除、恒久ドキュメント7ファイルに整理"
+      },
+      {
+        "task_id": "39a",
+        "title": "Trailing Profit Target検証完了・不採用判定",
+        "date": "2026-01-11",
+        "description": "2%/5%/8%の3段階トレーリングストップ実装・検証。ベースライン比-1,077 USD悪化のため不採用・全変更破棄"
+      },
+      {
+        "task_id": "38a-c",
+        "title": "2025年対応新戦略評価完了（VCP/Mean Reversion/Range Breakout Enhanced）",
+        "date": "2026-01-07",
+        "description": "全て評価完了・不採用判定。実装は保持するがフラグで無効化"
+      },
+      {
+        "task_id": "33",
+        "title": "ADXフィルタ最適化",
+        "date": "2026-01-02",
+        "description": "threshold=31で最適、累積損益1936.98 USD（+31.9%改善）、2025Q赤字88.85%削減"
+      }
+    ]
+  },
+  "documentation": {
+    "core_documents": [
+      "docs/ACTION_LIST.md",
+      "docs/ARCHITECTURE_OVERVIEW.md",
+      "docs/DEVELOPMENT_RULES.md",
+      "docs/PROFIT_ENHANCEMENT_STRATEGY_2026.md",
+      "docs/PRICE_DATA_FLOW_DESIGN.md",
+      "docs/TRADE_LOG_USAGE_GUIDE.md",
+      "docs/ADX_FILTER_ANALYSIS.md"
+    ],
+    "analysis_files": {
+      "source_code_analysis": "docs/analysis/src/ (23 JSON files)",
+      "backtest_results": "docs/quarterly_backtest_results/",
+      "regression_tests": "docs/regression_test_results/"
+    },
+    "recent_cleanup": {
+      "date": "2026-01-31",
+      "action": "削除した一時レポート13ファイル、ACTION_LIST.md簡素化（478→99行）",
+      "deleted_files": [
+        "ADAPTIVE_OPTIMIZATION_REPORT.md",
+        "LOSS_TRADE_ANALYSIS_PLAN.md",
+        "MEAN_REVERSION_IMPLEMENTATION_PLAN.md",
+        "PARAMETER_OPTIMIZATION_ANALYSIS_20260105.md",
+        "PRE_INTEGRATION_CHECKLIST.md",
+        "RANGE_BREAKOUT_ENHANCED_PLAN.md",
+        "FILTER_SCENARIO_ANALYSIS_REPORT.md",
+        "mean_reversion_phase0_evaluation*.md (3 files)",
+        "PHASE0_*.md (3 files)"
+      ]
+    }
+  },
+  "test_suite": {
+    "total_tests": 54,
+    "pass_rate": "97.8%",
+    "test_files": 26,
+    "last_regression_test": "2025-12-10"
+  },
+  "configuration": {
+    "current_parameters": {
+      "time_frame": "240min",
+      "adx_threshold": 31,
+      "pvo_threshold": 10,
+      "donchian_period": 30,
+      "entry_times": 2,
+      "volatility_term": 14
+    },
+    "enabled_filters": {
+      "enable_pvo_filter": true,
+      "enable_adx_filter": true,
+      "enable_seasonality_based_positioning": false,
+      "enable_market_regime_detection": false,
+      "enable_vcp_strategy": false,
+      "enable_mean_reversion_strategy": false,
+      "enable_range_breakout_enhanced": false
+    }
+  },
+  "next_actions": {
+    "immediate": [
+      "Task 39b: Two-Tier Entry System 実装開始（優先度最高）",
+      "Task 39c: Multi-Timeframe Integration 設計・実装",
+      "Task 22b/22c: Strategy B/C 有効化検討・評価"
+    ],
+    "planned": [
+      "Task 39d-f: Time-Based Exit / Dynamic Stop Loss / Weekend Avoidance 実装",
+      "Task 23a-b: Fear & Greed Index / RSI 二重確認実装",
+      "Task 20b: マルチタイムフレーム ADX 実装完了"
+    ],
+    "backlog": [
+      "Task 38d: Volume Profile Analysis 実装（主要戦略完了後）",
+      "Task 38e: Market Microstructure 実装（Phase 4検討）",
+      "Task 6: ログファイル自動整理機能実装"
+    ]
+  },
+  "performance_goals_2026": {
+    "target": "年間累積損益 +$1,500-2,500",
+    "strategy_contributions": {
+      "39b_two_tier_entry": "+$300-600",
+      "39c_multi_timeframe": "+$400-700",
+      "39d_time_based_exit": "+$100-200",
+      "39e_dynamic_stop_loss": "+$100-150",
+      "39f_weekend_avoidance": "+$100-200",
+      "current_baseline": "+$904 (2024-2025)"
+    }
+  },
+  "notes": {
+    "workflow": "DEVELOPMENT_RULES.mdに基づいた開発フロー遵守",
+    "testing": "変更前に必ずレグレッションテスト実施",
+    "documentation": "各タスク完了時にACTION_LIST.md更新",
+    "commit_policy": "機能追加は個別コミット、バグ修正は即時コミット",
+    "backup": "ベースライン性能をbaseline_backup/に定期保存"
+  }
+}
