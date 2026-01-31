@@ -1,0 +1,57 @@
+#!/bin/bash
+# プロジェクト分析読み込みコマンド
+# 使用方法: ./prj-load-analysis
+
+echo "🔍 satosystem gen2 - プロジェクト分析読み込み"
+echo "=========================================="
+echo ""
+
+# プロジェクトルート確認
+if [ ! -d "docs/analysis" ]; then
+    echo "❌ エラー: docs/analysis が見つかりません"
+    exit 1
+fi
+
+# README.md完全表示
+echo "📖 docs/analysis/README.md を読み込み中..."
+echo ""
+cat docs/analysis/README.md
+
+echo ""
+echo "=========================================="
+echo "📊 分析ファイル統計"
+echo "=========================================="
+
+# src/配下のJSON数
+SRC_JSON_COUNT=$(ls docs/analysis/src/*.json 2>/dev/null | wc -l)
+echo "✅ ソースコード分析: ${SRC_JSON_COUNT} ファイル"
+
+# 主要ファイル確認
+echo ""
+echo "📁 主要分析ファイル:"
+for file in bot config trading_strategy exit_strategy_v2 risk_management price_data_management; do
+    if [ -f "docs/analysis/src/${file}.json" ]; then
+        echo "  ✅ ${file}.json"
+    else
+        echo "  ❌ ${file}.json (見つかりません)"
+    fi
+done
+
+echo ""
+echo "=========================================="
+echo "🎯 次のステップ"
+echo "=========================================="
+echo ""
+echo "1. スキーマ確認:"
+echo "   cat docs/analysis/ANALYSIS_SCHEMA_V2.json | jq '.'"
+echo ""
+echo "2. クリティカルモジュール確認:"
+echo "   cat docs/analysis/src/bot.json | jq '.file_overview'"
+echo "   cat docs/analysis/src/trading_strategy.json | jq '.file_overview'"
+echo ""
+echo "3. 全ファイル一覧:"
+echo "   ls -1 docs/analysis/src/"
+echo ""
+echo "=========================================="
+echo "✅ プロジェクト分析読み込み完了"
+echo "=========================================="
