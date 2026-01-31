@@ -168,7 +168,7 @@ satosystem/
 ## 関連ドキュメント
 
 - `docs/ACTION_LIST.md` - タスク詳細管理（TODO/PROGRESS/DONE）
-- `docs/DEVELOPMENT_RULES.md` - 開発ルール・ワークフロー
+- `DEVELOPMENT_RULES.json` - 開発ルール・ワークフロー
 - `docs/ARCHITECTURE_OVERVIEW.md` - システムアーキテクチャ
 
 ## 注意事項

@@ -1,199 +1,244 @@
-# docs/analysis フォルダ構成
+# AI向け: プロジェクト分析ファイル完全読み込み手順
 
-このフォルダは、プロジェクト全体の分析成果物とメタデータを整理管理します。
+**このREADMEは、AIアシスタントがプロジェクト全体を理解するための必読手順書です。**
+
+## ⚠️ CRITICAL: このREADMEを読んだAIは、以下の手順に従って全分析ファイルを読み込む必要があります
+
 ---
 
-## 🎯 プロジェクト分析の推奨手順
+## 📋 読み込み手順（MANDATORY）
 
-### Step 1: 分析フォーマットの理解
-最初に、プロジェクトで使用している分析フォーマット（**Level 1+ スキーマ**）を理解してください。
-```bash
-cat docs/analysis/ANALYSIS_SCHEMA_V2.json | jq '.'
+### Step 1: スキーマ定義の理解（REQUIRED）
+**必須ファイル**: `docs/analysis/ANALYSIS_SCHEMA_V2.json` (全行読み込み)
+
+このファイルは、全分析ファイルのフォーマット定義を含みます。読み込まずに他のファイルを読むことは禁止されています。
+
+**読み込み方法**:
+```
+read_file('docs/analysis/ANALYSIS_SCHEMA_V2.json', startLine=1, endLine=435)
 ```
 
-**ANALYSIS_SCHEMA_V2.json が定義するもの**:
+**このファイルから理解すべき内容**:
 - `metadata`: 分析ファイルのメタデータ（作成日時、Python版、フォーマットバージョン）
 - `file_overview`: ファイル全体の目的・行数・クラス数・責務定義
 - `classes[]`: 各クラスの責務・メソッド・エラーハンドリング・テスト提案
 - `functions[]`: スタンドアロン関数の詳細
 - `summary`: アーキテクチャスコア（信頼性・テスト容易性・保守性）
 
-### Step 2: ソースコード分析ファイルの参照
-`docs/analysis/src/` 配下に、**全17個のPythonソースファイルの詳細分析**が格納されています。
+---
 
-```bash
-# クリティカルモジュールから確認
-cat docs/analysis/src/bot.json | jq '.file_overview'
-cat docs/analysis/src/config.json | jq '.file_overview'
-cat docs/analysis/src/trading_strategy.json | jq '.file_overview'
+### Step 2: クリティカルモジュール分析（PRIORITY: ★★★★★）
+以下の5ファイルを**必ず順番に全行読み込み**してください。これらはシステムの心臓部です。
 
-# 全ファイル一覧
-ls docs/analysis/src/ | sort
+#### 2-1. Bot (オーケストレーター)
+```
+read_file('docs/analysis/src/bot.json', startLine=1, endLine=338)
+```
+**理解すべき内容**: トレード実行ループ制御、注文実行、ポジション管理、メトリクス集計
+
+#### 2-2. Config (設定管理)
+```
+read_file('docs/analysis/src/config.json', startLine=1, endLine=537)
+```
+**理解すべき内容**: 60+ パラメータの管理、API キー管理、戦略パラメータ（Donchian, PVO, ADX）
+
+#### 2-3. TradingStrategy (意思決定エンジン)
+```
+read_file('docs/analysis/src/trading_strategy.json', startLine=1, endLine=183)
+```
+**理解すべき内容**: Entry/Add/Exit 判定、市場体制検出、マルチStrategy評価
+
+#### 2-4. RiskManagement (リスク管理)
+```
+read_file('docs/analysis/src/risk_management.json', startLine=1, endLine=169)
+```
+**理解すべき内容**: ポジションサイズ計算、PSAR/ADX 計算、ストップ価格管理
+
+#### 2-5. ExitStrategyV2 (出口戦略)
+```
+read_file('docs/analysis/src/exit_strategy_v2.json', startLine=1, endLine=284)
+```
+**理解すべき内容**: 4段階Exit判定（強トレンド/減衰/枯渇/ストップロス）、ADX/PVO複合シグナル
+
+---
+
+### Step 3: データ管理・実行基盤（PRIORITY: ★★★★☆）
+以下の6ファイルを**全行読み込み**してください。
+
+#### 3-1. PriceDataManagement (価格データ管理)
+```
+read_file('docs/analysis/src/price_data_management.json', startLine=1, endLine=240)
 ```
 
-**各JSONファイルの役割**:
-| ファイル | 目的 | 優先度 |
-|---------|------|--------|
-| `bot.json` | トレード実行ループのオーケストレーション | ★★★★★ |
-| `config.json` | 設定管理・パラメータ定義 | ★★★★★ |
-| `trading_strategy.json` | Donchian + PVO シグナル生成 | ★★★★★ |
-| `risk_management.json` | 資金管理・ポジションサイズ | ★★★★★ |
-| `price_data_management.json` | OHLCV データキャッシュ・フェッチ | ★★★★☆ |
-| `exit_strategy_v2.json` | 複合exit指標（PSAR+PVO+ADX） | ★★★★☆ |
-| その他 | 補助機能（Order, Portfolio, Event等） | ★★★☆☆ |
+#### 3-2. OHLCVCache (データキャッシュ)
+```
+read_file('docs/analysis/src/ohlcv_cache.json', startLine=1, endLine=134)
+```
 
-### Step 3: プロジェクト全容の理解
-以下の主要ドキュメントを順序付きで参照：
+#### 3-3. Exchange (取引所抽象化)
+```
+read_file('docs/analysis/src/exchange.json', startLine=1, endLine=109)
+```
 
-1. **[ARCHITECTURE_OVERVIEW.md](../ARCHITECTURE_OVERVIEW.md)** - システムアーキテクチャ・モジュール依存関係
-2. **[PRICE_DATA_FLOW_DESIGN.md](../PRICE_DATA_FLOW_DESIGN.md)** - バックテスト / ペーパートレード / 本番トレードのデータフロー
-3. **[DEVELOPMENT_RULES.md](../DEVELOPMENT_RULES.md)** - 開発ルール・テスト戦略・コミットメッセージ規約
-4. **[ACTION_LIST.md](../ACTION_LIST.md)** - 進行中・完了済み・却下した施策一覧
+#### 3-4. BybitExchange (Bybit実装)
+```
+read_file('docs/analysis/src/bybit_exchange.json', startLine=1, endLine=153)
+```
 
-### Step 4: 整合性確認
-プロジェクト全容を把握した後、以下の観点で整合性を検証：
+#### 3-5. BitgetExchange (Bitget実装)
+```
+read_file('docs/analysis/src/bitget_exchange.json', startLine=1, endLine=120)
+```
 
-- ✅ **src/ JSONの統一性**: 全18ファイルが `format_version: "2.0"` を採用
+#### 3-6. Portfolio (ポジション・残高管理)
+```
+read_file('docs/analysis/src/portfolio.json', startLine=1, endLine=183)
+```
+
+#### 3-7. Logger (ログ管理)
+```
+read_file('docs/analysis/src/logger.json', startLine=1, endLine=119)
+```
+
+#### 3-8. TradeLogger (トレードログ管理)
+```
+read_file('docs/analysis/src/trade_logger.json', startLine=1, endLine=95)
+```
+
+---
+
+### Step 4: サポートモジュール（PRIORITY: ★★★☆☆）
+以下の10ファイルを**全行読み込み**してください。
+
+#### 4-1. Order (注文情報)
+```
+read_file('docs/analysis/src/order.json', startLine=1, endLine=70)
+```
+
+#### 4-2. Event (イベントバス)
+```
+read_file('docs/analysis/src/event.json', startLine=1, endLine=60)
+```
+
+#### 4-3. Side (売買方向)
+```
+read_file('docs/analysis/src/side.json', startLine=1, endLine=45)
+```
+
+#### 4-4. Metrics (メトリクス集計)
+```
+read_file('docs/analysis/src/metrics.json', startLine=1, endLine=140)
+```
+
+#### 4-5. Util (ユーティリティ)
+```
+read_file('docs/analysis/src/util.json', startLine=1, endLine=95)
+```
+
+#### 4-6. Visualizer (可視化)
+```
+read_file('docs/analysis/src/visualizer.json', startLine=1, endLine=128)
+```
+
+#### 4-7. NewIndicators (新規指標)
+```
+read_file('docs/analysis/src/new_indicators.json', startLine=1, endLine=110)
+```
+
+#### 4-8. VCPStrategy (VCP戦略)
+```
+read_file('docs/analysis/src/vcp_strategy.json', startLine=1, endLine=105)
+```
+
+#### 4-9. MeanReversionStrategy (平均回帰戦略)
+```
+read_file('docs/analysis/src/mean_reversion_strategy.json', startLine=1, endLine=98)
+```
+
+#### 4-10. MarketRegimeDetector (市場体制検出)
+```
+read_file('docs/analysis/src/market_regime_detector.json', startLine=1, endLine=115)
+```
+
+---
+
+### Step 5: 整合性確認チェックリスト
+全23ファイル読み込み後、以下を確認してください：
+
+- ✅ **フォーマット統一**: 全ファイルが `format_version: "2.0"` を採用しているか
 - ✅ **責務の明確性**: 各クラスの `responsibility.primary` が唯一に定義されているか
-- ✅ **依存関係の閉包性**: 循環依存がないか（DAG構造）
+- ✅ **依存関係の閉包性**: 循環依存がないか（Bot → Strategy → RiskManagement → Config のDAG構造）
 - ✅ **エラーハンドリング**: critical_methods が例外対応を記載しているか
-- ✅ **テスト推奨事項**: テストケース提案が実装可能か
-
----
-## ディレクトリ構成
-
-### `/src/` - ソースコード分析結果
-`src/` フォルダ以下のPythonファイルを自動解析したJSON形式の分析成果物。各ファイルは対応するソースファイルの構造（クラス、メソッド、関数など）を記録します。
-
-**対象ファイル** (18個):
-- `bot.json`, `bybit_exchange.json`, `config.json`
-- `event.json`, `exchange.json`, `exit_strategy_v2.json`
-- `logger.json`, `metrics.json`, `ohlcv_cache.json`, `ohlcv_cache_inspector.json`
-- `order.json`, `portfolio.json`, `price_data_management.json`
-- `risk_management.json`, `side.json`, `trading_strategy.json`
-- `util.json`, `visualizer.json`
-
-**フォーマット**: ANALYSIS_SCHEMA_V2.json に準拠（Level 1 フォーマット）
-- `metadata`: 分析時刻・Python版・フォーマット版
-- `file_overview`: 目的・行数・クラス数・責務定義
-- `classes[]`: クラスごとの責務・メソッド・エラーハンドリング
-- `summary`: スコア（アーキテクチャ、テスト容易性、保守性）
+- ✅ **テスト推奨事項**: test_recommendations が具体的か
 
 ---
 
-## ルートレベル - スキーマ・レポート
+## 📊 読み込み完了後の報告テンプレート
 
-### スキーマ定義
-- **ANALYSIS_SCHEMA_V2.json** - Level 1+ フォーマットのJSON Schema定義
+全ファイル読み込み完了後、以下のフォーマットで報告してください：
 
-### 戦略・分析レポート  
+```
+✅ プロジェクト分析ファイル読み込み完了
+
+【読み込み統計】
+- スキーマ定義: 1ファイル (ANALYSIS_SCHEMA_V2.json)
+- クリティカルモジュール: 5ファイル (Bot, Config, TradingStrategy, RiskManagement, ExitStrategyV2)
+- データ管理・実行基盤: 8ファイル (PriceDataManagement, OHLCVCache, Exchange, BybitExchange, BitgetExchange, Portfolio, Logger, TradeLogger)
+- サポートモジュール: 10ファイル (Order, Event, Side, Metrics, Util, Visualizer, NewIndicators, VCPStrategy, MeanReversionStrategy, MarketRegimeDetector)
+- 合計: 24ファイル (23個のソース分析 + 1個のスキーマ定義)
+
+【理解度確認】
+- システムアーキテクチャ: Bot がオーケストレーター、Config が設定ハブ、Strategy が意思決定
+- データフロー: PriceDataManagement → OHLCVCache → TradingStrategy → Bot → Exchange
+- リスク管理: RiskManagement がポジションサイズ・PSAR/ADX計算、ExitStrategyV2 が4段階Exit判定
+- 依存関係: DAG構造、循環依存なし
+
+【次のアクション】
+- ユーザーからのタスク指示を待機
+```
+
+---
+
+## 📁 ディレクトリ構成
+
+### `/src/` - ソースコード分析結果（23ファイル）
+全Pythonソースファイルの詳細分析JSON。ANALYSIS_SCHEMA_V2.json準拠。
+
+**クリティカルモジュール** (5ファイル):
+- `bot.json` (338行)
+- `config.json` (537行)
+- `trading_strategy.json` (183行)
+- `risk_management.json` (169行)
+- `exit_strategy_v2.json` (284行)
+
+**データ管理・実行基盤** (8ファイル):
+- `price_data_management.json` (240行)
+- `ohlcv_cache.json` (134行)
+- `exchange.json` (109行)
+- `bybit_exchange.json` (153行)
+- `bitget_exchange.json` (120行)
+- `portfolio.json` (183行)
+- `logger.json` (119行)
+- `trade_logger.json` (95行)
+
+**サポートモジュール** (10ファイル):
+- `order.json`, `event.json`, `side.json`, `metrics.json`, `util.json`, `visualizer.json`
+- `new_indicators.json`
+- `vcp_strategy.json`, `mean_reversion_strategy.json`
+- `market_regime_detector.json`
+
+### ルートレベル - スキーマ・レポート
+- **ANALYSIS_SCHEMA_V2.json** (435行) - Level 1+ フォーマットのJSON Schema定義
 - **UPDATE_STRATEGY_SUMMARY.json** - 戦略更新・改善施策の総括
 - **project_structure.json** - gen2 ブランチのプロジェクト構成メタデータ
 
 ---
 
-## 効率的な参照方法
+## 🔗 関連ドキュメント（読み込み後に参照推奨）
 
-### 1. クリティカルモジュール構造の確認（最初の 5 分）
-```bash
-# Bot のメイン処理フロー
-jq '.classes[0].responsibility' docs/analysis/src/bot.json
-
-# Config パラメータ全体像
-jq '.file_overview + .classes[0].methods | .[0:5]' docs/analysis/src/config.json
-
-# Trading Strategy のシグナル生成
-jq '.classes[0].methods[] | select(.name == "generate_signal")' docs/analysis/src/trading_strategy.json
-```
-
-### 2. システムアーキテクチャの把握（10 分）
-```bash
-# 依存関係を見る
-jq '.file_overview' docs/analysis/src/bot.json
-jq '.file_overview' docs/analysis/src/price_data_management.json
-
-# 外部ドキュメント参照
-cat docs/ARCHITECTURE_OVERVIEW.md
-```
-
-### 3. エラーハンドリング・テスト戦略の確認（必要時）
-```bash
-# 各クラスのエラーハンドリング
-jq '.classes[0] | {name: .class_name, error_handling}' docs/analysis/src/*.json
-
-# テスト推奨事項
-jq '.classes[0].test_recommendations' docs/analysis/src/trading_strategy.json
-```
-
----
-
-## ドキュメント管理ルール
-
-1. **ソース分析JSON** (`src/*.json`):
-   - フォーマット: ANALYSIS_SCHEMA_V2.json に準拠
-   - 更新: 手動（ソースコード変更後に手動で再分析）
-   - コミット対象: Yes（参考資料・設計ドキュメント）
-
-2. **スキーマ・メタデータ** (ルートレベル):
-   - `ANALYSIS_SCHEMA_V2.json`: フォーマット定義（変更はめったにない）
-   - `project_structure.json`: プロジェクト構成（ファイル追加・削除時に更新）
-   - `UPDATE_STRATEGY_SUMMARY.json`: 戦略更新記録（施策実装時に更新）
-
-3. **古いファイルの削除**:
-   - フォーマット統一のため、旧フォーマット（v1.0以前）のJSONは削除
-   - 不要な分析ファイル（テスト結果など）は `_archive/` に移動
-
-4. **参照リンク**:
-   - `docs/` ルートドキュメント（ARCHITECTURE, DEVELOPMENT_RULES など）への参照は絶対パスで記載
-   - 例: `../ARCHITECTURE_OVERVIEW.md`, `../PRICE_DATA_FLOW_DESIGN.md`
-
----
-
-## トラブルシューティング
-
-### Q: JSON ファイルが古いフォーマットのように見える
-**A:** `format_version` フィールドを確認してください。`2.0` 以上が新フォーマットです。
-```bash
-jq '.metadata.format_version' docs/analysis/src/bot.json
-```
-
-### Q: 新しいソースファイルを追加した
-**A:** 対応する分析JSONを手動で作成してください（ANALYSIS_SCHEMA_V2.json に準拠）。
-```bash
-# テンプレートから生成
-python << 'EOF'
-import json
-template = {
-  "metadata": {"source_file": "src/new_module.py", "format_version": "2.0", ...},
-  "file_overview": {...},
-  "classes": [...],
-  "summary": {...}
-}
-print(json.dumps(template, indent=2, ensure_ascii=False))
-EOF
-```
-
-### Q: プロジェクト全容がわかりにくい
-**A:** 推奨手順に従ってください：
-1. ANALYSIS_SCHEMA_V2.json でフォーマット確認（2 分）
-2. `docs/analysis/src/bot.json` でメイン処理確認（3 分）
-3. `docs/ARCHITECTURE_OVERVIEW.md` でモジュール関係図確認（5 分）
-4. 各 `src/*.json` で詳細確認（時間がある時）
-
-
-3. **スキーマ・定義** (SOURCE_ANALYSIS_SCHEMA.json 他):
-   - 仕様変更時のみ更新
-   - 変更履歴を記録
-
-4. **一時的なレポート**:
-   - `report_tmp/` に移動（見直し予定のもの）
-   - Git管理外（.gitignore）
-
----
-
-## 関連ドキュメント
-
-- `docs/DEVELOPMENT_RULES.md` - 開発ルール全般
+- `docs/ARCHITECTURE_OVERVIEW.md` - システムアーキテクチャ概要
+- `DEVELOPMENT_RULES.json` - 開発ルール全般
 - `docs/ACTION_LIST.md` - 課題・改善項目管理
-- `docs/ARCHITECTURE_OVERVIEW.md` - アーキテクチャ概要
-- `src/source_analyzer.py` - ソース分析ツール
+- `docs/PRICE_DATA_FLOW_DESIGN.md` - データフロー設計
+- `DEVELOPMENT_RULES.json` - 開発ルール（JSON形式）
+- `PROGRESS.json` - プロジェクト進捗状況

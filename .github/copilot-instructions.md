@@ -36,7 +36,7 @@
 
 作業前に以下を確認：
 - `docs/ACTION_LIST.md` - タスク管理（TODO/PROGRESS/DONE）
-- `docs/DEVELOPMENT_RULES.md` - 開発ルール詳細
+- `DEVELOPMENT_RULES.json` - 開発ルール（JSON形式）
 - `docs/ARCHITECTURE_OVERVIEW.md` - システムアーキテクチャ
 - `PROGRESS.json` - 現在の進捗状況
 - `DEVELOPMENT_RULES.json` - 開発ルール（JSON形式）
@@ -109,9 +109,14 @@ docs: ACTION_LIST更新 - Task 39b完了記録
 satosystem/
 ├── PROGRESS.json              # 進捗管理（JSON形式）
 ├── DEVELOPMENT_RULES.json     # 開発ルール（JSON形式）
+├── commands/                  # プロジェクトコマンド
+│   ├── prj-init               # プロジェクト初期化
+│   ├── prj-help               # コマンド一覧表示
+│   ├── prj-action-list        # TODO表示
+│   ├── prj-load-analysis      # 分析JSON読み込み
+│   └── prj-run-regression     # レグレッションテスト実行
 ├── docs/
 │   ├── ACTION_LIST.md         # タスク管理
-│   ├── DEVELOPMENT_RULES.md   # 開発ルール詳細
 │   ├── ARCHITECTURE_OVERVIEW.md
 │   └── analysis/src/          # ソースコード分析（23 JSON files）
 ├── src/                       # 本体ソースコード（23 Python modules）
@@ -126,6 +131,18 @@ satosystem/
 ### 開発ルール表示
 ```bash
 python3 tools/load_development_rules.py
+# または
+./commands/prj-init
+```
+
+### コマンド一覧
+```bash
+./commands/prj-help
+```
+
+### 次のアクションプラン（TODO）表示
+```bash
+./commands/prj-action-list
 ```
 
 ### 進捗更新
@@ -143,17 +160,17 @@ python3 tools/update_progress.py --task-start "39c" --description "実装開始"
 ## 作業フロー
 
 1. **タスク開始時**
-   - `docs/ACTION_LIST.md`のTODO確認
+   - `docs/ACTION_LIST.md`のTODO確認、または `./commands/prj-action-list`実行
    - `python3 tools/update_progress.py --task-start <ID>`
    - ACTION_LIST.mdのPROGRESSセクション更新
 
 2. **実装中**
-   - DEVELOPMENT_RULES.md遵守
+   - DEVELOPMENT_RULES.json遵守
    - 変更はファイル・機能単位で分割
    - テストを並行して作成
 
 3. **完了時**
-   - レグレッションテスト実行
+   - レグレッションテスト実行: `./commands/prj-run-regression`
    - `git status`で変更確認
    - ユーザーに変更内容報告 → 許可取得
    - コミット実行
@@ -170,6 +187,6 @@ python3 tools/update_progress.py --task-start "39c" --description "実装開始"
 ---
 
 詳細は以下を参照：
-- 開発ルール詳細: `docs/DEVELOPMENT_RULES.md` または `DEVELOPMENT_RULES.json`
+- 開発ルール詳細: `DEVELOPMENT_RULES.json`
 - 進捗詳細: `PROGRESS.json`
 - タスク詳細: `docs/ACTION_LIST.md`

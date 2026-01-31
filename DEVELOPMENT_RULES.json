@@ -47,8 +47,8 @@
   "documentation_management": {
     "core_documents": [
       {
-        "file": "docs/DEVELOPMENT_RULES.md",
-        "purpose": "本ルールを収録し、すべてのメンバーが参照する",
+        "file": "DEVELOPMENT_RULES.json",
+        "purpose": "本ルールをJSON形式で収録し、すべてのメンバーが参照する",
         "required": true
       },
       {
@@ -153,6 +153,16 @@
       "progress_tracking": {
         "statuses": ["TODO", "PROGRESS", "DONE"],
         "requirement": "進捗は明示的にステータスで示す"
+      },
+      "progress_json_updates": {
+        "requirement": "タスク開始・完了時やコミット時にPROGRESS.jsonを更新",
+        "tool": "tools/update_progress.py",
+        "update_triggers": [
+          "タスク開始時: python3 tools/update_progress.py --task-start <ID> --description <内容>",
+          "タスク完了時: python3 tools/update_progress.py --task-complete <ID> --description <内容>",
+          "コミット時: python3 tools/update_progress.py --commit"
+        ],
+        "manual_update": "必要に応じてPROGRESS.jsonを直接編集（JSON形式を壊さないよう注意）"
       }
     },
     "design_review": {

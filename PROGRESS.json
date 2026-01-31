@@ -99,7 +99,7 @@
     "core_documents": [
       "docs/ACTION_LIST.md",
       "docs/ARCHITECTURE_OVERVIEW.md",
-      "docs/DEVELOPMENT_RULES.md",
+      "DEVELOPMENT_RULES.json",
       "docs/PROFIT_ENHANCEMENT_STRATEGY_2026.md",
       "docs/PRICE_DATA_FLOW_DESIGN.md",
       "docs/TRADE_LOG_USAGE_GUIDE.md",
@@ -180,7 +180,7 @@
     }
   },
   "notes": {
-    "workflow": "DEVELOPMENT_RULES.mdに基づいた開発フロー遵守",
+    "workflow": "DEVELOPMENT_RULES.jsonに基づいた開発フロー遵守",
     "testing": "変更前に必ずレグレッションテスト実施",
     "documentation": "各タスク完了時にACTION_LIST.md更新",
     "commit_policy": "機能追加は個別コミット、バグ修正は即時コミット",

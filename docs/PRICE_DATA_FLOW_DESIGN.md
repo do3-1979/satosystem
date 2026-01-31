@@ -385,7 +385,7 @@ config.ini:
 ## 参考資料
 
 - [ARCHITECTURE_OVERVIEW.md](ARCHITECTURE_OVERVIEW.md) - システムアーキテクチャ・モジュール構成
-- [DEVELOPMENT_RULES.md](DEVELOPMENT_RULES.md) - 開発ルール・実行モード設定
+- [DEVELOPMENT_RULES.json](../DEVELOPMENT_RULES.json) - 開発ルール・実行モード設定
 - [docs/analysis/src/price_data_management.json](docs/analysis/src/price_data_management.json) - PriceDataManagement クラス分析
 - [docs/analysis/src/bybit_exchange.json](docs/analysis/src/bybit_exchange.json) - BybitExchange クラス分析
 

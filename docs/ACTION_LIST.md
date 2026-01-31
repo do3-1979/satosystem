@@ -1,6 +1,6 @@
 # ACTION LIST
 
-このファイルでは `DEVELOPMENT_RULES.md` に基づいて、現在の gen2 ブランチの課題をTODO/PROGRESS/DONE で管理します。
+このファイルでは `DEVELOPMENT_RULES.json` に基づいて、現在の gen2 ブランチの課題をTODO/PROGRESS/DONE で管理します。
 
 ## TODO
 
@@ -65,7 +65,7 @@
 | **戦略最適化**          | 18  | 2025年成績悪化の根本原因分析・四半期別分析 → Stage 1-4 改善戦略策定                            | 2025-12-09          | ★★★★★ |
 | **個別トレード改善**    | 19  | 出口戦略の複合指標化（PSAR + PVO + ADX） → MFE失われた利益を75%削減                           | 2025-12-10          | ★★★★★ |
 | **個別トレード改善**    | 19a | ExitStrategyV2 統合 - Q4 2025 で -2.63 → +368.20 USD に改善、勝率 100%達成                   | 2025-12-10          | ★★★★★ |
-| Document governance    | -   | `docs/DEVELOPMENT_RULES.md`、`docs/ACTION_LIST.md`、`docs/analysis/project_structure.json` 整備 | 2025-11-26          | ★★★★☆ |
+| Document governance    | -   | `DEVELOPMENT_RULES.json`、`docs/ACTION_LIST.md`、`docs/analysis/project_structure.json` 整備 | 2025-11-26          | ★★★★☆ |
 | Update architecture    | -   | `docs/ARCHITECTURE_OVERVIEW.md` を gen2 現況に合わせて更新                                      | 2025-11-26          | ★★★★☆ |
 | Backtest optimization  | 2   | `price_data_management.py` 1分刻み → 2時間足刻み進行、`trading_strategy.py` ストップ判定改善  | 2025-11-27 (9f6f0da) | ★★★★☆ |
 | Cleanup local assets   | -   | 非追跡キャッシュ削除、`.gitignore` 更新、ローカル運用方針明記                                  | 2025-11-27          | ★★★★☆ |
