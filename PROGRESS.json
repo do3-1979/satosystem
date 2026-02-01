@@ -11,9 +11,9 @@
     }
   },
   "latest_commit": {
-    "hash": "79bef2f",
+    "hash": "42e3ffc",
     "date": "2026-02-01",
-    "message": "chore: commands/フォルダ新設 + DEVELOPMENT_RULES.json強化 + prj-helpコマンド追加",
+    "message": "feat: ACTION_LIST.mdをJSON化 - ACTION_LIST.json作成、全ドキュメント整合性確保",
     "changes": {
       "files_changed": 14,
       "lines_added": 4,
