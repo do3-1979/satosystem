@@ -1,14 +1,28 @@
 import os
 import json
 import zipfile
-import pandas as pd
+try:
+    import pandas as pd  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+    pd = None
 from datetime import datetime
 import logging
-import openpyxl
-from openpyxl import load_workbook
-from openpyxl.utils.dataframe import dataframe_to_rows
-from openpyxl.chart import LineChart, Reference
-from bybit_exchange import BybitExchange
+try:
+    import openpyxl  # type: ignore
+    from openpyxl import load_workbook  # type: ignore
+    from openpyxl.utils.dataframe import dataframe_to_rows  # type: ignore
+    from openpyxl.chart import LineChart, Reference  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+    openpyxl = None
+    load_workbook = None
+    dataframe_to_rows = None
+    LineChart = None
+    Reference = None
+
+try:
+    from bybit_exchange import BybitExchange
+except Exception:  # pragma: no cover
+    BybitExchange = None
 from config import Config
 import pprint
 import re
@@ -25,6 +39,11 @@ class Util:
             start_time (str): 開始時刻 (%Y/%m/%d %H:%M:%S 形式)
             end_time (str): 終了時刻 (%Y/%m/%d %H:%M:%S 形式)
         """
+        if pd is None:
+            raise ModuleNotFoundError("pandas が未インストールのため、Util.extract_and_export_logs は実行できません")
+        if openpyxl is None or load_workbook is None or dataframe_to_rows is None or LineChart is None or Reference is None:
+            raise ModuleNotFoundError("openpyxl が未インストールのため、Util.extract_and_export_logs は実行できません")
+
         if start_time and end_time:
             start_time = datetime.strptime(start_time, "%Y/%m/%d %H:%M")
             end_time = datetime.strptime(end_time, "%Y/%m/%d %H:%M")

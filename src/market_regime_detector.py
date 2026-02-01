@@ -195,6 +195,45 @@ class MarketRegimeDetector:
                 return None
         
         return sum(atr_values[-ma_period:]) / len(atr_values[-ma_period:])
+
+    def _detect_swing_direction(self, ohlcv_data, lookback_period):
+        """
+        スイング構造を判定します（上昇スイング、下降スイング、横ばい）
+
+        Args:
+            ohlcv_data (list): OHLCV データリスト
+            lookback_period (int): 遡り期間
+
+        Returns:
+            int: -1 (下降スイング), 0 (横ばい/不確定), 1 (上昇スイング)
+        """
+        if len(ohlcv_data) < lookback_period:
+            return 0
+
+        recent = ohlcv_data[-lookback_period:]
+
+        highs = [c['high_price'] for c in recent]
+        lows = [c['low_price'] for c in recent]
+
+        mid_point = len(recent) // 2
+        if mid_point <= 0:
+            return 0
+
+        first_half_high = max(highs[:mid_point])
+        first_half_low = min(lows[:mid_point])
+        second_half_high = max(highs[mid_point:])
+        second_half_low = min(lows[mid_point:])
+
+        higher_high = second_half_high > first_half_high
+        higher_low = second_half_low > first_half_low
+        lower_high = second_half_high < first_half_high
+        lower_low = second_half_low < first_half_low
+
+        if higher_high and higher_low:
+            return 1
+        if lower_high and lower_low:
+            return -1
+        return 0
     
     def detect_regime_simple(self, ohlcv_data, lookback_period=20):
         """
@@ -292,49 +331,6 @@ class MarketRegimeDetector:
             'recent_range': recent_range,
             'overall_range': overall_range
         }
-
-        """
-        スイング構造を判定します（上昇スイング、下降スイング、横ばい）
-        
-        Args:
-            ohlcv_data (list): OHLCV データリスト
-            lookback_period (int): 遡り期間
-        
-        Returns:
-            int: -1 (下降スイング), 0 (横ばい/不確定), 1 (上昇スイング)
-        """
-        if len(ohlcv_data) < lookback_period:
-            return 0
-        
-        recent = ohlcv_data[-lookback_period:]
-        
-        # 直近のHigh と Lowを取得
-        highs = [c['high_price'] for c in recent]
-        lows = [c['low_price'] for c in recent]
-        
-        # 最初と最後の半分で比較
-        mid_point = len(recent) // 2
-        
-        first_half_high = max(highs[:mid_point])
-        first_half_low = min(lows[:mid_point])
-        second_half_high = max(highs[mid_point:])
-        second_half_low = min(lows[mid_point:])
-        
-        # スイング判定
-        higher_high = second_half_high > first_half_high
-        higher_low = second_half_low > first_half_low
-        lower_high = second_half_high < first_half_high
-        lower_low = second_half_low < first_half_low
-        
-        # 上昇スイング判定
-        if higher_high and higher_low:
-            return 1  # TRENDING_UP
-        # 下降スイング判定
-        elif lower_high and lower_low:
-            return -1  # TRENDING_DOWN
-        # 横ばい判定
-        else:
-            return 0  # RANGING or TRANSITION
 
 
 if __name__ == "__main__":

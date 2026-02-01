@@ -1,4 +1,14 @@
-import ccxt
+"""exchange.py
+
+NOTE:
+- このモジュールは抽象的な Exchange 基底クラスを提供します。
+- ccxt はここでは直接使用していないため、未導入環境でも import 可能なように任意依存として扱います。
+"""
+
+try:
+    import ccxt  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+    ccxt = None
 
 class Exchange:
     """
