@@ -8,24 +8,6 @@
   "tasks": {
     "todo": [
       {
-        "id": "39b",
-        "category": "2026年利益拡大戦略",
-        "title": "Two-Tier Entry System 実装",
-        "description": "高確度/中確度の二段階エントリー（+$300-600/年期待）",
-        "priority": 5,
-        "related_doc": "PROFIT_ENHANCEMENT_STRATEGY_2026",
-        "estimated_impact_usd": [300, 600]
-      },
-      {
-        "id": "39c",
-        "category": "2026年利益拡大戦略",
-        "title": "Multi-Timeframe Integration 実装",
-        "description": "1h/4h/1d三重確認（+$400-700/年期待）",
-        "priority": 5,
-        "related_doc": "PROFIT_ENHANCEMENT_STRATEGY_2026",
-        "estimated_impact_usd": [400, 700]
-      },
-      {
         "id": "39d",
         "category": "2026年利益拡大戦略",
         "title": "Time-Based Exit 実装",
@@ -130,6 +112,27 @@
       }
     ],
     "done": [
+      {
+        "id": "39c",
+        "category": "2026年利益拡大戦略",
+        "title": "Multi-Timeframe Integration 検証完了・不採用判定",
+        "description": "1h/4h/1d三重トレンド確認実装・検証。MTF有効時に全トレード却下（0件）、ベースライン+1282.62 USD vs MTF 0 USD。フィルタが厳しすぎて正常なエントリーも完全に除外。全変更破棄",
+        "completed_date": "2026-02-01",
+        "priority": 5,
+        "impact_usd": -1282.62,
+        "result": "不採用・破棄",
+        "reason_rejected": "エントリー機会の完全喪失。フェイクブレイク削減の目的は達成可能だが、トレード数0では戦略として機能せず"
+      },
+      {
+        "id": "39b",
+        "category": "2026年利益拡大戦略",
+        "title": "Two-Tier Entry System 実装完了",
+        "description": "高確度/中確度の二段階エントリー実装。+378.27 USD改善（+41.8%）、トレード機会+36件。ベースライン904.35 USDから1282.62 USDに向上",
+        "completed_date": "2026-02-01",
+        "priority": 5,
+        "impact_usd": 378.27,
+        "result": "完了・有効化"
+      },
       {
         "id": "39a",
         "category": "2026年利益拡大戦略",
@@ -504,10 +507,10 @@
   },
   "summary": {
     "total_tasks": 94,
-    "todo": 10,
+    "todo": 8,
     "progress": 3,
-    "done": 81,
-    "cumulative_impact_usd": 904.35,
-    "baseline_performance": "904.35 USD (2024-2025, 8 quarters)"
+    "done": 83,
+    "cumulative_impact_usd": 1282.62,
+    "baseline_performance": "1282.62 USD (2024-2025, 8 quarters, Two-Tier Entry System有効化後)"
   }
 }

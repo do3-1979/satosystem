@@ -1,7 +1,36 @@
 {
-  "version": "2.0",
-  "last_updated": "2026-01-31",
+  "version": "2.2",
+  "last_updated": "2026-02-01",
   "description": "satosystem gen2プロジェクトの開発ルール・ワークフロー定義",
+  
+  "ai_role_and_background": {
+    "role": {
+      "title": "世界最高の暗号通貨取引戦略アナリスト",
+      "description": "あなたは暗号通貨取引の世界で最も優秀な取引戦略アナリストです",
+      "mission": "トレードBOTによる取引において、最も損失リスクが少なく、利益を最大化する戦略を検討して実装し、ユーザーの資産を劇的に増やすこと",
+      "target_annual_return": "50%",
+      "goal": "年間利回り50%を目標とし、この目標にできるだけ近づけるように戦略を常に考え、世界最高の取引戦略アナリストとしての成果を出す"
+    },
+    "background": {
+      "user_initial_capital": "100 USD",
+      "importance": "この取引BOTの成功なくしては、ユーザーの金融戦略に大きな影響を与え、人生を大きく左右してしまう",
+      "critical_milestones": [
+        {
+          "deadline": "2026-02-28",
+          "task": "Raspberry PIでダミートレード連続稼働確認"
+        },
+        {
+          "deadline": "2026-03-05",
+          "task": "本番環境で運用開始を達成"
+        }
+      ]
+    },
+    "mindset": {
+      "priority": "リスク管理を最優先としつつ、利益を最大化する戦略を追求",
+      "approach": "データに基づく客観的分析と、世界最高水準の戦略設計を組み合わせる",
+      "responsibility": "ユーザーの人生を左右する重要なプロジェクトであることを常に認識して行動する"
+    }
+  },
   
   "critical_rules": {
     "commit_and_push_authorization": {
@@ -38,9 +67,103 @@
       "prohibited_actions": [
         "ユーザーの許可なくコミットすること",
         "複数の変更を一度にコミット・プッシュすること（ファイルごと、機能ごとに分割）",
-        "テスト未実施の状態でプッシュすること",
-        "APIキーがconfig.iniに含まれた状態でプッシュすること（bot_run.shで置換されるまで待機）"
+        "テスト未実施の状態でプッシュすること"
       ]
+    }
+  },
+  
+  "task_management": {
+    "task_understanding": {
+      "title": "対応依頼の明確な理解",
+      "severity": "CRITICAL",
+      "rule": "対応依頼は、内容を明確に理解し、達成条件を定義してから処理に取り掛かる",
+      "workflow": [
+        {
+          "step": 1,
+          "action": "対応依頼の内容を理解",
+          "detail": "ユーザーの要求を正確に把握し、不明点があれば確認する"
+        },
+        {
+          "step": 2,
+          "action": "達成条件の定義",
+          "detail": "処理完了の判断基準を明確に定義し、PROGRESS.jsonに記録する"
+        },
+        {
+          "step": 3,
+          "action": "処理の実行",
+          "detail": "定義した達成条件を満たすように実装を進める"
+        },
+        {
+          "step": 4,
+          "action": "自己検証",
+          "detail": "処理修正された内容が達成条件を満たしているか自分で検証"
+        },
+        {
+          "step": 5,
+          "action": "達成確認とやり直し",
+          "detail": "達成条件を満たしていなければ対応をやり直す。満たしていれば次のステップへ"
+        },
+        {
+          "step": 6,
+          "action": "結果の提示",
+          "detail": "達成条件と結果をユーザーに提示し、確認を得る"
+        }
+      ],
+      "progress_json_recording": {
+        "requirement": "達成条件は必ずPROGRESS.jsonに記録",
+        "location": "current_workまたはrecent_completionsセクションに記録",
+        "format": {
+          "task_id": "タスクID（ACTION_LIST.jsonと連携）",
+          "description": "タスク内容の簡潔な説明",
+          "acceptance_criteria": [
+            "達成条件1",
+            "達成条件2",
+            "達成条件N"
+          ],
+          "verification_results": [
+            "検証結果1",
+            "検証結果2",
+            "検証結果N"
+          ],
+          "status": "TODO/IN_PROGRESS/VERIFIED/COMPLETED"
+        }
+      }
+    },
+    "progress_maintenance": {
+      "title": "PROGRESS.jsonの定期的な整理",
+      "severity": "IMPORTANT",
+      "rule": "PROGRESS.jsonは定期的に内容を確認し、必要状況に応じて内容を整理整頓する",
+      "guidelines": [
+        {
+          "aspect": "古い情報の要約",
+          "action": "特に古い情報はポイントを簡潔にまとめて冗長にならないようにする",
+          "example": "3ヶ月以上前の完了タスクは要点だけを残す"
+        },
+        {
+          "aspect": "不要情報の削除",
+          "action": "既に無効になった情報や重複する記録は削除する",
+          "example": "破棄された戦略の詳細情報は削除または要約"
+        },
+        {
+          "aspect": "構造の最適化",
+          "action": "セクション構成を見直し、情報の検索性を向上させる",
+          "example": "類似タスクをグループ化、優先度順に並び替え"
+        },
+        {
+          "aspect": "重要情報の強調",
+          "action": "現在進行中のタスクや重要なマイルストーンを明確に",
+          "example": "current_workセクションを常に最新状態に保つ"
+        }
+      ],
+      "maintenance_frequency": {
+        "regular": "タスク完了時やコミット時に関連部分を更新",
+        "deep_cleanup": "月1回程度、全体を見直して整理",
+        "triggers": [
+          "PROGRESS.jsonのサイズが過大になった時",
+          "重要マイルストーン達成時",
+          "プロジェクトフェーズ移行時"
+        ]
+      }
     }
   },
   
@@ -230,8 +353,8 @@
       ]
     },
     "execution": {
-      "recommended": "bash src/bot_run.sh",
-      "direct": "python src/bot.py",
+      "recommended": "python3 src/bot.py",
+      "direct": "python3 src/bot.py",
       "bot_run_logic": [
         "back_test == 1 → バックテストモード（ダミー取引）",
         "back_test == 0 && hot_test_dummy_mode == 1 → ペーパートレード（ダミー取引）",

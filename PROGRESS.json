@@ -5,15 +5,20 @@
     "branch": "gen2",
     "last_updated": "2026-02-01",
     "baseline_performance": {
-      "cumulative_pnl_usd": 904.35,
-      "period": "2024-2025 (8 quarters)",
-      "baseline_file": "baseline_backup/BASELINE_904.35USD_20251221.json"
+      "cumulative_pnl_usd": 1282.62,
+      "period": "2024-2025 (8 quarters, Two-Tier Entry System有効化後)",
+      "baseline_file": "baseline_backup/BASELINE_1282.62USD_20260201.json",
+      "previous_baseline": {
+        "cumulative_pnl_usd": 904.35,
+        "improvement_usd": 378.27,
+        "improvement_percent": 41.8
+      }
     }
   },
   "latest_commit": {
-    "hash": "42e3ffc",
+    "hash": "126c2c3",
     "date": "2026-02-01",
-    "message": "feat: ACTION_LIST.mdをJSON化 - ACTION_LIST.json作成、全ドキュメント整合性確保",
+    "message": "chore: PROGRESS.json更新 - コミット42e3ffc記録",
     "changes": {
       "files_changed": 14,
       "lines_added": 4,
@@ -55,6 +60,45 @@
       ]
     },
     "recently_completed": [
+      {
+        "task_id": "FIX-REG-001",
+        "title": "bot_run.sh依存削除（レグレッション修正）",
+        "date": "2026-02-01",
+        "description": "bot_run.sh廃止方針に合わせ、レグレッションテストがbot.py直接実行でバックテスト検証できるように修正し、bot_run.shを削除。開発ルールの推奨実行コマンドも更新。",
+        "acceptance_criteria": [
+          "test/regression_test_suite.py が src/bot_run.sh を呼ばない",
+          "バックテスト検証が python3 src/bot.py 直接実行で完走する",
+          "src/bot_run.sh が削除されている",
+          "DEVELOPMENT_RULES.json の推奨実行コマンドが bot.py 直接実行に更新されている"
+        ],
+        "verification_results": [
+          "subprocess 実行が bash src/bot_run.sh → python3 src/bot.py test <start> <end> に変更済み",
+          "backtest 単体実行で [OK] backtest を確認",
+          "src/bot_run.sh が存在しないことを確認",
+          "DEVELOPMENT_RULES.json execution.recommended/direct を python3 src/bot.py に更新済み"
+        ]
+      },
+      {
+        "task_id": "DEV-RULES-001",
+        "title": "DEVELOPMENT_RULES.jsonにタスク管理ルール追加",
+        "date": "2026-02-01",
+        "description": "命令.txtに基づき、対応依頼の明確化・達成条件定義・検証・やり直しのワークフローをDEVELOPMENT_RULES.jsonに追加。PROGRESS.jsonの定期的な整理ルールも追加。",
+        "acceptance_criteria": [
+          "✅ DEVELOPMENT_RULES.jsonにtask_managementセクションを追加",
+          "✅ task_understanding（対応依頼の明確な理解）ルールを定義（6ステップworkflow）",
+          "✅ progress_maintenance（PROGRESS.jsonの定期的な整理）ルールを定義（4つのguidelines）",
+          "✅ 達成条件定義のフォーマットをPROGRESS.jsonに記録",
+          "✅ JSON妥当性が保たれている（構文エラーなし）",
+          "✅ バージョンを2.1→2.2に更新"
+        ],
+        "verification_results": [
+          "task_managementセクション追加完了（task_understanding + progress_maintenance）",
+          "PROGRESS.json記録フォーマット定義完了（acceptance_criteria/verification_results/status含む）",
+          "JSON妥当性確認完了（python3でパース成功、12セクション）",
+          "バージョン更新完了（2.1→2.2）",
+          "すべての達成条件を満たしていることを確認"
+        ]
+      },
       {
         "task_id": "39c",
         "title": "Multi-Timeframe Integration 検証完了・不採用判定",
@@ -164,12 +208,11 @@
   },
   "next_actions": {
     "immediate": [
-      "Task 39b: Two-Tier Entry System 実装開始（優先度最高）",
-      "Task 39c: Multi-Timeframe Integration 設計・実装",
+      "Task 39d: Time-Based Exit 実装開始（優先度最高）",
       "Task 22b/22c: Strategy B/C 有効化検討・評価"
     ],
     "planned": [
-      "Task 39d-f: Time-Based Exit / Dynamic Stop Loss / Weekend Avoidance 実装",
+      "Task 39e-f: Dynamic Stop Loss / Weekend Avoidance 実装",
       "Task 23a-b: Fear & Greed Index / RSI 二重確認実装",
       "Task 20b: マルチタイムフレーム ADX 実装完了"
     ],
@@ -182,12 +225,12 @@
   "performance_goals_2026": {
     "target": "年間累積損益 +$1,500-2,500",
     "strategy_contributions": {
-      "39b_two_tier_entry": "+$300-600",
-      "39c_multi_timeframe": "+$400-700",
-      "39d_time_based_exit": "+$100-200",
-      "39e_dynamic_stop_loss": "+$100-150",
-      "39f_weekend_avoidance": "+$100-200",
-      "current_baseline": "+$904 (2024-2025)"
+      "39b_two_tier_entry": "+$378.27 (完了・有効化)",
+      "39c_multi_timeframe": "不採用（全トレード却下で機能せず）",
+      "39d_time_based_exit": "+$100-200 (計画中)",
+      "39e_dynamic_stop_loss": "+$100-150 (計画中)",
+      "39f_weekend_avoidance": "+$100-200 (計画中)",
+      "current_baseline": "+$1,282.62 (39b実装後)"
     }
   },
   "notes": {
