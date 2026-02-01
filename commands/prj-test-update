@@ -1,0 +1,84 @@
+#!/bin/bash
+# prj-test-update - テストスイート自動更新・実行
+# ソースコード修正に応じてテストを追加修正し、全テストPASSまで実行
+
+set -e
+
+echo "🧪 テストスイート自動更新・実行"
+echo "=========================================="
+echo ""
+
+# プロジェクトルート確認
+if [ ! -d "test" ] || [ ! -d "src" ]; then
+    echo "❌ エラー: プロジェクトルートから実行してください"
+    exit 1
+fi
+
+# ソースファイルとテストファイルの対応を確認
+echo "📂 ソースファイルとテストの対応確認..."
+python3 << 'PYEOF'
+import os
+import glob
+
+src_files = glob.glob('src/*.py')
+src_files = [f for f in src_files if not f.endswith('__init__.py')]
+
+test_files = glob.glob('test/test_*_regression.py')
+test_map = {}
+
+for test_file in test_files:
+    base = os.path.basename(test_file)
+    # test_xxx_regression.py -> xxx
+    module = base.replace('test_', '').replace('_regression.py', '')
+    test_map[module] = test_file
+
+print(f"✅ ソースファイル: {len(src_files)}件")
+print(f"✅ テストファイル: {len(test_files)}件")
+print()
+
+missing_tests = []
+for src in sorted(src_files):
+    module = os.path.basename(src).replace('.py', '')
+    if module not in test_map:
+        missing_tests.append(module)
+        print(f"⚠️  テスト未作成: {module}")
+
+if missing_tests:
+    print()
+    print(f"📝 テストが必要なモジュール: {len(missing_tests)}件")
+else:
+    print()
+    print("✅ すべてのモジュールにテストが存在します")
+PYEOF
+
+echo ""
+echo "=========================================="
+echo "🔬 レグレッションテスト実行"
+echo "=========================================="
+
+# レグレッションテストスイート実行
+cd test
+python3 regression_test_suite.py
+
+RESULT=$?
+
+echo ""
+echo "=========================================="
+if [ $RESULT -eq 0 ]; then
+    echo "✅ すべてのテストがPASSしました"
+    echo ""
+    echo "📊 次のステップ:"
+    echo "  1. 新しいテストが必要な場合は test/ に追加"
+    echo "  2. regression_test_suite.py にテストを登録"
+    echo "  3. 再度 ./commands/prj-test-update を実行"
+else
+    echo "❌ テストに失敗しました"
+    echo ""
+    echo "🔧 修正手順:"
+    echo "  1. 失敗したテストのエラーメッセージを確認"
+    echo "  2. ソースコードまたはテストコードを修正"
+    echo "  3. 再度 ./commands/prj-test-update を実行"
+fi
+echo "=========================================="
+
+exit $RESULT

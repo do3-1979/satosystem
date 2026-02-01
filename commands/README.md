@@ -51,6 +51,17 @@
 - docs/analysis/README.mdを表示
 - 23個のソースコード分析JSONの読み込み手順を提示
 
+#### ./commands/prj-update-analysis
+ソースコード分析ファイルの整合性チェック・更新案内
+
+```bash
+./commands/prj-update-analysis
+```
+
+- `src/*.py` と `docs/analysis/src/*.json` の対応を確認
+- 更新必要/未分析ファイルを一覧表示
+- 手動更新の手順を案内（分析JSONの再生成はAI依頼）
+
 #### ./commands/prj-run-regression
 レグレッションテストスイート実行
 
@@ -64,6 +75,17 @@
   3. backtest_and_visualize.sh
 - 結果サマリー表示
 - グラフファイル検証
+
+#### ./commands/prj-test-update
+テストスイート自動更新・実行
+
+```bash
+./commands/prj-test-update
+```
+
+- `src/*.py` と `test/test_*_regression.py` の対応を確認
+- “テスト未作成”モジュールを表示
+- `test/regression_test_suite.py` を実行
 
 ## 使い方
 
@@ -96,7 +118,9 @@ alias prj-init="./commands/prj-init"
 alias prj-help="./commands/prj-help"
 alias prj-action-list="./commands/prj-action-list"
 alias prj-load-analysis="./commands/prj-load-analysis"
+alias prj-update-analysis="./commands/prj-update-analysis"
 alias prj-run-regression="./commands/prj-run-regression"
+alias prj-test-update="./commands/prj-test-update"
 ```
 
 ## 開発者向け情報

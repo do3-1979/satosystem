@@ -12,6 +12,33 @@ if [ ! -f "PROGRESS.json" ] || [ ! -f "DEVELOPMENT_RULES.json" ]; then
     exit 1
 fi
 
+# 背景と役割を表示
+echo "🎯 AI役割と背景"
+echo "=========================================="
+python3 << 'PYEOF'
+import json
+
+with open('DEVELOPMENT_RULES.json', 'r') as f:
+    rules = json.load(f)
+
+role = rules.get('ai_role_and_background', {}).get('role', {})
+background = rules.get('ai_role_and_background', {}).get('background', {})
+
+print(f"\033[1;33m役割:\033[0m {role.get('title', 'N/A')}")
+print(f"  📈 年間利回り目標: {role.get('target_annual_return', 'N/A')}")
+print(f"  🎯 ミッション: {role.get('mission', 'N/A')}")
+print()
+print(f"\033[1;31m背景:\033[0m")
+print(f"  💰 初期資本: {background.get('user_initial_capital', 'N/A')}")
+print(f"  ⚠️  重要性: {background.get('importance', 'N/A')}")
+print(f"  🗓️  重要マイルストーン:")
+for milestone in background.get('critical_milestones', []):
+    print(f"     • {milestone.get('deadline', 'N/A')}: {milestone.get('task', 'N/A')}")
+PYEOF
+echo ""
+echo "=========================================="
+echo ""
+
 # 開発ルール表示
 echo "📋 開発ルール読み込み中..."
 python3 tools/load_development_rules.py
