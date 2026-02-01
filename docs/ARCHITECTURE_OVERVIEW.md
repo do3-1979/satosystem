@@ -288,7 +288,7 @@ This document complements `Readme.md` and analysis files; update incrementally.
 - ローカル OHLCV キャッシュは `ohlcv_data/` 以下で管理されており、クリーンアップ対象として README やこのドキュメントに記録している。
 
 ## ドキュメントとの連携
-- ルールの根幹は `DEVELOPMENT_RULES.json` に記述。作業ごとにこのファイルを確認し、`docs/ACTION_LIST.md` に進捗を記録する。
+- ルールの根幹は `DEVELOPMENT_RULES.json` に記述。作業ごとにこのファイルを確認し、`ACTION_LIST.json` に進捗を記録する。
 - `docs/analysis/project_structure.json` には gen2 の現行構成（ディレクトリ、主要コンポーネント）が JSON 形式で記録されており、実装変更前には必ず参照する。
 - 議論や一時的な調査レポートが必要であれば `report_tmp/` 内でカテゴリ別に管理し、必要分のみ `ARCHITECTURE_OVERVIEW.md` に要約・言及する。
 

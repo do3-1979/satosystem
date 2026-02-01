@@ -35,11 +35,10 @@
 ## 必須ドキュメント
 
 作業前に以下を確認：
-- `docs/ACTION_LIST.md` - タスク管理（TODO/PROGRESS/DONE）
+- `ACTION_LIST.json` - タスク管理（TODO/PROGRESS/DONE）
 - `DEVELOPMENT_RULES.json` - 開発ルール（JSON形式）
 - `docs/ARCHITECTURE_OVERVIEW.md` - システムアーキテクチャ
 - `PROGRESS.json` - 現在の進捗状況
-- `DEVELOPMENT_RULES.json` - 開発ルール（JSON形式）
 
 ## 実行モード
 
@@ -160,9 +159,9 @@ python3 tools/update_progress.py --task-start "39c" --description "実装開始"
 ## 作業フロー
 
 1. **タスク開始時**
-   - `docs/ACTION_LIST.md`のTODO確認、または `./commands/prj-action-list`実行
+   - `ACTION_LIST.json`のtasks.todo確認、または `./commands/prj-action-list`実行
    - `python3 tools/update_progress.py --task-start <ID>`
-   - ACTION_LIST.mdのPROGRESSセクション更新
+   - ACTION_LIST.jsonのtasks.progressセクション更新
 
 2. **実装中**
    - DEVELOPMENT_RULES.json遵守
@@ -175,7 +174,7 @@ python3 tools/update_progress.py --task-start "39c" --description "実装開始"
    - ユーザーに変更内容報告 → 許可取得
    - コミット実行
    - `python3 tools/update_progress.py --task-complete <ID> --commit`
-   - ACTION_LIST.mdのDONEセクション更新
+   - ACTION_LIST.jsonのtasks.doneセクション更新
 
 ## 注意事項
 
@@ -189,4 +188,4 @@ python3 tools/update_progress.py --task-start "39c" --description "実装開始"
 詳細は以下を参照：
 - 開発ルール詳細: `DEVELOPMENT_RULES.json`
 - 進捗詳細: `PROGRESS.json`
-- タスク詳細: `docs/ACTION_LIST.md`
+- タスク詳細: `ACTION_LIST.json`

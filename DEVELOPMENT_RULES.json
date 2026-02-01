@@ -57,7 +57,7 @@
         "required": true
       },
       {
-        "file": "docs/ACTION_LIST.md",
+        "file": "ACTION_LIST.json",
         "purpose": "TODO/PROGRESS/DONEのセクションを含み、作業課題と進捗を常に更新",
         "required": true
       }
@@ -79,7 +79,7 @@
       "cleanup": "不要になった報告書は随時削除",
       "migration": {
         "useful_info": "ARCHITECTURE_OVERVIEW.mdに転記",
-        "tasks": "ACTION_LIST.mdに追記"
+        "tasks": "ACTION_LIST.jsonに追記"
       }
     }
   },
@@ -96,7 +96,7 @@
     "phase_2": {
       "name": "課題管理",
       "goal": "必要な変更・レビュー項目を記録し、優先度付きで整理",
-      "document": "ACTION_LIST.md",
+      "document": "ACTION_LIST.json",
       "process": "ユーザー指定の順に一件ずつ、レビュー・修正・テスト・検証を実施"
     },
     "phase_3": {
@@ -148,7 +148,7 @@
   
   "communication": {
     "document_updates": {
-      "requirement": "ドキュメント更新や課題追加は必ずACTION_LIST.mdを通じて記録",
+      "requirement": "ドキュメント更新や課題追加は必ずACTION_LIST.jsonを通じて記録",
       "review_process": "レビューで明示的に取り上げる",
       "progress_tracking": {
         "statuses": ["TODO", "PROGRESS", "DONE"],
@@ -264,7 +264,7 @@
   
   "metadata": {
     "schema_version": "2.0",
-    "compatible_with": ["PROGRESS.json", "ACTION_LIST.md", "ARCHITECTURE_OVERVIEW.md"],
+    "compatible_with": ["PROGRESS.json", "ACTION_LIST.json", "ARCHITECTURE_OVERVIEW.md"],
     "auto_load": {
       "enabled": false,
       "planned": true,

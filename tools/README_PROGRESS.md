@@ -103,7 +103,7 @@ python3 tools/update_progress.py --commit
      --description "完了内容" \
      --commit
    ```
-5. `docs/ACTION_LIST.md`のDONEセクション更新
+5. `ACTION_LIST.json`のtasks.doneセクション更新
 
 ### タスク開始時の標準フロー
 
@@ -113,7 +113,7 @@ python3 tools/update_progress.py --commit
      --task-start "タスクID" \
      --description "実装内容"
    ```
-2. `docs/ACTION_LIST.md`のPROGRESSセクション更新
+2. `ACTION_LIST.json`のtasks.progressセクション更新
 3. 実装開始
 
 ## 使用例
@@ -131,7 +131,7 @@ python3 tools/update_progress.py \
   --description "高確度/中確度の二段階エントリー実装。バックテスト結果: +$450改善" \
   --commit
 
-# 3. ACTION_LIST.md手動更新（DONEセクション）
+# 3. ACTION_LIST.json手動更新（tasks.doneセクション）
 ```
 
 ### 例2: Task 39c開始
@@ -143,7 +143,7 @@ python3 tools/update_progress.py \
   --description "Multi-Timeframe Integration実装開始 - 1h/4h/1d三重確認" \
   --priority "★★★★★"
 
-# 2. ACTION_LIST.md手動更新（PROGRESSセクション）
+# 2. ACTION_LIST.json手動更新（tasks.progressセクション）
 ```
 
 ### 例3: コミット情報のみ更新
@@ -162,12 +162,12 @@ satosystem/
 │   ├── update_progress.py     # 更新スクリプト
 │   └── README_PROGRESS.md     # このファイル
 └── docs/
-    └── ACTION_LIST.md         # タスク一覧（詳細管理）
+    ├── ACTION_LIST.json       # タスク一覧（詳細管理）
 ```
 
 ## 関連ドキュメント
 
-- `docs/ACTION_LIST.md` - タスク詳細管理（TODO/PROGRESS/DONE）
+- `ACTION_LIST.json` - タスク詳細管理（TODO/PROGRESS/DONE）
 - `DEVELOPMENT_RULES.json` - 開発ルール・ワークフロー
 - `docs/ARCHITECTURE_OVERVIEW.md` - システムアーキテクチャ
 
@@ -176,7 +176,7 @@ satosystem/
 1. **手動編集時**：JSON形式を壊さないよう注意
 2. **スクリプト使用時**：Git作業ディレクトリから実行すること
 3. **コミット前**：PROGRESS.json更新後は`git add PROGRESS.json`を忘れずに
-4. **ACTION_LIST.mdとの同期**：両方を更新してプロジェクト状態を正確に保つ
+4. **ACTION_LIST.jsonとの同期**：両方を更新してプロジェクト状態を正確に保つ
 
 ## トラブルシューティング
 

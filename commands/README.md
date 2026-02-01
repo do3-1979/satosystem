@@ -35,7 +35,7 @@
 ./commands/prj-action-list
 ```
 
-- ACTION_LIST.mdのTODOセクションを表示
+- ACTION_LIST.jsonのtasks.todoセクションを表示
 - 進捗状況サマリーを表示
 - 次のステップガイドを表示
 

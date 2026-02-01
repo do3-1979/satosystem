@@ -238,7 +238,7 @@ read_file('docs/analysis/src/market_regime_detector.json', startLine=1, endLine=
 
 - `docs/ARCHITECTURE_OVERVIEW.md` - システムアーキテクチャ概要
 - `DEVELOPMENT_RULES.json` - 開発ルール全般
-- `docs/ACTION_LIST.md` - 課題・改善項目管理
+- `ACTION_LIST.json` - 課題・改善項目管理（JSON形式）
 - `docs/PRICE_DATA_FLOW_DESIGN.md` - データフロー設計
 - `DEVELOPMENT_RULES.json` - 開発ルール（JSON形式）
 - `PROGRESS.json` - プロジェクト進捗状況

@@ -21,31 +21,48 @@ echo "=========================================="
 echo "📊 現在の進捗状況"
 echo "=========================================="
 
-# PROGRESS.jsonから重要情報を抽出
-python3 -c "
+# PROGRESS.jsonとACTION_LIST.jsonから情報を抽出
+python3 << 'PYEOF'
 import json
+
+# PROGRESS.json読み込み
 with open('PROGRESS.json', 'r') as f:
-    data = json.load(f)
-    
-print(f\"✅ ベースライン: {data['project']['baseline_performance']['cumulative_pnl_usd']} USD\")
-print(f\"📅 最終更新: {data['project']['last_updated']}\")
-print(f\"🔧 最新コミット: {data['latest_commit']['hash']} - {data['latest_commit']['message'][:60]}...\")
+    progress = json.load(f)
+
+# ACTION_LIST.json読み込み
+with open('ACTION_LIST.json', 'r') as f:
+    action_list = json.load(f)
+
+print(f"✅ ベースライン: {progress['project']['baseline_performance']['cumulative_pnl_usd']} USD")
+print(f"📅 最終更新: {progress['project']['last_updated']}")
+print(f"🔧 最新コミット: {progress['latest_commit']['hash']} - {progress['latest_commit']['message'][:60]}...")
 print()
-print('📌 作業中タスク:')
-for task in data['current_status']['active_tasks']['in_progress'][:3]:
-    print(f\"  • {task['task_id']}: {task['title']}\")
+print(f"📊 タスク統計: TODO={action_list['summary']['todo']}, PROGRESS={action_list['summary']['progress']}, DONE={action_list['summary']['done']}")
 print()
-print('🎯 次の優先タスク:')
-for task in data['current_status']['active_tasks']['next_priority'][:3]:
-    print(f\"  • {task['task_id']}: {task['title']} ({task['priority']})\")
-"
+print('📌 作業中タスク (PROGRESS):')
+for task in action_list['tasks']['progress'][:3]:
+    priority = '★' * task['priority']
+    print(f"  • {task['id']}: {task['title']} ({priority})")
+print()
+print('🎯 次の優先タスク (TODO):')
+for task in sorted(action_list['tasks']['todo'], key=lambda x: x['priority'], reverse=True)[:3]:
+    priority = '★' * task['priority']
+    impact = ''
+    if task.get('estimated_impact_usd'):
+        impact = f" → 期待効果: +${task['estimated_impact_usd'][0]}-{task['estimated_impact_usd'][1]}/年"
+    print(f"  • {task['id']}: {task['title']} ({priority}){impact}")
+print()
+print('✅ 最近完了したタスク (DONE):')
+for task in action_list['tasks']['done'][:3]:
+    print(f"  • {task['id']}: {task['title']} ({task['completed_date']})")
+PYEOF
 
 echo ""
 echo "=========================================="
 echo "✅ プロジェクト初期化完了"
 echo ""
 echo "📚 参考ドキュメント:"
-echo "  • docs/ACTION_LIST.md - タスク一覧"
+echo "  • ACTION_LIST.json - タスク管理（JSON形式）"
 echo "  • DEVELOPMENT_RULES.json - 開発ルール（JSON形式）"
 echo "  • PROGRESS.json - 進捗状況"
 echo ""

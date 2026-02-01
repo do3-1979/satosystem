@@ -1,0 +1,513 @@
+{
+  "meta": {
+    "version": "1.0",
+    "last_updated": "2026-02-01",
+    "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE)",
+    "replaces": "docs/ACTION_LIST.md"
+  },
+  "tasks": {
+    "todo": [
+      {
+        "id": "39b",
+        "category": "2026年利益拡大戦略",
+        "title": "Two-Tier Entry System 実装",
+        "description": "高確度/中確度の二段階エントリー（+$300-600/年期待）",
+        "priority": 5,
+        "related_doc": "PROFIT_ENHANCEMENT_STRATEGY_2026",
+        "estimated_impact_usd": [300, 600]
+      },
+      {
+        "id": "39c",
+        "category": "2026年利益拡大戦略",
+        "title": "Multi-Timeframe Integration 実装",
+        "description": "1h/4h/1d三重確認（+$400-700/年期待）",
+        "priority": 5,
+        "related_doc": "PROFIT_ENHANCEMENT_STRATEGY_2026",
+        "estimated_impact_usd": [400, 700]
+      },
+      {
+        "id": "39d",
+        "category": "2026年利益拡大戦略",
+        "title": "Time-Based Exit 実装",
+        "description": "72時間保有で強制決済（+$100-200/年期待）",
+        "priority": 4,
+        "related_doc": "PROFIT_ENHANCEMENT_STRATEGY_2026",
+        "estimated_impact_usd": [100, 200]
+      },
+      {
+        "id": "39e",
+        "category": "2026年利益拡大戦略",
+        "title": "Dynamic Stop Loss Width 実装",
+        "description": "ATRベース動的ストップ幅（+$100-150/年期待）",
+        "priority": 4,
+        "related_doc": "PROFIT_ENHANCEMENT_STRATEGY_2026",
+        "estimated_impact_usd": [100, 150]
+      },
+      {
+        "id": "39f",
+        "category": "2026年利益拡大戦略",
+        "title": "Weekend/Holiday Avoidance 実装",
+        "description": "低流動性時間回避（+$100-200/年期待）",
+        "priority": 4,
+        "related_doc": "PROFIT_ENHANCEMENT_STRATEGY_2026",
+        "estimated_impact_usd": [100, 200]
+      },
+      {
+        "id": "38d",
+        "category": "2025年補助フィルター",
+        "title": "Volume Profile Analysis 実装",
+        "description": "出来高集中価格帯判定、VCP/Mean Reversion併用",
+        "priority": 3,
+        "related_doc": "主要戦略完了後検討",
+        "estimated_impact_usd": null
+      },
+      {
+        "id": "38e",
+        "category": "2025年補助フィルター",
+        "title": "Market Microstructure 実装",
+        "description": "Bid-Ask Spread分析、流動性低下時エントリー抑制",
+        "priority": 2,
+        "related_doc": "優先度低・Phase 4検討",
+        "estimated_impact_usd": null
+      },
+      {
+        "id": "23a",
+        "category": "段階1（即座）",
+        "title": "Fear & Greed Index 統合",
+        "description": "過度な楽観/恐怖でのエントリー抑制（+5-8%期待、2-3h）",
+        "priority": 4,
+        "related_doc": "IMPLEMENTATION_ROADMAP",
+        "estimated_impact_usd": null,
+        "estimated_hours": [2, 3]
+      },
+      {
+        "id": "23b",
+        "category": "段階1（即座）",
+        "title": "RSI 二重確認実装",
+        "description": "過買い状態でのロング回避（+2-3%期待、1-2h）",
+        "priority": 4,
+        "related_doc": "IMPLEMENTATION_ROADMAP",
+        "estimated_impact_usd": null,
+        "estimated_hours": [1, 2]
+      },
+      {
+        "id": "6",
+        "category": "ログ制御・出力",
+        "title": "ログファイル自動整理・定期クリーンアップ機能の実装",
+        "description": "手動実施済み、自動化検討中",
+        "priority": 2,
+        "related_doc": "QUARTERLY_BACKTEST分析参照",
+        "estimated_impact_usd": null
+      }
+    ],
+    "progress": [
+      {
+        "id": "22b",
+        "category": "Phase 0改善戦略",
+        "title": "Strategy B: 指標確認（Bollinger+RSI+SMA）",
+        "description": "コード実装済み、有効化検討中",
+        "status": "実装完了、有効化待機",
+        "priority": 4,
+        "related_doc": null
+      },
+      {
+        "id": "22c",
+        "category": "Phase 0改善戦略",
+        "title": "Strategy C: 複合戦略（A+B）",
+        "description": "コード実装済み、有効化検討中",
+        "status": "実装完了、有効化待機",
+        "priority": 4,
+        "related_doc": null
+      },
+      {
+        "id": "20b",
+        "category": "Phase 3計画",
+        "title": "マルチタイムフレーム ADX 確認",
+        "description": "1h+4h複合判定でノイズ削減",
+        "status": "設計中 (2025年度対応)",
+        "priority": 4,
+        "related_doc": null
+      }
+    ],
+    "done": [
+      {
+        "id": "39a",
+        "category": "2026年利益拡大戦略",
+        "title": "Trailing Profit Target 検証完了・不採用判定",
+        "description": "ExitStrategyV2に2%/5%/8%の3段階トレーリングストップ実装。優先度調整・MOMENTUM_EXHAUSTED無効化等の修正実施。バックテスト結果：Trailing有効時-173 USD（ベースライン+904比-1,077 USD, -119%悪化）、Trailing無効時+153 USD（-751 USD, -83%悪化）。ExitStrategyV2完全削除後も+153 USDで変化なし。性能悪化の原因はExitStrategyV2自体ではなく別要因。ベースライン再現優先のため不採用・全変更破棄",
+        "completed_date": "2026-01-11",
+        "priority": 5,
+        "impact_usd": -1077,
+        "result": "不採用・破棄"
+      },
+      {
+        "id": "38c",
+        "category": "2025年対応新戦略",
+        "title": "Range Breakout Enhanced 戦略評価完了・不採用判定",
+        "description": "Donchian強化版として相対出来高フィルター実装（threshold=1.5x）。全8Q評価の結果、2024年が82%に低下（必須条件90%未満）、2025年が-90 USDに悪化（目標：黒字化失敗）、累積で-406 USD減少（20.6%損失）。実装は参考用として保持するが enable_range_breakout_enhanced=0 で無効化推奨",
+        "completed_date": "2026-01-07",
+        "priority": 5,
+        "impact_usd": -406,
+        "result": "不採用・無効化"
+      },
+      {
+        "id": "38b",
+        "category": "2025年対応新戦略",
+        "title": "Mean Reversion (平均回帰) 戦略評価完了・不採用判定",
+        "description": "BB 2σ逸脱+RSI<30で実装・評価の結果、2025 Q1でPF=0.07, 勝率7.14%, -198 USD。採用基準（PF>0.8, 勝率>40%）を大幅に下回り不採用。ADXフィルター無効化でトレンド相場でも逆張りエントリー、RSI<30だけでは売られすぎ判定不十分、BB下限タッチの反転シグナルとしての弱さが原因。実装は保持するが enable_mean_reversion_strategy=0 で無効化",
+        "completed_date": "2026-01-07",
+        "priority": 5,
+        "impact_usd": -198,
+        "result": "不採用・無効化"
+      },
+      {
+        "id": "38a",
+        "category": "2025年対応新戦略",
+        "title": "VCP (Volatility Contraction Pattern) 戦略評価完了・不採用判定",
+        "description": "実装・評価の結果、2025年で逆効果（勝率22.7%, -11,537 USD）、全期間でも-8,209 USD。VCP適用により勝率が半減（45.1%→22.7%）。高ボラティリティ市場で機能せず。enable_vcp_strategy=0で無効化。実装は保持するが使用推奨せず",
+        "completed_date": "2026-01-05",
+        "priority": 5,
+        "impact_usd": -8209,
+        "result": "不採用・無効化"
+      },
+      {
+        "id": "37",
+        "category": "パラメータ最適化検証",
+        "title": "Phase2損失トレード分析の信頼性検証",
+        "description": "phase2_loss_analysis.pyが最新8ファイルのみ読込み問題を発見。ベースライン vs 最適化版の四半期別・通年比較を実施。2024年はベースライン優位（利益因子4.40, 勝率92%）、2025年は両設定とも機能不全（勝率3%以下）を確認。市場環境依存性が極めて高いことが判明",
+        "completed_date": "2026-01-05",
+        "priority": 5,
+        "impact_usd": null,
+        "result": "分析完了"
+      },
+      {
+        "id": "35",
+        "category": "ホットテスト修復",
+        "title": "ホットテスト（ペーパートレード）ループ前エラー修復",
+        "description": "commit 01c7ea7で導入されたシグナル計算タイミング制限が原因。修正前コードベースにホットテスト開始時刻動的計算ロジックを統合（afcc15f+動的start/end_epoch）。バックテスト/ホットテスト両方動作確認完了",
+        "completed_date": "2026-01-04",
+        "priority": 5,
+        "impact_usd": null,
+        "result": "修復完了"
+      },
+      {
+        "id": "36",
+        "category": "APIキー管理改善",
+        "title": "APIキー管理方式の刷新",
+        "description": "config.py起動時に.api_key(JSON)から読み込み。config.iniプレースホルダ廃止。replace_api_key.sh/bot_run.sh削除で運用簡素化。バックテスト/ホットテスト動作確認完了",
+        "completed_date": "2026-01-04",
+        "priority": 5,
+        "impact_usd": null,
+        "result": "刷新完了"
+      },
+      {
+        "id": "33",
+        "category": "フィルタ最適化",
+        "title": "ADXフィルタ スイープテスト完了",
+        "description": "threshold=31で最適、累積損益1936.98 USD（+31.9%改善）、2025Q赤字88.85%削減",
+        "completed_date": "2026-01-02",
+        "priority": 5,
+        "impact_usd": 1032.63,
+        "result": "最適化完了"
+      },
+      {
+        "id": "34",
+        "category": "フィルタ検証却下",
+        "title": "季節性フィルタ・マーケットレジーム検出は実装上機能していない",
+        "description": "スイープテストで効果ゼロ、無効化確定",
+        "completed_date": "2026-01-02",
+        "priority": 5,
+        "impact_usd": 0,
+        "result": "無効化確定"
+      },
+      {
+        "id": "30",
+        "category": "品質保証",
+        "title": "2024/Q1除外テスト完了",
+        "description": "run_quarterly_backtest.py修正、スクリプト整理（analyze*削除）、全検証OK",
+        "completed_date": "2025-12-29",
+        "priority": 5,
+        "impact_usd": null,
+        "result": "完了"
+      },
+      {
+        "id": "25",
+        "category": "パラメータ最適化",
+        "title": "最適パラメータ確定",
+        "description": "vol=28, don=32, entry=3, stop=2 で +374.95 USD (Q1除外) 達成",
+        "completed_date": "2025-12-29",
+        "priority": 5,
+        "impact_usd": 374.95,
+        "result": "確定"
+      },
+      {
+        "id": "23c",
+        "category": "パラメータ最適化分析",
+        "title": "Leverage×Risk×EntryTimes スイープテスト 実施完了",
+        "description": "57テスト実施、最適パラメータ特定",
+        "completed_date": "2025-12-10",
+        "priority": 5,
+        "impact_usd": null,
+        "result": "完了"
+      },
+      {
+        "id": "23d",
+        "category": "ドキュメント統合",
+        "title": "docs/ の DEVELOPMENT_RULES/ARCHITECTURE/PRICE_DATA_FLOW を analysis/ に反映",
+        "description": "ドキュメント統合作業完了",
+        "completed_date": "2025-12-10",
+        "priority": 5,
+        "impact_usd": null,
+        "result": "完了"
+      },
+      {
+        "id": "20a",
+        "category": "Phase 1.5実装",
+        "title": "3段階ADXフィルタ戦略実装",
+        "description": "BOX/WEAK/STRONG環境対応 → +$641改善達成",
+        "completed_date": "2025-12-11",
+        "priority": 5,
+        "impact_usd": 641,
+        "result": "実装完了"
+      },
+      {
+        "id": "22a",
+        "category": "戦略実装",
+        "title": "Strategy A: 市場レジーム検出（ADX）",
+        "description": "Phase 1.5 で統合・最適化完了 (+$641改善)",
+        "completed_date": "2025-12-11",
+        "priority": 5,
+        "impact_usd": 641,
+        "result": "統合完了"
+      },
+      {
+        "id": "26",
+        "category": "エントリー戦略",
+        "title": "PVO/ADXフィルター効果検証",
+        "description": "3シナリオ比較実施、最適フィルター特定（PVO Only推奨）",
+        "completed_date": "2025-12-21",
+        "priority": 5,
+        "impact_usd": null,
+        "result": "検証完了"
+      },
+      {
+        "id": "20",
+        "category": "戦略最適化",
+        "title": "マーケット環境変化対応",
+        "description": "ADX で トレンド強度を検出し、パラメータを動的調整（Phase 1.5で実装）",
+        "completed_date": "2025-12-11",
+        "priority": 5,
+        "impact_usd": null,
+        "result": "実装完了"
+      },
+      {
+        "id": "3",
+        "category": "ログ制御・出力",
+        "title": "drawdown計算の統一・修正",
+        "description": "drawdown計算ロジック統一",
+        "completed_date": "2025-12-08",
+        "priority": 4,
+        "impact_usd": null,
+        "result": "完了"
+      },
+      {
+        "id": "4",
+        "category": "ログ制御・出力",
+        "title": "PnL時系列エクスポート機能の実装",
+        "description": "PnL時系列データエクスポート機能実装",
+        "completed_date": "2025-12-09",
+        "priority": 4,
+        "impact_usd": null,
+        "result": "完了"
+      },
+      {
+        "id": "5",
+        "category": "ログ制御・出力",
+        "title": "full-loggingオプションのBot反映",
+        "description": "full-loggingオプション実装",
+        "completed_date": "2025-12-09",
+        "priority": 3,
+        "impact_usd": null,
+        "result": "完了"
+      },
+      {
+        "id": "10",
+        "category": "doc/test整備",
+        "title": "ドキュメント統合・体系化",
+        "description": "ドキュメント構造整理",
+        "completed_date": "2025-11-30",
+        "priority": 3,
+        "impact_usd": null,
+        "result": "完了"
+      },
+      {
+        "id": "11",
+        "category": "doc/test整備",
+        "title": "テストランナー統合・verify_all.py追加",
+        "description": "テストランナー実装",
+        "completed_date": "2025-12-10",
+        "priority": 3,
+        "impact_usd": null,
+        "result": "完了"
+      },
+      {
+        "id": "12",
+        "category": "doc/test整備",
+        "title": "ドキュメント構造テスト追加",
+        "description": "ドキュメント構造バリデーション",
+        "completed_date": "2025-12-10",
+        "priority": 3,
+        "impact_usd": null,
+        "result": "完了"
+      },
+      {
+        "id": "13",
+        "category": "doc/test整備",
+        "title": "analysis/project_structure.json・ARCHITECTURE_OVERVIEW.mdにクラス・メソッド一覧を反映",
+        "description": "プロジェクト構造分析更新",
+        "completed_date": "2025-12-21",
+        "priority": 3,
+        "impact_usd": null,
+        "result": "完了"
+      },
+      {
+        "id": "13b",
+        "category": "config/キャッシュ管理",
+        "title": "config.iniのプレースホルダ化・コメント整形",
+        "description": "config.ini整理",
+        "completed_date": "2025-12-08",
+        "priority": 3,
+        "impact_usd": null,
+        "result": "完了"
+      },
+      {
+        "id": "15",
+        "category": "config/キャッシュ管理",
+        "title": "path_utils.pyによるパス管理の一元化",
+        "description": "パス管理統一",
+        "completed_date": "2025-12-09",
+        "priority": 3,
+        "impact_usd": null,
+        "result": "完了"
+      },
+      {
+        "id": "16",
+        "category": "スクリプト統合・運用",
+        "title": "backtest.pyへの機能統合",
+        "description": "バックテストスクリプト統合",
+        "completed_date": "2025-12-08",
+        "priority": 3,
+        "impact_usd": null,
+        "result": "完了"
+      },
+      {
+        "id": "17",
+        "category": "スクリプト統合・運用",
+        "title": "bot_run.sh, replace_api_key.shの整理",
+        "description": "運用スクリプト整理",
+        "completed_date": "2025-12-21",
+        "priority": 3,
+        "impact_usd": null,
+        "result": "完了"
+      },
+      {
+        "id": "18",
+        "category": "戦略最適化",
+        "title": "2025年成績悪化の根本原因分析・四半期別分析",
+        "description": "Stage 1-4 改善戦略策定",
+        "completed_date": "2025-12-09",
+        "priority": 5,
+        "impact_usd": null,
+        "result": "完了"
+      },
+      {
+        "id": "19",
+        "category": "個別トレード改善",
+        "title": "出口戦略の複合指標化（PSAR + PVO + ADX）",
+        "description": "MFE失われた利益を75%削減",
+        "completed_date": "2025-12-10",
+        "priority": 5,
+        "impact_usd": null,
+        "result": "完了"
+      },
+      {
+        "id": "19a",
+        "category": "個別トレード改善",
+        "title": "ExitStrategyV2 統合",
+        "description": "Q4 2025 で -2.63 → +368.20 USD に改善、勝率 100%達成",
+        "completed_date": "2025-12-10",
+        "priority": 5,
+        "impact_usd": 370.83,
+        "result": "統合完了"
+      },
+      {
+        "id": "27",
+        "category": "季節性フィルター検証却下",
+        "title": "季節性パターン（Q2/Q3損失）による取引スキップ",
+        "description": "年度変動で信頼性不足のため却下",
+        "completed_date": "2025-12-21",
+        "priority": 3,
+        "impact_usd": null,
+        "result": "却下"
+      },
+      {
+        "id": "21",
+        "category": "ローソク足パターン却下",
+        "title": "ローソク足形状シグナル分析",
+        "description": "14パターン実装、Donchian検証 → 単独では-853.61 USD損失のため却下",
+        "completed_date": "2025-12-30",
+        "priority": 4,
+        "impact_usd": -853.61,
+        "result": "却下"
+      },
+      {
+        "id": "31",
+        "category": "ETHパラメータ不採用",
+        "title": "ETHパラメータスイープテスト",
+        "description": "605テスト実施、1%(6個)のみ正利益。ノイズ多く、市場環境依存度高いため採用見送り",
+        "completed_date": "2025-12-31",
+        "priority": 4,
+        "impact_usd": null,
+        "result": "不採用"
+      },
+      {
+        "id": "32",
+        "category": "ドキュメント整理",
+        "title": "docs/analysis 再分析・整理完了",
+        "description": "src/分析ファイルを src/ サブフォルダに整理、全17Pythonファイル分析・JSON置き換え完了",
+        "completed_date": "2026-01-01",
+        "priority": 5,
+        "impact_usd": null,
+        "result": "完了"
+      },
+      {
+        "id": "33b",
+        "category": "ドキュメント整理",
+        "title": "docs/ 一時レポート削除",
+        "description": "PLAN/REPORT/CHECKLIST系13ファイル削除、恒久ドキュメント7ファイルに整理",
+        "completed_date": "2026-01-31",
+        "priority": 3,
+        "impact_usd": null,
+        "result": "完了"
+      },
+      {
+        "id": "1",
+        "category": "テスト体制整備",
+        "title": "コミット前のレグレッションテスト作成",
+        "description": "全54テスト PASS、pytest + regression_test_suite.py",
+        "completed_date": "2025-12-10",
+        "priority": 5,
+        "impact_usd": null,
+        "result": "完了"
+      }
+    ]
+  },
+  "summary": {
+    "total_tasks": 94,
+    "todo": 10,
+    "progress": 3,
+    "done": 81,
+    "cumulative_impact_usd": 904.35,
+    "baseline_performance": "904.35 USD (2024-2025, 8 quarters)"
+  }
+}
