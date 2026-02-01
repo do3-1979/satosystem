@@ -1,338 +1,93 @@
 {
   "metadata": {
     "source_file": "src/bot.py",
-    "analyzed_at": "2026-01-01T00:00:00Z",
+    "analyzed_at": "2026-02-01T00:00:00Z",
     "python_version": "3.10",
     "format_version": "2.0",
-    "analyzer_note": "Level 1 フォーマット完全実装 - 責務・目的定義、エラーハンドリング、テストケース提案を含む"
+    "analyzer_note": "完全構造分析 - TradeLogger統合、3モード対応、Portfolio/RiskManagement統合を反映"
   },
   "file_overview": {
     "purpose": "トレード実行ループ制御・注文実行・ポジション管理・メトリクス集計",
-    "lines_of_code": 452,
-    "dependency_count": 13,
+    "lines_of_code": 547,
+    "dependency_count": 19,
     "class_count": 1,
-    "function_count": 0,
-    "critical_methods": [
-      "run",
-      "execute_order"
-    ],
-    "description": "Bot は全体のオーケストレーター。PriceDataManagement, TradingStrategy, RiskManagement, Portfolio を統合制御。バックテスト（back_test=1）/ ペーパートレード（hot_test_dummy_mode=1）/ 本番運用（back_test=0, hot_test_dummy_mode=0）の3モードに対応。"
+    "function_count": 3,
+    "critical_methods": ["run", "execute_order", "show_trade_data"],
+    "description": "Bot は全体のオーケストレーター。PriceDataManagement, TradingStrategy, RiskManagement, Portfolio を統合制御。バックテスト（back_test=1）/ ペーパートレード（hot_test_dummy_mode=1）/ 本番運用（back_test=0, hot_test_dummy_mode=0）の3モードに対応。TradeLoggerによるJSONログ記録、EventBusによるイベント発火、メトリクス集計を実行。"
   },
   "classes": [
     {
       "class_name": "Bot",
-      "line": 52,
+      "line": 44,
       "docstring": "メインのボットクラス。Exchange、TradingStrategy、Portfolio、RiskManagement などのクラスを組み合わせてトレード実行と監視を行う。",
-      "responsibility": {
-        "primary": "トレード実行ループの制御・注文実行・ポジション更新・メトリクス集計",
-        "secondary": [
-          "価格データの定期更新（バックテスト時は仮想時刻進行）",
-          "ログ記録と構造化出力（JSON形式）",
-          "イベント発火による外部通知（EventBus）",
-          "例外の捕捉と異常復帰",
-          "メモリ監視（リアルタイムモード）",
-          "ログローテーション・圧縮"
-        ],
-        "scope": "GLOBAL",
-        "criticality": "CRITICAL",
-        "testing_priority": 1,
-        "description": "Bot はシステム全体の心臓。他モジュール（Strategy, RiskManagement, Portfolio, Exchange）の統合制御を担い、ループごとに取引判定→注文実行→ポジション更新→ログ記録を繰り返す。バックテスト結果の集計・メトリクス計算もこのクラスで行う。"
-      },
-      "inheritance": [],
-      "attributes": [
-        {
-          "name": "exchange",
-          "type": "BybitExchange or BitgetExchange",
-          "visibility": "private",
-          "description": "取引所API実行エンジン（ENTRY/ADD/EXIT注文実行）"
-        },
-        {
-          "name": "strategy",
-          "type": "TradingStrategy",
-          "visibility": "private",
-          "description": "トレード判定ロジック（ENTRY/ADD/EXIT信号生成）"
-        },
-        {
-          "name": "risk_management",
-          "type": "RiskManagement",
-          "visibility": "private",
-          "description": "ポジションサイズ・ストップ価格・ADX計算"
-        },
-        {
-          "name": "price_data_management",
-          "type": "PriceDataManagement",
-          "visibility": "private",
-          "description": "OHLCV取得・指標計算（Donchian, PVO, ADX, Volatility）"
-        },
-        {
-          "name": "portfolio",
-          "type": "Portfolio",
-          "visibility": "private",
-          "description": "保有ポジション・損益管理"
-        },
-        {
-          "name": "logger",
-          "type": "Logger",
-          "visibility": "private",
-          "description": "構造化ログ記録（JSON）・ローテーション・圧縮"
-        },
-        {
-          "name": "events",
-          "type": "EventBus",
-          "visibility": "private",
-          "description": "イベント通知システム（ENTRY_SIGNAL, EXIT_SIGNAL等）"
-        },
-        {
-          "name": "pnl_history",
-          "type": "List[float]",
-          "visibility": "private",
-          "description": "バックテスト用損益履歴（毎イテレーション累積PnLを記録）"
-        },
-        {
-          "name": "trade_results",
-          "type": "List[bool]",
-          "visibility": "private",
-          "description": "約定履歴（勝率計算用。True=勝ち, False=負け）"
-        }
-      ],
       "methods": [
         {
           "name": "__init__",
-          "line": 59,
-          "method_type": "INIT",
-          "purpose": "Bot インスタンスを初期化し、全依存モジュール（exchange, strategy, risk_management, portfolio）をセットアップ",
-          "entry_conditions": [
-            "exchange, strategy, risk_management, price_data_management, portfolio は有効なインスタンス",
-            "config.ini が正常に読み込まれている",
-            "Logger が初期化可能な状態である"
-          ],
-          "exit_outcomes": [
-            "Bot インスタンスが完全に初期化され、run() 呼び出し可能",
-            "初期化エラーの場合は例外を発生"
-          ],
-          "state_changes": [
-            "self.exchange, self.strategy, self.risk_management が設定",
-            "self.logger, self.events が初期化",
-            "pnl_history=[], trade_results=[] が初期化"
-          ],
+          "line": 45,
+          "purpose": "Bot インスタンスを初期化し、全依存モジュールをセットアップ",
           "criticality": "CRITICAL"
         },
         {
-          "name": "run",
-          "line": 84,
-          "method_type": "ACTION",
-          "purpose": "バックテスト/ホットテスト/本番運用のメインループを無限実行（バックテストを除く）",
-          "entry_conditions": [
-            "__init__() が正常に完了",
-            "config.ini の実行モード設定が有効（back_test 0 or 1）",
-            "exchange の認証情報が有効（ホットテスト/本番）",
-            "price_data_management が初期化済み"
-          ],
-          "exit_outcomes": [
-            "バックテスト完了：メトリクス出力後にループ終了",
-            "ホットテスト/本番：ユーザー Ctrl-C で中断",
-            "致命的エラー：例外捕捉後に time.sleep() でリトライ"
-          ],
-          "state_changes": [
-            "portfolio.pnl_history が毎イテレーション更新",
-            "portfolio.positions が ENTRY/ADD/EXIT時に更新",
-            "trade_results が EXIT時に勝敗判定を追加",
-            "logger に取引記録が毎ループ保存",
-            "EventBus 経由で複数イベントが発火"
-          ],
-          "criticality": "CRITICAL",
-          "error_handling": {
-            "exceptions": [
-              {
-                "exception_type": "APIError",
-                "location": "exchange.get_account_balance_total()呼び出し",
-                "recovery_strategy": "RETRY_WITH_SLEEP",
-                "fallback_action": "前回値使用、ループ続行"
-              },
-              {
-                "exception_type": "Exception",
-                "location": "strategy.make_trade_decision()実行",
-                "recovery_strategy": "IGNORE",
-                "fallback_action": "trade_decision={'decision':'NONE'}で続行"
-              },
-              {
-                "exception_type": "Exception",
-                "location": "execute_order()呼び出し",
-                "recovery_strategy": "IGNORE",
-                "fallback_action": "ポートフォリオ更新スキップ"
-              },
-              {
-                "exception_type": "KeyboardInterrupt",
-                "location": "ループ内（Ctrl-C）",
-                "recovery_strategy": "HANDLED_CLEANLY",
-                "fallback_action": "バックテストはメトリクス出力→終了。ホットテストは time.sleep()で継続"
-              }
-            ],
-            "failure_modes": [
-              {
-                "scenario": "ネットワーク断絶",
-                "impact": "HIGH",
-                "handling": "API呼び出し失敗→前回値使用→time.sleep()で再試行"
-              },
-              {
-                "scenario": "ポジション状態不整合（local vs exchange）",
-                "impact": "CRITICAL",
-                "handling": "検出メカニズムなし。未約定注文時にデータ不整合リスク"
-              },
-              {
-                "scenario": "APIレート制限超過",
-                "impact": "MEDIUM",
-                "handling": "指数バックオフ未実装。time.sleep()で後続リトライ"
-              }
-            ]
-          },
-          "testability": {
-            "difficulty": "HARD",
-            "suggested_test_cases": [
-              {
-                "name": "test_backtest_mode_full_flow",
-                "type": "INTEGRATION",
-                "setup": "back_test=1, 1週間分過去データ設定",
-                "expected": "ループ実行、pnl_history複数エントリ、backtest_summary生成"
-              },
-              {
-                "name": "test_hot_test_dummy_mode",
-                "type": "INTEGRATION",
-                "setup": "back_test=0, hot_test_dummy_mode=1",
-                "expected": "API呼び出しあるもポジション実際には変わらず"
-              },
-              {
-                "name": "test_exception_handling_strategy_error",
-                "type": "UNIT",
-                "setup": "strategy.make_trade_decision()がException発生",
-                "expected": "例外キャッチ、取引スキップ、ループ継続"
-              }
-            ]
-          },
-          "performance": {
-            "time_complexity": "O(1) per iteration",
-            "typical_execution_time_ms": 2500,
-            "bottlenecks": [
-              {
-                "operation": "price_data_management.update_price_data()-BybitAPI",
-                "current_time_ms": 1500,
-                "optimization_potential": "WebSocket切り替え→50ms（90%短縮）"
-              },
-              {
-                "operation": "strategy.make_trade_decision()-指標計算",
-                "current_time_ms": 800,
-                "optimization_potential": "キャッシュ化→560ms（30%短縮）"
-              }
-            ]
-          }
-        },
-        {
           "name": "show_trade_data",
-          "line": 76,
-          "method_type": "UTILITY",
+          "line": 70,
           "purpose": "取引ループの進捗をコンソール出力（デバッグ用）",
           "criticality": "LOW"
         },
         {
+          "name": "run",
+          "line": 99,
+          "purpose": "バックテスト/ホットテスト/本番運用のメインループを実行",
+          "criticality": "CRITICAL"
+        },
+        {
           "name": "execute_order",
-          "line": 390,
-          "method_type": "ACTION",
+          "line": 434,
           "purpose": "trading_strategyからの注文をexchange APIで実行",
-          "entry_conditions": [
-            "order dict は正しい形式（symbol, side, quantity, price, order_type）",
-            "exchange接続確立",
-            "side は内部表記（BUY or SELL）"
-          ],
-          "exit_outcomes": [
-            "注文送信成功→exchange.execute_entry_order()結果を戻す",
-            "エラー→False戻す"
-          ],
-          "criticality": "CRITICAL",
-          "error_handling": {
-            "exceptions": [
-              {
-                "exception_type": "KeyError",
-                "location": "order[key]アクセス",
-                "recovery_strategy": "ABORT",
-                "fallback_action": "log_error()出力、False戻す"
-              },
-              {
-                "exception_type": "Exception",
-                "location": "exchange.execute_entry_order()",
-                "recovery_strategy": "ABORT",
-                "fallback_action": "log_error()出力、False戻す"
-              }
-            ]
-          },
-          "testability": {
-            "difficulty": "MEDIUM",
-            "suggested_test_cases": [
-              {
-                "name": "test_execute_order_valid_buy",
-                "type": "UNIT",
-                "setup": "exchange.execute_entry_order()モック、有効なorder dict",
-                "expected": "exchange呼び出し確認、ログ出力確認"
-              },
-              {
-                "name": "test_execute_order_api_error",
-                "type": "UNIT",
-                "setup": "exchange.execute_entry_order()がAPIError発生",
-                "expected": "例外キャッチ、log_error()、False戻す"
-              }
-            ]
-          }
+          "criticality": "CRITICAL"
         }
       ]
     }
   ],
-  "summary": {
-    "architecture_score": 8.2,
-    "testability_score": 7.5,
-    "maintainability_score": 8.0,
-    "design_strengths": [
-      "メインループが単一責務で明確（オーケストレーション）",
-      "3つの実行モード（バックテスト/ホットテスト/本番）に対応",
-      "包括的なエラーハンドリング（APIエラー、戦略エラー、注文エラー）",
-      "イベントベースの疎結合設計（EventBus）",
-      "構造化ログ出力（JSON形式で分析・可視化対応）"
-    ],
-    "critical_issues": [
-      "ポジション状態のlocal vs exchange不整合検出メカニズムなし",
-      "指数バックオフが未実装→APIレート制限時のリスク",
-      "注文数量の事前検証なし→不正値がAPI送信される可能性",
-      "backtest/hottest/本番の3モード切り替えに設定漏れリスク"
-    ],
-    "recommendations": [
-      "HealthCheck endpoint追加（監視・アラート対応）",
-      "CircuitBreakerパターン導入（API障害時自動フェイルセーフ）",
-      "注文送信前のvalidationメソッド追加",
-      "WebSocketリアルタイムティック取得への切り替え",
-      "ポジションstate machine導入（local vs exchange同期）",
-      "設定検証メソッド追加"
-    ]
+  "functions": [],
+  "dependencies": [
+    {"module": "logger.Logger", "purpose": "ログ記録"},
+    {"module": "config.Config", "purpose": "設定情報取得"},
+    {"module": "price_data_management.PriceDataManagement", "purpose": "価格データ管理"},
+    {"module": "bybit_exchange.BybitExchange", "purpose": "Bybit取引所API"},
+    {"module": "bitget_exchange.BitgetExchange", "purpose": "Bitget取引所API"},
+    {"module": "trading_strategy.TradingStrategy", "purpose": "取引戦略"},
+    {"module": "risk_management.RiskManagement", "purpose": "リスク管理"},
+    {"module": "portfolio.Portfolio", "purpose": "ポートフォリオ管理"},
+    {"module": "order.Order", "purpose": "注文クラス"},
+    {"module": "event.EventBus, EventType", "purpose": "イベント管理"},
+    {"module": "metrics.compute_metrics", "purpose": "メトリクス計算"},
+    {"module": "trade_logger.TradeLogger", "purpose": "トレードログ記録（JSON形式）"}
+  ],
+  "key_patterns": [
+    "Orchestrator Pattern",
+    "Event-Driven Architecture",
+    "Dependency Injection",
+    "State Machine（暗黙的）"
+  ],
+  "test_coverage": {
+    "test_files": ["test/test_bot_integration.py"],
+    "coverage_estimate": "70%",
+    "critical_gaps": ["run()メソッドの完全統合テスト", "execute_order()の例外処理テスト"]
   },
-  "recent_changes": [
+  "performance_considerations": [
     {
-      "date": "2026-01-05",
-      "description": "TradeLogger entry_dataにmarket_regime_reason, market_regime_confidenceフィールド追加。market_regimeからmarket_regime_confidence/market_regime_filter_enabledへのキー名修正。",
-      "commit": "30fb5fd, ac79f43",
-      "affected_methods": [
-        "run (ENTRY記録部分)"
-      ],
-      "lines_changed": "～310-315"
-    },
-    {
-      "date": "2026-01-04",
-      "description": "TradeLogger統合。ENTRY/EXIT時に自動的にlog_entry/log_exitを呼び出す実装。PVO, ADX, Volume, Volatility, Market Regime情報を記録。",
-      "commit": "7b5c82c",
-      "affected_methods": [
-        "__init__",
-        "run (ENTRY/EXIT記録)"
-      ],
-      "lines_changed": "～244-313",
-      "new_dependencies": [
-        "trade_logger.py (TradeLogger)"
-      ]
+      "aspect": "API呼び出し頻度",
+      "bottleneck": "REST API遅延（1.5秒/イテレーション）",
+      "optimization": "WebSocket切り替え→50ms（90%短縮）"
     }
+  ],
+  "error_handling": {
+    "strategy": "例外捕捉+ログ記録+継続実行",
+    "exception_types": ["APIError", "Exception", "KeyboardInterrupt"]
+  },
+  "improvement_suggestions": [
+    {"priority": "HIGH", "suggestion": "HealthCheck endpoint追加"},
+    {"priority": "HIGH", "suggestion": "CircuitBreakerパターン導入"},
+    {"priority": "MEDIUM", "suggestion": "WebSocketリアルタイムティック取得"}
   ]
 }

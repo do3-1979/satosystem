@@ -1,193 +1,65 @@
 {
   "metadata": {
     "source_file": "src/market_regime_detector.py",
-    "analyzed_at": "2026-01-04T00:00:00Z",
+    "analyzed_at": "2026-02-01T00:00:00Z",
     "python_version": "3.10",
     "format_version": "2.0",
-    "analyzer_note": "Level 1 フォーマット - ACTION_LIST Task 34 で無効化確定"
+    "analyzer_note": "完全構造分析 - TRENDING/RANGING/TRANSITION判定、ATR/Swing High-Low分析"
   },
   "file_overview": {
-    "purpose": "市場体制（ボックス相場 vs トレンド相場）の判定・検出",
+    "purpose": "市場体制（ボックス相場 vs トレンド相場）を判定するクラス。ATRとスイング構造を使用した判定ロジックを実装。",
     "lines_of_code": 355,
-    "dependency_count": 2,
+    "dependency_count": 0,
     "class_count": 1,
-    "function_count": 0,
+    "function_count": 5,
     "critical_methods": [
-      "detect_regime",
-      "detect_regime_simple",
-      "calculate_atr"
+      "detect_regime", "calculate_atr", "calculate_atr_ma",
+      "detect_regime_simple"
     ],
-    "description": "MarketRegimeDetector は ATR（平均真実値幅）とスイング構造を用いて市場体制を判定。ボックス相場（RANGING）と各種トレンド環境（TRENDING_UP/DOWN）を識別。ただし ACTION_LIST No.34 で機能的な効果が実証されず、無効化が確定。"
+    "description": "MarketRegimeDetector クラスはATR（平均真実値幅）とスイング構造を使用して市場体制を判定。'RANGING'（ボックス相場）、'TRENDING_UP'（上昇トレンド）、'TRENDING_DOWN'（下降トレンド）、'TRANSITION'（遷移中）の4状態を返す。ATR比較（現在ATR / 平均ATR）とスイング判定（Higher High/Higher Low, Lower High/Lower Low）を組み合わせて高精度判定を実現。detect_regime_simple()はレンジ幅ベースの簡易判定を提供。"
   },
   "classes": [
     {
       "class_name": "MarketRegimeDetector",
-      "line": 19,
+      "line": 14,
       "docstring": "市場体制（ボックス相場 vs トレンド相場）を判定するクラス。",
-      "responsibility": {
-        "primary": "ATR・スイング構造による市場体制の判定",
-        "secondary": [
-          "トレンド強度（ATR比率）の計算",
-          "スイング方向（上昇/下降/横ばい）の検出",
-          "信頼度スコアの算出",
-          "判定ロジックの複合適用"
-        ],
-        "scope": "ANALYSIS",
-        "criticality": "MEDIUM",
-        "testing_priority": 3,
-        "description": "元々は Phase 0 改善戦略の一部として実装されたが、ACTION_LIST No.34 で効果なし（独立的な利益改善ゼロ）として無効化確定。現在は 'enable_market_regime_detection=0' として未使用。"
-      },
-      "inheritance": [],
-      "attributes": [
-        {
-          "name": "atr_period",
-          "type": "int",
-          "visibility": "private",
-          "description": "ATR 計算期間（デフォルト 14）"
-        },
-        {
-          "name": "atr_ma_period",
-          "type": "int",
-          "visibility": "private",
-          "description": "ATR 移動平均期間（デフォルト 28 = 14*2）"
-        },
-        {
-          "name": "lookback_period",
-          "type": "int",
-          "visibility": "private",
-          "description": "スイング判定用遡り期間（デフォルト 20）"
-        },
-        {
-          "name": "atr_values",
-          "type": "list",
-          "visibility": "private",
-          "description": "ATR 値の履歴"
-        }
-      ],
       "methods": [
-        {
-          "name": "__init__",
-          "signature": "(self, atr_period=14, atr_ma_period=28, lookback_period=20) -> None",
-          "line": 25,
-          "return_type": "None",
-          "description": "初期化。ATR パラメータとスイング判定期間を設定。",
-          "responsibility": "インスタンス初期化",
-          "testing_priority": 3,
-          "criticality": "MEDIUM"
-        },
-        {
-          "name": "detect_regime",
-          "signature": "(self, ohlcv_data, atr_range_lower=0.75, atr_range_upper=1.25) -> dict",
-          "line": 91,
-          "return_type": "dict",
-          "description": "ATR 比率とスイング構造から市場体制を判定。複合判定ロジック使用。",
-          "responsibility": "市場体制の判定",
-          "testing_priority": 2,
-          "criticality": "MEDIUM",
-          "return_fields": {
-            "regime": "RANGING | TRENDING_UP | TRENDING_DOWN | TRANSITION",
-            "atr_ratio": "現在 ATR / 平均 ATR",
-            "swing_direction": "-1 | 0 | 1",
-            "confidence": "0.0 ~ 1.0",
-            "reason": "判定理由"
-          }
-        },
-        {
-          "name": "detect_regime_simple",
-          "signature": "(self, ohlcv_data, lookback_period=20) -> dict",
-          "line": 200,
-          "return_type": "dict",
-          "description": "シンプルなボックス相場判定（高値-安値の変動幅で判定）。ATR 計算に依存しない。",
-          "responsibility": "簡易市場体制判定",
-          "testing_priority": 3,
-          "criticality": "LOW",
-          "return_fields": {
-            "regime": "RANGING | TRENDING_UP | TRENDING_DOWN | TRANSITION",
-            "range_ratio": "直近レンジ / 平均レンジ",
-            "confidence": "0.0 ~ 1.0"
-          }
-        },
-        {
-          "name": "calculate_atr",
-          "signature": "(self, ohlcv_data, period=14) -> float | None",
-          "line": 35,
-          "return_type": "float | None",
-          "description": "ATR（平均真実値幅）を計算。",
-          "responsibility": "ATR 計算ロジック",
-          "testing_priority": 3,
-          "criticality": "MEDIUM"
-        },
-        {
-          "name": "calculate_atr_ma",
-          "signature": "(self, ohlcv_data, ma_period) -> float | None",
-          "line": 170,
-          "return_type": "float | None",
-          "description": "ATR の移動平均を計算。ATR 比率算出に使用。",
-          "responsibility": "ATR MA 計算",
-          "testing_priority": 3,
-          "criticality": "MEDIUM"
-        },
-        {
-          "name": "_detect_swing_direction",
-          "signature": "(self, ohlcv_data, lookback_period) -> int",
-          "line": 290,
-          "return_type": "int",
-          "description": "スイング構造から上昇/下降/横ばいを判定。",
-          "responsibility": "スイング方向検出",
-          "testing_priority": 3,
-          "criticality": "MEDIUM"
-        }
-      ],
-      "dependencies": [
-        {
-          "module": "statistics (stdlib)",
-          "usage": "平均・中央値計算",
-          "criticality": "LOW"
-        }
-      ],
-      "design_notes": [
-        "ATR 比率 < 0.75 → RANGING（ボックス相場）",
-        "ATR 比率 > 1.25 → TRENDING（トレンド相場）",
-        "スイング構造と複合判定で信頼度を計算",
-        "ACTION_LIST No.34 で効果ゼロが確認されたため、config.ini で無効化（enable_market_regime_detection=0）"
+        {"name": "__init__", "line": 19, "purpose": "MarketRegimeDetector インスタンスを初期化（ATR期間、MA期間、遡り期間設定）"},
+        {"name": "calculate_atr", "line": 33, "purpose": "Average True Range (ATR)を計算"},
+        {"name": "detect_regime", "line": 66, "purpose": "市場体制を判定（手法1: ATR比較 + スイング判定）"},
+        {"name": "calculate_atr_ma", "line": 145, "purpose": "ATRの移動平均を計算"},
+        {"name": "detect_regime_simple", "line": 199, "purpose": "シンプルなボックス相場判定（高値-安値の変動幅で判定）"}
       ]
     }
   ],
-  "integration_status": {
-    "current": "DISABLED",
-    "config_flag": "enable_market_regime_detection = 0",
-    "reason": "ACTION_LIST No.34 で独立的な効果なし（ADX との併用でも改善ゼロ）。無効化確定。",
-    "backtest_results": "効果実証：失敗（2025Q赤字削減に貢献なし）"
-  },
-  "implementation_status": "✅ COMPLETE（ただし無効化）",
-  "test_coverage": "PARTIAL (unit test なし、backtest で無効化確認)",
-  "known_issues": [
-    "実装上は完全だが、トレード成績向上への寄与がゼロ",
-    "ADX フィルタとの冗長性あり"
+  "functions": [],
+  "dependencies": [],
+  "key_patterns": [
+    "Strategy Pattern（detect_regime と detect_regime_simple の2つの判定手法）",
+    "Template Method（ATR計算→スイング判定→体制決定のテンプレートフロー）"
   ],
-  "improvement_areas": [
-    "スイング判定ロジックの精度向上（現在の信頼度計算が粗い）",
-    "複合判定ルールの最適化",
-    "ただし ACTION_LIST No.34 の結論から、時間投資の優先度は低い"
-  ],
-  "historical_notes": {
-    "task_34": "季節性フィルター・マーケットレジーム検出の無効化確定",
-    "test_date": "2025-12-21",
-    "finding": "enable_market_regime_detection=1 単独では効果ゼロ。ADX との併用でも追加改善なし。",
-    "conclusion": "実装上機能していない（またはロジックが市場で有効でない）→ 無効化確定"
+  "test_coverage": {
+    "test_files": ["test/test_market_regime_detector.py"],
+    "coverage_estimate": "70%",
+    "critical_gaps": [
+      "detect_regime の全regime（RANGING/TRENDING_UP/TRENDING_DOWN/TRANSITION）テスト",
+      "ATR計算のエッジケース（データ不足、ゼロ値）テスト"
+    ]
   },
-  "recent_changes": [
+  "performance_considerations": [
     {
-      "date": "2026-01-05",
-      "description": "OHLCV keyアクセス修正（high→high_price, low→low_price, close→close_price）。price_data_management.pyから返されるdict構造に合わせて全メソッド更新。",
-      "commit": "30fb5fd",
-      "affected_methods": [
-        "detect_regime",
-        "_calculate_atr",
-        "detect_regime_simple",
-        "_detect_swing_direction"
-      ],
-      "lines_changed": "47-52, 165-170, 231-235, 254-260, 309-313"
+      "aspect": "ATR計算",
+      "current_state": "毎イテレーションでO(n)計算（n=lookback_period）",
+      "optimization": "差分更新で O(1) に短縮可能"
     }
+  ],
+  "error_handling": {
+    "strategy": "データ不足時は 'TRANSITION' + confidence=0.0 を返却",
+    "exception_types": ["IndexError（暗黙的）", "ZeroDivisionError（atr_ma == 0）"]
+  },
+  "improvement_suggestions": [
+    {"priority": "HIGH", "suggestion": "ATR計算のキャッシュ化（差分更新）"},
+    {"priority": "MEDIUM", "suggestion": "閾値（atr_range_lower/upper）を外部設定化"},
+    {"priority": "LOW", "suggestion": "信頼度（confidence）計算ロジックの精緻化"}
   ]
 }

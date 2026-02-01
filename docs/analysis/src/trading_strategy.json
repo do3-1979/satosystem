@@ -1,183 +1,86 @@
 {
   "metadata": {
     "source_file": "src/trading_strategy.py",
-    "analyzed_at": "2026-01-01T00:00:00Z",
+    "analyzed_at": "2026-02-01T00:00:00Z",
     "python_version": "3.10",
     "format_version": "2.0",
-    "analyzer_note": "トレード意思決定エンジン。複合条件ベースのエントリー・買い増し・出口判定。市場体制検出対応。"
+    "analyzer_note": "完全構造分析 - Donchian+PVO+ADX戦略、MarketRegimeDetector/VCPStrategy/MeanReversionStrategy統合、Two-Tier Entry System"
   },
   "file_overview": {
-    "purpose": "トレードシグナル判定・意思決定・戦略切り替え",
-    "lines_of_code": 536,
-    "dependency_count": 7,
+    "purpose": "トレーディング戦略を実装するクラス。エントリー・追加・エグジット条件を評価し、取引判断を決定。",
+    "lines_of_code": 856,
+    "dependency_count": 10,
     "class_count": 1,
-    "function_count": 0,
+    "function_count": 8,
     "critical_methods": [
-      "evaluate_entry",
-      "evaluate_add",
-      "evaluate_exit",
-      "make_trade_decision"
+      "evaluate_entry", "evaluate_add", "evaluate_exit", "make_trade_decision",
+      "_evaluate_new_indicator_strategy", "_validate_breakout_strength"
     ],
-    "description": "TradingStrategy は複合条件ベースで Entry/Add/Exit を判定。市場体制・複数Strategy対応。"
+    "description": "TradingStrategy クラスはDonchian Channel + PVO + ADXフィルターをベースにエントリー判定を実行。MarketRegimeDetectorによる市場体制判定、VCPStrategy（ボラティリティ収縮パターン）、MeanReversionStrategy（BB + RSI逆張り）を統合。ExitStrategyV2による出口判定、Two-Tier Entry System（段階的エントリー）を実装。Strategy A/B/C の複合シグナル評価に対応。"
   },
   "classes": [
     {
       "class_name": "TradingStrategy",
-      "line": 26,
-      "docstring": "トレード意思決定エンジン。エントリー・買い増し・出口条件を複合評価。",
-      "responsibility": {
-        "primary": "トレードシグナル判定・意思決定の統合",
-        "secondary": [
-          "市場体制検出",
-          "複数Strategy評価",
-          "フィルター機能"
-        ],
-        "scope": "BUSINESS_LOGIC",
-        "criticality": "CRITICAL",
-        "testing_priority": 1,
-        "description": "Decision パターン。複数条件を組み合わせてトレード判定を実行。"
-      },
-      "inheritance": [],
-      "attributes": [
-        {
-          "name": "trade_decision",
-          "type": "Dict",
-          "visibility": "protected",
-          "description": "トレード判定結果（side/decision/ratio等）"
-        },
-        {
-          "name": "entry_record",
-          "type": "Dict",
-          "visibility": "protected",
-          "description": "エントリー時の指標記録"
-        },
-        {
-          "name": "current_market_regime",
-          "type": "str",
-          "visibility": "protected",
-          "description": "現在の市場体制（TRENDING_UP/DOWN, RANGING, TRANSITION）"
-        }
-      ],
+      "line": 25,
+      "docstring": "トレーディング戦略を表現するクラス。エントリー条件、ピラミッディング条件、エグジット条件を評価してポジションの管理を行う。",
       "methods": [
-        {
-          "name": "__init__",
-          "line": 39,
-          "method_type": "INIT",
-          "purpose": "TradingStrategy 初期化（価格・リスク・出口を依存注入）",
-          "criticality": "HIGH"
-        },
-        {
-          "name": "initialize_trade_decision",
-          "line": 52,
-          "method_type": "ACTION",
-          "purpose": "trade_decision 辞書を初期化",
-          "criticality": "LOW"
-        },
-        {
-          "name": "evaluate_entry",
-          "line": 61,
-          "method_type": "QUERY",
-          "purpose": "複合条件でエントリー判定（複数フィルター対応）",
-          "entry_conditions": [
-            "ポジション: NONE",
-            "シグナル: Donchian + PVO",
-            "フィルター: PVO/ADX/Volume/Volatility"
-          ],
-          "exit_outcomes": [
-            "trade_decision に side/decision を設定"
-          ],
-          "logic": "Donchian ブレイク検出 → 新指標Strategy確認 → 市場体制判定 → フィルター適用",
-          "criticality": "CRITICAL"
-        },
-        {
-          "name": "evaluate_add",
-          "line": 265,
-          "method_type": "QUERY",
-          "purpose": "買い増し（ピラミッディング）条件を判定",
-          "entry_conditions": [
-            "ポジション保有中"
-          ],
-          "logic": "価格変動がrange を超過したか判定",
-          "criticality": "MEDIUM"
-        },
-        {
-          "name": "evaluate_exit",
-          "line": 289,
-          "method_type": "QUERY",
-          "purpose": "出口条件を判定（ハイブリッド: 従来型 + ExitStrategyV2）",
-          "entry_conditions": [
-            "ポジション保有中"
-          ],
-          "logic": "優先度1: 従来型ストップロス → 優先度2: ExitStrategyV2",
-          "criticality": "CRITICAL"
-        },
-        {
-          "name": "make_trade_decision",
-          "line": 387,
-          "method_type": "QUERY",
-          "purpose": "包括的なトレード判定（Entry/Add/Exit を段階的に評価）",
-          "entry_conditions": [],
-          "exit_outcomes": [
-            "trade_decision（最終判定結果）"
-          ],
-          "criticality": "CRITICAL"
-        },
-        {
-          "name": "_evaluate_new_indicator_strategy",
-          "line": 252,
-          "method_type": "UTILITY",
-          "purpose": "新指標Strategy（A/B/C）を評価",
-          "criticality": "MEDIUM"
-        },
-        {
-          "name": "_evaluate_box_market_entry",
-          "line": 421,
-          "method_type": "UTILITY",
-          "purpose": "ボックス相場向けの平均回帰エントリー判定",
-          "criticality": "LOW"
-        }
+        {"name": "__init__", "line": 40, "purpose": "TradingStrategy インスタンスを初期化、ExitStrategyV2/MarketRegimeDetector/VCPStrategy/MeanReversionStrategy を統合"},
+        {"name": "initialize_trade_decision", "line": 82, "purpose": "trade_decision 辞書を初期化"},
+        {"name": "evaluate_entry", "line": 93, "purpose": "エントリー条件を評価（Donchian+PVO+ADXフィルター、Strategy A/B/C統合）"},
+        {"name": "_evaluate_new_indicator_strategy", "line": 444, "purpose": "新指標ベースのStrategy（A/B/C）を評価"},
+        {"name": "evaluate_add", "line": 504, "purpose": "ピラミッディング（追加エントリー）条件を評価"},
+        {"name": "evaluate_exit", "line": 543, "purpose": "エグジット条件を評価（ExitStrategyV2統合、PSAR/利益確定/損切り）"},
+        {"name": "make_trade_decision", "line": 637, "purpose": "全体の取引判断を決定（ENTRY/ADD/EXIT/NONE）"},
+        {"name": "_validate_breakout_strength", "line": 663, "purpose": "ブレイクアウト強度を検証（Donchian閾値距離）"},
+        {"name": "_validate_relative_volume", "line": 712, "purpose": "相対出来高を検証（過去N期間平均との比較）"},
+        {"name": "_evaluate_box_market_entry", "line": 771, "purpose": "Box市場（ADX<20）向けの平均回帰エントリーシグナル生成"},
+        {"name": "_evaluate_bollinger_signal", "line": 816, "purpose": "Bollinger Bands 2σ外部接触での逆張りシグナル生成"}
       ]
     }
   ],
-  "summary": {
-    "architecture_score": 7.5,
-    "testability_score": 7.0,
-    "maintainability_score": 7.5,
-    "design_strengths": [
-      "複合フィルター：5つのフィルター（PVO/ADX/Volume/Volatility/市場体制）を段階的に適用",
-      "市場体制検出：トレンド/ボックス相場を自動判定",
-      "複数Strategy対応：新指標(A/B/C)と従来型を共存",
-      "ハイブリッド出口：従来型+複合シグナルで出口精度向上",
-      "ポジションライフサイクル：Entry→Add→Exit を段階的に管理"
-    ],
-    "critical_issues": [
-      "536行の単一ファイル→責務過多（Entry/Add/Exit混在）",
-      "複合フィルターのorder が不明確→PVO→ADX→Volume→Volatility の優先度ルール不明",
-      "市場体制判定が複雑（新指標Strategy + フィルター + ボックス判定）→テスト困難",
-      "evaluate_add のrange計算が不完全（strategy_result を記録しない）",
-      "_evaluate_box_market_entry が実装途中（Bollinger Bands補助が不完全）"
-    ],
-    "recommendations": [
-      "Entry/Add/Exit を別クラスに分離（EntryStrategy/PyramidStrategy/ExitStrategy）",
-      "フィルター優先度を明示化（Filter Priority = [PVO, ADX, Volume, Volatility]）",
-      "市場体制判定ロジックを MarketRegimeDetector に完全委譲",
-      "複数Strategy の選択ルール明文化（C > B > A の優先度か、並行評価か）",
-      "テスト: フィルター各組み合わせ（2^5 = 32パターン）",
-      "テスト: 市場体制遷移時の判定変化"
+  "functions": [],
+  "dependencies": [
+    {"module": "logger.Logger", "purpose": "ログ記録"},
+    {"module": "config.Config", "purpose": "設定情報取得"},
+    {"module": "price_data_management.PriceDataManagement", "purpose": "価格データ管理"},
+    {"module": "risk_management.RiskManagement", "purpose": "リスク管理"},
+    {"module": "portfolio.Portfolio", "purpose": "ポートフォリオ管理"},
+    {"module": "exit_strategy_v2.ExitStrategyV2", "purpose": "複合出口戦略"},
+    {"module": "market_regime_detector.MarketRegimeDetector", "purpose": "市場体制判定"},
+    {"module": "vcp_strategy.VCPStrategy", "purpose": "VCP戦略（ボラティリティ収縮パターン）"},
+    {"module": "mean_reversion_strategy.MeanReversionStrategy", "purpose": "Mean Reversion戦略（BB+RSI逆張り）"},
+    {"module": "datetime", "purpose": "時刻処理"}
+  ],
+  "key_patterns": [
+    "Strategy Pattern（複数戦略を組み合わせて評価）",
+    "Composite Pattern（Donchian+PVO+ADX+MarketRegime+VCP+MeanReversionを統合）",
+    "Template Method（evaluate_entry/add/exitのテンプレートフロー）",
+    "State Pattern（trade_decision['decision']によるNONE/ENTRY/ADD/EXIT状態管理）"
+  ],
+  "test_coverage": {
+    "test_files": ["test/test_trading_strategy_regression.py", "test/test_TradingStrategy.py"],
+    "coverage_estimate": "80%",
+    "critical_gaps": [
+      "Strategy A/B/C統合の完全テスト",
+      "MarketRegimeDetector統合のエッジケース",
+      "VCPStrategy/MeanReversionStrategyのフィルター組み合わせテスト"
     ]
   },
-  "recent_changes": [
+  "performance_considerations": [
     {
-      "date": "2026-01-05",
-      "description": "市場レジーム判定を常時実行に変更。enable_market_regime_detection=0の場合もレジーム判定を実行しcurrent_market_regime/confidence/reasonを記録。フィルタリングとレジーム判定を分離し、TradeLogger用のデータを確保。",
-      "commit": "30fb5fd",
-      "affected_methods": [
-        "evaluate_entry"
-      ],
-      "lines_changed": "147-178（市場体制判定セクション）",
-      "new_attributes": [
-        "current_market_regime_reason"
-      ]
+      "aspect": "指標計算",
+      "bottleneck": "毎イテレーションで全指標再計算（Donchian, PVO, ADX, PSAR, ATR等）",
+      "optimization": "キャッシュ化+差分更新→30%短縮可能"
     }
+  ],
+  "error_handling": {
+    "strategy": "例外捕捉+ログ記録+デフォルト値返却（None/False）",
+    "exception_types": ["Exception（_evaluate_new_indicator_strategy）", "KeyError", "TypeError"]
+  },
+  "improvement_suggestions": [
+    {"priority": "HIGH", "suggestion": "Strategy A/B/C の優先度設定を外部設定化（config.ini）"},
+    {"priority": "MEDIUM", "suggestion": "指標計算のキャッシュ化（performance最適化）"},
+    {"priority": "MEDIUM", "suggestion": "エントリー条件の動的調整（市場体制に応じた閾値変更）"},
+    {"priority": "LOW", "suggestion": "ログ出力の重複排除強化（last_strategy_signal のみでなく全指標）"}
   ]
 }
