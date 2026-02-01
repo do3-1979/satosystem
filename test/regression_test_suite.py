@@ -7,7 +7,7 @@
 # - テスト仕様・期待値は `docs/REGRESSION_TEST_POLICY.md` を参照してください。
 #
 # ## テスト項目
-# 1. バックテスト（bot_run.sh）
+# 1. バックテスト（bot.py 直接実行）
 # 2. ホットテスト（ダミーラッパ）
 # 3. 主要クラス・メソッド単体テスト
 # 4. 結果整合性チェック
@@ -19,7 +19,7 @@ import subprocess
 import time
 import json
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # ワークスペースルートを基準とする
 WORKSPACE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -151,7 +151,7 @@ def verify_hottest_config():
 
 def test_backtest():
     """
-    bot_run.shによるバックテストが正常に実行でき、結果が前回と一致するか判定
+    bot.py を直接実行してバックテストが正常に完走できることを確認
     """
     test_name = "backtest"
     # 変更前の結果を保存（仮実装: 直近のresultファイルをコピー）
@@ -160,11 +160,30 @@ def test_backtest():
     
     # バックテスト実行
     try:
-        # WORKSPACE_ROOT で実行し、bot_run.sh は src/ 内を参照するのでフルパスで指定
-        # timeout: バックテスト期間が長い場合は時間がかかるため余裕を持たせる（デフォルト: 600秒）
-        result = subprocess.run(["bash", "src/bot_run.sh"], cwd=WORKSPACE_ROOT, capture_output=True, text=True, timeout=600)
+        # 期間が長いと時間がかかるため、config.ini の開始日から短い期間に丸めて実行する
+        # bot.py は `python src/bot.py test YYYY-MM-DD YYYY-MM-DD` で実行時期間上書きに対応
+        try:
+            from config import Config
+            start_time = Config.get_start_time()  # 例: 2024/01/01 00:00
+            start_date = start_time.split()[0].replace('/', '-')
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+            end_dt = start_dt + timedelta(days=2)
+            end_date = end_dt.strftime("%Y-%m-%d")
+        except Exception:
+            # フォールバック（データが存在することを前提とした暫定値）
+            start_date = "2024-01-01"
+            end_date = "2024-01-03"
+
+        # timeout: 短期期間での健全性チェックなので短めにする
+        result = subprocess.run(
+            ["python3", "src/bot.py", "test", start_date, end_date],
+            cwd=WORKSPACE_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=240,
+        )
         if result.returncode != 0:
-            log_result(test_name, False, f"bot_run.sh実行エラー\nstdout: {result.stdout[:500]}\nstderr: {result.stderr[:500]}")
+            log_result(test_name, False, f"bot.py実行エラー\nperiod: {start_date} ~ {end_date}\nstdout: {result.stdout[:500]}\nstderr: {result.stderr[:500]}")
             return
         # 結果ファイル例: logs/backtest_summary_*.json または logs/latest_backtest.log
         log_files = [f for f in os.listdir(LOGS_DIR) if f.startswith("backtest_summary") and f.endswith(".json")]
@@ -539,13 +558,20 @@ def run_individual_test_modules():
             "test_visualizer_regression",
             "test_ohlcv_cache_regression",
             "test_bitget_exchange_regression",
+            "test_exchange_regression",
             "test_supplementary_regression",
             "test_indicators_regression",
             "test_exit_strategy_v2_regression",
+            "test_market_regime_detector_regression",
             "test_event_regression",
             "test_side_regression",
             "test_order_regression",
-            "test_metrics_regression"
+            "test_metrics_regression",
+            "test_mean_reversion_strategy_regression",
+            "test_new_indicators_regression",
+            "test_trade_logger_regression",
+            "test_util_regression",
+            "test_vcp_strategy_regression",
         ]
         
         all_results = []
@@ -640,9 +666,14 @@ def generate_regression_report():
                     result = json.load(f)
                     all_results.append(result)
                     
+                    # 個別ファイルテスト: { total, passed }
                     if "total" in result and "passed" in result:
-                        total_tests += result["total"]
-                        total_passed += result["passed"]
+                        total_tests += int(result["total"])
+                        total_passed += int(result["passed"])
+                    # log_result(): { passed: bool }
+                    elif "passed" in result:
+                        total_tests += 1
+                        total_passed += 1 if bool(result["passed"]) else 0
             except Exception as e:
                 print(f"⚠️  {result_file} の読み込みエラー: {e}")
         
@@ -780,3 +811,7 @@ if __name__ == "__main__":
     print("\n" + "=" * 70)
     print("✅ レグレッションテストスイート完了")
     print("=" * 70)
+
+    # 失敗が1件でもあれば非0終了（CI/自動化で判定しやすくする）
+    if report and report.get("summary", {}).get("total_failed", 0) > 0:
+        sys.exit(1)
