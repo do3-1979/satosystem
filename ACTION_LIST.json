@@ -61,15 +61,7 @@
         "related_doc": "DEVELOPMENT_RULES.json",
         "estimated_impact_usd": null
       },
-      {
-        "id": "40d",
-        "category": "戦略監査",
-        "title": "現行戦略の見直し（エントリー/EXITの整合性監査）",
-        "description": "Donchian/PVO/ADX/新指標/Exit(PSAR等)の相互作用を点検し、(1)過剰フィルタで機会損失、(2)Exitが早すぎて期待値棄損、(3)反転局面で逆行、のどれが支配的かを定量化して改善案を作る",
-        "priority": 4,
-        "related_doc": "docs/ARCHITECTURE_OVERVIEW.md",
-        "estimated_impact_usd": null
-      },
+
       {
         "id": "40e",
         "category": "調査・研究",
@@ -190,6 +182,16 @@
         "status": "設計中 (2025年度対応)",
         "priority": 4,
         "related_doc": null
+      },
+      {
+        "id": "40d",
+        "category": "戦略監査",
+        "title": "現行戦略の見直し（エントリー/EXITの整合性監査）",
+        "description": "Donchian/PVO/ADX/新指標/Exit(PSAR等)の相互作用を点検し、(1)過剰フィルタで機会損失、(2)Exitが早すぎて期待値棄損、(3)反転局面で逆行、のどれが支配的かを定量化して改善案を作る",
+        "status": "分析中",
+        "priority": 4,
+        "related_doc": "docs/ARCHITECTURE_OVERVIEW.md",
+        "estimated_impact_usd": null
       }
     ],
     "done": [

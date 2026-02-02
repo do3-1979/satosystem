@@ -47,6 +47,18 @@
           "title": "マルチタイムフレーム ADX 確認",
           "status": "設計中 (2025年度対応)",
           "priority": "★★★★☆"
+        },
+        {
+          "task_id": "40d",
+          "title": "現行戦略の見直し（エントリー/EXITの整合性監査）",
+          "status": "分析中",
+          "priority": "★★★★☆"
+        },
+        {
+          "task_id": "40d",
+          "title": "エントリー/Exit整合性監査開始",
+          "status": "実装中",
+          "priority": "★★★★☆"
         }
       ],
       "next_priority": [
