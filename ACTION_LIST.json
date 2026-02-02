@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0",
-    "last_updated": "2026-02-01",
+    "last_updated": "2026-02-02",
     "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE)",
     "replaces": "docs/ACTION_LIST.md"
   },
@@ -33,6 +33,97 @@
         "priority": 4,
         "related_doc": "PROFIT_ENHANCEMENT_STRATEGY_2026",
         "estimated_impact_usd": [100, 200]
+      },
+      {
+        "id": "40a",
+        "category": "品質保証",
+        "title": "効果測定手法の強化（Walk-Forward + OOS）",
+        "description": "2024→2025のウォークフォワード（学習/調整→検証）と、OOS(外部期間)での再現性確認に移行。四半期別だけでなくローリング期間・市場レジーム別の評価も導入",
+        "priority": 5,
+        "related_doc": "docs/PROFIT_ENHANCEMENT_STRATEGY_2026.md",
+        "estimated_impact_usd": null
+      },
+      {
+        "id": "40b",
+        "category": "品質保証",
+        "title": "手数料/スリッページ/約定遅延のコストモデル導入",
+        "description": "バックテスト評価に実コスト（手数料・スリッページ・約定遅延・指値未約定）を織り込み、期待値がコストに耐えるかを検証。指標改善の“見かけ”を排除",
+        "priority": 5,
+        "related_doc": "docs/PRICE_DATA_FLOW_DESIGN.md",
+        "estimated_impact_usd": null
+      },
+      {
+        "id": "40c",
+        "category": "運用・リスク管理",
+        "title": "リスク・オーバーレイ（DD制限/日次損失上限/取引停止）",
+        "description": "初期資本100USD前提で、最大DD/日次損失/連敗/ボラ急増時に取引を止める“キルスイッチ”を導入。資産曲線の破綻リスクを最小化",
+        "priority": 5,
+        "related_doc": "DEVELOPMENT_RULES.json",
+        "estimated_impact_usd": null
+      },
+      {
+        "id": "40d",
+        "category": "戦略監査",
+        "title": "現行戦略の見直し（エントリー/EXITの整合性監査）",
+        "description": "Donchian/PVO/ADX/新指標/Exit(PSAR等)の相互作用を点検し、(1)過剰フィルタで機会損失、(2)Exitが早すぎて期待値棄損、(3)反転局面で逆行、のどれが支配的かを定量化して改善案を作る",
+        "priority": 4,
+        "related_doc": "docs/ARCHITECTURE_OVERVIEW.md",
+        "estimated_impact_usd": null
+      },
+      {
+        "id": "40e",
+        "category": "調査・研究",
+        "title": "トレンドフォロー以外の優位性候補の調査・小規模検証",
+        "description": "暗号資産で比較的語られる優位性（レンジ/平均回帰の条件付き適用、ボラティリティ・ブレイクアウト、Funding/Carryの偏り、時間帯/流動性、簡易マーケットメイク等）を候補化し、最小実装でバックテスト/ペーパー検証",
+        "priority": 3,
+        "related_doc": "docs/PROFIT_ENHANCEMENT_STRATEGY_2026.md",
+        "estimated_impact_usd": null
+      },
+      {
+        "id": "40f",
+        "category": "データ品質",
+        "title": "価格データの健全性チェック（欠損/異常値/時間ずれ/取引所差）",
+        "description": "OHLCVの欠損・重複・タイムゾーンずれ・スパイクを検出し、必要なら補正/除外。取引所切替やデータソース変更で性能が“見かけ”変化しないようにする",
+        "priority": 4,
+        "related_doc": "docs/PRICE_DATA_FLOW_DESIGN.md",
+        "estimated_impact_usd": null
+      },
+      {
+        "id": "40g",
+        "category": "運用・信頼性",
+        "title": "本番運用の耐障害性（API障害/再試行/部分約定/ログ監視）",
+        "description": "Raspberry Pi常時稼働に向けて、API失敗時のリトライ/バックオフ、部分約定、二重発注防止、ヘルスチェック、重要ログのアラート（メール/Discord等）を整備",
+        "priority": 4,
+        "related_doc": "docs/TRADE_LOG_USAGE_GUIDE.md",
+        "estimated_impact_usd": null
+      },
+      {
+        "id": "40j",
+        "category": "品質保証",
+        "title": "ホットテスト（ダミー）とバックテストのシグナル計算一致検証",
+        "description": "ホットテストは60秒ごとに最新足を更新しシグナル計算しているため、バックテストの1本足ごとの計算結果と差異が出ないことを検証する。ホットテスト/バックテスト双方で(同一OHLCV入力→同一インジケータ値→同一エントリー/EXIT判定)になることをステップ実行で確認し、差異が出る場合は原因（足確定タイミング、インデックスずれ、丸め、欠損補完、状態保持、Hottest candle更新など）を特定して修正",
+        "priority": 5,
+        "related_doc": "docs/PRICE_DATA_FLOW_DESIGN.md",
+        "estimated_impact_usd": null,
+        "estimated_hours": [3, 6]
+      },
+      {
+        "id": "40h",
+        "category": "戦略拡張",
+        "title": "レジーム別の戦略切替（Trend/Rangeで別ロジック）",
+        "description": "単一のトレンドフォロー固定ではなく、市場体制（トレンド/レンジ/遷移）に応じてエントリー条件・Exit・許可時間帯を切替。39c(MTF)の失敗を踏まえ“厳しすぎて0件”にならない設計で実装",
+        "priority": 4,
+        "related_doc": "docs/ADX_FILTER_ANALYSIS.md",
+        "estimated_impact_usd": null
+      },
+      {
+        "id": "40i",
+        "category": "ポートフォリオ",
+        "title": "銘柄分散・相関管理（BTC単一→複数候補）",
+        "description": "BTC単一の機会損失とレジーム偏りを避けるため、ETH等の複数銘柄で同一ルール/別パラメータの検証と、同時保有上限・相関によるリスク制限を追加",
+        "priority": 3,
+        "related_doc": "docs/PROFIT_ENHANCEMENT_STRATEGY_2026.md",
+        "estimated_impact_usd": null
       },
       {
         "id": "38d",
@@ -109,6 +200,17 @@
         "status": "設計中 (2025年度対応)",
         "priority": 4,
         "related_doc": null
+      },
+      {
+        "id": "40j",
+        "category": "品質保証",
+        "title": "ホットテスト（ダミー）とバックテストのシグナル計算一致検証",
+        "description": "ホットテストは60秒ごとに最新足を更新しシグナル計算しているため、バックテストの1本足ごとの計算結果と差異が出ないことを検証する。ホットテスト/バックテスト双方で(同一OHLCV入力→同一インジケータ値→同一エントリー/EXIT判定)になることをステップ実行で確認し、差異が出る場合は原因（足確定タイミング、インデックスずれ、丸め、欠損補完、状態保持、Hottest candle更新など）を特定して修正",
+        "status": "検証中",
+        "priority": 5,
+        "related_doc": "docs/PRICE_DATA_FLOW_DESIGN.md",
+        "estimated_impact_usd": null,
+        "estimated_hours": [3, 6]
       }
     ],
     "done": [
@@ -506,9 +608,9 @@
     ]
   },
   "summary": {
-    "total_tasks": 94,
-    "todo": 8,
-    "progress": 3,
+    "total_tasks": 104,
+    "todo": 17,
+    "progress": 4,
     "done": 83,
     "cumulative_impact_usd": 1282.62,
     "baseline_performance": "1282.62 USD (2024-2025, 8 quarters, Two-Tier Entry System有効化後)"

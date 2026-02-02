@@ -47,6 +47,12 @@
           "title": "マルチタイムフレーム ADX 確認",
           "status": "設計中 (2025年度対応)",
           "priority": "★★★★☆"
+        },
+        {
+          "task_id": "40j",
+          "title": "Task 40j 実装開始",
+          "status": "実装中",
+          "priority": "★★★★☆"
         }
       ],
       "next_priority": [
