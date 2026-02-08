@@ -261,11 +261,36 @@ def run_backtest(year, q, start_str, end_str):
             # コピー完了を1行で表示
             if copied_count > 0:
                 print(f"   📁 Trade Log を {copied_count} 件バックアップ")
+            
+            # 古い四半期ログを削除（同一四半期の古い実行結果のみ保持最小限に）
+            try:
+                quarterly_prefix = f"Q{q}_{year}_"
+                quarterly_files = [
+                    f for f in os.listdir(quarterly_logs_dir) 
+                    if f.startswith(quarterly_prefix)
+                ]
+                
+                # タイムスタンプでソート（新しい順）
+                quarterly_files.sort(reverse=True)
+                
+                # 最新8ファイル以外を削除（通常1四半期あたり1-2ファイル）
+                files_to_keep = 8
+                if len(quarterly_files) > files_to_keep:
+                    deleted_count = 0
+                    for old_file in quarterly_files[files_to_keep:]:
+                        old_path = os.path.join(quarterly_logs_dir, old_file)
+                        os.remove(old_path)
+                        deleted_count += 1
+                    
+                    if deleted_count > 0:
+                        print(f"   🗑️  古いログ {deleted_count} 件を削除")
+            except Exception as e:
+                print(f"   ⚠️  古いログ削除エラー: {e}")
         
         print(f"   ✅ バックテスト完了")
         print(f"      - 総損益: {metrics.get('total_pnl', 'N/A')} USD")
         print(f"      - 利益因子: {metrics.get('profit_factor', 'N/A')}")
-        print(f"      - 最大ドローダウン: {metrics.get('max_drawdown', 'N/A')}%")
+        print(f"      - 最大DD率: {metrics.get('max_drawdown_rate', 'N/A')}%")
         print(f"      - Sharpe: {metrics.get('sharpe', 'N/A')}")
         print(f"      - 勝率: {metrics.get('win_rate', 'N/A')}%")
         
@@ -298,7 +323,7 @@ def print_summary(results):
     print("=" * 100)
     
     print("\n{:<12} {:<15} {:<15} {:<15} {:<12} {:<12}".format(
-        "期間", "総損益 (USD)", "利益因子", "最大DD", "Sharpe", "勝率"
+        "期間", "総損益 (USD)", "利益因子", "最大DD率", "Sharpe", "勝率"
     ))
     print("-" * 100)
     
@@ -312,11 +337,14 @@ def print_summary(results):
             total_pnl += total_pnl_val
             successful_quarters += 1
             
-            print("{:<12} {:<15.2f} {:<15.3f} {:<15.2f} {:<12.3f} {:<12.2f}%".format(
+            # max_drawdown_rate（%）を使用（修正済み：初期資産込み計算で100%以下）
+            max_dd_rate = result['metrics'].get('max_drawdown_rate', 0)
+            
+            print("{:<12} {:<15.2f} {:<15.3f} {:<14.2f}% {:<12.3f} {:<12.2f}%".format(
                 q_str,
                 total_pnl_val,
                 result['metrics'].get('profit_factor', 0),
-                result['metrics'].get('max_drawdown', 0),
+                max_dd_rate,
                 result['metrics'].get('sharpe', 0),
                 result['metrics'].get('win_rate', 0)
             ))
@@ -394,14 +422,18 @@ def main():
     output_file = save_results(results)
     print(f"✅ 結果を保存しました: {output_file}")
     
-    # ログファイルの確認
-    print(f"\n📊 Q別ログファイル確認:")
+    # ログファイルの確認（要約情報のみ）
+    print(f"\n📊 Q別ログファイル要約:")
     if os.path.exists(quarterly_logs_dir):
-        log_files = sorted(os.listdir(quarterly_logs_dir))
+        log_files = os.listdir(quarterly_logs_dir)
         if log_files:
-            for log_file in log_files:
-                file_size = os.path.getsize(os.path.join(quarterly_logs_dir, log_file)) / 1024
-                print(f"  ✓ {log_file} ({file_size:.1f} KB)")
+            total_size_mb = sum(
+                os.path.getsize(os.path.join(quarterly_logs_dir, f)) 
+                for f in log_files
+            ) / (1024 * 1024)
+            print(f"  ✓ ファイル数: {len(log_files)} 件")
+            print(f"  ✓ 合計サイズ: {total_size_mb:.1f} MB")
+            print(f"  ✓ 保存先: {quarterly_logs_dir}")
         else:
             print(f"  (ログファイルなし)")
     
