@@ -14,6 +14,7 @@ get_asset_quantity() メソッドで保有数量を取得し、update_asset_quan
 """
 from logger import Logger
 from config import Config  # Config クラスのインポート
+from cost_model import CostModel  # Task 40b: コストモデル
 
 # Portfolio クラスの定義
 class Portfolio:
@@ -26,6 +27,12 @@ class Portfolio:
         self.logger = Logger()
         self.market_type = Config.get_market()
         self.initial_balance = initial_balance  # 初期資産を保持
+        
+        # Task 40b: コストモデル初期化
+        self.cost_model = CostModel()
+        self.total_fees_paid = 0.0  # 累積手数料
+        self.total_slippage_cost = 0.0  # 累積スリッページコスト
+        
         # 現在の market_type に基づいてポジションを初期化
         self.positions = {self.market_type: {'quantity': 0, 'side': 'NONE', 'position_price': 0}}
         self.profit = 0
@@ -109,8 +116,29 @@ class Portfolio:
             quantity: ポジション数量
             side: 'BUY' または 'SELL'
             price: エントリー価格
-            is_backtest: バックテストモードかどうか（今は未使用）
+            is_backtest: バックテストモードかどうか
         """
+        # Task 40b: バックテスト時のコスト計上
+        actual_price = price  # デフォルトはシグナル価格
+        if is_backtest and self.cost_model.is_enabled:
+            actual_price, entry_cost, cost_details = self.cost_model.calculate_entry_cost(
+                side=side.lower(),
+                quantity=quantity,
+                signal_price=price,
+                is_market_order=True
+            )
+            # コスト累積
+            self.total_fees_paid += cost_details.get('fee_cost', 0)
+            self.total_slippage_cost += cost_details.get('slippage_cost', 0)
+            self.loss += entry_cost
+            
+            self.logger.log(
+                f"💰 エントリーコスト: "
+                f"手数料={cost_details.get('fee_cost', 0):.4f} USD, "
+                f"スリッページ={cost_details.get('slippage_cost', 0):.4f} USD, "
+                f"合計={entry_cost:.4f} USD"
+            )
+        
         current_quantity = self.positions[self.market_type]["quantity"]
         current_position_price = self.positions[self.market_type]["position_price"]
         current_side = self.positions[self.market_type]["side"]
@@ -119,12 +147,12 @@ class Portfolio:
             # 初回の追加購入または既存ポジションとのsideが異なる場合
             self.positions[self.market_type]["quantity"] = quantity
             self.positions[self.market_type]["side"] = side
-            self.positions[self.market_type]["position_price"] = price
+            self.positions[self.market_type]["position_price"] = actual_price  # Task 40b: 実際の約定価格を使用
             self.add_num = 1
         else:
             # 既存のポジションがある場合、平均取得単価を計算しなおす
             new_quantity = current_quantity + quantity
-            new_position_price = ((current_quantity * current_position_price) + (quantity * price)) / new_quantity
+            new_position_price = ((current_quantity * current_position_price) + (quantity * actual_price)) / new_quantity  # Task 40b: 実際の約定価格を使用
             
             self.positions[self.market_type]["quantity"] = new_quantity
             self.positions[self.market_type]["side"] = side
@@ -170,13 +198,40 @@ class Portfolio:
 
         Args:
             price (float): 売却時の価格
-            is_backtest (bool): バックテストモードかどうか（今は未使用）
+            is_backtest (bool): バックテストモードかどうか
         """
         profit = 0
         loss = 0
 
         # 利益と損失の合算
         profit, loss = self.calc_position_quantity(price)
+        
+        # Task 40b: バックテスト時のイグジットコスト計上
+        actual_price = price  # デフォルトはシグナル価格
+        if is_backtest and self.cost_model.is_enabled:
+            quantity = self.positions[self.market_type]["quantity"]
+            side = self.get_position_side()
+            
+            # イグジットは逆方向の取引になる
+            exit_side = 'sell' if side == 'BUY' else 'buy'
+            
+            actual_price, exit_cost, cost_details = self.cost_model.calculate_exit_cost(
+                side=exit_side,
+                quantity=quantity,
+                signal_price=price,
+                is_market_order=True
+            )
+            # コスト累積
+            self.total_fees_paid += cost_details.get('fee_cost', 0)
+            self.total_slippage_cost += cost_details.get('slippage_cost', 0)
+            loss += exit_cost  # イグジットコストは損失として計上
+            
+            self.logger.log(
+                f"💰 イグジットコスト: "
+                f"手数料={cost_details.get('fee_cost', 0):.4f} USD, "
+                f"スリッページ={cost_details.get('slippage_cost', 0):.4f} USD, "
+                f"合計={exit_cost:.4f} USD"
+            )
         
         # ドローダウンを計算
         prev_funds_max = self.funds_max

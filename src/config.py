@@ -1143,6 +1143,75 @@ class Config:
         except (KeyError, ValueError):
             return 72.0
 
+    # ========================================
+    # Task 40b: CostModel設定
+    # ========================================
+    
+    @classmethod
+    def get_cost_model_enabled(cls):
+        """
+        コストモデル有効/無効を取得
+        
+        Returns:
+            bool: 有効ならTrue、無効ならFalse（デフォルト: False）
+        """
+        try:
+            return int(cls.config['CostModel']['enabled']) == 1
+        except (KeyError, ValueError):
+            return False
+    
+    @classmethod
+    def get_maker_fee(cls):
+        """
+        メイカー手数料率（%）を取得
+        
+        Returns:
+            float: メイカー手数料率（デフォルト: 0.02%）
+        """
+        try:
+            return float(cls.config['CostModel']['maker_fee'])
+        except (KeyError, ValueError):
+            return 0.02
+    
+    @classmethod
+    def get_taker_fee(cls):
+        """
+        テイカー手数料率（%）を取得
+        
+        Returns:
+            float: テイカー手数料率（デフォルト: 0.05%）
+        """
+        try:
+            return float(cls.config['CostModel']['taker_fee'])
+        except (KeyError, ValueError):
+            return 0.05
+    
+    @classmethod
+    def get_slippage_rate(cls):
+        """
+        スリッページ率（%）を取得
+        
+        Returns:
+            float: スリッページ率（デフォルト: 0.02%）
+        """
+        try:
+            return float(cls.config['CostModel']['slippage_rate'])
+        except (KeyError, ValueError):
+            return 0.02
+    
+    @classmethod
+    def get_execution_delay_candles(cls):
+        """
+        約定遅延（足数）を取得
+        
+        Returns:
+            int: 約定遅延の足数（デフォルト: 1）
+        """
+        try:
+            return int(cls.config['CostModel']['execution_delay_candles'])
+        except (KeyError, ValueError):
+            return 1
+
     def __str__(self):
         """
         コンフィグ内容を可読性よく文字列として表現するメソッドです。
