@@ -5,18 +5,20 @@
     "branch": "gen2",
     "last_updated": "2026-02-08",
     "baseline_performance": {
-      "cumulative_pnl_usd": 1282.62,
-      "period": "2024-2025 (8 quarters, Two-Tier Entry System有効化後)",
-      "baseline_file": "baseline_backup/BASELINE_1282.62USD_20260201.json",
+      "cumulative_pnl_usd": 1403.49,
+      "period": "2024-2025 (8 quarters, Task 39e完了後)",
+      "baseline_file": "run_quarterly_backtest.py最新実行結果 (2026-02-08)",
       "previous_baseline": {
-        "cumulative_pnl_usd": 904.35,
-        "improvement_usd": 378.27,
-        "improvement_percent": 41.8
+        "cumulative_pnl_usd": 1282.62,
+        "improvement_usd": 120.87,
+        "improvement_percent": 9.4,
+        "note": "Task 39e (Dynamic Stop Loss) 完了後の改善"
       }
     },
-    "baseline_regression": {
+    "baseline_regression_300usd": {
       "timestamp": "2026-02-08T12:56:51",
-      "purpose": "DD率計算修正後の正確なベースライン（初期資本300 USDを考慮した資産ベースDD率）",
+      "purpose": "DD率計算修正後の正確なベースライン（初期資本300 USDを考慮した資産ベースDD率） - 参考データ",
+      "note": "標準の初期資本は100 USD。このデータは300 USD初期資本での結果であり、baseline_performanceとは異なる",
       "cumulative_pnl_usd": 1568.82,
       "initial_balance_usd": 300.0,
       "period": "2024 Q1 - 2025 Q4 (8 quarters)",
@@ -97,14 +99,14 @@
     }
   },
   "latest_commit": {
-    "hash": "b277f61",
+    "hash": "88ce392",
     "date": "2026-02-08",
-    "message": "refactor: 四半期別バックテストのログ出力を改善",
+    "message": "refactor: ACTION_LIST.json優先度全面見直し（本番運用2026-02-28対応）",
     "changes": {
-      "files_changed": 14,
-      "lines_added": 4,
-      "lines_deleted": 4208,
-      "description": "ドキュメント整理 - 一時レポート13ファイル削除、ACTION_LIST.mdを478行→99行に短縮"
+      "files_changed": 1,
+      "lines_added": 103,
+      "lines_deleted": 96,
+      "description": "本番運用必須タスク5件を優先度5に昇格、過学習対策を明記、TODO 16→15、PROGRESS 4→1"
     }
   },
   "current_status": {
@@ -112,37 +114,42 @@
     "active_tasks": {
       "in_progress": [
         {
-          "task_id": "22b",
-          "title": "Strategy B: 指標確認（Bollinger+RSI+SMA）",
-          "status": "実装完了、有効化待機",
-          "priority": "★★★★☆"
-        },
-        {
-          "task_id": "22c",
-          "title": "Strategy C: 複合戦略（A+B）",
-          "status": "実装完了、有効化待機",
-          "priority": "★★★★☆"
-        },
-        {
-          "task_id": "20b",
-          "title": "マルチタイムフレーム ADX 確認",
-          "status": "設計中 (2025年度対応)",
-          "priority": "★★★★☆"
-        },
-        {
           "task_id": "40d",
           "title": "現行戦略の見直し（エントリー/EXITの整合性監査）",
-          "status": "分析中",
-          "priority": "★★★★☆"
-        },
-        {
-          "task_id": "40d",
-          "title": "エントリー/Exit整合性監査開始",
           "status": "実装中",
-          "priority": "★★★★☆"
+          "priority": "★★★★★",
+          "note": "Walk-Forward分析で過学習検出。戦略の根本的見直しを実施中"
         }
       ],
-      "next_priority": []
+      "next_priority": [
+        {
+          "task_id": "40b",
+          "title": "手数料/スリッページ/約定遅延のコストモデル導入",
+          "priority": "★★★★★",
+          "deadline": "2026-02-28",
+          "reason": "本番運用前必須"
+        },
+        {
+          "task_id": "40c",
+          "title": "リスク・オーバーレイ（DD制限/日次損失上限/取引停止）",
+          "priority": "★★★★★",
+          "deadline": "2026-02-28",
+          "reason": "本番運用前必須"
+        },
+        {
+          "task_id": "40g",
+          "title": "本番運用の耐障害性（API障害/再試行/部分約定/ログ監視）",
+          "priority": "★★★★★",
+          "deadline": "2026-02-28",
+          "reason": "本番運用前必須"
+        },
+        {
+          "task_id": "40e",
+          "title": "トレンドフォロー以外の優位性候補の調査・小規模検証",
+          "priority": "★★★★★",
+          "reason": "過学習対策の一環"
+        }
+      ]
     },
     "recently_completed": [
       {
