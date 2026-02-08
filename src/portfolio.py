@@ -101,9 +101,15 @@ class Portfolio:
         
         return drawdown_rate
 
-    def add_position_quantity(self, quantity, side, price):
+    def add_position_quantity(self, quantity, side, price, is_backtest=False):
         """
         通貨の保有ポジション量を更新
+        
+        Args:
+            quantity: ポジション数量
+            side: 'BUY' または 'SELL'
+            price: エントリー価格
+            is_backtest: バックテストモードかどうか（今は未使用）
         """
         current_quantity = self.positions[self.market_type]["quantity"]
         current_position_price = self.positions[self.market_type]["position_price"]
@@ -158,12 +164,13 @@ class Portfolio:
 
         return profit, loss
 
-    def clear_position_quantity(self, price):
+    def clear_position_quantity(self, price, is_backtest=False):
         """
         通貨の保有ポジション量を更新し、利益または損失を計算します。
 
         Args:
             price (float): 売却時の価格
+            is_backtest (bool): バックテストモードかどうか（今は未使用）
         """
         profit = 0
         loss = 0

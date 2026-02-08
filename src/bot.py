@@ -247,7 +247,8 @@ class Bot:
                     if trade_decision["decision"] == "EXIT":
                         exit_price = price
                         pnl = self.portfolio.get_profit_and_loss()
-                        self.portfolio.clear_position_quantity(price)
+                        is_backtest = Config.get_back_test_mode()  # Task 40b
+                        self.portfolio.clear_position_quantity(price, is_backtest=is_backtest)
                         # EXITで確定した損益を勝敗判定 (正なら勝ち)
                         self.trade_results.append(pnl >= 0)
                         
@@ -276,7 +277,8 @@ class Bot:
                             self.logger.log_error(f"トレードログEXIT記録失敗: {e}")
                             
                     elif trade_decision["decision"] == "ENTRY" or trade_decision["decision"] == "ADD":
-                        self.portfolio.add_position_quantity(quantity, trade_decision["side"], price)
+                        is_backtest = Config.get_back_test_mode()  # Task 40b
+                        self.portfolio.add_position_quantity(quantity, trade_decision["side"], price, is_backtest=is_backtest)
                         # 前回のエントリ価格を更新
                         self.risk_management.update_last_entry_price(price)
                         
