@@ -2,7 +2,7 @@
   "meta": {
     "version": "1.0",
     "last_updated": "2026-02-08",
-    "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE)",
+    "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE) - 優先度見直し完了（本番運用2026-02-28、過学習対策40a反映）",
     "replaces": "docs/ACTION_LIST.md",
     "workflow_rules": {
       "baseline_before_action": "アクションリスト実行前に必ずレグレッションテストを実行し、PROGRESS.json baseline_regressionに保存すること",
@@ -12,20 +12,12 @@
   "tasks": {
     "todo": [
       {
-        "id": "39f",
-        "category": "2026年利益拡大戦略",
-        "title": "Weekend/Holiday Avoidance 実装",
-        "description": "低流動性時間回避（+$100-200/年期待）",
-        "priority": 4,
-        "related_doc": "PROFIT_ENHANCEMENT_STRATEGY_2026",
-        "estimated_impact_usd": [100, 200]
-      },
-      {
         "id": "40b",
         "category": "品質保証",
         "title": "手数料/スリッページ/約定遅延のコストモデル導入",
-        "description": "バックテスト評価に実コスト（手数料・スリッページ・約定遅延・指値未約定）を織り込み、期待値がコストに耐えるかを検証。指標改善の“見かけ”を排除",
+        "description": "バックテスト評価に実コスト（手数料・スリッページ・約定遅延・指値未約定）を織り込み、期待値がコストに耐えるかを検証。指標改善の「見かけ」を排除。本番運用前必須",
         "priority": 5,
+        "deadline": "2026-02-28",
         "related_doc": "docs/PRICE_DATA_FLOW_DESIGN.md",
         "estimated_impact_usd": null
       },
@@ -33,55 +25,113 @@
         "id": "40c",
         "category": "運用・リスク管理",
         "title": "リスク・オーバーレイ（DD制限/日次損失上限/取引停止）",
-        "description": "初期資本100USD前提で、最大DD/日次損失/連敗/ボラ急増時に取引を止める“キルスイッチ”を導入。資産曲線の破綻リスクを最小化",
+        "description": "初期資本100USD前提で、最大DD/日次損失/連敗/ボラ急増時に取引を止める「キルスイッチ」を導入。資産曲線の破綻リスクを最小化。本番運用前必須（DD>50%等のキルスイッチ）",
         "priority": 5,
+        "deadline": "2026-02-28",
         "related_doc": "DEVELOPMENT_RULES.json",
-        "estimated_impact_usd": null
-      },
-
-      {
-        "id": "40e",
-        "category": "調査・研究",
-        "title": "トレンドフォロー以外の優位性候補の調査・小規模検証",
-        "description": "暗号資産で比較的語られる優位性（レンジ/平均回帰の条件付き適用、ボラティリティ・ブレイクアウト、Funding/Carryの偏り、時間帯/流動性、簡易マーケットメイク等）を候補化し、最小実装でバックテスト/ペーパー検証",
-        "priority": 3,
-        "related_doc": "docs/PROFIT_ENHANCEMENT_STRATEGY_2026.md",
-        "estimated_impact_usd": null
-      },
-      {
-        "id": "40f",
-        "category": "データ品質",
-        "title": "価格データの健全性チェック（欠損/異常値/時間ずれ/取引所差）",
-        "description": "OHLCVの欠損・重複・タイムゾーンずれ・スパイクを検出し、必要なら補正/除外。取引所切替やデータソース変更で性能が“見かけ”変化しないようにする",
-        "priority": 4,
-        "related_doc": "docs/PRICE_DATA_FLOW_DESIGN.md",
         "estimated_impact_usd": null
       },
       {
         "id": "40g",
         "category": "運用・信頼性",
         "title": "本番運用の耐障害性（API障害/再試行/部分約定/ログ監視）",
-        "description": "Raspberry Pi常時稼働に向けて、API失敗時のリトライ/バックオフ、部分約定、二重発注防止、ヘルスチェック、重要ログのアラート（メール/Discord等）を整備",
-        "priority": 4,
+        "description": "Raspberry Pi常時稼働に向けて、API失敗時のリトライ/バックオフ、部分約定、二重発注防止、ヘルスチェック、重要ログのアラート（メール/Discord等）を整備。本番運用前必須",
+        "priority": 5,
+        "deadline": "2026-02-28",
         "related_doc": "docs/TRADE_LOG_USAGE_GUIDE.md",
         "estimated_impact_usd": null
+      },
+      {
+        "id": "40e",
+        "category": "調査・研究",
+        "title": "トレンドフォロー以外の優位性候補の調査・小規模検証",
+        "description": "暗号資産で比較的語られる優位性（レンジ/平均回帰の条件付き適用、ボラティリティ・ブレイクアウト、Funding/Carryの偏り、時間帯/流動性、簡易マーケットメイク等）を候補化し、最小実装でバックテスト/ペーパー検証。過学習対策の一環（Task 40a参照）",
+        "priority": 5,
+        "deadline": "2026-02-28",
+        "related_doc": "docs/PROFIT_ENHANCEMENT_STRATEGY_2026.md, Task 40a",
+        "estimated_impact_usd": null
+      },
+      {
+        "id": "39f",
+        "category": "2026年利益拡大戦略",
+        "title": "Weekend/Holiday Avoidance 実装",
+        "description": "低流動性時間回避（+$100-200/年期待）",
+        "priority": 4,
+        "related_doc": "PROFIT_ENHANCEMENT_STRATEGY_2026",
+        "estimated_impact_usd": [
+          100,
+          200
+        ]
       },
       {
         "id": "40h",
         "category": "戦略拡張",
         "title": "レジーム別の戦略切替（Trend/Rangeで別ロジック）",
-        "description": "単一のトレンドフォロー固定ではなく、市場体制（トレンド/レンジ/遷移）に応じてエントリー条件・Exit・許可時間帯を切替。39c(MTF)の失敗を踏まえ“厳しすぎて0件”にならない設計で実装",
+        "description": "単一のトレンドフォロー固定ではなく、市場体制（トレンド/レンジ/遷移）に応じてエントリー条件・Exit・許可時間帯を切替。過学習対策＋利益拡大。Task 39c (MTF)の失敗を踏まえ「厳しすぎて0件」にならない設計で実装",
         "priority": 4,
-        "related_doc": "docs/ADX_FILTER_ANALYSIS.md",
+        "related_doc": "docs/ADX_FILTER_ANALYSIS.md, Task 39c (失敗例)",
         "estimated_impact_usd": null
+      },
+      {
+        "id": "22b-eval",
+        "category": "Phase 0改善戦略",
+        "title": "Strategy B 有効化・バックテスト評価",
+        "description": "Strategy B（Bollinger+RSI+SMA）実装完了済みだが未評価。全8四半期バックテストで効果測定",
+        "priority": 4,
+        "related_doc": "Task 22b (実装済み)",
+        "estimated_impact_usd": null
+      },
+      {
+        "id": "22c-eval",
+        "category": "Phase 0改善戦略",
+        "title": "Strategy C 有効化・バックテスト評価",
+        "description": "Strategy C（複合戦略A+B）実装完了済みだが未評価。全8四半期バックテストで効果測定",
+        "priority": 4,
+        "related_doc": "Task 22c (実装済み)",
+        "estimated_impact_usd": null
+      },
+      {
+        "id": "40f",
+        "category": "データ品質",
+        "title": "価格データの健全性チェック（欠損/異常値/時間ずれ/取引所差）",
+        "description": "OHLCVの欠損・重複・タイムゾーンずれ・スパイクを検出し、必要なら補正/除外。取引所切替やデータソース変更で性能が「見かけ」変化しないようにする",
+        "priority": 3,
+        "related_doc": "docs/PRICE_DATA_FLOW_DESIGN.md",
+        "estimated_impact_usd": null
+      },
+      {
+        "id": "23a",
+        "category": "段階1（即座）",
+        "title": "Fear & Greed Index 統合",
+        "description": "過度な楽観/恐怖でのエントリー抑制（+5-8%期待、2-3h）",
+        "priority": 3,
+        "related_doc": "IMPLEMENTATION_ROADMAP",
+        "estimated_impact_usd": null,
+        "estimated_hours": [
+          2,
+          3
+        ]
+      },
+      {
+        "id": "23b",
+        "category": "段階1（即座）",
+        "title": "RSI 二重確認実装",
+        "description": "過買い状態でのロング回避（+2-3%期待、1-2h）",
+        "priority": 3,
+        "related_doc": "IMPLEMENTATION_ROADMAP",
+        "estimated_impact_usd": null,
+        "estimated_hours": [
+          1,
+          2
+        ]
       },
       {
         "id": "40i",
         "category": "ポートフォリオ",
         "title": "銘柄分散・相関管理（BTC単一→複数候補）",
-        "description": "BTC単一の機会損失とレジーム偏りを避けるため、ETH等の複数銘柄で同一ルール/別パラメータの検証と、同時保有上限・相関によるリスク制限を追加",
-        "priority": 3,
-        "related_doc": "docs/PROFIT_ENHANCEMENT_STRATEGY_2026.md",
+        "description": "BTC単一の機会損失とレジーム偏りを避けるため、ETH等の複数銘柄で同一ルール/別パラメータの検証と、同時保有上限・相関によるリスク制限を追加。Task 31でETHテスト失敗したため慎重に",
+        "priority": 2,
+        "related_doc": "docs/PROFIT_ENHANCEMENT_STRATEGY_2026.md, Task 31 (ETH不採用)",
         "estimated_impact_usd": null
       },
       {
@@ -89,7 +139,7 @@
         "category": "2025年補助フィルター",
         "title": "Volume Profile Analysis 実装",
         "description": "出来高集中価格帯判定、VCP/Mean Reversion併用",
-        "priority": 3,
+        "priority": 2,
         "related_doc": "主要戦略完了後検討",
         "estimated_impact_usd": null
       },
@@ -98,76 +148,30 @@
         "category": "2025年補助フィルター",
         "title": "Market Microstructure 実装",
         "description": "Bid-Ask Spread分析、流動性低下時エントリー抑制",
-        "priority": 2,
+        "priority": 1,
         "related_doc": "優先度低・Phase 4検討",
         "estimated_impact_usd": null
-      },
-      {
-        "id": "23a",
-        "category": "段階1（即座）",
-        "title": "Fear & Greed Index 統合",
-        "description": "過度な楽観/恐怖でのエントリー抑制（+5-8%期待、2-3h）",
-        "priority": 4,
-        "related_doc": "IMPLEMENTATION_ROADMAP",
-        "estimated_impact_usd": null,
-        "estimated_hours": [2, 3]
-      },
-      {
-        "id": "23b",
-        "category": "段階1（即座）",
-        "title": "RSI 二重確認実装",
-        "description": "過買い状態でのロング回避（+2-3%期待、1-2h）",
-        "priority": 4,
-        "related_doc": "IMPLEMENTATION_ROADMAP",
-        "estimated_impact_usd": null,
-        "estimated_hours": [1, 2]
       },
       {
         "id": "6",
         "category": "ログ制御・出力",
         "title": "ログファイル自動整理・定期クリーンアップ機能の実装",
-        "description": "手動実施済み、自動化検討中",
-        "priority": 2,
+        "description": "手動実施完了(2026-02-08)、自動化は低優先度",
+        "priority": 1,
         "related_doc": "QUARTERLY_BACKTEST分析参照",
         "estimated_impact_usd": null
       }
     ],
     "progress": [
       {
-        "id": "22b",
-        "category": "Phase 0改善戦略",
-        "title": "Strategy B: 指標確認（Bollinger+RSI+SMA）",
-        "description": "コード実装済み、有効化検討中",
-        "status": "実装完了、有効化待機",
-        "priority": 4,
-        "related_doc": null
-      },
-      {
-        "id": "22c",
-        "category": "Phase 0改善戦略",
-        "title": "Strategy C: 複合戦略（A+B）",
-        "description": "コード実装済み、有効化検討中",
-        "status": "実装完了、有効化待機",
-        "priority": 4,
-        "related_doc": null
-      },
-      {
-        "id": "20b",
-        "category": "Phase 3計画",
-        "title": "マルチタイムフレーム ADX 確認",
-        "description": "1h+4h複合判定でノイズ削減",
-        "status": "設計中 (2025年度対応)",
-        "priority": 4,
-        "related_doc": null
-      },
-      {
         "id": "40d",
         "category": "戦略監査",
         "title": "現行戦略の見直し（エントリー/EXITの整合性監査）",
-        "description": "Donchian/PVO/ADX/新指標/Exit(PSAR等)の相互作用を点検し、(1)過剰フィルタで機会損失、(2)Exitが早すぎて期待値棄損、(3)反転局面で逆行、のどれが支配的かを定量化して改善案を作る",
+        "description": "Donchian/PVO/ADX/新指標/Exit(PSAR等)の相互作用を点検し、(1)過剰フィルタで機会損失、(2)Exitが早すぎて期待値棄損、(3)反転局面で逆行、のどれが支配的かを定量化して改善案を作る。本番運用前必須、過学習リスクあり（Task 40a参照）",
         "status": "分析中",
-        "priority": 4,
-        "related_doc": "docs/ARCHITECTURE_OVERVIEW.md",
+        "priority": 5,
+        "deadline": "2026-02-28",
+        "related_doc": "docs/ARCHITECTURE_OVERVIEW.md, Task 40a (過学習検出)",
         "estimated_impact_usd": null
       }
     ],
@@ -230,7 +234,10 @@
           "implementation": {
             "max_holding_hours": 72,
             "priority": 0,
-            "exit_reasons": ["TIME_LIMIT_PROFIT", "TIME_LIMIT_LOSS"]
+            "exit_reasons": [
+              "TIME_LIMIT_PROFIT",
+              "TIME_LIMIT_LOSS"
+            ]
           },
           "bugs_fixed": [
             "Bug #1: Trailing Profit Target無効化（Task 39a破棄済み）",
@@ -320,7 +327,7 @@
               "window": 1,
               "is_period": "2024-01-01 to 2024-06-30",
               "oos_period": "2024-07-01 to 2024-09-30",
-              "is_pnl_usd": 156.80,
+              "is_pnl_usd": 156.8,
               "oos_pnl_usd": -23.68,
               "degradation_pct": -115.1,
               "diagnosis": "severe overfitting"
@@ -773,11 +780,11 @@
     ]
   },
   "summary": {
-    "total_tasks": 104,
-    "todo": 16,
-    "progress": 4,
-    "done": 84,
-    "cumulative_impact_usd": 1282.62,
-    "baseline_performance": "1282.62 USD (2024-2025, 8 quarters, Two-Tier Entry System有効化後)"
+    "total_tasks": 60,
+    "todo": 15,
+    "progress": 1,
+    "done": 44,
+    "cumulative_impact_usd": 1403.49,
+    "baseline_performance": "1403.49 USD (8 quarters, Task 39e完了後)"
   }
 }
