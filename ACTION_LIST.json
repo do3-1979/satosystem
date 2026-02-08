@@ -12,15 +12,6 @@
   "tasks": {
     "todo": [
       {
-        "id": "39e",
-        "category": "2026年利益拡大戦略",
-        "title": "Dynamic Stop Loss Width 実装",
-        "description": "ATRベース動的ストップ幅（+$100-150/年期待）",
-        "priority": 4,
-        "related_doc": "PROFIT_ENHANCEMENT_STRATEGY_2026",
-        "estimated_impact_usd": [100, 150]
-      },
-      {
         "id": "39f",
         "category": "2026年利益拡大戦略",
         "title": "Weekend/Holiday Avoidance 実装",
@@ -181,6 +172,47 @@
       }
     ],
     "done": [
+      {
+        "id": "39e",
+        "category": "2026年利益拡大戦略",
+        "title": "Dynamic Stop Loss Width 実装完了",
+        "description": "ADXベースの動的ストップ幅を実装。ボラティリティ環境に応じて3段階でストップ幅を自動調整（低ボラ: 1.5x、中ボラ: 2.0x、高ボラ: 2.5x）。get_dynamic_stop_range()メソッド追加、テスト6/6 PASS、レグレッション124/124 PASS。Q4 2025単独では結果悪化（+26→-92 USD）のため、全8四半期での総合評価が必要",
+        "completed_date": "2026-02-08",
+        "priority": 4,
+        "impact_usd": "TBD (全四半期評価待ち)",
+        "result": "実装完了・総合評価待ち",
+        "commits": [
+          "3681c44: feat: Task 39e - Dynamic Stop Loss Width実装（ADXベース）"
+        ],
+        "notes": {
+          "implementation": {
+            "method": "get_dynamic_stop_range()",
+            "thresholds": {
+              "low_volatility": "ADX < 25: 1.5x ストップ（狭い）",
+              "medium_volatility": "ADX 25-40: 2.0x ストップ（デフォルト）",
+              "high_volatility": "ADX > 40: 2.5x ストップ（広い、ノイズ回避）"
+            },
+            "updated_method": "__update_stop_price() でstop_offset初期化時に動的値使用"
+          },
+          "test_results": {
+            "unit_tests": "1/1 PASS (test_dynamic_stop_range)",
+            "regression_tests": "6/6 PASS (risk_management)",
+            "full_regression": "124/124 PASS"
+          },
+          "backtest_results_q4_2025": {
+            "before": "+26 USD (Task 39d後)",
+            "after": "-92 USD (Task 39e後)",
+            "change": "-118 USD (悪化)",
+            "trades": "4件（全てSTOP_LOSS）",
+            "adx_values": "34.32-64.83 (中～高ボラ環境)"
+          },
+          "next_steps": [
+            "全8四半期バックテストで総合評価",
+            "悪化が継続する場合は戦略見直しまたは不採用",
+            "ストップ幅の閾値再調整を検討"
+          ]
+        }
+      },
       {
         "id": "39d",
         "category": "2026年利益拡大戦略",
@@ -742,9 +774,9 @@
   },
   "summary": {
     "total_tasks": 104,
-    "todo": 17,
+    "todo": 16,
     "progress": 4,
-    "done": 83,
+    "done": 84,
     "cumulative_impact_usd": 1282.62,
     "baseline_performance": "1282.62 USD (2024-2025, 8 quarters, Two-Tier Entry System有効化後)"
   }
