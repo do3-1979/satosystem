@@ -472,6 +472,11 @@ class ExitStrategyV2:
             if holding_duration_hours > self.max_holding_hours:
                 # 含み損益を計算
                 unrealized_pnl = current_price - entry_price
+                
+                # 0除算を防止
+                if entry_price == 0:
+                    return {'should_exit': False}
+                
                 pnl_pct = (unrealized_pnl / entry_price) * 100
                 
                 if unrealized_pnl > 0:
