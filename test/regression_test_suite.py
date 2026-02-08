@@ -653,8 +653,30 @@ def generate_regression_report():
     print("=" * 70)
     
     try:
-        # 全ての結果ファイルを読み込む
-        result_files = [f for f in os.listdir(RESULTS_DIR) if f.endswith(".json") and f != "individual_test_summary.json"]
+        # 除外すべきファイル（古い分析結果や一時ファイル）
+        EXCLUDE_FILES = {
+            'REGRESSION_TEST_REPORT.json',
+            'individual_test_summary.json',
+            'psar_differences.json',
+            'psar_expected.json',
+            'hot_trading_3min_result.json',
+            'regime_analysis_20251210_015029.json',
+            'combined_trend_analysis_20251210_233202.json',
+            'trade_analysis_summary.json',
+            'visualizer_dual_pnl.json',
+            'backtest_before.json',
+            'backtest_script_normalize_option.json',
+            'baseline_backtest.json',
+            'exit_strategy_v2_integration.json',
+            'hot_test.json',
+            'test_exit_strategy_v2_regression.json',
+            'test_hot_backtest_parity_regression.json',
+            'test_visualizer_regression.json'
+        }
+        
+        # 全ての結果ファイルを読み込む（除外リストを適用）
+        result_files = [f for f in os.listdir(RESULTS_DIR) 
+                       if f.endswith(".json") and f not in EXCLUDE_FILES]
         
         all_results = []
         total_tests = 0
