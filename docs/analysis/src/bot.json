@@ -1,93 +1,23 @@
 {
   "metadata": {
     "source_file": "src/bot.py",
-    "analyzed_at": "2026-02-01T00:00:00Z",
+    "analyzed_at": "2026-02-08T00:00:00Z",
     "python_version": "3.10",
     "format_version": "2.0",
-    "analyzer_note": "完全構造分析 - TradeLogger統合、3モード対応、Portfolio/RiskManagement統合を反映"
+    "analyzer_note": "トレード実行ループの制御クラス - Portfolio初期化時にinitial_balanceを渡すように修正（DD率計算修正対応）"
   },
   "file_overview": {
     "purpose": "トレード実行ループ制御・注文実行・ポジション管理・メトリクス集計",
-    "lines_of_code": 547,
-    "dependency_count": 19,
+    "lines_of_code": 550,
+    "dependency_count": 12,
     "class_count": 1,
-    "function_count": 3,
+    "function_count": 0,
     "critical_methods": ["run", "execute_order", "show_trade_data"],
-    "description": "Bot は全体のオーケストレーター。PriceDataManagement, TradingStrategy, RiskManagement, Portfolio を統合制御。バックテスト（back_test=1）/ ペーパートレード（hot_test_dummy_mode=1）/ 本番運用（back_test=0, hot_test_dummy_mode=0）の3モードに対応。TradeLoggerによるJSONログ記録、EventBusによるイベント発火、メトリクス集計を実行。"
+    "description": "Botは全体のオーケストレーター。PriceDataManagement, TradingStrategy, RiskManagement, Portfolioを統合制御。バックテスト/ペーパートレード/本番の3モード対応。TradeLoggerによるJSON形式のトレードログ記録、EventBusによるイベント発火、メトリクス集計（initial_balance込みのDD率計算）を実装。2026-02-08: Portfolio初期化時にinitial_balanceを渡す修正を実施し、get_drawdown_rate()の計算を正確化。"
   },
-  "classes": [
-    {
-      "class_name": "Bot",
-      "line": 44,
-      "docstring": "メインのボットクラス。Exchange、TradingStrategy、Portfolio、RiskManagement などのクラスを組み合わせてトレード実行と監視を行う。",
-      "methods": [
-        {
-          "name": "__init__",
-          "line": 45,
-          "purpose": "Bot インスタンスを初期化し、全依存モジュールをセットアップ",
-          "criticality": "CRITICAL"
-        },
-        {
-          "name": "show_trade_data",
-          "line": 70,
-          "purpose": "取引ループの進捗をコンソール出力（デバッグ用）",
-          "criticality": "LOW"
-        },
-        {
-          "name": "run",
-          "line": 99,
-          "purpose": "バックテスト/ホットテスト/本番運用のメインループを実行",
-          "criticality": "CRITICAL"
-        },
-        {
-          "name": "execute_order",
-          "line": 434,
-          "purpose": "trading_strategyからの注文をexchange APIで実行",
-          "criticality": "CRITICAL"
-        }
-      ]
-    }
-  ],
-  "functions": [],
-  "dependencies": [
-    {"module": "logger.Logger", "purpose": "ログ記録"},
-    {"module": "config.Config", "purpose": "設定情報取得"},
-    {"module": "price_data_management.PriceDataManagement", "purpose": "価格データ管理"},
-    {"module": "bybit_exchange.BybitExchange", "purpose": "Bybit取引所API"},
-    {"module": "bitget_exchange.BitgetExchange", "purpose": "Bitget取引所API"},
-    {"module": "trading_strategy.TradingStrategy", "purpose": "取引戦略"},
-    {"module": "risk_management.RiskManagement", "purpose": "リスク管理"},
-    {"module": "portfolio.Portfolio", "purpose": "ポートフォリオ管理"},
-    {"module": "order.Order", "purpose": "注文クラス"},
-    {"module": "event.EventBus, EventType", "purpose": "イベント管理"},
-    {"module": "metrics.compute_metrics", "purpose": "メトリクス計算"},
-    {"module": "trade_logger.TradeLogger", "purpose": "トレードログ記録（JSON形式）"}
-  ],
-  "key_patterns": [
-    "Orchestrator Pattern",
-    "Event-Driven Architecture",
-    "Dependency Injection",
-    "State Machine（暗黙的）"
-  ],
   "test_coverage": {
     "test_files": ["test/test_bot_integration.py"],
     "coverage_estimate": "70%",
     "critical_gaps": ["run()メソッドの完全統合テスト", "execute_order()の例外処理テスト"]
-  },
-  "performance_considerations": [
-    {
-      "aspect": "API呼び出し頻度",
-      "bottleneck": "REST API遅延（1.5秒/イテレーション）",
-      "optimization": "WebSocket切り替え→50ms（90%短縮）"
-    }
-  ],
-  "error_handling": {
-    "strategy": "例外捕捉+ログ記録+継続実行",
-    "exception_types": ["APIError", "Exception", "KeyboardInterrupt"]
-  },
-  "improvement_suggestions": [
-    {"priority": "HIGH", "suggestion": "HealthCheck endpoint追加"},
-    {"priority": "HIGH", "suggestion": "CircuitBreakerパターン導入"},
-    {"priority": "MEDIUM", "suggestion": "WebSocketリアルタイムティック取得"}
-  ]
+  }
 }

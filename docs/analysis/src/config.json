@@ -1,139 +1,23 @@
 {
   "metadata": {
     "source_file": "src/config.py",
-    "analyzed_at": "2026-02-01T00:00:00Z",
+    "analyzed_at": "2026-02-08T00:00:00Z",
     "python_version": "3.10",
     "format_version": "2.0",
-    "analyzer_note": "完全構造分析 - .api_key JSON読み込み、90個の設定メソッド、config.iniパース"
+    "analyzer_note": "設定管理クラス - config.iniと.api_keyファイルから設定読み込み、動的な設定上書きをサポート"
   },
   "file_overview": {
-    "purpose": "ボットの設定情報を一元管理するクラス。APIキー、戦略パラメータ、リスク管理設定等を提供。",
-    "lines_of_code": 1324,
-    "dependency_count": 5,
+    "purpose": "設定ファイル（config.ini, .api_key）から設定情報を読み込み、全モジュールに提供",
+    "lines_of_code": 1355,
+    "dependency_count": 4,
     "class_count": 1,
-    "function_count": 93,
-    "critical_methods": [
-      "get_api_key", "get_api_secret", "get_bitget_api_key", "get_bybit_api_key",
-      "get_back_test_mode", "get_is_dummy_mode", "get_donchian_buy_term",
-      "get_pvo_threshold", "get_adx_filter_threshold"
-    ],
-    "description": "Config クラスは config.ini と .api_key ファイルから設定を読み込み、93個のクラスメソッドで各種設定値を提供。APIキーはセキュリティ上 .api_key（JSON形式）から読み込み、config.ini には含めない。バックテスト期間、戦略パラメータ、フィルター設定、MarketRegime設定、VCP/MeanReversion戦略設定等を一元管理。"
+    "function_count": 0,
+    "critical_methods": ["get_api_key", "get_api_secret", "get_account_balance", "get_risk_percentage", "get_back_test_mode"],
+    "description": "Configクラスはconfig.iniファイルと.api_keyファイル（JSON形式）から設定を読み込む。APIキー、取引所選択、リスク管理パラメータ、トレード戦略設定、フィルター設定などを一元管理。実行時の動的な設定上書き（_override_start_time, _override_end_time）をサポート。Bybit/Bitget両取引所のAPIキーを分離管理。"
   },
-  "classes": [
-    {
-      "class_name": "Config",
-      "line": 17,
-      "docstring": "ボットの設定情報を格納するクラス。APIキー、トレードの間隔、戦略の選択などの設定を保持。",
-      "methods": [
-        {"name": "get_api_key", "line": 39, "purpose": "Bitget APIキーを取得（.api_key優先、config.ini代替）", "is_classmethod": true},
-        {"name": "get_api_secret", "line": 52, "purpose": "Bitget APIシークレットを取得"},
-        {"name": "get_api_passphrase", "line": 65, "purpose": "Bitget APIパスフレーズを取得"},
-        {"name": "get_bitget_api_key", "line": 78, "purpose": "Bitget APIキーを取得"},
-        {"name": "get_bitget_api_secret", "line": 91, "purpose": "Bitget APIシークレットを取得"},
-        {"name": "get_bitget_api_passphrase", "line": 104, "purpose": "Bitget APIパスフレーズを取得"},
-        {"name": "get_bybit_api_key", "line": 117, "purpose": "Bybit APIキーを取得"},
-        {"name": "get_bybit_api_secret", "line": 130, "purpose": "Bybit APIシークレットを取得"},
-        {"name": "get_exchange", "line": 143, "purpose": "取引所名を取得"},
-        {"name": "get_exchange_data", "line": 153, "purpose": "データ取得用取引所名を取得"},
-        {"name": "get_exchange_trade", "line": 163, "purpose": "取引実行用取引所名を取得"},
-        {"name": "get_risk_percentage", "line": 173, "purpose": "リスクパーセンテージを取得"},
-        {"name": "get_account_balance", "line": 183, "purpose": "アカウント残高を取得"},
-        {"name": "get_leverage", "line": 193, "purpose": "レバレッジを取得"},
-        {"name": "get_entry_times", "line": 203, "purpose": "エントリー回数を取得"},
-        {"name": "get_entry_range", "line": 213, "purpose": "エントリー範囲を取得"},
-        {"name": "get_stop_range", "line": 223, "purpose": "ストップ範囲を取得"},
-        {"name": "get_stop_AF", "line": 233, "purpose": "ストップAF（加速係数）を取得"},
-        {"name": "get_stop_AF_add", "line": 243, "purpose": "ストップAF追加値を取得"},
-        {"name": "get_stop_AF_max", "line": 253, "purpose": "ストップAF最大値を取得"},
-        {"name": "get_surge_follow_price_ratio", "line": 263, "purpose": "ストップ近傍のレートを取得"},
-        {"name": "get_psar_time_frame", "line": 273, "purpose": "PSAR用の時間軸を取得"},
-        {"name": "get_market", "line": 283, "purpose": "マーケット（例: 'BTC/USD'）を取得"},
-        {"name": "get_market_unit_pair", "line": 293, "purpose": "マーケットからユニットペア（例: 'BTC'）を取得"},
-        {"name": "get_time_frame", "line": 303, "purpose": "時間軸[分]を取得"},
-        {"name": "get_start_time", "line": 313, "purpose": "開始時刻を取得（実行時上書き対応）"},
-        {"name": "get_end_time", "line": 323, "purpose": "終了時刻を取得（実行時上書き対応）"},
-        {"name": "get_start_epoch", "line": 333, "purpose": "開始時刻をepoch時間で取得"},
-        {"name": "get_end_epoch", "line": 343, "purpose": "終了時刻をepoch時間で取得"},
-        {"name": "get_volatility_term", "line": 373, "purpose": "ボラティリティ期間を取得"},
-        {"name": "get_donchian_buy_term", "line": 383, "purpose": "ドンチャン買い期間を取得"},
-        {"name": "get_donchian_sell_term", "line": 393, "purpose": "ドンチャン売り期間を取得"},
-        {"name": "get_pvo_s_term", "line": 403, "purpose": "PVO短期期間を取得"},
-        {"name": "get_pvo_l_term", "line": 413, "purpose": "PVO長期期間を取得"},
-        {"name": "get_pvo_threshold", "line": 423, "purpose": "PVO閾値を取得"},
-        {"name": "get_server_retry_wait", "line": 443, "purpose": "サーバーリトライ待機時間を取得"},
-        {"name": "get_bot_operation_cycle", "line": 453, "purpose": "ボット動作サイクル[秒]を取得"},
-        {"name": "get_back_test_mode", "line": 463, "purpose": "バックテストモード（0/1）を取得"},
-        {"name": "get_hot_test_dummy_mode", "line": 473, "purpose": "ホットテストダミーモード（0/1）を取得"},
-        {"name": "get_is_dummy_mode", "line": 1101, "purpose": "ダミーモード判定（バックテストまたはペーパートレード）"},
-        {"name": "get_enable_pvo_filter", "line": 503, "purpose": "PVOフィルター有効/無効を取得"},
-        {"name": "get_enable_adx_filter", "line": 513, "purpose": "ADXフィルター有効/無効を取得"},
-        {"name": "get_adx_filter_threshold", "line": 523, "purpose": "ADXフィルター閾値を取得"},
-        {"name": "get_enable_volume_filter", "line": 543, "purpose": "Volumeフィルター有効/無効を取得"},
-        {"name": "get_volume_filter_threshold", "line": 553, "purpose": "Volumeフィルター閾値を取得"},
-        {"name": "get_enable_volatility_filter", "line": 573, "purpose": "Volatilityフィルター有効/無効を取得"},
-        {"name": "get_volatility_filter_threshold", "line": 583, "purpose": "Volatilityフィルター閾値を取得"},
-        {"name": "get_enable_seasonality_based_positioning", "line": 603, "purpose": "季節性ベースのロット削減機能有効/無効を取得"},
-        {"name": "get_seasonality_loss_quarter_multiplier", "line": 613, "purpose": "ボックス相場シーズンのロット削減倍率を取得"},
-        {"name": "get_seasonality_profit_quarter_multiplier", "line": 623, "purpose": "トレンド相場シーズンの倍率を取得"},
-        {"name": "get_enable_market_regime_detection", "line": 643, "purpose": "市場体制判定機能の有効/無効を取得"},
-        {"name": "get_atr_range_threshold_lower", "line": 653, "purpose": "ATR比較のボックス判定下限倍率を取得"},
-        {"name": "get_atr_range_threshold_upper", "line": 663, "purpose": "ATR比較のトレンド判定上限倍率を取得"},
-        {"name": "get_atr_period", "line": 673, "purpose": "ATR計算期間を取得"},
-        {"name": "get_atr_ma_period", "line": 683, "purpose": "ATR移動平均期間を取得"},
-        {"name": "get_swing_lookback_period", "line": 693, "purpose": "スイング判定の遡り期間を取得"},
-        {"name": "get_enable_entry_condition_strictness_on_range", "line": 703, "purpose": "ボックス相場時のエントリー条件強化の有効/無効を取得"},
-        {"name": "get_ranging_position_size_multiplier", "line": 713, "purpose": "ボックス相場時のポジションサイズ倍率を取得"},
-        {"name": "get_enable_vcp_strategy", "line": 733, "purpose": "VCP戦略の有効/無効を取得"},
-        {"name": "get_vcp_contraction_ratio", "line": 743, "purpose": "VCP収縮率閾値を取得"},
-        {"name": "get_vcp_lookback_period", "line": 753, "purpose": "VCP遡り期間を取得"},
-        {"name": "get_vcp_breakout_threshold", "line": 763, "purpose": "VCPブレイクアウト閾値を取得"},
-        {"name": "get_vcp_min_confidence", "line": 773, "purpose": "VCP最低信頼度を取得"},
-        {"name": "get_enable_mean_reversion_strategy", "line": 793, "purpose": "Mean Reversion戦略の有効/無効を取得"},
-        {"name": "get_bb_period", "line": 803, "purpose": "Bollinger Band期間を取得"},
-        {"name": "get_bb_std_dev", "line": 813, "purpose": "Bollinger Band標準偏差倍率を取得"},
-        {"name": "get_rsi_period", "line": 823, "purpose": "RSI期間を取得"},
-        {"name": "get_rsi_oversold_threshold", "line": 833, "purpose": "RSI売られすぎ閾値を取得"},
-        {"name": "get_log_dir_name", "line": 853, "purpose": "ログディレクトリ名を取得"},
-        {"name": "__str__", "line": 1134, "purpose": "コンフィグ内容を文字列で表現"},
-        {"name": "to_dict", "line": 1164, "purpose": "コンフィグ内容を辞書で表現"},
-        {"name": "get_config_bool", "line": 1214, "purpose": "コンフィグから論理値を汎用取得"},
-        {"name": "get_config_int", "line": 1234, "purpose": "コンフィグから整数値を汎用取得"},
-        {"name": "get_config_float", "line": 1254, "purpose": "コンフィグから浮動小数点数を汎用取得"}
-      ]
-    }
-  ],
-  "functions": [],
-  "dependencies": [
-    {"module": "configparser", "purpose": "config.ini読み込み"},
-    {"module": "datetime", "purpose": "時刻パース"},
-    {"module": "pytz", "purpose": "タイムゾーン処理"},
-    {"module": "os", "purpose": "ファイルパス操作"},
-    {"module": "json", "purpose": ".api_key JSON読み込み"}
-  ],
-  "key_patterns": [
-    "Singleton Pattern（クラスメソッドのみ、インスタンス不要）",
-    "Facade Pattern（複雑な設定を単純なインターフェースで提供）",
-    "Strategy Pattern（実行時上書き: _override_start_time, _override_end_time）"
-  ],
   "test_coverage": {
-    "test_files": ["test/test_config_regression.py"],
-    "coverage_estimate": "85%",
-    "critical_gaps": [".api_key読み込みエラー時の動作検証", "実行時上書き（_override_*）の統合テスト"]
-  },
-  "performance_considerations": [
-    {
-      "aspect": "設定読み込み",
-      "current_state": "クラス初期化時に config.ini を一度だけ読み込み",
-      "optimization": "不要、既に最適化済み"
-    }
-  ],
-  "error_handling": {
-    "strategy": "KeyError/ValueError発生時にデフォルト値を返す（try-exceptで安全化）",
-    "exception_types": ["KeyError", "ValueError"]
-  },
-  "improvement_suggestions": [
-    {"priority": "HIGH", "suggestion": ".api_key ファイルが存在しない場合の警告強化"},
-    {"priority": "MEDIUM", "suggestion": "設定値の妥当性検証メソッド追加（例: ADX閾値は10-50の範囲）"},
-    {"priority": "LOW", "suggestion": "設定値の型アノテーション追加（静的型チェック対応）"}
-  ]
+    "test_files": ["テスト未実装"],
+    "coverage_estimate": "0%",
+    "critical_gaps": ["設定読み込みのユニットテスト", ".api_keyファイル優先順位テスト"]
+  }
 }

@@ -1,65 +1,23 @@
 {
   "metadata": {
     "source_file": "src/market_regime_detector.py",
-    "analyzed_at": "2026-02-01T00:00:00Z",
+    "analyzed_at": "2026-02-08T00:00:00Z",
     "python_version": "3.10",
     "format_version": "2.0",
-    "analyzer_note": "完全構造分析 - TRENDING/RANGING/TRANSITION判定、ATR/Swing High-Low分析"
+    "analyzer_note": "市場体制判定クラス - ATRとスイング構造でレンジ/トレンドを識別"
   },
   "file_overview": {
-    "purpose": "市場体制（ボックス相場 vs トレンド相場）を判定するクラス。ATRとスイング構造を使用した判定ロジックを実装。",
-    "lines_of_code": 355,
+    "purpose": "ボックス相場（レンジ）とトレンド相場を判定するモジュール",
+    "lines_of_code": 400,
     "dependency_count": 0,
     "class_count": 1,
-    "function_count": 5,
-    "critical_methods": [
-      "detect_regime", "calculate_atr", "calculate_atr_ma",
-      "detect_regime_simple"
-    ],
-    "description": "MarketRegimeDetector クラスはATR（平均真実値幅）とスイング構造を使用して市場体制を判定。'RANGING'（ボックス相場）、'TRENDING_UP'（上昇トレンド）、'TRENDING_DOWN'（下降トレンド）、'TRANSITION'（遷移中）の4状態を返す。ATR比較（現在ATR / 平均ATR）とスイング判定（Higher High/Higher Low, Lower High/Lower Low）を組み合わせて高精度判定を実現。detect_regime_simple()はレンジ幅ベースの簡易判定を提供。"
+    "function_count": 0,
+    "critical_methods": ["detect_regime", "detect_regime_simple", "calculate_atr", "_detect_swing_direction"],
+    "description": "MarketRegimeDetectorはATR（平均真実値幅）とスイング構造を使用して市場体制を判定。detect_regime()はATR比較+スイング判定、detect_regime_simple()はレンジ幅比較でBOXING/TRENDING_UP/TRENDING_DOWN/TRANSITIONを判定。trading_strategyから呼び出され、エントリー条件の強化に利用。confidence値を返すことで判定の信頼性を提供。"
   },
-  "classes": [
-    {
-      "class_name": "MarketRegimeDetector",
-      "line": 14,
-      "docstring": "市場体制（ボックス相場 vs トレンド相場）を判定するクラス。",
-      "methods": [
-        {"name": "__init__", "line": 19, "purpose": "MarketRegimeDetector インスタンスを初期化（ATR期間、MA期間、遡り期間設定）"},
-        {"name": "calculate_atr", "line": 33, "purpose": "Average True Range (ATR)を計算"},
-        {"name": "detect_regime", "line": 66, "purpose": "市場体制を判定（手法1: ATR比較 + スイング判定）"},
-        {"name": "calculate_atr_ma", "line": 145, "purpose": "ATRの移動平均を計算"},
-        {"name": "detect_regime_simple", "line": 199, "purpose": "シンプルなボックス相場判定（高値-安値の変動幅で判定）"}
-      ]
-    }
-  ],
-  "functions": [],
-  "dependencies": [],
-  "key_patterns": [
-    "Strategy Pattern（detect_regime と detect_regime_simple の2つの判定手法）",
-    "Template Method（ATR計算→スイング判定→体制決定のテンプレートフロー）"
-  ],
   "test_coverage": {
-    "test_files": ["test/test_market_regime_detector.py"],
-    "coverage_estimate": "70%",
-    "critical_gaps": [
-      "detect_regime の全regime（RANGING/TRENDING_UP/TRENDING_DOWN/TRANSITION）テスト",
-      "ATR計算のエッジケース（データ不足、ゼロ値）テスト"
-    ]
-  },
-  "performance_considerations": [
-    {
-      "aspect": "ATR計算",
-      "current_state": "毎イテレーションでO(n)計算（n=lookback_period）",
-      "optimization": "差分更新で O(1) に短縮可能"
-    }
-  ],
-  "error_handling": {
-    "strategy": "データ不足時は 'TRANSITION' + confidence=0.0 を返却",
-    "exception_types": ["IndexError（暗黙的）", "ZeroDivisionError（atr_ma == 0）"]
-  },
-  "improvement_suggestions": [
-    {"priority": "HIGH", "suggestion": "ATR計算のキャッシュ化（差分更新）"},
-    {"priority": "MEDIUM", "suggestion": "閾値（atr_range_lower/upper）を外部設定化"},
-    {"priority": "LOW", "suggestion": "信頼度（confidence）計算ロジックの精緻化"}
-  ]
+    "test_files": ["テスト未実装"],
+    "coverage_estimate": "0%",
+    "critical_gaps": ["ATR計算の精度検証", "スイング判定ロジックのユニットテスト"]
+  }
 }
