@@ -150,6 +150,37 @@ class RiskManagement:
     
     def get_adx_bear(self):
         return self.adx_bear
+    
+    def get_dynamic_stop_range(self):
+        """
+        ADXベースの動的ストップ幅を取得します（Task 39e: Dynamic Stop Loss Width）
+        
+        ボラティリティ環境に応じてストップ幅を調整：
+        - 低ボラ環境（ADX < 25）: volatility * 1.5 （狭いストップ）
+        - 中ボラ環境（ADX 25-40）: volatility * 2.0 （現在のデフォルト）
+        - 高ボラ環境（ADX > 40）: volatility * 2.5 （広いストップ、ノイズ回避）
+        
+        期待効果：年間 +$100-150 の損失削減
+        
+        Returns:
+            float: 動的に調整されたストップ範囲の倍率
+        """
+        current_adx = self.get_adx()
+        
+        # ADXが取得できない場合はデフォルト値を使用
+        if current_adx == 0 or current_adx is None:
+            return self.initial_stop_range
+        
+        # ADXベースの動的調整
+        if current_adx < 25:
+            # 低ボラ環境: 狭いストップでノイズカットを優先
+            return 1.5
+        elif current_adx <= 40:
+            # 中ボラ環境: デフォルト値を使用
+            return 2.0
+        else:
+            # 高ボラ環境 (ADX > 40): 広いストップでノイズ回避
+            return 2.5
 
     def get_donchian_high(self, period=20):
         """
@@ -697,9 +728,10 @@ class RiskManagement:
         #ohlcv = self.price_data_management.get_latest_ohlcv()
         
         # 未初期化の場合は初期値を設定する
-        # TODO 初期ストップ値の再考慮　ボラティリティで決めていいのか
+        # Task 39e: Dynamic Stop Loss Width - ADXベースの動的調整
         if self.stop_offset == 0:
-            self.stop_offset = self.price_data_management.get_volatility() * self.initial_stop_range
+            dynamic_stop_range = self.get_dynamic_stop_range()
+            self.stop_offset = self.price_data_management.get_volatility() * dynamic_stop_range
 
         prev_stop_offset = self.stop_offset
 

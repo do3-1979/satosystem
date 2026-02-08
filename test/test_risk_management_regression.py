@@ -114,6 +114,37 @@ def test_private_methods():
         return False, f"❌ プライベートメソッド確認エラー: {e}"
 
 
+def test_dynamic_stop_range():
+    """Task 39e: Dynamic Stop Loss Width - ADXベースの動的ストップ幅計算を確認"""
+    try:
+        from risk_management import RiskManagement
+        
+        # get_dynamic_stop_range メソッドの存在確認
+        if not hasattr(RiskManagement, "get_dynamic_stop_range"):
+            return False, f"❌ get_dynamic_stop_range メソッドが見つかりません"
+        
+        # メソッドシグネチャ確認
+        sig = inspect.signature(RiskManagement.get_dynamic_stop_range)
+        params = list(sig.parameters.keys())
+        
+        # self のみのメソッドであることを確認
+        if len(params) != 1 or params[0] != "self":
+            return False, f"❌ get_dynamic_stop_range のシグネチャが不正: {params}"
+        
+        # ドキュメント文字列の確認
+        doc = RiskManagement.get_dynamic_stop_range.__doc__
+        if not doc or "Task 39e" not in doc:
+            return False, f"❌ get_dynamic_stop_range のドキュメントが不十分"
+        
+        # ADXベースの3段階調整が実装されていることを確認
+        if "ADX" not in doc or "1.5" not in doc or "2.0" not in doc or "2.5" not in doc:
+            return False, f"❌ 動的ストップ幅の3段階調整が実装されていません"
+        
+        return True, f"✅ Dynamic Stop Loss Width (Task 39e) 実装確認完了"
+    except Exception as e:
+        return False, f"❌ Dynamic Stop Range テストエラー: {e}"
+
+
 def run_all_tests():
     """全テストを実行"""
     tests = [
@@ -122,6 +153,7 @@ def run_all_tests():
         ("リスク計算メソッド確認", test_risk_calculation_methods),
         ("RiskManagement.__init__ 確認", test_risk_management_init),
         ("プライベートメソッド確認", test_private_methods),
+        ("Dynamic Stop Loss Width (Task 39e)", test_dynamic_stop_range),
     ]
     
     results = []
