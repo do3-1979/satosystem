@@ -73,6 +73,31 @@
     },
     "recently_completed": [
       {
+        "task_id": "40a",
+        "title": "Walk-Forward + OOS分析 実装完了・戦略過学習検出",
+        "date": "2026-02-08",
+        "description": "Walk-Forward分析フレームワーク（6ヶ月IS、3ヶ月OOS、3ヶ月ステップ）実装完了。2024-2025期間で5ウィンドウ検証実施。現行戦略の深刻な過学習を検出：5ウィンドウ中3個でPnL劣化率<-100%（W1: -115.1%, W3: -115.5%, W4: -100.1%）、W2の+6908%は異常値、W5はIS赤字。フレームワークは正常動作するが、戦略の本番適用には重大リスクあり。実装破棄、戦略見直し推奨",
+        "key_numbers": {
+          "analysis_period": "2024-01-01 to 2025-12-31",
+          "total_windows": 5,
+          "configuration": "IS 6mo, OOS 3mo, Step 3mo",
+          "total_is_pnl_usd": 1447.49,
+          "total_oos_pnl_usd": 1401.51,
+          "windows_severe_degradation": "3/5 (60%)",
+          "worst_degradation_pct": -115.5,
+          "anomalous_window": "W2: +6908% (market luck, not skill)"
+        },
+        "decision": "フレームワーク実装成功も、現戦略の過学習検出により全変更破棄。戦略根本見直しが必要",
+        "artifacts_created_then_deleted": [
+          "tools/walk_forward_analysis.py",
+          "tools/oos_validator.py",
+          "run_walk_forward.py",
+          "docs/WALK_FORWARD_GUIDE.md",
+          "src/bot.py modifications",
+          "src/config.ini modifications"
+        ]
+      },
+      {
         "task_id": "40j",
         "title": "ホットテスト（ダミー）とバックテストのシグナル計算一致検証",
         "date": "2026-02-03",

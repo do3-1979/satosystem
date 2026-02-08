@@ -35,15 +35,6 @@
         "estimated_impact_usd": [100, 200]
       },
       {
-        "id": "40a",
-        "category": "品質保証",
-        "title": "効果測定手法の強化（Walk-Forward + OOS）",
-        "description": "2024→2025のウォークフォワード（学習/調整→検証）と、OOS(外部期間)での再現性確認に移行。四半期別だけでなくローリング期間・市場レジーム別の評価も導入",
-        "priority": 5,
-        "related_doc": "docs/PROFIT_ENHANCEMENT_STRATEGY_2026.md",
-        "estimated_impact_usd": null
-      },
-      {
         "id": "40b",
         "category": "品質保証",
         "title": "手数料/スリッページ/約定遅延のコストモデル導入",
@@ -211,6 +202,88 @@
             "docs/analysis/TASK_40j_HOT_BACKTEST_PARITY.md"
           ],
           "key_finding": "確定足系列のシグナルに対し約定が遅れるだけでP&Lが大きく変動し得るため、差異は認識した上で39d等の優先タスクを先行"
+        }
+      },
+      {
+        "id": "40a",
+        "category": "品質保証",
+        "title": "Walk-Forward + OOS分析 実装完了・戦略過学習検出",
+        "description": "Walk-Forward分析フレームワーク（6ヶ月IS、3ヶ月OOS、3ヶ月ステップ）実装完了。2024-2025期間で5ウィンドウ検証実施。現行戦略の深刻な過学習を検出：5ウィンドウ中3個でPnL劣化率<-100%（W1: -115.1%, W3: -115.5%, W4: -100.1%）、W2の+6908%改善は異常値（偶然）、W5はIS自体が赤字。フレームワーク自体は正常動作するが、現戦略の本番適用には重大なリスクあり。実装は破棄し、戦略根本見直しを推奨",
+        "completed_date": "2026-02-08",
+        "priority": 5,
+        "impact_usd": null,
+        "result": "フレームワーク実装完了・戦略欠陥検出・コード破棄",
+        "reason_rejected": "Walk-Forward分析により現行戦略の過学習を検出。IS期間で最適化されたパラメータがOOS期間で機能せず、3/5ウィンドウでPnL完全消失（劣化率<-100%）。フレームワーク自体の動作は正常だが、分析結果により戦略の根本的な見直しが必要と判明。全変更破棄",
+        "notes": {
+          "analysis_period": "2024-01-01 to 2025-12-31",
+          "configuration": {
+            "in_sample_months": 6,
+            "out_of_sample_months": 3,
+            "step_months": 3,
+            "total_windows": 5
+          },
+          "window_results": [
+            {
+              "window": 1,
+              "is_period": "2024-01-01 to 2024-06-30",
+              "oos_period": "2024-07-01 to 2024-09-30",
+              "is_pnl_usd": 156.80,
+              "oos_pnl_usd": -23.68,
+              "degradation_pct": -115.1,
+              "diagnosis": "severe overfitting"
+            },
+            {
+              "window": 2,
+              "is_period": "2024-04-01 to 2024-09-30",
+              "oos_period": "2024-10-01 to 2024-12-31",
+              "is_pnl_usd": 21.99,
+              "oos_pnl_usd": 1540.84,
+              "degradation_pct": 6908.1,
+              "diagnosis": "anomalous - likely market luck, not skill"
+            },
+            {
+              "window": 3,
+              "is_period": "2024-07-01 to 2024-12-31",
+              "oos_period": "2025-01-01 to 2025-03-31",
+              "is_pnl_usd": 929.03,
+              "oos_pnl_usd": -143.91,
+              "degradation_pct": -115.5,
+              "diagnosis": "severe overfitting"
+            },
+            {
+              "window": 4,
+              "is_period": "2024-10-01 to 2025-03-31",
+              "oos_period": "2025-04-01 to 2025-06-30",
+              "is_pnl_usd": 566.26,
+              "oos_pnl_usd": -0.76,
+              "degradation_pct": -100.1,
+              "diagnosis": "complete profit loss"
+            },
+            {
+              "window": 5,
+              "is_period": "2025-01-01 to 2025-06-30",
+              "oos_period": "2025-07-01 to 2025-09-30",
+              "is_pnl_usd": -226.58,
+              "oos_pnl_usd": 29.03,
+              "degradation_pct": 112.8,
+              "diagnosis": "IS negative - strategy ineffective in training"
+            }
+          ],
+          "summary": {
+            "total_is_pnl_usd": 1447.49,
+            "total_oos_pnl_usd": 1401.51,
+            "windows_with_severe_degradation": "3/5 (60%)",
+            "conclusion": "現行戦略は過学習により本番環境で期待利益を実現できない可能性が極めて高い。戦略の根本的な見直しが必要"
+          },
+          "artifacts_created_then_deleted": [
+            "tools/walk_forward_analysis.py (522 lines)",
+            "tools/oos_validator.py (250 lines)",
+            "run_walk_forward.py (140 lines)",
+            "docs/WALK_FORWARD_GUIDE.md",
+            "docs/walk_forward_results/*.json",
+            "src/bot.py modifications (QUARTERLY_LOG_PREFIX support)",
+            "src/config.ini modifications (OOS test period)"
+          ]
         }
       },
       {
