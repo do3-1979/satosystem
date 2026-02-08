@@ -1,12 +1,30 @@
 {
   "meta": {
     "version": "1.0",
-    "last_updated": "2026-02-03",
+    "last_updated": "2026-02-08",
     "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE)",
-    "replaces": "docs/ACTION_LIST.md"
+    "replaces": "docs/ACTION_LIST.md",
+    "workflow_rules": {
+      "baseline_before_action": "アクションリスト実行前に必ずレグレッションテストを実行し、PROGRESS.json baseline_regressionに保存すること",
+      "comparison_source": "アクションリスト実行時の比較元としてPROGRESS.json baseline_regressionを活用すること"
+    }
   },
   "tasks": {
     "todo": [
+      {
+        "id": "41a",
+        "category": "リスク管理・最重要",
+        "title": "最大ドローダウン低減策の実装",
+        "description": "現状6/8四半期で100%超DD発生（最大247%）。破産リスク排除のため、ポジションサイズ調整・ストップロス最適化・早期利確・トレンド強度フィルタ等によりDDを50%以下に抑制",
+        "priority": 5,
+        "related_doc": "PROGRESS.json (baseline_regression参照)",
+        "estimated_impact_usd": null,
+        "baseline": {
+          "dd_over_100_quarters": "6/8 (75%)",
+          "max_dd": "246.78 USD (246.8%)",
+          "target_dd": "50% or less"
+        }
+      },
       {
         "id": "39d",
         "category": "2026年利益拡大戦略",

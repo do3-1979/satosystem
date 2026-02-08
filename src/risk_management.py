@@ -29,6 +29,14 @@ class RiskManagement:
         self.portfolio = portfolio
         self.risk_percentage = Config.get_risk_percentage()
         self.account_balance = Config.get_account_balance()
+        
+        # 動的ポジションサイズ調整設定（DD低減策1）
+        self.enable_dynamic_position_sizing = Config.get_config_bool('RiskManagement', 'enable_dynamic_position_sizing', 0)
+        self.dynamic_tier_90_risk = Config.get_config_float('RiskManagement', 'dynamic_tier_90_risk', 0.30)
+        self.dynamic_tier_70_risk = Config.get_config_float('RiskManagement', 'dynamic_tier_70_risk', 0.20)
+        self.dynamic_tier_50_risk = Config.get_config_float('RiskManagement', 'dynamic_tier_50_risk', 0.15)
+        self.dynamic_tier_below_risk = Config.get_config_float('RiskManagement', 'dynamic_tier_below_risk', 0.10)
+        self.initial_balance = Config.get_account_balance()  # 初期資本を記憶
 
         self.lot_limit_lower = Config.get_lot_limit_lower()
         self.balance_tether_limit = Config.get_balance_tether_limit()
@@ -751,10 +759,10 @@ class RiskManagement:
     def calculate_position_size(self, balance_tether):
         """
         ポジションサイズ[通貨単位]を計算します。
+        動的ポジションサイズ調整が有効な場合、資産額に応じてリスクを調整します。
 
         Args:
-            entry_price (float): エントリー価格
-            stop_loss_price (float): ストップロス価格
+            balance_tether (float): 現在の口座残高
 
         Returns:
             float: ポジションサイズ
@@ -766,6 +774,32 @@ class RiskManagement:
             self.logger.log_error(f"証拠金{balance_tether:.2f}が最低額{self.balance_tether_limit}を下回ったので発注できません")
             self.capital_exhausted = True
         else:
+            # 動的ポジションサイズ調整: 現在の資産状況に応じてリスクを調整
+            current_risk_percentage = self.risk_percentage
+            
+            if self.enable_dynamic_position_sizing:
+                # 現在の資産比率を計算（初期資本に対する割合）
+                balance_ratio = balance_tether / self.initial_balance
+                
+                # ティアに応じてリスクパーセンテージを調整
+                if balance_ratio >= 0.90:
+                    current_risk_percentage = self.dynamic_tier_90_risk
+                    tier_name = "Tier 90%+"
+                elif balance_ratio >= 0.70:
+                    current_risk_percentage = self.dynamic_tier_70_risk
+                    tier_name = "Tier 70-90%"
+                elif balance_ratio >= 0.50:
+                    current_risk_percentage = self.dynamic_tier_50_risk
+                    tier_name = "Tier 50-70%"
+                else:
+                    current_risk_percentage = self.dynamic_tier_below_risk
+                    tier_name = "Tier <50%"
+                
+                self.logger.log_info(
+                    f"動的ポジションサイズ: 資産比率={balance_ratio:.2%}, "
+                    f"{tier_name}, リスク={current_risk_percentage:.2%}"
+                )
+            
             # 初回のstop値を計算
             # ボラティリティの幅からストップ幅を計算
             volatility = self.price_data_management.get_volatility()
@@ -778,7 +812,8 @@ class RiskManagement:
                 return 0
 
             # 総購入数は、総資産 x 失っていい割合 / ボラティリティで動きうる幅で決定
-            total_size = round( ( balance_tether * 100 * self.risk_percentage / stop_range / 100 ), 7 )
+            # 動的リスク調整を適用
+            total_size = round( ( balance_tether * 100 * current_risk_percentage / stop_range / 100 ), 7 )
             # 分割購入するので1買い当たりのサイズに変換
             tmp_size = round( ( total_size * 100 / self.entry_times / 100 ) , 7 )
 

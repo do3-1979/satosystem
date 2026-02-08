@@ -139,8 +139,9 @@ class Bot:
                         self.logger.log(f"最大ドローダウン: {self.portfolio.get_drawdown():>4.2f} [BTC/USD]")
                         self.logger.log(f"最大ドローダウン率: {self.portfolio.get_drawdown_rate():>4.2f} [%]")
 
-                        # 追加メトリクス計算
-                        metrics = compute_metrics(self.pnl_history, self.trade_results)
+                        # 追加メトリクス計算（初期資本を渡してDD率を正しく計算）
+                        initial_balance = Config.get_account_balance()
+                        metrics = compute_metrics(self.pnl_history, self.trade_results, initial_balance)
                         self.logger.log(f"Sharpe: {metrics['sharpe']:.3f}")
                         self.logger.log(f"WinRate: {metrics['win_rate']:.2f}% Trades: {metrics['trades']}")
                         # JSON出力

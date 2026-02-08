@@ -13,6 +13,85 @@
         "improvement_usd": 378.27,
         "improvement_percent": 41.8
       }
+    },
+    "baseline_regression": {
+      "timestamp": "2026-02-08T12:42:03.646859",
+      "purpose": "ドローダウン低減策実装前のベースライン",
+      "cumulative_pnl_usd": 1568.8155379999998,
+      "period": "2024 Q1 - 2025 Q4 (8 quarters)",
+      "quarterly_results": [
+        {
+          "period": "Q1 2024",
+          "pnl": 92.010147,
+          "max_drawdown": 83.97239,
+          "drawdown_ratio": 84.0,
+          "profit_factor": 2.095719,
+          "win_rate": 25.0
+        },
+        {
+          "period": "Q2 2024",
+          "pnl": 49.579448,
+          "max_drawdown": 43.71519,
+          "drawdown_ratio": 43.7,
+          "profit_factor": 2.13352,
+          "win_rate": 50.0
+        },
+        {
+          "period": "Q3 2024",
+          "pnl": -23.679424,
+          "max_drawdown": 115.871326,
+          "drawdown_ratio": 115.9,
+          "profit_factor": 0.79564,
+          "win_rate": 75.0
+        },
+        {
+          "period": "Q4 2024",
+          "pnl": 1540.83766,
+          "max_drawdown": 246.783404,
+          "drawdown_ratio": 246.8,
+          "profit_factor": 5.101851,
+          "win_rate": 87.5
+        },
+        {
+          "period": "Q1 2025",
+          "pnl": -143.914194,
+          "max_drawdown": 143.914194,
+          "drawdown_ratio": 143.9,
+          "profit_factor": 0.0,
+          "win_rate": 20.0
+        },
+        {
+          "period": "Q2 2025",
+          "pnl": -0.756881,
+          "max_drawdown": 111.871987,
+          "drawdown_ratio": 111.9,
+          "profit_factor": 0.99599,
+          "win_rate": 75.0
+        },
+        {
+          "period": "Q3 2025",
+          "pnl": 29.025524,
+          "max_drawdown": 148.531042,
+          "drawdown_ratio": 148.5,
+          "profit_factor": 1.195417,
+          "win_rate": 100.0
+        },
+        {
+          "period": "Q4 2025",
+          "pnl": 25.713258,
+          "max_drawdown": 113.844744,
+          "drawdown_ratio": 113.8,
+          "profit_factor": 1.225862,
+          "win_rate": 100.0
+        }
+      ],
+      "drawdown_statistics": {
+        "quarters_with_dd_over_100_percent": 6,
+        "total_quarters": 8,
+        "dd_over_100_ratio": 75.0,
+        "max_drawdown_overall": 246.783404,
+        "max_dd_ratio": 246.8
+      }
     }
   },
   "latest_commit": {

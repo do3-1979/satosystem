@@ -50,13 +50,45 @@ def _max_drawdown(pnl_history: List[float]) -> float:
     return max_dd
 
 
-def compute_metrics(pnl_history: List[float], trade_results: List[bool]) -> Dict[str, float]:
+def _max_drawdown_rate(pnl_history: List[float], initial_balance: float) -> float:
+    """
+    最大ドローダウン率を計算（初期資本を考慮）
+    
+    Args:
+        pnl_history: 累積損益の履歴
+        initial_balance: 初期資本
+    
+    Returns:
+        最大ドローダウン率（%）
+    """
+    if not pnl_history or initial_balance <= 0:
+        return 0.0
+    
+    peak_balance = initial_balance  # 資産のピーク（初期資本から開始）
+    max_dd_rate = 0.0
+    
+    for pnl in pnl_history:
+        current_balance = initial_balance + pnl  # 現在の資産
+        
+        if current_balance > peak_balance:
+            peak_balance = current_balance  # ピーク更新
+        
+        # ドローダウン率 = (ピーク - 現在) / ピーク
+        dd_rate = ((peak_balance - current_balance) / peak_balance * 100) if peak_balance > 0 else 0.0
+        
+        if dd_rate > max_dd_rate:
+            max_dd_rate = dd_rate
+    
+    return max_dd_rate
+
+
+def compute_metrics(pnl_history: List[float], trade_results: List[bool], initial_balance: float = 100.0) -> Dict[str, float]:
+def compute_metrics(pnl_history: List[float], trade_results: List[bool], initial_balance: float = 100.0) -> Dict[str, float]:
     total_pnl = pnl_history[-1] if pnl_history else 0.0
     returns = _incremental_returns(pnl_history)
     sharpe = _sharpe(returns)
     max_dd = _max_drawdown(pnl_history) if pnl_history else 0.0
-    peak = max(pnl_history) if pnl_history else 0.0
-    max_dd_rate = (max_dd / peak * 100) if peak > 0 else 0.0
+    max_dd_rate = _max_drawdown_rate(pnl_history, initial_balance)
 
     trades = len(trade_results)
     wins = sum(1 for r in trade_results if r)
