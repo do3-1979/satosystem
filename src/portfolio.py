@@ -17,9 +17,15 @@ from config import Config  # Config クラスのインポート
 
 # Portfolio クラスの定義
 class Portfolio:
-    def __init__(self):
+    def __init__(self, initial_balance=100.0):
+        """初期化
+        
+        Args:
+            initial_balance: 初期資産（デフォルト: 100.0 USD）
+        """
         self.logger = Logger()
         self.market_type = Config.get_market()
+        self.initial_balance = initial_balance  # 初期資産を保持
         # 現在の market_type に基づいてポジションを初期化
         self.positions = {self.market_type: {'quantity': 0, 'side': 'NONE', 'position_price': 0}}
         self.profit = 0
@@ -79,12 +85,20 @@ class Portfolio:
     
     def get_drawdown_rate(self):
         """
-        ドローダウン率を取得します。
+        ドローダウン率を取得します（初期資産を含む総資産ベース）。
         """
-        if self.funds > 0:
-            drawdown_rate = round( self.drawdown * 100 / self.funds_max, 1)
+        # ピーク資産 = 初期資産 + 累積損益のピーク
+        peak_balance = self.initial_balance + self.funds_max
+        
+        # 現在の資産 = 初期資産 + 現在の累積損益
+        current_balance = self.initial_balance + self.funds
+        
+        if peak_balance > 0:
+            # ドローダウン率 = (ピーク資産 - 現在の資産) / ピーク資産 * 100
+            drawdown_rate = round((peak_balance - current_balance) / peak_balance * 100, 1)
         else:
-            drawdown_rate = 0 
+            drawdown_rate = 0
+        
         return drawdown_rate
 
     def add_position_quantity(self, quantity, side, price):

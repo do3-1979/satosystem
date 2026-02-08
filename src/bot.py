@@ -520,8 +520,9 @@ if __name__ == "__main__":
     else:  # デフォルトは bybit
         exchange = BybitExchange(Config.get_bybit_api_key(), Config.get_bybit_api_secret())
 
-    # 資産管理クラスを初期化
-    portfolio = Portfolio()
+    # 資産管理クラスを初期化（初期資産を渡す）
+    initial_balance = Config.get_account_balance()
+    portfolio = Portfolio(initial_balance)
     
     # 価格情報クラスを初期化
     price_data_management = PriceDataManagement()
