@@ -82,8 +82,18 @@ def _max_drawdown_rate(pnl_history: List[float], initial_balance: float) -> floa
     return max_dd_rate
 
 
-def compute_metrics(pnl_history: List[float], trade_results: List[bool], initial_balance: float = 100.0) -> Dict[str, float]:
-def compute_metrics(pnl_history: List[float], trade_results: List[bool], initial_balance: float = 100.0) -> Dict[str, float]:
+def compute_metrics(pnl_history: List[float], trade_results: List[bool], initial_balance: float) -> Dict[str, float]:
+    """
+    バックテスト結果のメトリクスを計算
+    
+    Args:
+        pnl_history: 累積損益の履歴
+        trade_results: トレード結果のリスト（True=勝ち, False=負け）
+        initial_balance: 初期資本（必須）
+    
+    Returns:
+        メトリクス辞書
+    """
     total_pnl = pnl_history[-1] if pnl_history else 0.0
     returns = _incremental_returns(pnl_history)
     sharpe = _sharpe(returns)
