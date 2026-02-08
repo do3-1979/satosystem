@@ -188,6 +188,20 @@ def run_backtest(year, q, start_str, end_str):
             env=env
         )
         
+        # # デバッグ用：stdout出力を表示（Time-Based Exit検証用）
+        # debug_keywords = ["Time-Based Exit", "🕐", "⏰", "📍"]
+        # if any(kw in result.stdout for kw in debug_keywords):
+        #     print(f"   [DEBUG] Time-Based Exit関連出力:")
+        #     lines = result.stdout.split('\n')
+        #     for i, line in enumerate(lines):
+        #         if any(kw in line for kw in debug_keywords):
+        #             # マッチした行の前後2行を含めて表示
+        #             start = max(0, i-1)
+        #             end = min(len(lines), i+4)
+        #             for j in range(start, end):
+        #                 print(f"      {lines[j]}")
+        #             print(f"      ---")
+        
         if result.returncode != 0:
             print(f"   ❌ バックテスト失敗")
             return None

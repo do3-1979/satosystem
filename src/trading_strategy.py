@@ -44,6 +44,7 @@ class TradingStrategy:
         self.risk_manager = risk_manager
         self.portfolio = portfolio
         self.exit_strategy_v2 = ExitStrategyV2()  # ExitStrategyV2を初期化
+        self.exit_strategy_v2.load_config(Config)  # Config設定をロード（Task 39d）
         self.entry_record = {}  # エントリー時の指標情報を記録
         
         # 市場体制判定の初期化
@@ -435,9 +436,10 @@ class TradingStrategy:
                 'entry_price': current_price.get('close_price', 0),
                 'entry_adx': self.risk_manager.get_adx(),
                 'entry_pvo': current_price.get('pvo_val', 0) or current_price.get('pvo', 0),
-                'entry_time': current_price.get('real_time_dt'),
+                'entry_time': current_price.get('timestamp', 0),  # タイムスタンプ（数値）を記録
                 'strategy_result': strategy_result,  # Strategy結果も記録
             }
+            # self.logger.log(f"[DEBUG ENTRY RECORD] entry_record保存: entry_time={self.entry_record['entry_time']}, entry_price={self.entry_record['entry_price']}")
             
         return
     
@@ -561,6 +563,52 @@ class TradingStrategy:
         
         # 現在のOHLCVと指標を取得
         current_ohlcv = self.price_data_management.get_latest_ohlcv()
+        
+        # timestampがない場合はclose_timeをtimestampとして設定（Time-Based Exit用）
+        if 'timestamp' not in current_ohlcv and 'close_time' in current_ohlcv:
+            current_ohlcv['timestamp'] = current_ohlcv['close_time']
+        
+        #-------------------------------------------------------
+        # 優先度0：Time-Based Exit（長期ポジションの強制決済）
+        #-------------------------------------------------------
+        # ストップロスより優先して、保有時間制限をチェック
+        try:
+            position_info = {
+                'entry_price': self.portfolio.entry_price if hasattr(self.portfolio, 'entry_price') else 0,
+                'quantity': self.portfolio.get_position_quantity(),
+                'side': position_side,
+            }
+            
+            # Time-Based Exitのみをチェック（他のExitStrategyV2ロジックは優先度2で実行）
+            if self.exit_strategy_v2.time_based_exit_enabled:
+                entry_time = self.entry_record.get('entry_time', 0)
+                current_time = current_ohlcv.get('timestamp', 0)
+                
+                # デバッグ出力
+                # self.logger.log(f"[DEBUG TBE] entry_time={entry_time}, current_time={current_time}")
+                
+                time_check = self.exit_strategy_v2._check_time_based_exit(
+                    current_time,
+                    entry_time,
+                    current_ohlcv.get('close_price', 0),
+                    position_info.get('entry_price', 0)
+                )
+                if time_check.get('should_exit', False):
+                    decision = "EXIT"
+                    exit_reason = time_check.get('exit_reason', 'TIME_LIMIT')
+                    
+                    if position_side == "BUY":
+                        side = "SELL"
+                    elif position_side == "SELL":
+                        side = "BUY"
+                    
+                    self.logger.log(f"[条件判定:EXIT] Time-Based Exit: {time_check.get('description', '72時間超過')}")
+                    self.trade_decision["side"] = side
+                    self.trade_decision["decision"] = decision
+                    self.trade_decision["exit_reason"] = exit_reason
+                    return
+        except Exception as e:
+            self.logger.log(f"[WARNING] Time-Based Exitチェックエラー: {e}")
         
         #-------------------------------------------------------
         # 優先度1：従来のストップロス判定

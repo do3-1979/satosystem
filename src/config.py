@@ -1113,6 +1113,36 @@ class Config:
             # デフォルトは安全のためダミーモード
             return True
 
+    # ========================================
+    # TimeBasedExit セクション (Task 39d)
+    # ========================================
+
+    @classmethod
+    def get_enable_time_based_exit(cls):
+        """
+        Time-Based Exit機能の有効/無効を取得します.
+
+        Returns:
+            bool: True = 有効、False = 無効
+        """
+        try:
+            return int(cls.config['TimeBasedExit']['enable_time_based_exit']) == 1
+        except (KeyError, ValueError):
+            return False
+
+    @classmethod
+    def get_max_holding_hours(cls):
+        """
+        最大保有時間を取得します（時間）.
+
+        Returns:
+            float: 保有時間制限（時間）、デフォルト72時間
+        """
+        try:
+            return float(cls.config['TimeBasedExit']['max_holding_hours'])
+        except (KeyError, ValueError):
+            return 72.0
+
     def __str__(self):
         """
         コンフィグ内容を可読性よく文字列として表現するメソッドです。

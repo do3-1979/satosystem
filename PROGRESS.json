@@ -15,16 +15,17 @@
       }
     },
     "baseline_regression": {
-      "timestamp": "2026-02-08T12:42:03.646859",
-      "purpose": "ドローダウン低減策実装前のベースライン",
-      "cumulative_pnl_usd": 1568.8155379999998,
+      "timestamp": "2026-02-08T12:56:51",
+      "purpose": "DD率計算修正後の正確なベースライン（初期資本300 USDを考慮した資産ベースDD率）",
+      "cumulative_pnl_usd": 1568.82,
+      "initial_balance_usd": 300.0,
       "period": "2024 Q1 - 2025 Q4 (8 quarters)",
       "quarterly_results": [
         {
           "period": "Q1 2024",
           "pnl": 92.010147,
           "max_drawdown": 83.97239,
-          "drawdown_ratio": 84.0,
+          "drawdown_ratio": 28.0,
           "profit_factor": 2.095719,
           "win_rate": 25.0
         },
@@ -32,7 +33,7 @@
           "period": "Q2 2024",
           "pnl": 49.579448,
           "max_drawdown": 43.71519,
-          "drawdown_ratio": 43.7,
+          "drawdown_ratio": 13.1,
           "profit_factor": 2.13352,
           "win_rate": 50.0
         },
@@ -40,7 +41,7 @@
           "period": "Q3 2024",
           "pnl": -23.679424,
           "max_drawdown": 115.871326,
-          "drawdown_ratio": 115.9,
+          "drawdown_ratio": 29.6,
           "profit_factor": 0.79564,
           "win_rate": 75.0
         },
@@ -48,7 +49,7 @@
           "period": "Q4 2024",
           "pnl": 1540.83766,
           "max_drawdown": 246.783404,
-          "drawdown_ratio": 246.8,
+          "drawdown_ratio": 13.6,
           "profit_factor": 5.101851,
           "win_rate": 87.5
         },
@@ -56,7 +57,7 @@
           "period": "Q1 2025",
           "pnl": -143.914194,
           "max_drawdown": 143.914194,
-          "drawdown_ratio": 143.9,
+          "drawdown_ratio": 48.0,
           "profit_factor": 0.0,
           "win_rate": 20.0
         },
@@ -64,7 +65,7 @@
           "period": "Q2 2025",
           "pnl": -0.756881,
           "max_drawdown": 111.871987,
-          "drawdown_ratio": 111.9,
+          "drawdown_ratio": 27.2,
           "profit_factor": 0.99599,
           "win_rate": 75.0
         },
@@ -72,7 +73,7 @@
           "period": "Q3 2025",
           "pnl": 29.025524,
           "max_drawdown": 148.531042,
-          "drawdown_ratio": 148.5,
+          "drawdown_ratio": 31.1,
           "profit_factor": 1.195417,
           "win_rate": 100.0
         },
@@ -80,17 +81,18 @@
           "period": "Q4 2025",
           "pnl": 25.713258,
           "max_drawdown": 113.844744,
-          "drawdown_ratio": 113.8,
+          "drawdown_ratio": 25.9,
           "profit_factor": 1.225862,
           "win_rate": 100.0
         }
       ],
       "drawdown_statistics": {
-        "quarters_with_dd_over_100_percent": 6,
+        "quarters_with_dd_over_50_percent": 0,
         "total_quarters": 8,
-        "dd_over_100_ratio": 75.0,
+        "dd_over_50_ratio": 0.0,
         "max_drawdown_overall": 246.783404,
-        "max_dd_ratio": 246.8
+        "max_dd_ratio": 48.0,
+        "note": "全四半期でDD率 ≤ 50%達成。以前の計算エラー（初期資本未考慮）により6/8四半期でDD>100%と誤判定されていた"
       }
     }
   },
@@ -151,6 +153,48 @@
       ]
     },
     "recently_completed": [
+      {
+        "task_id": "41a",
+        "title": "最大ドローダウン率計算バグ修正",
+        "date": "2026-02-08",
+        "description": "DD率計算ロジックを修正。以前の計算は初期資本を考慮せず、累積損益のピークのみをベースとしていた（max_dd / max(pnl_history)）。これにより6/8四半期でDD>100%と誤判定。正しくは資産ピーク（初期資本+累積損益）をベースとし、(peak_balance - current_balance) / peak_balance * 100 で計算すべき。修正後、全8四半期でDD ≤ 50% を達成しており、DD低減策は不要であることが判明。",
+        "acceptance_criteria": [
+          "✅ _max_drawdown_rate()関数にinitial_balance引数を追加",
+          "✅ peak_balanceとcurrent_balanceで資産ベースDD率を計算",
+          "✅ compute_metrics()のシグネチャをinitial_balance必須に変更",
+          "✅ bot.pyでConfig.get_account_balance()を渡すように修正",
+          "✅ 全8四半期を再測定し正確なDD率を取得"
+        ],
+        "verification_results": [
+          "src/metrics.py line 60-74: _max_drawdown_rate()修正完了",
+          "src/metrics.py line 85: compute_metrics(pnl_history, trade_results, initial_balance)に変更",
+          "src/bot.py line 143: initial_balance = Config.get_account_balance()追加",
+          "四半期バックテスト完了: 全8四半期でDD ≤ 50%",
+          "最大DD率: 48.0% (Q1 2025) - 目標50%以内達成"
+        ],
+        "key_numbers": {
+          "previous_incorrect_calculation": {
+            "quarters_with_dd_over_100": 6,
+            "max_dd_ratio": 246.8
+          },
+          "corrected_calculation": {
+            "quarters_with_dd_over_50": 0,
+            "max_dd_ratio": 48.0
+          },
+          "initial_balance_used": 300.0,
+          "cumulative_pnl": 1568.82
+        },
+        "commits": [
+          "522a2f7: fix: ドローダウン率計算を修正（初期資本を考慮）+ Task 41a追加",
+          "7496bde: fix: metrics.pyのインデントエラー修正 + config.ini期間設定復元"
+        ],
+        "decision": "Task 41a（DD低減策実装）は不要。システムは既にDD ≤ 50%目標を達成済み。利益拡大策（Task 39d-39f）に注力する",
+        "artifacts": [
+          "src/metrics.py (_max_drawdown_rate関数追加)",
+          "src/bot.py (initial_balance引数追加)",
+          "PROGRESS.json baseline_regression更新（正確なDD率記録）"
+        ]
+      },
       {
         "task_id": "40a",
         "title": "Walk-Forward + OOS分析 実装完了・戦略過学習検出",

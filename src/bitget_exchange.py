@@ -753,6 +753,7 @@ class BitgetExchange(Exchange):
                 tmp_time = ohlcv[i][0] / 1000 
                 if tmp_time < end_epoch_fixed:
                     ohlcv_data.append({ "close_time" : tmp_time,
+                        "timestamp" : tmp_time,  # 追加: Time-Based Exit用のtimestampキー
                         "close_time_dt" : datetime.fromtimestamp(tmp_time).strftime('%Y/%m/%d %H:%M'),
                         "open_price" : ohlcv[i][1],
                         "high_price" : ohlcv[i][2],
@@ -832,6 +833,7 @@ class BitgetExchange(Exchange):
         latest_ohlcv = ohlcv[-1]
         tmp_time = latest_ohlcv[0] / 1000 
         ohlcv_data.append({ "close_time" : tmp_time,
+            "timestamp" : tmp_time,  # 追加: Time-Based Exit用のtimestampキー
             "close_time_dt" : datetime.fromtimestamp(tmp_time).strftime('%Y/%m/%d %H:%M'),
             "open_price" : latest_ohlcv[1],
             "high_price" : latest_ohlcv[2],

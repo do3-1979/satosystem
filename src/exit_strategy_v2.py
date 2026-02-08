@@ -35,8 +35,8 @@ class ExitStrategyV2:
         self.PARTIAL_EXIT_RATIO = 0.5       # Stage 2での利確比率
         self.MFE_TARGET_RATIO = 0.7         # MFEの目標到達率
         
-        # Trailing Profit Target設定（Task 39a）
-        self.trailing_profit_enabled = True
+        # Trailing Profit Target設定（Task 39a - 破棄済み）
+        self.trailing_profit_enabled = False  # 破棄済み機能：ベースライン比-1,077 USD悪化
         self.profit_tier1_threshold = 0.02   # 2%
         self.profit_tier1_stop_multiplier = 1.5
         self.profit_tier2_threshold = 0.05   # 5%
@@ -46,6 +46,18 @@ class ExitStrategyV2:
         
         # Trailing Stop状態を保持
         self.trailing_stops = {}  # {trade_id: trailing_stop_price}
+        
+        # Time-Based Exit設定（Task 39d）
+        self.time_based_exit_enabled = False  # デフォルト無効、load_config()で更新
+        self.max_holding_hours = 72.0  # デフォルト72時間
+    
+    def load_config(self, config_module):
+        """Configモジュールから設定を読み込む（bot.pyから呼び出し）"""
+        try:
+            self.time_based_exit_enabled = config_module.get_enable_time_based_exit()
+            self.max_holding_hours = config_module.get_max_holding_hours()
+        except Exception as e:
+            print(f"⚠️  ExitStrategyV2: Config読み込みエラー（デフォルト値使用）: {e}")
     
     def evaluate_exit_condition(self, current_ohlcv, position_info, entry_info):
         """
@@ -72,6 +84,8 @@ class ExitStrategyV2:
                 'confidence': float (0.0-1.0),
             }
         """
+        
+        # print(f"📍 evaluate_exit_condition() 呼び出し: time_based_exit_enabled={self.time_based_exit_enabled}")  # コメントアウト:出力過多
         
         try:
             # データタイプ検証用ヘルパー関数
@@ -114,6 +128,23 @@ class ExitStrategyV2:
                 )
                 if trailing_check['should_exit']:
                     return trailing_check
+            
+            # print(f"[TBE] Trailing Profit通過, time_based_exit_enabled={self.time_based_exit_enabled}")
+            
+            # Time-Based Exit チェック（Task 39d: 長期ポジションの強制決済）
+            if self.time_based_exit_enabled:
+                # print(f"🔍 Time-Based Exit有効 → チェック実行")
+                time_check = self._check_time_based_exit(
+                    current_ohlcv.get('timestamp', 0),
+                    entry_info.get('entry_time', 0),
+                    current_price,
+                    entry_price
+                )
+                if time_check['should_exit']:
+                    # print(f"⏰ TIME_LIMIT発動: {time_check.get('exit_reason')}")
+                    return time_check
+            # else:
+                # print(f"⚠️  Time-Based Exit無効（設定未読込またはdisable）")
             
             # Stage判定
             stage = self._identify_stage(entry_adx, entry_pvo, current_adx, current_pvo)
@@ -403,6 +434,77 @@ class ExitStrategyV2:
         
         # トレーリングストップ未到達
         return {'should_exit': False}
+
+    def _check_time_based_exit(self, current_timestamp, entry_timestamp, current_price, entry_price):
+        """
+        Time-Based Exit: 保有時間制限をチェック（Task 39d）
+        
+        Args:
+            current_timestamp: 現在のタイムスタンプ（秒またはミリ秒）
+            entry_timestamp: エントリー時のタイムスタンプ（秒またはミリ秒）
+            current_price: 現在価格
+            entry_price: エントリー価格
+            
+        Returns:
+            dict: 出口判定結果
+        """
+        try:
+            # タイムスタンプを秒単位に正規化（ミリ秒の場合は変換）
+            if current_timestamp > 1e12:  # ミリ秒と判定
+                current_ts = current_timestamp / 1000
+            else:
+                current_ts = current_timestamp
+            
+            if entry_timestamp > 1e12:  # ミリ秒と判定
+                entry_ts = entry_timestamp / 1000
+            else:
+                entry_ts = entry_timestamp
+            
+            # 保有時間を計算（時間単位）
+            holding_duration_hours = (current_ts - entry_ts) / 3600
+            
+            # # デバッグ出力
+            # print(f"🕐 Time-Based Exit チェック中:")
+            # print(f"   entry_ts: {entry_ts}, current_ts: {current_ts}")
+            # print(f"   保有時間: {holding_duration_hours:.1f}h / 制限: {self.max_holding_hours}h")
+            
+            # 保有時間制限を超過しているかチェック
+            if holding_duration_hours > self.max_holding_hours:
+                # 含み損益を計算
+                unrealized_pnl = current_price - entry_price
+                pnl_pct = (unrealized_pnl / entry_price) * 100
+                
+                if unrealized_pnl > 0:
+                    # 利益確定
+                    return {
+                        'should_exit': True,
+                        'exit_reason': 'TIME_LIMIT_PROFIT',
+                        'close_ratio': 1.0,
+                        'stage': 'TIME_BASED_EXIT',
+                        'confidence': 0.85,
+                        'holding_hours': holding_duration_hours,
+                        'pnl_pct': pnl_pct,
+                        'description': f'{holding_duration_hours:.1f}時間保有（制限{self.max_holding_hours}h超過）。利益{pnl_pct:.2f}%で強制決済'
+                    }
+                else:
+                    # 損切り（塩漬け防止）
+                    return {
+                        'should_exit': True,
+                        'exit_reason': 'TIME_LIMIT_LOSS',
+                        'close_ratio': 1.0,
+                        'stage': 'TIME_BASED_EXIT',
+                        'confidence': 0.85,
+                        'holding_hours': holding_duration_hours,
+                        'pnl_pct': pnl_pct,
+                        'description': f'{holding_duration_hours:.1f}時間保有（制限{self.max_holding_hours}h超過）。損失{pnl_pct:.2f}%で強制決済（塩漬け防止）'
+                    }
+            
+            # 制限未到達
+            return {'should_exit': False}
+        
+        except Exception as e:
+            print(f"⚠️  Time-Based Exit チェックエラー: {e}")
+            return {'should_exit': False}
 
 
 class PortfolioExitExecutor:

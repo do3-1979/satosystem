@@ -758,13 +758,16 @@ class BybitExchange(Exchange):
                     ohlcv[i][2] != 0 and \
                     ohlcv[i][3] != 0 and \
                     ohlcv[i][4] != 0:
-                        ohlcv_data.append({ "close_time" : tmp_time,
+                        ohlcv_data.append({
+                        "close_time" : tmp_time,
+                        "timestamp" : tmp_time,  # 追加: Time-Based Exit用のtimestampキー
                         "close_time_dt" : datetime.fromtimestamp(tmp_time).strftime('%Y/%m/%d %H:%M'),
                         "open_price" : ohlcv[i][1],
                         "high_price" : ohlcv[i][2],
                         "low_price" : ohlcv[i][3],
                         "close_price": ohlcv[i][4],
-                        "Volume" : ohlcv[i][5]})
+                        "Volume" : ohlcv[i][5]
+                    })
                 else:
                     break
             get_time = tmp_time
@@ -798,6 +801,7 @@ class BybitExchange(Exchange):
             tmp_time = int(time.time())
             return [{
                 "close_time": tmp_time,
+                "timestamp": tmp_time,  # 追加: Time-Based Exit用のtimestampキー
                 "close_time_dt": datetime.fromtimestamp(tmp_time).strftime('%Y/%m/%d %H:%M'),
                 "open_price": random_price - 100,
                 "high_price": random_price + 200,
@@ -840,6 +844,7 @@ class BybitExchange(Exchange):
         latest_ohlcv = ohlcv[-1]
         tmp_time = latest_ohlcv[0] / 1000 
         ohlcv_data.append({ "close_time" : tmp_time,
+            "timestamp" : tmp_time,  # Time-Based Exit用のtimestampキー（リアルデータ対応）
             "close_time_dt" : datetime.fromtimestamp(tmp_time).strftime('%Y/%m/%d %H:%M'),
             "open_price" : latest_ohlcv[1],
             "high_price" : latest_ohlcv[2],
