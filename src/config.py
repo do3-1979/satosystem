@@ -1212,6 +1212,179 @@ class Config:
         except (KeyError, ValueError):
             return 1
 
+    # ========================================
+    # Task 40g: Resilience設定
+    # ========================================
+    
+    @classmethod
+    def get_api_retry_max_attempts(cls):
+        """
+        API障害時の最大リトライ回数を取得
+        
+        Returns:
+            int: 最大リトライ回数（デフォルト: 3）
+        """
+        try:
+            return int(cls.config['Resilience']['api_retry_max_attempts'])
+        except (KeyError, ValueError):
+            return 3
+    
+    @classmethod
+    def get_api_retry_initial_delay(cls):
+        """
+        API障害時の初期待機時間を取得
+        
+        Returns:
+            float: 初期待機時間（秒、デフォルト: 1.0）
+        """
+        try:
+            return float(cls.config['Resilience']['api_retry_initial_delay'])
+        except (KeyError, ValueError):
+            return 1.0
+    
+    @classmethod
+    def get_api_retry_backoff_multiplier(cls):
+        """
+        API障害時のバックオフ倍率を取得
+        
+        Returns:
+            float: バックオフ倍率（デフォルト: 2.0）
+        """
+        try:
+            return float(cls.config['Resilience']['api_retry_backoff_multiplier'])
+        except (KeyError, ValueError):
+            return 2.0
+    
+    @classmethod
+    def get_api_retry_max_delay(cls):
+        """
+        API障害時の最大待機時間を取得
+        
+        Returns:
+            float: 最大待機時間（秒、デフォルト: 30.0）
+        """
+        try:
+            return float(cls.config['Resilience']['api_retry_max_delay'])
+        except (KeyError, ValueError):
+            return 30.0
+    
+    @classmethod
+    def get_api_connection_timeout(cls):
+        """
+        API接続タイムアウトを取得
+        
+        Returns:
+            float: 接続タイムアウト（秒、デフォルト: 10.0）
+        """
+        try:
+            return float(cls.config['Resilience']['api_connection_timeout'])
+        except (KeyError, ValueError):
+            return 10.0
+    
+    @classmethod
+    def get_api_request_timeout(cls):
+        """
+        APIリクエストタイムアウトを取得
+        
+        Returns:
+            float: リクエストタイムアウト（秒、デフォルト: 30.0）
+        """
+        try:
+            return float(cls.config['Resilience']['api_request_timeout'])
+        except (KeyError, ValueError):
+            return 30.0
+    
+    @classmethod
+    def get_alert_enabled(cls):
+        """
+        アラート有効/無効を取得
+        
+        Returns:
+            bool: 有効ならTrue、無効ならFalse（デフォルト: False）
+        """
+        try:
+            return int(cls.config['Resilience']['alert_enabled']) == 1
+        except (KeyError, ValueError):
+            return False
+    
+    @classmethod
+    def get_alert_discord_webhook_url(cls):
+        """
+        Discord Webhook URLを取得
+        
+        Returns:
+            str: Discord Webhook URL（デフォルト: ''）
+        """
+        try:
+            return cls.config['Resilience']['alert_discord_webhook_url']
+        except (KeyError, ValueError):
+            return ''
+    
+    @classmethod
+    def get_alert_on_api_failure(cls):
+        """
+        API障害時のアラート有効/無効を取得
+        
+        Returns:
+            bool: 有効ならTrue（デフォルト: True）
+        """
+        try:
+            return int(cls.config['Resilience']['alert_on_api_failure']) == 1
+        except (KeyError, ValueError):
+            return True
+    
+    @classmethod
+    def get_alert_on_large_drawdown(cls):
+        """
+        大きなDD時のアラート有効/無効を取得
+        
+        Returns:
+            bool: 有効ならTrue（デフォルト: True）
+        """
+        try:
+            return int(cls.config['Resilience']['alert_on_large_drawdown']) == 1
+        except (KeyError, ValueError):
+            return True
+    
+    @classmethod
+    def get_alert_on_consecutive_losses(cls):
+        """
+        連続損失時のアラート有効/無効を取得
+        
+        Returns:
+            bool: 有効ならTrue（デフォルト: True）
+        """
+        try:
+            return int(cls.config['Resilience']['alert_on_consecutive_losses']) == 1
+        except (KeyError, ValueError):
+            return True
+    
+    @classmethod
+    def get_alert_drawdown_threshold(cls):
+        """
+        DD通知閾値を取得
+        
+        Returns:
+            float: DD通知閾値（%、デフォルト: 40.0）
+        """
+        try:
+            return float(cls.config['Resilience']['alert_drawdown_threshold'])
+        except (KeyError, ValueError):
+            return 40.0
+    
+    @classmethod
+    def get_alert_consecutive_loss_count(cls):
+        """
+        連続損失通知閾値を取得
+        
+        Returns:
+            int: 連続損失通知閾値（回、デフォルト: 3）
+        """
+        try:
+            return int(cls.config['Resilience']['alert_consecutive_loss_count'])
+        except (KeyError, ValueError):
+            return 3
+
     def __str__(self):
         """
         コンフィグ内容を可読性よく文字列として表現するメソッドです。

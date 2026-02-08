@@ -40,7 +40,7 @@ from datetime import datetime
 from datetime import timedelta
 from config import Config
 from logger import Logger
-from exchange import Exchange
+from exchange import Exchange, retry_with_backoff
 
 class BybitExchange(Exchange):
     def __init__(self, api_key, api_secret):
