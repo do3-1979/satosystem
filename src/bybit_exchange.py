@@ -117,6 +117,11 @@ class BybitExchange(Exchange):
             if self.is_papertrading_mode:
                 self.logger.log(f"🎭 ペーパートレード（ダミー取引）モード ON（balance: {self.dummy_balance} USD）")
 
+    @retry_with_backoff()
+    def _fetch_balance_from_api(self):
+        """内部ヘルパー: API経由で残高取得（リトライ付き）"""
+        return self.exchange.fetchBalance()
+
     def get_account_balance(self):
         """
         口座の残高情報を取得します.
@@ -134,23 +139,7 @@ class BybitExchange(Exchange):
                 }
             }
         
-        server_retry_wait = Config.get_server_retry_wait()
-        err_occuerd = False
-        
-        while True:
-            try:
-                balance = self.exchange.fetchBalance()
-                break
-            except ccxt.BaseError as e:
-                if err_occuerd == False:
-                    self.logger.log_error(f"口座の残高情報エラー:{str(e)}")
-                    err_occuerd = True
-                time.sleep(server_retry_wait)
-
-        if err_occuerd == True:
-            self.logger.log_error("口座の残高情報エラー復帰")
-
-        return balance
+        return self._fetch_balance_from_api()
     
     def get_account_balance_total(self):
         """
@@ -163,22 +152,7 @@ class BybitExchange(Exchange):
         if self.is_backtest_mode or self.is_papertrading_mode:
             return self.dummy_balance
         
-        server_retry_wait = Config.get_server_retry_wait()
-        err_occuerd = False
-        
-        while True:
-            try:
-                balance = self.exchange.fetchBalance()
-                break
-            except ccxt.BaseError as e:
-                if err_occuerd == False:
-                    self.logger.log_error(f"口座の使用可能な証拠金残高エラー:{str(e)}")
-                    err_occuerd = True
-                time.sleep(server_retry_wait)
-
-        if err_occuerd == True:
-            self.logger.log_error("口座の使用可能な証拠金残高エラー復帰")
-
+        balance = self._fetch_balance_from_api()
         # TODO balance が'BTC'でkeyerrorを起こした 24/1/5 その対策
         usd_balance = balance['USDT']['total']
 
@@ -192,6 +166,25 @@ class BybitExchange(Exchange):
             str: 取引シンボル
         """
         return self.market
+
+    @retry_with_backoff()
+    def _create_limit_order_api(self, symbol, side, amount, price):
+        """内部ヘルパー: 指値注文API呼び出し（リトライ付き）"""
+        return self.exchange.create_limit_order(
+            symbol=symbol,
+            side=side,
+            amount=amount,
+            price=price
+        )
+
+    @retry_with_backoff()
+    def _create_market_order_api(self, symbol, side, amount):
+        """内部ヘルパー: 成行注文API呼び出し（リトライ付き）"""
+        return self.exchange.create_market_order(
+            symbol=symbol,
+            side=side,
+            amount=amount
+        )
 
     def execute_order(self, side, quantity, price, order_type):
         """
@@ -224,46 +217,10 @@ class BybitExchange(Exchange):
             self.logger.log(f"🎭 ダミー注文: {side.upper()} {quantity} @ {price or 'MARKET'} (ID: {self.dummy_order_id})")
             return True
         
-        server_retry_wait = Config.get_server_retry_wait()
-        err_occuerd = False
-        
         if order_type == 'limit':
-            while True:
-                try:
-                    order = self.exchange.create_limit_order(
-                        symbol=self.market,
-                        side=side,
-                        amount=quantity,
-                        price=price
-                    )
-                    break
-                except ccxt.BaseError as e:
-                    if err_occuerd == False:
-                        self.logger.log_error(f"指値注文エラー:{str(e)}")
-                        err_occuerd = True
-                    time.sleep(server_retry_wait)
-
-            if err_occuerd == True:
-                self.logger.log_error("指値注文エラー復帰")
-
+            order = self._create_limit_order_api(self.market, side, quantity, price)
         elif order_type == 'market':
-            while True:
-                try:
-                    order = self.exchange.create_market_order(
-                        symbol=self.market,
-                        side=side,
-                        amount=quantity
-                    )
-                    break
-                except ccxt.BaseError as e:
-                    if err_occuerd == False:
-                        self.logger.log_error(f"成行注文エラー:{str(e)}")
-                        err_occuerd = True
-                    time.sleep(server_retry_wait)
-
-            if err_occuerd == True:
-                self.logger.log_error("成行注文エラー復帰")
-
+            order = self._create_market_order_api(self.market, side, quantity)
         else:
             raise ValueError("Invalid order_type. Use 'limit' or 'market'.")
 
@@ -883,24 +840,9 @@ class BybitExchange(Exchange):
         else:
             symbol = "BTC/USDT:USDT"  # デフォルト
         
-        max_retries = 3
-        retry_count = 0
-        
-        while retry_count < max_retries:
-            try:
-                ticker = self.exchange.fetch_ticker(symbol, params={'timeout': 10000})
-                price = ticker["last"]
-                return price
-            except (ccxt.BaseError, TimeoutError) as e:
-                retry_count += 1
-                if retry_count >= max_retries:
-                    self.logger.log_error(f"【TIMEOUT】ticker取得失敗（最大リトライ到達）: {str(e)}")
-                    raise
-                else:
-                    self.logger.log(f"ticker取得エラー（リトライ {retry_count}/{max_retries}）: {str(e)}")
-                    wait_time = min(2 ** retry_count, 30)
-                    import time
-                    time.sleep(wait_time)
+        ticker = self._fetch_ticker_from_api(symbol)
+        price = ticker["last"]
+        return price
 
 
 if __name__ == "__main__":
