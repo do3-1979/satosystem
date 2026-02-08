@@ -3,7 +3,7 @@
     "name": "satosystem gen2",
     "description": "Bitcoin auto-trading system - Donchian Breakout + PVO + ADX filter",
     "branch": "gen2",
-    "last_updated": "2026-02-03",
+    "last_updated": "2026-02-08",
     "baseline_performance": {
       "cumulative_pnl_usd": 1282.62,
       "period": "2024-2025 (8 quarters, Two-Tier Entry System有効化後)",
@@ -16,9 +16,9 @@
     }
   },
   "latest_commit": {
-    "hash": "126c2c3",
-    "date": "2026-02-01",
-    "message": "chore: PROGRESS.json更新 - コミット42e3ffc記録",
+    "hash": "b692e26",
+    "date": "2026-02-08",
+    "message": "feat: prj-initにprj-load-analysis機能を統合",
     "changes": {
       "files_changed": 14,
       "lines_added": 4,
