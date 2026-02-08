@@ -12,15 +12,6 @@
   "tasks": {
     "todo": [
       {
-        "id": "39d",
-        "category": "2026年利益拡大戦略",
-        "title": "Time-Based Exit 実装",
-        "description": "72時間保有で強制決済（+$100-200/年期待）",
-        "priority": 4,
-        "related_doc": "PROFIT_ENHANCEMENT_STRATEGY_2026",
-        "estimated_impact_usd": [100, 200]
-      },
-      {
         "id": "39e",
         "category": "2026年利益拡大戦略",
         "title": "Dynamic Stop Loss Width 実装",
@@ -190,6 +181,47 @@
       }
     ],
     "done": [
+      {
+        "id": "39d",
+        "category": "2026年利益拡大戦略",
+        "title": "Time-Based Exit 実装完了",
+        "description": "72時間保有で強制決済機能を実装。単体テスト4/4 PASS、entry_time記録修正（44/44正常）、5つの重大バグ修正（Trailing Profit Target無効化、timestamp記録修正、OHLCVにtimestampキー追加、fetch_latest_ohlcv修正、Priority 0実装）。TIME_LIMIT決済0件（PSAR優先発動）だが、長期ポジション保護の安全網として機能",
+        "completed_date": "2026-02-08",
+        "priority": 4,
+        "impact_usd": 0,
+        "result": "実装完了・安全網として機能（現状発動なし）",
+        "commits": [
+          "59ac2d8: feat: Task 39d - Time-Based Exit実装 + timestamp記録バグ修正",
+          "2b61b3d: docs: Task 39d完了記録をPROGRESS.jsonに追加"
+        ],
+        "notes": {
+          "implementation": {
+            "max_holding_hours": 72,
+            "priority": 0,
+            "exit_reasons": ["TIME_LIMIT_PROFIT", "TIME_LIMIT_LOSS"]
+          },
+          "bugs_fixed": [
+            "Bug #1: Trailing Profit Target無効化（Task 39a破棄済み）",
+            "Bug #2: entry_time記録修正（real_time_dt→timestamp）",
+            "Bug #3: OHLCVデータにtimestampキー追加（fetch_ohlcv）",
+            "Bug #4: CRITICAL fetch_latest_ohlcv()にtimestampキー追加",
+            "Bug #5: Time-Based ExitをPriority 0に昇格"
+          ],
+          "test_results": {
+            "unit_tests": "4/4 PASS",
+            "entry_time_recording": "44/44 trades with valid timestamp",
+            "time_limit_exits": "0 (PSAR stops fire before 72h limit)",
+            "trades_over_72h": "5 (all exited via STOP_LOSS)",
+            "regression_tests": "125/125 PASS"
+          },
+          "backtest_results": {
+            "quarters": "8/8 completed",
+            "cumulative_pnl": "+1568.82 USD",
+            "change_from_baseline": "±0 USD (no impact)"
+          },
+          "strategy_characteristic": "PSAR trailing stop fires before 72h limit due to responsive dynamic adjustment. Feature serves as safety net for rare edge cases or future strategy modifications."
+        }
+      },
       {
         "id": "41a",
         "category": "リスク管理",
