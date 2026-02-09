@@ -18,11 +18,13 @@ sys.path.insert(0, SRC_DIR)
 # 分析結果ファイル
 ANALYSIS_FILE = os.path.join(WORKSPACE_ROOT, "docs/analysis/src/bot.json")
 
+# 互換性ヘルパー
+from analysis_helper import load_analysis_with_compat, get_class_method_names
+
 
 def load_analysis():
-    """analysis/bot.json から Bot クラスの仕様を読む"""
-    with open(ANALYSIS_FILE, encoding="utf-8") as f:
-        return json.load(f)
+    """analysis/bot.json から Bot クラスの仕様を読む（互換性対応）"""
+    return load_analysis_with_compat(ANALYSIS_FILE)
 
 
 def test_bot_class_exists():
@@ -40,7 +42,7 @@ def test_bot_methods_exist():
         from bot import Bot
         analysis = load_analysis()
         
-        expected_methods = {m["name"] for m in analysis["classes"][0]["methods"]}
+        expected_methods = get_class_method_names(analysis)
         actual_methods = {m for m in dir(Bot) if not m.startswith("_") or m in ["__init__"]}
         
         missing = expected_methods - actual_methods

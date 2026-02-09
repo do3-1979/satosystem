@@ -18,11 +18,13 @@ sys.path.insert(0, SRC_DIR)
 # 分析結果ファイル
 ANALYSIS_FILE = os.path.join(WORKSPACE_ROOT, "docs/analysis/src/portfolio.json")
 
+# 互換性ヘルパー
+from analysis_helper import load_analysis_with_compat, get_class_method_names, get_class_methods
+
 
 def load_analysis():
-    """analysis/portfolio.json から Portfolio クラスの仕様を読む"""
-    with open(ANALYSIS_FILE, encoding="utf-8") as f:
-        return json.load(f)
+    """analysis/portfolio.json から Portfolio クラスの仕様を読む（互換性対応）"""
+    return load_analysis_with_compat(ANALYSIS_FILE)
 
 
 def test_portfolio_exists():
@@ -40,7 +42,7 @@ def test_portfolio_methods():
         from portfolio import Portfolio
         analysis = load_analysis()
         
-        expected_methods = {m["name"] for m in analysis["classes"][0]["methods"]}
+        expected_methods = get_class_method_names(analysis)
         # __str__ は name mangling の対象外（Python特殊メソッド）だが、テスト比較ロジックに含めない
         expected_methods.discard("__str__")
         actual_methods = {m for m in dir(Portfolio) if not m.startswith("_") or m == "__init__"}
@@ -104,7 +106,7 @@ def test_multi_symbol_methods():
         from portfolio import Portfolio
         analysis = load_analysis()
         
-        multi_symbol_methods = [m["name"] for m in analysis["classes"][0]["methods"] 
+        multi_symbol_methods = [m["name"] for m in get_class_methods(analysis)
                                if "with_symbol" in m["name"]]
         
         if len(multi_symbol_methods) > 0:
