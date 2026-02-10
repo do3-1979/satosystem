@@ -1,8 +1,8 @@
 {
   "meta": {
     "version": "1.0",
-    "last_updated": "2026-02-08",
-    "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE) - 優先度見直し完了（本番運用2026-02-28、過学習対策40a反映）",
+    "last_updated": "2026-02-11",
+    "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE) - Task 42追加（バックテスト・ホットテスト統一化）",
     "replaces": "docs/ACTION_LIST.md",
     "workflow_rules": {
       "baseline_before_action": "アクションリスト実行前に必ずレグレッションテストを実行し、PROGRESS.json baseline_regressionに保存すること",
@@ -11,6 +11,28 @@
   },
   "tasks": {
     "todo": [
+      {
+        "id": "42",
+        "category": "品質保証・テスト基盤",
+        "title": "バックテスト・ホットテスト統一化（キャッシュベースホットテスト実装）",
+        "description": "バックテストとホットテスト（ダミー取引）のロジックを完全統一化。ホットテストでもキャッシュからデータ取得し、バックテストと同等の速度で実行可能にする。これにより、本番トレードの結果がバックテストと乖離するリスクを最小化。config.ini に use_cached_data_for_hot_test フラグを追加し、PriceDataManagement と Bot ループを改修。本番運用前必須（2026-02-28 Raspberry Pi稼働確認、2026-03-05 本番運用開始）",
+        "priority": 5,
+        "deadline": "2026-02-28",
+        "related_doc": "docs/analysis/BACKTEST_HOT_TEST_UNIFICATION_ANALYSIS.json",
+        "estimated_impact_usd": null,
+        "implementation_phases": [
+          "Phase 1: config.ini に use_cached_data_for_hot_test フラグ追加（30分）",
+          "Phase 2: PriceDataManagement 統合（2-3時間）",
+          "Phase 3: Bot ループ最適化（1時間）",
+          "Phase 4: テストと検証（2時間）"
+        ],
+        "benefits": [
+          "バックテストとホットテストのロジック完全統一",
+          "ホットテストの高速化（60秒待機 → 0秒）",
+          "本番環境との差異最小化",
+          "デバッグ容易性の向上"
+        ]
+      },
       {
         "id": "40b",
         "category": "品質保証",
@@ -780,8 +802,8 @@
     ]
   },
   "summary": {
-    "total_tasks": 60,
-    "todo": 15,
+    "total_tasks": 61,
+    "todo": 16,
     "progress": 1,
     "done": 44,
     "cumulative_impact_usd": 1403.49,
