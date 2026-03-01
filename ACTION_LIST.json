@@ -33,16 +33,6 @@
         "estimated_impact_usd": null
       },
       {
-        "id": "40c",
-        "category": "運用・リスク管理",
-        "title": "リスク・オーバーレイ（DD制限/日次損失上限/取引停止）",
-        "description": "初期資本100USD前提で、最大DD/日次損失/連敗/ボラ急増時に取引を止める「キルスイッチ」を導入。資産曲線の破綻リスクを最小化。本番運用前必須（DD>50%等のキルスイッチ）",
-        "priority": 5,
-        "deadline": "2026-02-28",
-        "related_doc": "DEVELOPMENT_RULES.json",
-        "estimated_impact_usd": null
-      },
-      {
         "id": "40g",
         "category": "運用・信頼性",
         "title": "本番運用の耐障害性（API障害/再試行/部分約定/ログ監視）",
@@ -187,6 +177,19 @@
       }
     ],
     "done": [
+      {
+        "id": "40c",
+        "category": "運用・リスク管理",
+        "title": "リスク・オーバーレイ（DD制限/日次損失上限/取引停止）",
+        "description": "初期資本100USD前提で、最大DD/日次損失/連敗/ボラ急増時に取引を止める「キルスイッチ」を導入。資産曲線の破綻リスクを最小化。本番運用前必須（DD>50%等のキルスイッチ）",
+        "priority": 5,
+        "deadline": "2026-02-28",
+        "related_doc": "DEVELOPMENT_RULES.json",
+        "estimated_impact_usd": null,
+        "completed_at": "2026-03-01",
+        "status": "done",
+        "result": "RiskOverlayキルスイッチ実装完了。DD/日次損失/連続損失の3種停止。122/122 PASS。enabled=0でデフォルト無効。commit: 6df6783"
+      },
       {
         "id": "42",
         "category": "品質保証・テスト基盤",
@@ -816,10 +819,10 @@
     ]
   },
   "summary": {
-    "total_tasks": 61,
-    "todo": 16,
+    "total_tasks": 62,
+    "todo": 15,
     "progress": 1,
-    "done": 44,
+    "done": 46,
     "cumulative_impact_usd": 1403.49,
     "baseline_performance": "1403.49 USD (8 quarters, Task 39e完了後)"
   }

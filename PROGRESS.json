@@ -99,9 +99,9 @@
     }
   },
   "latest_commit": {
-    "hash": "27195d4",
+    "hash": "6df6783",
     "date": "2026-03-01",
-    "message": "docs: Task42完了記録 - ACTION_LIST/PROGRESS更新",
+    "message": "feat: Task40c - RiskOverlayキルスイッチ実装（DD/日次損失/連続損失停止）",
     "changes": {
       "files_changed": 1,
       "lines_added": 103,
@@ -130,13 +130,6 @@
           "reason": "本番運用前必須"
         },
         {
-          "task_id": "40c",
-          "title": "リスク・オーバーレイ（DD制限/日次損失上限/取引停止）",
-          "priority": "★★★★★",
-          "deadline": "2026-02-28",
-          "reason": "本番運用前必須"
-        },
-        {
           "task_id": "40g",
           "title": "本番運用の耐障害性（API障害/再試行/部分約定/ログ監視）",
           "priority": "★★★★★",
@@ -152,6 +145,12 @@
       ]
     },
     "recently_completed": [
+      {
+        "task_id": "40c",
+        "title": "リスク・オーバーレイ（DD制限/日次損失上限/取引停止）",
+        "date": "2026-03-01",
+        "description": "RiskOverlayキルスイッチ実装完了（DD/日次損失/連続損失の3種停止、122/122 PASS）"
+      },
       {
         "task_id": "39d",
         "title": "Time-Based Exit 実装",
@@ -241,24 +240,6 @@
           "donchian_plus_pvo_lag1_minus_lag0": "-1029.30"
         },
         "decision": "仕様差として許容（優先タスク39d等を先行）"
-      },
-      {
-        "task_id": "FIX-REG-001",
-        "title": "bot_run.sh依存削除（レグレッション修正）",
-        "date": "2026-02-01",
-        "description": "bot_run.sh廃止方針に合わせ、レグレッションテストがbot.py直接実行でバックテスト検証できるように修正し、bot_run.shを削除。開発ルールの推奨実行コマンドも更新。",
-        "acceptance_criteria": [
-          "test/regression_test_suite.py が src/bot_run.sh を呼ばない",
-          "バックテスト検証が python3 src/bot.py 直接実行で完走する",
-          "src/bot_run.sh が削除されている",
-          "DEVELOPMENT_RULES.json の推奨実行コマンドが bot.py 直接実行に更新されている"
-        ],
-        "verification_results": [
-          "subprocess 実行が bash src/bot_run.sh → python3 src/bot.py test <start> <end> に変更済み",
-          "backtest 単体実行で [OK] backtest を確認",
-          "src/bot_run.sh が存在しないことを確認",
-          "DEVELOPMENT_RULES.json execution.recommended/direct を python3 src/bot.py に更新済み"
-        ]
       }
     ]
   },
