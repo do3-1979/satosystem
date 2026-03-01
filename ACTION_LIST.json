@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0",
-    "last_updated": "2026-02-11",
+    "last_updated": "2026-03-01",
     "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE) - Task 42追加（バックテスト・ホットテスト統一化）",
     "replaces": "docs/ACTION_LIST.md",
     "workflow_rules": {
@@ -11,6 +11,17 @@
   },
   "tasks": {
     "todo": [
+      {
+        "task_id": "43",
+        "title": "RPiホットテスト1週間耐久テスト - ログ検証",
+        "description": "RPi上でホットテストダミーモードを1週間稼働させ、ログを回収・検証する。確認項目: (1)プロセスが1週間連続稼働したか、(2)エラー/クラッシュがないか、(3)トレードシグナルが期待通り発火しているか、(4)メモリリーク等の異常がないか。",
+        "priority": "★★★★★",
+        "category": "運用・信頼性",
+        "expected_benefit": "本番運用前の耐久性確認",
+        "due_date": "2026-03-08",
+        "created_date": "2026-03-01",
+        "notes": "start_bot.sh で 2026-03-01 起動済み。RPi: 192.168.1.19, back_test=0, hot_test_dummy_mode=1。ログ: ~/satosystem/src/logs/bot_*.log"
+      },
       {
         "id": "40b",
         "category": "品質保証",

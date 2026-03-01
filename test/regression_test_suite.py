@@ -572,6 +572,7 @@ def run_individual_test_modules():
             "test_trade_logger_regression",
             "test_util_regression",
             "test_vcp_strategy_regression",
+            "test_risk_overlay_regression",
         ]
         
         all_results = []

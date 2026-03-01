@@ -1402,6 +1402,46 @@ class Config:
         except (KeyError, ValueError):
             return 3
 
+    @classmethod
+    def get_risk_overlay_enabled(cls):
+        """RiskOverlay有効フラグ（0=無効, 1=有効）"""
+        try:
+            return int(cls.config['RiskOverlay'].get('enabled', '0'))
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_risk_overlay_max_drawdown_pct(cls):
+        """最大DD制限（%、初期資本比）"""
+        try:
+            return float(cls.config['RiskOverlay'].get('max_drawdown_pct', '50.0'))
+        except (KeyError, ValueError):
+            return 50.0
+
+    @classmethod
+    def get_risk_overlay_daily_loss_limit_pct(cls):
+        """日次損失上限（%、初期資本比）"""
+        try:
+            return float(cls.config['RiskOverlay'].get('daily_loss_limit_pct', '20.0'))
+        except (KeyError, ValueError):
+            return 20.0
+
+    @classmethod
+    def get_risk_overlay_consecutive_losses_limit(cls):
+        """連続損失停止回数"""
+        try:
+            return int(cls.config['RiskOverlay'].get('consecutive_losses_limit', '5'))
+        except (KeyError, ValueError):
+            return 5
+
+    @classmethod
+    def get_risk_overlay_auto_resume_next_day(cls):
+        """翌日自動再開（0=手動のみ, 1=翌日自動）"""
+        try:
+            return int(cls.config['RiskOverlay'].get('auto_resume_next_day', '1'))
+        except (KeyError, ValueError):
+            return 1
+
     def __str__(self):
         """
         コンフィグ内容を可読性よく文字列として表現するメソッドです。

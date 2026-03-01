@@ -40,6 +40,7 @@ from order import Order
 from event import EventBus, EventType
 from metrics import compute_metrics
 from trade_logger import TradeLogger
+from risk_overlay import RiskOverlay
 
 class Bot:
     def __init__(self, exchange, strategy, risk_management, price_data_management, portfolio):
@@ -67,6 +68,8 @@ class Bot:
         self.pnl_history = []
         # 約定履歴カウント (勝率計算用)
         self.trade_results = []  # list of bool win( True ) / loss( False )
+        # Task 40c: リスク・オーバーレイ（キルスイッチ）
+        self.risk_overlay = RiskOverlay()
 
     def show_trade_data(self, trade_data):
         self.logger.log(f"時刻: {trade_data['real_time']}"
@@ -213,6 +216,13 @@ class Bot:
                 # --------------------------------------------
                 # 取引決定の場合
                 # --------------------------------------------
+                # Task 40c: キルスイッチチェック（ENTRY/ADDのみ。EXITは常に許可）
+                if trade_decision["decision"] in ('ENTRY', 'ADD'):
+                    can_trade, stop_reason = self.risk_overlay.check_can_trade(self.portfolio)
+                    if not can_trade:
+                        self.logger.log(f"⛔ RiskOverlay: 取引停止 [{stop_reason}]")
+                        trade_decision = {"decision": "NONE"}
+
                 if trade_decision["decision"] != 'NONE' and trade_executed == False:
                     # --------------------------------------------
                     # 決定状態を表示
@@ -261,6 +271,8 @@ class Bot:
                         self.portfolio.clear_position_quantity(price, is_backtest=is_backtest)
                         # EXITで確定した損益を勝敗判定 (正なら勝ち)
                         self.trade_results.append(pnl >= 0)
+                        # Task 40c: RiskOverlayに損益を通知
+                        self.risk_overlay.notify_trade_result(pnl)
                         
                         # トレードログ: EXIT記録
                         try:
