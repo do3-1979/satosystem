@@ -70,7 +70,8 @@ class PriceDataManagement:
         self.volatility = 0
         self.prev_close_time = 0
         
-        if Config.get_back_test_mode() == 1:
+        # Task42: キャッシュベースホットテスト(use_cached=1)でもバックテスト用属性が必要
+        if Config.get_back_test_mode() == 1 or Config.get_use_cached_data_for_hot_test() == 1:
             self.back_test_ohlcv_data = [
                 {"time_frame": main_time_frame, "data": [], "prev_index": 0},
                 {"time_frame": psar_time_frame, "data": [], "prev_index": 0}

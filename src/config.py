@@ -545,6 +545,23 @@ class Config:
         return int(cls.config['Backtest']['hot_test_dummy_mode'])
 
     @classmethod
+    def get_use_cached_data_for_hot_test(cls):
+        """
+        キャッシュベースホットテストフラグを取得します.
+
+        back_test=0 かつ hot_test_dummy_mode=1 の状態で、
+        リアルタイムAPIの代わりにキャッシュからデータ取得して高速実行。
+        [Period] の start_time/end_time を期間として使用。
+
+        Returns:
+            int: 1=キャッシュ高速実行, 0=APIリアルタイム取得（デフォルト）
+        """
+        try:
+            return int(cls.config['Backtest'].get('use_cached_data_for_hot_test', '0'))
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
     def get_enable_pvo_filter(cls):
         """
         PVOフィルターの有効/無効を取得します.

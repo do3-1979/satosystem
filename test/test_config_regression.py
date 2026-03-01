@@ -131,6 +131,29 @@ def test_config_instantiation():
             return False, f"❌ Config インスタンス化エラー: {e}"
 
 
+def test_use_cached_data_for_hot_test_flag():
+    """Task42: get_use_cached_data_for_hot_test() メソッドの存在とデフォルト値を確認"""
+    try:
+        from config import Config
+
+        # メソッドが存在するか確認
+        if not hasattr(Config, 'get_use_cached_data_for_hot_test'):
+            return False, "❌ get_use_cached_data_for_hot_test メソッドが存在しません"
+
+        # 寄り道を使わず呈名で呼び出して整数値を返すか確認
+        result = Config.get_use_cached_data_for_hot_test()
+        if not isinstance(result, int):
+            return False, f"❌ 返り値が int ではない: {type(result)}"
+
+        # config.iniのus_cached_data_for_hot_testが0または1か確認
+        if result not in (0, 1):
+            return False, f"❌ 返り値が0または1以外: {result}"
+
+        return True, f"✅ get_use_cached_data_for_hot_test() = {result} (デフォルト: 0=API取得)"
+    except Exception as e:
+        return False, f"❌ get_use_cached_data_for_hot_test テストエラー: {e}"
+
+
 def run_all_tests():
     """全テストを実行"""
     tests = [
@@ -139,6 +162,7 @@ def run_all_tests():
         ("Config 主要メソッド確認", test_config_key_methods),
         ("Config classmethod 確認", test_config_classmethods),
         ("Config インスタンス化確認", test_config_instantiation),
+        ("Task42: use_cached_data_for_hot_test フラグ確認", test_use_cached_data_for_hot_test_flag),
     ]
     
     results = []

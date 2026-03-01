@@ -101,9 +101,19 @@ class Bot:
         """
         config_instance = Config()
         back_test_mode = config_instance.get_back_test_mode()
+        # Task42: キャッシュベースホットテストモード判定
+        # back_test=0 かつ hot_test_dummy_mode=1 かつ use_cached_data_for_hot_test=1
+        use_cached_hot_test = (
+            back_test_mode == 0
+            and Config.get_hot_test_dummy_mode() == 1
+            and Config.get_use_cached_data_for_hot_test() == 1
+        )
         
         if back_test_mode == 1:
             self.logger.log("--- BOT START (BACK TEST MODE)-------------------------")
+            self.price_data_management.initialise_back_test_ohlcv_data()
+        elif use_cached_hot_test:
+            self.logger.log("--- BOT START (CACHED HOT TEST MODE - DUMMY TRADE)-----")
             self.price_data_management.initialise_back_test_ohlcv_data()
         else:
             self.logger.log("--- BOT START -----------------------------------------")
@@ -122,7 +132,7 @@ class Bot:
                 # --------------------------------------------
                 # 最初に価格情報の更新
                 # --------------------------------------------
-                if back_test_mode == 1:
+                if back_test_mode == 1 or use_cached_hot_test:
                     is_end = self.price_data_management.update_price_data_backtest()
                     # イベント: ティック
                     self.events.emit(EventType.TICK, {
@@ -176,8 +186,8 @@ class Bot:
                 price = self.price_data_management.get_ticker()
 
                 # 取引所から口座残高を取得
-                if back_test_mode == 1:
-                    # バックテスト: 初期資産 + 累積損益
+                if back_test_mode == 1 or use_cached_hot_test:
+                    # バックテスト / キャッシュベースホットテスト: 初期資産 + 累積損益（APIコール不要）
                     balance_tether = config_instance.get_account_balance() + self.portfolio.get_profit_and_loss()
                 else:
                     # 本番: Bybit実際の残高 + 累積損益
@@ -353,8 +363,8 @@ class Bot:
                 # ログに記録
                 # --------------------------------------------
                 trade_data = self.price_data_management.get_latest_ohlcv()
-                # バックテスト時はclose priceをシミュレータ値に更新
-                if back_test_mode == 1:
+                # バックテスト / キャッシュベースホットテスト時はclose priceをシミュレータ値に更新
+                if back_test_mode == 1 or use_cached_hot_test:
                     trade_data['real_time'] = self.price_data_management.get_latest_close_time_dt()
                     trade_data['close_price'] = price
                 else:
@@ -369,8 +379,8 @@ class Bot:
                 profit, loss = self.portfolio.calc_position_quantity(price)
                 trade_data['profit_and_loss'] = profit - loss
                 trade_data['total_profit_and_loss'] = self.portfolio.get_profit_and_loss()
-                # 損益履歴へ追加 (バックテストのみ)
-                if back_test_mode == 1:
+                # 損益履歴へ追加 (バックテスト & キャッシュベースホットテスト)
+                if back_test_mode == 1 or use_cached_hot_test:
                     self.pnl_history.append(trade_data['total_profit_and_loss'])
                 trade_data['volatility'] = self.price_data_management.get_volatility()
                 trade_data['stop_offset'] = self.risk_management.get_stop_offset()
@@ -404,8 +414,8 @@ class Bot:
                 # イベント初期化
                 self.strategy.initialize_trade_decision()
             
-                # 一定の待ち時間を設けてループを繰り返す
-                if back_test_mode == 0:
+                # 一定の待ち時間を設けてループを繰り返す。キャッシュベース時は即時処理（sleepなし）
+                if back_test_mode == 0 and not use_cached_hot_test:
                     time.sleep(self.bot_operation_cycle)
 
                 # 2時間ごとにファイルを分けるかチェック
@@ -439,7 +449,7 @@ class Bot:
             except Exception as e:
                 self.logger.log_error(f"メインループエラー: {e}")
                 self.events.emit(EventType.LOOP_ERROR, {'error': str(e)})
-                if back_test_mode == 0:
+                if back_test_mode == 0 and not use_cached_hot_test:
                     time.sleep(self.bot_operation_cycle)
 
     def execute_order(self, order):
