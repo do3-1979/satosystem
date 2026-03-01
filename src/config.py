@@ -15,7 +15,8 @@ import os
 import json
 
 class Config:
-    config = configparser.ConfigParser()
+    # interpolation=None: config値内の % をエスケープ不要にする（コメント内 % による InterpolationSyntaxError 防止）
+    config = configparser.ConfigParser(interpolation=None)
     # config.ini のパスを動的に決定（スクリプトのディレクトリを基準）
     config_path = os.path.join(os.path.dirname(__file__), 'config.ini')
     config.read(config_path, encoding="utf-8_sig")

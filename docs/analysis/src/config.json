@@ -1,23 +1,35 @@
 {
   "metadata": {
     "source_file": "src/config.py",
-    "analyzed_at": "2026-03-01T00:00:00Z",
+    "analyzed_at": "2026-03-02T00:00:00Z",
     "python_version": "3.10",
     "format_version": "2.0",
-    "analyzer_note": "設定管理クラス - config.iniと.api_keyファイルから設定読み込み、動的な設定上書きをサポート。2026-03-01: Task42 - get_use_cached_data_for_hot_test()メソッド追加"
+    "analyzer_note": "設定管理クラス - config.iniと.api_keyファイルから設定読み込み、動的な設定上書きをサポート。2026-03-01: Task42 - get_use_cached_data_for_hot_test()メソッド追加 2026-03-02: interpolation=None追加（%コメントのInterpolationSyntaxError防止）"
   },
   "file_overview": {
     "purpose": "設定ファイル（config.ini, .api_key）から設定情報を読み込み、全モジュールに提供",
-    "lines_of_code": 1613,
+    "lines_of_code": 1654,
     "dependency_count": 4,
     "class_count": 1,
     "function_count": 0,
-    "critical_methods": ["get_api_key", "get_api_secret", "get_account_balance", "get_risk_percentage", "get_back_test_mode", "get_use_cached_data_for_hot_test"],
+    "critical_methods": [
+      "get_api_key",
+      "get_api_secret",
+      "get_account_balance",
+      "get_risk_percentage",
+      "get_back_test_mode",
+      "get_use_cached_data_for_hot_test"
+    ],
     "description": "Configクラスはconfig.iniファイルと.api_keyファイル（JSON形式）から設定を読み込む。APIキー、取引所選択、リスク管理パラメータ、トレード戦略設定、フィルター設定などを一元管理。実行時の動的な設定上書き（_override_start_time, _override_end_time）をサポート。Bybit/Bitget両取引所のAPIキーを分離管理。"
   },
   "test_coverage": {
-    "test_files": ["テスト未実装"],
+    "test_files": [
+      "テスト未実装"
+    ],
     "coverage_estimate": "0%",
-    "critical_gaps": ["設定読み込みのユニットテスト", ".api_keyファイル優先順位テスト"]
+    "critical_gaps": [
+      "設定読み込みのユニットテスト",
+      ".api_keyファイル優先順位テスト"
+    ]
   }
 }

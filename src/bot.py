@@ -41,6 +41,7 @@ from event import EventBus, EventType
 from metrics import compute_metrics
 from trade_logger import TradeLogger
 from risk_overlay import RiskOverlay
+from alert import Alert
 
 class Bot:
     def __init__(self, exchange, strategy, risk_management, price_data_management, portfolio):
@@ -70,6 +71,8 @@ class Bot:
         self.trade_results = []  # list of bool win( True ) / loss( False )
         # Task 40c: リスク・オーバーレイ（キルスイッチ）
         self.risk_overlay = RiskOverlay()
+        # Task 40g: アラート通知（Discord Webhook, alert_enabled=0でデフォルト無効）
+        self.alert = Alert()
 
     def show_trade_data(self, trade_data):
         self.logger.log(f"時刻: {trade_data['real_time']}"
@@ -123,6 +126,10 @@ class Bot:
 
         self.logger.log(str(config_instance))
         self.logger.log("-------------------------------------------------------")
+        # Task 40g: システム起動通知（ライブ/ダミーモードのみ、alert_enabled=0でno-op）
+        if back_test_mode == 0:
+            mode_str = "HOT_TEST (DUMMY)" if Config.get_hot_test_dummy_mode() == 1 else "LIVE"
+            self.alert.notify_system_start(mode_str, Config.get_account_balance())
         
         # メモリ監視機能の初期化（リアルタイムモードのみ）
         memory_check_interval = 3600  # 1時間ごと
@@ -179,6 +186,13 @@ class Bot:
                         
                         self.logger.close_log_file()
                         self.logger.log("--- BOT END -------------------------------------------")
+                        # Task 40g: システム終了通知
+                        _final_pnl = self.portfolio.get_profit_and_loss()
+                        self.alert.notify_system_stop(
+                            "END",
+                            config_instance.get_account_balance() + _final_pnl,
+                            _final_pnl
+                        )
                         break
                 else:
                     self.price_data_management.update_price_data()
@@ -221,6 +235,20 @@ class Bot:
                     can_trade, stop_reason = self.risk_overlay.check_can_trade(self.portfolio)
                     if not can_trade:
                         self.logger.log(f"⛔ RiskOverlay: 取引停止 [{stop_reason}]")
+                        # Task 40g: キルスイッチ通知（ライブモードのみ、alert_enabled=0でno-op）
+                        if back_test_mode == 0:
+                            if "DD_STOP" in stop_reason:
+                                self.alert.notify_large_drawdown(
+                                    self.portfolio.get_drawdown_rate(),
+                                    balance_tether,
+                                    balance_tether + self.portfolio.get_drawdown()
+                                )
+                            elif "CONSEC_STOP" in stop_reason:
+                                _ov_status = self.risk_overlay.get_status()
+                                self.alert.notify_consecutive_losses(
+                                    _ov_status["consecutive_losses"],
+                                    _ov_status["daily_loss_usd"]
+                                )
                         trade_decision = {"decision": "NONE"}
 
                 if trade_decision["decision"] != 'NONE' and trade_executed == False:
@@ -261,6 +289,14 @@ class Bot:
                         self.logger.log_error(f"注文実行エラー: {e}")
                         continue  # 注文失敗時はポートフォリオ更新をスキップ
 
+                    # Task 40g: ENTRY/ADD取引実行通知（ライブモードのみ、EXITはpnl確定後に通知）
+                    if back_test_mode == 0 and trade_decision["decision"] in ("ENTRY", "ADD"):
+                        self.alert.notify_trade_execution(
+                            side=trade_decision["side"],
+                            price=price,
+                            quantity=quantity
+                        )
+
                     # --------------------------------------------
                     # portfolio更新
                     # --------------------------------------------
@@ -273,6 +309,14 @@ class Bot:
                         self.trade_results.append(pnl >= 0)
                         # Task 40c: RiskOverlayに損益を通知
                         self.risk_overlay.notify_trade_result(pnl)
+                        # Task 40g: EXIT取引実行通知（ライブモードのみ）
+                        if back_test_mode == 0:
+                            self.alert.notify_trade_execution(
+                                side=trade_decision["side"],
+                                price=price,
+                                quantity=quantity,
+                                pnl=pnl
+                            )
                         
                         # トレードログ: EXIT記録
                         try:
@@ -518,6 +562,8 @@ class Bot:
             
         except Exception as e:
             self.logger.log_error(f"❌ 注文実行エラー: {str(e)}")
+            # Task 40g: API障害通知
+            self.alert.notify_api_failure("exchange", str(e), 0)
             return False
 
 if __name__ == "__main__":

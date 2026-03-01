@@ -1,23 +1,32 @@
 {
   "metadata": {
     "source_file": "src/bot.py",
-    "analyzed_at": "2026-03-01T00:00:00Z",
+    "analyzed_at": "2026-03-02T00:00:00Z",
     "python_version": "3.10",
     "format_version": "2.0",
-    "analyzer_note": "トレード実行ループの制御クラス - Portfolio初期化時にinitial_balanceを渡すように修正（DD率計算修正対応）。2026-03-01: Task42 - use_cached_hot_testフラグ追加（back_test=0+cached=1の複合判定）、pnl_history/real_timeのキャッシュモード対応（6箇所修正）、time.sleep()スキップ処理追加"
+    "analyzer_note": "トレード実行ループの制御クラス - Task40c/42/40g統合。2026-03-02: Task40g - Alert統合（起動/終了/取引実行/API障害/DDキルスイッチ通知）、config.pyのinterpolation=None修正"
   },
   "file_overview": {
     "purpose": "トレード実行ループ制御・注文実行・ポジション管理・メトリクス集計",
-    "lines_of_code": 561,
+    "lines_of_code": 619,
     "dependency_count": 12,
     "class_count": 1,
     "function_count": 0,
-    "critical_methods": ["run", "execute_order", "show_trade_data"],
-    "description": "Botは全体のオーケストレーター。PriceDataManagement, TradingStrategy, RiskManagement, Portfolioを統合制御。バックテスト/ペーパートレード/本番の3モード対応。TradeLoggerによるJSON形式のトレードログ記録、EventBusによるイベント発火、メトリクス集計（initial_balance込みのDD率計算）を実装。2026-02-08: Portfolio初期化時にinitial_balanceを渡す修正を実施し、get_drawdown_rate()の計算を正確化。2026-03-01: Task42 - キャッシュベースホットテストモード追加（use_cached_hot_test複合フラグ）、total 4モード対応。"
+    "critical_methods": [
+      "run",
+      "execute_order",
+      "show_trade_data"
+    ],
+    "description": "Botは全体のオーケストレーター。全4モード（バックテスト/キャッシュホットテスト/ダミー/本番）対応。Task40c: RiskOverlayキルスイッチ統合。Task42: キャッシュベースホットテストモード追加。Task40g: Alert統合（起動/終了/取引実行/API障害/DDキルスイッチ通知を実装、alert_enabled=0でデフォルト無効）。"
   },
   "test_coverage": {
-    "test_files": ["test/test_bot_integration.py"],
+    "test_files": [
+      "test/test_bot_integration.py"
+    ],
     "coverage_estimate": "70%",
-    "critical_gaps": ["run()メソッドの完全統合テスト", "execute_order()の例外処理テスト"]
+    "critical_gaps": [
+      "run()メソッドの完全統合テスト",
+      "execute_order()の例外処理テスト"
+    ]
   }
 }

@@ -130,13 +130,6 @@
           "reason": "本番運用前必須"
         },
         {
-          "task_id": "40g",
-          "title": "本番運用の耐障害性（API障害/再試行/部分約定/ログ監視）",
-          "priority": "★★★★★",
-          "deadline": "2026-02-28",
-          "reason": "本番運用前必須"
-        },
-        {
           "task_id": "40e",
           "title": "トレンドフォロー以外の優位性候補の調査・小規模検証",
           "priority": "★★★★★",
@@ -145,6 +138,12 @@
       ]
     },
     "recently_completed": [
+      {
+        "task_id": "40g",
+        "title": "本番運用の耐障害性（API障害/再試行/部分約定/ログ監視）",
+        "date": "2026-03-02",
+        "description": "API耐障害性bot統合完了 - Alert統合(Discord通知)、config.py interpolation=None修正、テスト12件追加"
+      },
       {
         "task_id": "40c",
         "title": "リスク・オーバーレイ（DD制限/日次損失上限/取引停止）",
@@ -223,23 +222,6 @@
           "src/bot.py modifications",
           "src/config.ini modifications"
         ]
-      },
-      {
-        "task_id": "40j",
-        "title": "ホットテスト（ダミー）とバックテストのシグナル計算一致検証",
-        "date": "2026-02-03",
-        "description": "不一致を再現し、遅延（約定が1本以上後ろにズレる）時の損益感度を実データで測定。現時点は仕様差として許容し、ロジック修正は実施しない方針で完了",
-        "artifacts": [
-          "test/test_hot_backtest_parity_regression.py",
-          "test/test_signal_delay_pnl_impact.py",
-          "docs/analysis/TASK_40j_HOT_BACKTEST_PARITY.md"
-        ],
-        "key_numbers": {
-          "dataset": "BTC/USDT:USDT tf=240min 2025Q4 (551 candles)",
-          "donchian_only_lag1_minus_lag0": "+4371.10",
-          "donchian_plus_pvo_lag1_minus_lag0": "-1029.30"
-        },
-        "decision": "仕様差として許容（優先タスク39d等を先行）"
       }
     ]
   },

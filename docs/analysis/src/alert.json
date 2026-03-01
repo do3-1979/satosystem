@@ -1,7 +1,7 @@
 {
   "metadata": {
     "source_file": "src/alert.py",
-    "analyzed_at": "2026-03-01T00:00:00Z",
+    "analyzed_at": "2026-03-02T00:00:00Z",
     "python_version": "3.10",
     "format_version": "2.0",
     "analyzer_note": "アラート通知クラス - Task40g 本番運用耐障害性対応。Discord Webhook通知、API障害/DD/連続損失の検知と通知機能を提供。"
@@ -24,8 +24,8 @@
     "description": "Alertクラスはconfig.iniのalert_*パラメータに基づいてDiscord Webhookへ通知を送信する。API障害・大きなDD・連続損失などの重要イベントを検知し、通知有無を制御可能。enabled=Falseまたはwebhook_url未設定時は通知をスキップ。Task40g（本番運用の耐障害性）の一部として実装。"
   },
   "test_coverage": {
-    "test_files": [],
-    "coverage_estimate": "0%",
-    "critical_gaps": ["Discord Webhook送信の単体テスト未実装", "各notify_*メソッドの動作確認テスト未実装"]
+    "test_files": ["test/test_alert_regression.py"],
+    "coverage_estimate": "80%+",
+    "critical_gaps": ["Discord Webhook送信の結合テスト未実裃(enabled=1実環境)"]
   }
 }

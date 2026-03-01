@@ -549,6 +549,7 @@ def run_individual_test_modules():
     try:
         test_modules = [
             "test_bot_regression",
+            "test_alert_regression",
             "test_config_regression",
             "test_trading_strategy_regression",
             "test_risk_management_regression",

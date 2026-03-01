@@ -33,16 +33,6 @@
         "estimated_impact_usd": null
       },
       {
-        "id": "40g",
-        "category": "運用・信頼性",
-        "title": "本番運用の耐障害性（API障害/再試行/部分約定/ログ監視）",
-        "description": "Raspberry Pi常時稼働に向けて、API失敗時のリトライ/バックオフ、部分約定、二重発注防止、ヘルスチェック、重要ログのアラート（メール/Discord等）を整備。本番運用前必須",
-        "priority": 5,
-        "deadline": "2026-02-28",
-        "related_doc": "docs/TRADE_LOG_USAGE_GUIDE.md",
-        "estimated_impact_usd": null
-      },
-      {
         "id": "40e",
         "category": "調査・研究",
         "title": "トレンドフォロー以外の優位性候補の調査・小規模検証",
@@ -177,6 +167,18 @@
       }
     ],
     "done": [
+      {
+        "id": "40g",
+        "category": "運用・信頼性",
+        "title": "本番運用の耐障害性（API障害/再試行/部分約定/ログ監視）",
+        "description": "Raspberry Pi常時稼働に向けて、API失敗時のリトライ/バックオフ、部分約定、二重発注防止、ヘルスチェック、重要ログのアラート（メール/Discord等）を整備。本番運用前必須",
+        "priority": 5,
+        "deadline": "2026-02-28",
+        "related_doc": "docs/TRADE_LOG_USAGE_GUIDE.md",
+        "estimated_impact_usd": null,
+        "completed_at": "2026-03-02",
+        "status": "done"
+      },
       {
         "id": "40c",
         "category": "運用・リスク管理",
