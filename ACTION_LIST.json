@@ -23,16 +23,6 @@
         "notes": "start_bot.sh で 2026-03-01 起動済み。RPi: 192.168.1.19, back_test=0, hot_test_dummy_mode=1。ログ: ~/satosystem/src/logs/bot_*.log"
       },
       {
-        "id": "40b",
-        "category": "品質保証",
-        "title": "手数料/スリッページ/約定遅延のコストモデル導入",
-        "description": "バックテスト評価に実コスト（手数料・スリッページ・約定遅延・指値未約定）を織り込み、期待値がコストに耐えるかを検証。指標改善の「見かけ」を排除。本番運用前必須",
-        "priority": 5,
-        "deadline": "2026-02-28",
-        "related_doc": "docs/PRICE_DATA_FLOW_DESIGN.md",
-        "estimated_impact_usd": null
-      },
-      {
         "id": "40e",
         "category": "調査・研究",
         "title": "トレンドフォロー以外の優位性候補の調査・小規模検証",
@@ -167,6 +157,19 @@
       }
     ],
     "done": [
+      {
+        "id": "40b",
+        "category": "品質保証",
+        "title": "手数料/スリッページ/約定遅延のコストモデル導入",
+        "description": "バックテスト評価に実コスト（手数料・スリッページ・約定遅延・指値未約定）を織り込み、期待値がコストに耐えるかを検証。指標改善の「見かけ」を排除。本番運用前必須",
+        "priority": 5,
+        "deadline": "2026-02-28",
+        "related_doc": "docs/PRICE_DATA_FLOW_DESIGN.md",
+        "estimated_impact_usd": null,
+        "completed_at": "2026-03-02",
+        "status": "done",
+        "completion_note": "cost_model.py実装済み、portfolio.pyのadd/clear_position_quantityに統合済み（is_backtest引数経由）。bot.pyから呼び出し確認済み。"
+      },
       {
         "id": "40g",
         "category": "運用・信頼性",
