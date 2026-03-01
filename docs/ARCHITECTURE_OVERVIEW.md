@@ -21,6 +21,8 @@
 | OHLCVCacheInspector  | src/ohlcv_cache_inspector.py | キャッシュ分析・検査ツール            | __init__, get_cache_parameters, get_data_coverage, print_summary, print_detailed_analysis |
 | ExitStrategyV2       | src/exit_strategy_v2.py      | 4段階出口戦略（Stage1～4）実装        | __init__, evaluate_exit_condition, _identify_stage, _check_stop_loss, safe_get |
 | PathUtils            | src/path_utils.py            | パス管理・ファイル操作一元化          | get_src_dir, get_project_root, get_module_path |
+| RiskOverlay          | src/risk_overlay.py          | DDキルスイッチ・資産保護自動停止 (Task40c) | check_can_trade, notify_trade_result, get_status |
+| CostModel            | src/cost_model.py            | バックテスト取引コスト織り込み (Task40b) | calculate_entry_cost, calculate_exit_cost, get_cost_summary |
 # Architecture Overview
 
 ## 最新の実行モード・データ型検証 (2025-12-29 更新)
@@ -44,7 +46,7 @@ December 29日のコミット `7029c70` で以下を実装（issue: bgmode実行
 - **本番トレード（back_test=0, hot_test_dummy_mode=0）**: Bybit実APIから価格取得、実取引実行 ✅
 
 ### 品質保証（2025-12-29）
-- **レグレッションテスト**: 54テスト中90成功（成功率97.8%）✅
+- **レグレッションテスト**: 122テスト全PASS（成功率100%）✅ （2026-03-01時点）
 - **全四半期テスト**: 2024Q1～2025Q4 全8四半期実施、累積損益 +856.50 USD ✅
 - **個別ファイルテスト**: すべてのモジュールで4～38テスト成功
 
@@ -63,8 +65,8 @@ December 29日のコミット `7029c70` で以下を実装（issue: bgmode実行
 | Visualizer | Interactive backtest visualization & reporting | Logger outputs |
 | Metrics | Post-backtest performance metrics (Sharpe, MaxDD, PF, WinRate) | Bot (backtest summary) |
 | OHLCVCache | SQLite-based OHLCV caching for fast data retrieval | PriceDataManagement, Bot |
-| OHLCVCacheInspector | Cache analysis & inspection tool | OHLCVCache |
-
+| OHLCVCacheInspector | Cache analysis & inspection tool | OHLCVCache || RiskOverlay          | Kill-switch: DD / daily-loss / consecutive-loss auto-stop (Task40c, enabled=0 by default) | Bot (check_can_trade before ENTRY/ADD, notify_trade_result after EXIT) |
+| CostModel            | Backtest cost modelling: fee, slippage, execution delay (Task40b, is_enabled=False by default) | Bot (cost adjustments at order execution) |
 ## Data Flow (Backtest & Live)
 ```
           +-------------+

@@ -71,19 +71,19 @@
 ## 現在の進捗状況
 
 ### 作業中タスク（PROGRESS）
-- Task 22b: Strategy B（Bollinger+RSI+SMA）実装完了、有効化待機
-- Task 22c: Strategy C（複合戦略A+B）実装完了、有効化待機
-- Task 20b: マルチタイムフレーム ADX 確認、設計中
+- Task 43: RPi 1週間耐久ホットテスト検証（due: 2026-03-08）
+  - RPi SSH接続復旧後に `./src/start_bot.sh` で起動
 
 ### 次の優先タスク（TODO）
-- Task 39d: Time-Based Exit 実装（優先度: ★★★★☆）
-  - 期待利益: +$100-200/年
-- Task 39e: Dynamic Stop Loss 実装（優先度: ★★★★☆）
-  - 期待利益: +$100-150/年
-- Task 39f: Weekend Avoidance 実装（優先度: ★★★★☆）
-  - 期待利益: +$100-200/年
+- Task 40b: コストモデル bot 統合（優先度: ★★★★☆）
+- Task 40g: API耐障害性 bot 統合（優先度: ★★★★☆）
+- Task 40d: 戦略監査（優先度: ★★★☆☆）
 
 ### 最近完了（DONE）
+- Task 40c: DDキルスイッチ（RiskOverlay）実装完了（2026-03-01）
+  - 3種停止: DD_STOP / DAILY_STOP / CONSEC_STOP、enabled=0でデフォルト無効
+- Task 42: キャッシュベースホットテスト実装完了（2026-03-01）
+  - use_cached_data_for_hot_test=1でSQLiteキャッシュから高速ホットテスト
 - Task 39b: Two-Tier Entry System 実装完了（2026-02-01）
   - ベースライン: +904.35 USD → +1282.62 USD（+378.27 USD）
 - Task 39c: Multi-Timeframe Integration 検証完了・不採用（2026-02-01）
@@ -92,15 +92,13 @@
   - 一時レポート13ファイル削除、ACTION_LIST.md簡素化
 - Task 39a: Trailing Profit Target検証完了・不採用（2026-01-11）
   - ベースライン比-1,077 USD悪化のため破棄
-- Task 33: ADXフィルタ最適化（2026-01-02）
-  - threshold=31で最適、累積+1936.98 USD（+31.9%改善）
 
 ## テスト品質基準
 
-現在の状態（2025-12-29）：
-- レグレッションテスト: 53/54 (97.8%) PASS
+現在の状態（2026-03-01）：
+- レグレッションテスト: 122/122 (100%) PASS
 - 四半期テスト: 8/8 PASS
-- 累積損益: +904.35 USD
+- ベースライン累積損益: +1282.62 USD（Two-Tier Entry System有効化後）
 
 必須基準：
 - レグレッションテスト合格率 ≥ 95%
