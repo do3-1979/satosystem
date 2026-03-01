@@ -1,18 +1,18 @@
 {
   "metadata": {
     "source_file": "src/config.py",
-    "analyzed_at": "2026-02-08T00:00:00Z",
+    "analyzed_at": "2026-03-01T00:00:00Z",
     "python_version": "3.10",
     "format_version": "2.0",
-    "analyzer_note": "設定管理クラス - config.iniと.api_keyファイルから設定読み込み、動的な設定上書きをサポート"
+    "analyzer_note": "設定管理クラス - config.iniと.api_keyファイルから設定読み込み、動的な設定上書きをサポート。2026-03-01: Task42 - get_use_cached_data_for_hot_test()メソッド追加"
   },
   "file_overview": {
     "purpose": "設定ファイル（config.ini, .api_key）から設定情報を読み込み、全モジュールに提供",
-    "lines_of_code": 1355,
+    "lines_of_code": 1613,
     "dependency_count": 4,
     "class_count": 1,
     "function_count": 0,
-    "critical_methods": ["get_api_key", "get_api_secret", "get_account_balance", "get_risk_percentage", "get_back_test_mode"],
+    "critical_methods": ["get_api_key", "get_api_secret", "get_account_balance", "get_risk_percentage", "get_back_test_mode", "get_use_cached_data_for_hot_test"],
     "description": "Configクラスはconfig.iniファイルと.api_keyファイル（JSON形式）から設定を読み込む。APIキー、取引所選択、リスク管理パラメータ、トレード戦略設定、フィルター設定などを一元管理。実行時の動的な設定上書き（_override_start_time, _override_end_time）をサポート。Bybit/Bitget両取引所のAPIキーを分離管理。"
   },
   "test_coverage": {

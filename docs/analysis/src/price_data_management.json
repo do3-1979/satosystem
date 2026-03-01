@@ -1,10 +1,10 @@
 {
   "metadata": {
     "source_file": "src/price_data_management.py",
-    "analyzed_at": "2026-01-04T00:00:00Z",
+    "analyzed_at": "2026-03-01T00:00:00Z",
     "python_version": "3.10",
     "format_version": "2.0",
-    "analyzer_note": "価格データ・シグナル管理。Singleton。バックテスト・本番両対応、複数タイムフレーム管理。TODO 35 でシグナル計算タイミング制限解除、ホットテスト動的start/end_epoch統合完了。"
+    "analyzer_note": "価格データ・シグナル管理。Singleton。バックテスト・本番両対応、複数タイムフレーム管理。TODO 35 でシグナル計算タイミング制限解除、ホットテスト動的start/end_epoch統合完了。2026-03-01: Task42 - initialize()のback_test_ohlcv_data初期化条件にuse_cached_data_for_hot_test対応追加"
   },
   "file_overview": {
     "purpose": "OHLCV価格データ・指標・シグナルの統合管理",

@@ -1,0 +1,29 @@
+{
+  "metadata": {
+    "source_file": "src/cost_model.py",
+    "analyzed_at": "2026-03-01T00:00:00Z",
+    "python_version": "3.10",
+    "format_version": "2.0",
+    "analyzer_note": "取引コストモデル - Task40b 手数料/スリッページ/約定遅延のバックテスト織り込み対応。is_enabled=Falseで既存動作に影響なし。"
+  },
+  "file_overview": {
+    "purpose": "バックテストに実取引コスト（手数料・スリッページ・約定遅延）を織り込む",
+    "lines_of_code": 177,
+    "dependency_count": 2,
+    "class_count": 1,
+    "function_count": 0,
+    "critical_methods": [
+      "calculate_entry_cost",
+      "calculate_exit_cost",
+      "_apply_slippage",
+      "get_execution_delay",
+      "get_cost_summary"
+    ],
+    "description": "CostModelクラスはconfig.iniのmaker_fee/taker_fee/slippage_rate/execution_delay_candlesを読み込み、エントリー・エグジット時の実取引コストをシミュレートする。is_enabled=Falseの場合はコストゼロで既存動作と完全互換。Task40b（コストモデル導入）として実装。バックテスト精度向上に貢献。"
+  },
+  "test_coverage": {
+    "test_files": [],
+    "coverage_estimate": "0%",
+    "critical_gaps": ["calculate_entry_cost/calculate_exit_costの単体テスト未実装", "スリッページ計算の境界値テスト未実装"]
+  }
+}
