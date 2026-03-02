@@ -692,7 +692,9 @@ class TradingStrategy:
         # ストップロスより優先して、保有時間制限をチェック
         try:
             position_info = {
-                'entry_price': self.portfolio.entry_price if hasattr(self.portfolio, 'entry_price') else 0,
+                # NOTE: entry_price=0 はベースライン互換のため意図的（0の場合TBEは P&L判定をスキップしてshould_exit=False）
+                # Chandelier/PSL用の entry_price は各ブロック内で get_position_price() を使用
+                'entry_price': 0,
                 'quantity': self.portfolio.get_position_quantity(),
                 'side': position_side,
             }
@@ -727,17 +729,167 @@ class TradingStrategy:
                     return
         except Exception as e:
             self.logger.log(f"[WARNING] Time-Based Exitチェックエラー: {e}")
-        
+
+        #-------------------------------------------------------
+        # 優先度0.5：Chandelier Exit（Task 44a）
+        # - 従来型ATRストップより先に発動する可能性のあるトレイリングストップ
+        # - Chandelier Stop > 従来型ストップ（ロング）の場合により高い価格でEXIT
+        #-------------------------------------------------------
+        try:
+            if self.exit_strategy_v2.chandelier_exit_enabled:
+                entry_price_for_chandelier = self.portfolio.get_position_price()
+                chandelier_position_info = {
+                    'entry_price': entry_price_for_chandelier,
+                    'quantity': self.portfolio.get_position_quantity(),
+                    'side': position_side,
+                }
+                chandelier_result = self.exit_strategy_v2._check_chandelier_exit(
+                    current_price=current_ohlcv.get('close_price', 0),
+                    current_high=current_ohlcv.get('high_price', 0),
+                    current_low=current_ohlcv.get('low_price', 0),
+                    current_atr=current_ohlcv.get('volatility', 0),
+                    entry_price=entry_price_for_chandelier,
+                    position_info=chandelier_position_info,
+                    entry_info=self.entry_record,
+                )
+                if chandelier_result.get('should_exit', False):
+                    chandelier_stop = chandelier_result.get('chandelier_stop', 0)
+                    replaces_psar = getattr(self.exit_strategy_v2, 'chandelier_replaces_psar', False)
+                    if replaces_psar:
+                        # PSARを置換モード: Chandelier Stopを無条件採用
+                        exec_chandelier = True
+                    else:
+                        # 併用モード: Chandelier StopがPSARより有利な場合のみ採用
+                        stop_price_check = self.risk_manager.get_stop_price()
+                        exec_chandelier = (
+                            (position_side == "BUY"  and chandelier_stop > stop_price_check) or
+                            (position_side == "SELL" and chandelier_stop < stop_price_check)
+                        )
+                    if exec_chandelier:
+                        side = "SELL" if position_side == "BUY" else "BUY"
+                        decision = "EXIT"
+                        exit_reason = "CHANDELIER_STOP"
+                        self.logger.log(f"[条件判定:EXIT] Chandelier Exit: stop={chandelier_stop:.2f} (replaces_psar={replaces_psar})")
+                        self.trade_decision["side"] = side
+                        self.trade_decision["decision"] = decision
+                        self.trade_decision["exit_reason"] = exit_reason
+                        return
+        except Exception as e:
+            self.logger.log(f"[WARNING] Chandelier Exitチェックエラー: {e}")
+
+        #-------------------------------------------------------
+        # 優先度0.6：Profit Step Lock（Task 44b）
+        # - 含み益が目標に達した後、大きく引き込んだら利益確定
+        #-------------------------------------------------------
+        try:
+            if self.exit_strategy_v2.profit_step_lock_enabled:
+                entry_price_for_psl = self.portfolio.get_position_price()
+                psl_position_info = {
+                    'entry_price': entry_price_for_psl,
+                    'quantity': self.portfolio.get_position_quantity(),
+                    'side': position_side,
+                }
+                psl_result = self.exit_strategy_v2._check_profit_step_lock(
+                    current_price=current_ohlcv.get('close_price', 0),
+                    entry_price=entry_price_for_psl,
+                    position_info=psl_position_info,
+                )
+                if psl_result.get('should_exit', False):
+                    side = "SELL" if position_side == "BUY" else "BUY"
+                    decision = "EXIT"
+                    exit_reason = psl_result.get('exit_reason', 'PROFIT_LOCK')
+                    tier_name = psl_result.get('tier', '?')
+                    mfe_pct = psl_result.get('mfe_pct', 0) * 100
+                    cur_pct = psl_result.get('current_pnl_pct', 0) * 100
+                    self.logger.log(f"[条件判定:EXIT] Profit Step Lock {tier_name}: MFE={mfe_pct:.1f}% → 現在={cur_pct:.1f}%")
+                    self.trade_decision["side"] = side
+                    self.trade_decision["decision"] = decision
+                    self.trade_decision["exit_reason"] = exit_reason
+                    return
+        except Exception as e:
+            self.logger.log(f"[WARNING] Profit Step Lockチェックエラー: {e}")
+
+        #-------------------------------------------------------
+        # 優先度0.7：Volume Climax Exit（Task 44d）
+        # - 出来高急増（クライマックス）時、含み益があれば利確EXIT
+        #-------------------------------------------------------
+        try:
+            if getattr(self.exit_strategy_v2, 'volume_climax_exit_enabled', False):
+                vce_entry_price = self.portfolio.get_position_price()
+                vce_position_info = {
+                    'entry_price': vce_entry_price,
+                    'quantity': self.portfolio.get_position_quantity(),
+                    'side': position_side,
+                }
+                vce_result = self.exit_strategy_v2._check_volume_climax_exit(
+                    current_volume=current_ohlcv.get('Volume', 0),  # 大文字V
+                    current_price=current_ohlcv.get('close_price', 0),
+                    entry_price=vce_entry_price,
+                    position_info=vce_position_info,
+                )
+                if vce_result.get('should_exit', False):
+                    side = "SELL" if position_side == "BUY" else "BUY"
+                    decision = "EXIT"
+                    exit_reason = vce_result.get('exit_reason', 'VOLUME_CLIMAX')
+                    vol_ratio = vce_result.get('volume_ratio', 0)
+                    pnl_pct = vce_result.get('pnl_pct', 0) * 100
+                    self.logger.log(f"[条件判定:EXIT] Volume Climax Exit: 出来高比={vol_ratio:.1f}x, 含み益={pnl_pct:.1f}%")
+                    self.trade_decision["side"] = side
+                    self.trade_decision["decision"] = decision
+                    self.trade_decision["exit_reason"] = exit_reason
+                    return
+        except Exception as e:
+            self.logger.log(f"[WARNING] Volume Climax Exitチェックエラー: {e}")
+
+        #-------------------------------------------------------
+        # 優先度0.8：Composite Score Exit（Task 44e）
+        # - ADX低下・PVO低下・Volume低下の複合スコアでトレンド失速を検出
+        #-------------------------------------------------------
+        try:
+            if getattr(self.exit_strategy_v2, 'composite_score_exit_enabled', False):
+                cse_entry_price = self.portfolio.get_position_price()
+                cse_position_info = {
+                    'entry_price': cse_entry_price,
+                    'quantity': self.portfolio.get_position_quantity(),
+                    'side': position_side,
+                }
+                cse_result = self.exit_strategy_v2._check_composite_score_exit(
+                    current_adx=current_ohlcv.get('adx', 0),
+                    current_pvo=current_ohlcv.get('pvo_val', 0),
+                    current_volume=current_ohlcv.get('Volume', 0),
+                    entry_adx=self.entry_record.get('entry_adx', 0),
+                    entry_price=cse_entry_price,
+                    current_price=current_ohlcv.get('close_price', 0),
+                    position_info=cse_position_info,
+                )
+                if cse_result.get('should_exit', False):
+                    side = "SELL" if position_side == "BUY" else "BUY"
+                    decision = "EXIT"
+                    exit_reason = cse_result.get('exit_reason', 'COMPOSITE_SCORE_EXIT')
+                    score = cse_result.get('score', 0)
+                    reasons = cse_result.get('reasons', [])
+                    pnl_pct = cse_result.get('pnl_pct', 0) * 100
+                    self.logger.log(f"[条件判定:EXIT] Composite Score Exit: スコア={score}/3, 含み益={pnl_pct:.1f}%, {reasons}")
+                    self.trade_decision["side"] = side
+                    self.trade_decision["decision"] = decision
+                    self.trade_decision["exit_reason"] = exit_reason
+                    return
+        except Exception as e:
+            self.logger.log(f"[WARNING] Composite Score Exitチェックエラー: {e}")
+
         #-------------------------------------------------------
         # 優先度1：従来のストップロス判定
+        # chandelier_replaces_psar=True のときはスキップ（Chandelierが代替）
         #-------------------------------------------------------
+        _skip_psar = getattr(self.exit_strategy_v2, 'chandelier_exit_enabled', False) and \
+                     getattr(self.exit_strategy_v2, 'chandelier_replaces_psar', False)
         stop_price = self.risk_manager.get_stop_price()
         high_price = current_ohlcv.get('high_price', 0)
         low_price = current_ohlcv.get('low_price', 0)
         close_price = current_ohlcv.get('close_price', 0)
-        
+
         if position_side == "BUY":
-            if low_price <= stop_price:
+            if not _skip_psar and low_price <= stop_price:
                 executed_price = stop_price * 0.995  # スリッページ考慮
                 self.logger.log(f"[条件判定:EXIT] 従来型ストップロス: 2h安値 {low_price:.2f} がストップ値 {stop_price:.2f} を割り込みました")
                 side = "SELL"
@@ -750,7 +902,7 @@ class TradingStrategy:
                 return
         
         elif position_side == "SELL":
-            if high_price >= stop_price:
+            if not _skip_psar and high_price >= stop_price:
                 executed_price = stop_price * 1.005  # スリッページ考慮
                 self.logger.log(f"[条件判定:EXIT] 従来型ストップロス: 2h高値 {high_price:.2f} がストップ値 {stop_price:.2f} を超過しました")
                 side = "BUY"
@@ -767,7 +919,7 @@ class TradingStrategy:
         #-------------------------------------------------------
         try:
             position_info = {
-                'entry_price': self.portfolio.entry_price if hasattr(self.portfolio, 'entry_price') else 0,
+                'entry_price': self.portfolio.get_position_price(),
                 'quantity': self.portfolio.get_position_quantity(),
                 'side': position_side,
             }

@@ -1248,6 +1248,168 @@ class Config:
             return 72.0
 
     # ========================================
+    # ChandelierExit セクション (Task 44a)
+    # ========================================
+
+    @classmethod
+    def get_enable_chandelier_exit(cls):
+        """
+        Chandelier Exit機能の有効/無効を取得します.
+
+        Returns:
+            bool: True = 有効、False = 無効
+        """
+        try:
+            return int(cls.config['ChandelierExit']['enable_chandelier_exit']) == 1
+        except (KeyError, ValueError):
+            return False
+
+    @classmethod
+    def get_chandelier_period(cls):
+        """
+        Chandelier Exit の最高値/最安値追跡期間を取得します.
+
+        Returns:
+            int: バー数、デフォルト22
+        """
+        try:
+            return int(cls.config['ChandelierExit']['chandelier_period'])
+        except (KeyError, ValueError):
+            return 22
+
+    @classmethod
+    def get_chandelier_mult(cls):
+        """
+        Chandelier Exit の ATR乗数を取得します.
+
+        Returns:
+            float: ATR乗数、デフォルト3.0
+        """
+        try:
+            return float(cls.config['ChandelierExit']['chandelier_mult'])
+        except (KeyError, ValueError):
+            return 3.0
+
+    @classmethod
+    def get_chandelier_replaces_psar(cls):
+        """
+        Chandelier ExitがPSARトレイリングストップを完全置換するか取得します.
+        1=置換（PSARスキップ）、0=PSARと併用（デフォルト）.
+
+        Returns:
+            bool: True = PSARを置換、False = PSARも有効
+        """
+        try:
+            return int(cls.config['ChandelierExit']['chandelier_replaces_psar']) == 1
+        except (KeyError, ValueError):
+            return False
+
+    # ========================================
+    # ProfitStepLock セクション (Task 44b)
+    # ========================================
+
+    @classmethod
+    def get_enable_profit_step_lock(cls):
+        """
+        Profit Step Lock機能の有効/無効を取得します.
+
+        Returns:
+            bool: True = 有効、False = 無効
+        """
+        try:
+            return int(cls.config['ProfitStepLock']['enable_profit_step_lock']) == 1
+        except (KeyError, ValueError):
+            return False
+
+    # ========================================
+    # Task 44d: VolumeClimaxExit設定
+    # ========================================
+
+    @classmethod
+    def get_enable_volume_climax_exit(cls):
+        """Volume Climax Exit有効/無効"""
+        try:
+            return int(cls.config['VolumeClimaxExit']['enable_volume_climax_exit']) == 1
+        except (KeyError, ValueError):
+            return False
+
+    @classmethod
+    def get_volume_climax_threshold(cls):
+        """出来高急増判定倍率（デフォルト: 3.0）"""
+        try:
+            return float(cls.config['VolumeClimaxExit']['volume_climax_threshold'])
+        except (KeyError, ValueError):
+            return 3.0
+
+    @classmethod
+    def get_volume_climax_lookback(cls):
+        """出来高移動平均期間（デフォルト: 20）"""
+        try:
+            return int(cls.config['VolumeClimaxExit']['volume_climax_lookback'])
+        except (KeyError, ValueError):
+            return 20
+
+    @classmethod
+    def get_volume_climax_min_profit_pct(cls):
+        """EXIT発動に必要な最低含み益率（デフォルト: 0.005）"""
+        try:
+            return float(cls.config['VolumeClimaxExit']['volume_climax_min_profit_pct'])
+        except (KeyError, ValueError):
+            return 0.005
+
+    # ========================================
+    # Task 44e: CompositeScoreExit設定
+    # ========================================
+
+    @classmethod
+    def get_enable_composite_score_exit(cls):
+        """Composite Score Exit有効/無効"""
+        try:
+            return int(cls.config['CompositeScoreExit']['enable_composite_score_exit']) == 1
+        except (KeyError, ValueError):
+            return False
+
+    @classmethod
+    def get_composite_exit_adx_drop(cls):
+        """ADX低下判定閾値（デフォルト: 5.0）"""
+        try:
+            return float(cls.config['CompositeScoreExit']['composite_exit_adx_drop'])
+        except (KeyError, ValueError):
+            return 5.0
+
+    @classmethod
+    def get_composite_exit_pvo_threshold(cls):
+        """PVO閾値（デフォルト: 0.0）"""
+        try:
+            return float(cls.config['CompositeScoreExit']['composite_exit_pvo_threshold'])
+        except (KeyError, ValueError):
+            return 0.0
+
+    @classmethod
+    def get_composite_exit_volume_ratio(cls):
+        """Volume比率閾値（デフォルト: 0.8）"""
+        try:
+            return float(cls.config['CompositeScoreExit']['composite_exit_volume_ratio'])
+        except (KeyError, ValueError):
+            return 0.8
+
+    @classmethod
+    def get_composite_exit_min_score(cls):
+        """EXIT最低スコア（デフォルト: 2）"""
+        try:
+            return int(cls.config['CompositeScoreExit']['composite_exit_min_score'])
+        except (KeyError, ValueError):
+            return 2
+
+    @classmethod
+    def get_composite_exit_min_profit_pct(cls):
+        """EXIT最低含み益率（デフォルト: 0.005）"""
+        try:
+            return float(cls.config['CompositeScoreExit']['composite_exit_min_profit_pct'])
+        except (KeyError, ValueError):
+            return 0.005
+
+    # ========================================
     # Task 40b: CostModel設定
     # ========================================
     

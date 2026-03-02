@@ -1,8 +1,8 @@
 {
   "meta": {
     "version": "1.0",
-    "last_updated": "2026-03-02",
-    "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE) - ベースライン更新 1985.14 USD (Task 40e)",
+    "last_updated": "2026-03-03",
+    "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE) - ベースライン更新 1985.14 USD (Task 40e). Task 44イグジット戦略PDCA完了（全5案不採用）",
     "replaces": "docs/ACTION_LIST.md",
     "workflow_rules": {
       "baseline_before_action": "アクションリスト実行前に必ずレグレッションテストを実行し、PROGRESS.json baseline_regressionに保存すること",
@@ -137,6 +137,92 @@
       }
     ],
     "done": [
+      {
+        "id": "44",
+        "title": "イグジット戦略PDCA改善プロジェクト (Exit Strategy Optimization)",
+        "priority": 5,
+        "category": "戦略改善",
+        "description": "現状のPSARトレイリングストップ中心のイグジットを多角的に改善。10案検討 → TOP5選定 → 5回PDCA → レビュー",
+        "baseline_before": "1985.14 USD (2026-03-02)",
+        "baseline_after": "1985.14 USD (全5案不採用・ベースライン維持)",
+        "completed_date": "2026-03-03",
+        "result": "全5案不採用。根本的洞察: PSARトレイリングストップは既に最適化済みで、追加EXIT条件はDonchian Breakoutシステムのマクロトレンド利益（Q4 2024の+1831 USD等）を早期終了させるため逆効果。アクション: イグジット改善は断念し、エントリー精度向上（Task 40d）に集中。",
+        "side_effects": [
+          "run_quarterly_backtest.py: getCtime→getMtime修正（2143個の古いsummaryファイルで誤ファイル参照バグ修正）",
+          "TBE backward compatibility確認（entry_price=0でTBEが意図的に無効化されていたことを文書化）"
+        ],
+        "sub_tasks": ["44a", "44b", "44c", "44d", "44e"]
+      },
+      {
+        "id": "44a",
+        "title": "PDCA #1: Chandelier Exit 実装・検証",
+        "category": "戦略改善",
+        "parent_task": "44",
+        "pdca_id": 1,
+        "completed_date": "2026-03-03",
+        "result_usd": 175.43,
+        "baseline_usd": 1985.14,
+        "delta_usd": -1809.71,
+        "verdict": "不採用",
+        "reason": "ATR×3.0がPSAR常に優先→augmentモード発動なし。replace modeでは強トレンドでもChandelierが発動せずポジション未決済問題が発生。mult=3.0は大きすぎてPSARより常にルーズ",
+        "files_modified": ["src/exit_strategy_v2.py", "src/trading_strategy.py", "src/config.py", "src/config.ini"]
+      },
+      {
+        "id": "44b",
+        "title": "PDCA #2: Profit Step Lock 実装・検証",
+        "category": "戦略改善",
+        "parent_task": "44",
+        "pdca_id": 2,
+        "completed_date": "2026-03-03",
+        "result_usd": 1942.22,
+        "baseline_usd": 1985.14,
+        "delta_usd": -42.92,
+        "verdict": "不採用",
+        "reason": "PSLのTier1（MFE≥2%→1%以下でEXIT）がBTCの通常の2-3%揺れで早期発動→その後回復し損失拡大。Q3 2024で確認: MFE=3.4%→0.5%でEXITしたが相場継続",
+        "files_modified": ["src/exit_strategy_v2.py", "src/trading_strategy.py", "src/config.py", "src/config.ini"]
+      },
+      {
+        "id": "44c",
+        "title": "PDCA #3: ATR Trailing Stop 実装・検証",
+        "category": "戦略改善",
+        "parent_task": "44",
+        "pdca_id": 3,
+        "completed_date": "2026-03-03",
+        "result_usd": 1985.14,
+        "baseline_usd": 1985.14,
+        "delta_usd": 0.0,
+        "verdict": "不採用（未発動）",
+        "reason": "augmentモード（mult=1.5）: PSAR常に優先で発動不可。replaceモード（mult=1.5）: 強トレンドでChandelierが発動せずポジション未決済→0 USD。ATR trailing stopはこのシステムのPSAR補完として機能しない",
+        "files_modified": ["src/config.ini (既存実装のパラメータ変更のみ)"]
+      },
+      {
+        "id": "44d",
+        "title": "PDCA #4: Volume Climax Exit 実装・検証",
+        "category": "戦略改善",
+        "parent_task": "44",
+        "pdca_id": 4,
+        "completed_date": "2026-03-03",
+        "result_usd": 1524.96,
+        "baseline_usd": 1985.14,
+        "delta_usd": -460.18,
+        "verdict": "不採用",
+        "reason": "Volume Climaxが強トレンドの途中でEXIT→その後トレンド継続で損失。Q1 2024: +357→-50 USD。強トレンドはしばしば出来高急増を伴うため、このシステムと根本的に相性不良",
+        "files_modified": ["src/exit_strategy_v2.py", "src/trading_strategy.py", "src/config.py", "src/config.ini"]
+      },
+      {
+        "id": "44e",
+        "title": "PDCA #5: Composite Score Exit 実装・検証",
+        "category": "戦略改善",
+        "parent_task": "44",
+        "pdca_id": 5,
+        "completed_date": "2026-03-03",
+        "result_usd": 189.45,
+        "baseline_usd": 1985.14,
+        "delta_usd": -1795.69,
+        "verdict": "不採用",
+        "reason": "ADX/PVO一時低下でもトレンドが継続するケースが多く、Q4 2024の主要利益（+1831→+294 USD）の大部分を損失。Donchian Breakoutシステムのトレンド継続性を阻害する",
+        "files_modified": ["src/exit_strategy_v2.py", "src/trading_strategy.py", "src/config.py", "src/config.ini"]
+      },
       {
         "id": "40e",
         "category": "調査・研究",
@@ -973,7 +1059,7 @@
   },
   "summary": {
     "total_tasks": 62,
-    "todo": 10,
+    "todo": 16,
     "progress": 2,
     "done": 50,
     "cumulative_impact_usd": 1985.14,

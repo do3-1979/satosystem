@@ -50,7 +50,46 @@ class ExitStrategyV2:
         # Time-Based Exit設定（Task 39d）
         self.time_based_exit_enabled = False  # デフォルト無効、load_config()で更新
         self.max_holding_hours = 72.0  # デフォルト72時間
-    
+
+        # Chandelier Exit設定（Task 44a）
+        # N期間最高値（ロング）または最安値（ショート）から ATR×mult のトレイリングストップ
+        # PSARよりボラティリティ適応性が高く、トレンド中の利益をより多く確定できる
+        self.chandelier_exit_enabled = False    # デフォルト無効、load_config()で更新
+        self.chandelier_period = 22              # 最高値/最安値の追跡期間（バー数）
+        self.chandelier_mult   = 3.0             # ATR乗数（標準値: 3.0）
+        self.chandelier_states = {}              # {trade_key: {'highest': float, 'lowest': float}}
+        self.chandelier_replaces_psar = False    # TrueのときPSARトレイリングをスキップ
+
+        # Profit Step Lock設定（Task 44b）
+        # 含み益が段階目標に達した後、利益が大きく引き込んだらEXIT（利益の保護）
+        # Tier1: MFE≥2% → 含み益1%以下に戻ったらEXIT
+        # Tier2: MFE≥4% → 含み益2.5%以下に戻ったらEXIT
+        # Tier3: MFE≥8% → 含み益6%以下に戻ったらEXIT
+        self.profit_step_lock_enabled = False  # デフォルト無効
+        self.psl_tiers = [
+            {'mfe_threshold': 0.02, 'lock_level': 0.01,  'name': 'Tier1'},
+            {'mfe_threshold': 0.04, 'lock_level': 0.025, 'name': 'Tier2'},
+            {'mfe_threshold': 0.08, 'lock_level': 0.06,  'name': 'Tier3'},
+        ]
+        self.psl_states = {}  # {trade_key: {'max_pnl_pct': float}}
+
+        # Volume Climax Exit設定（Task 44d）
+        # 出来高が移動平均の threshold倍に急増したとき、含み益があればEXIT
+        self.volume_climax_exit_enabled = False  # デフォルト無効
+        self.volume_climax_threshold    = 3.0    # 出来高急増判定倍率
+        self.volume_climax_lookback     = 20     # 出来高移動平均期間
+        self.volume_climax_min_profit   = 0.005  # 最低含み益率（0.5%）
+        self.volume_history             = []     # 直近出来高履歴
+
+        # Composite Score Exit設定（Task 44e）
+        # ADX低下・PVO低下・Volume低下の複合スコアでトレンド失速を検出してEXIT
+        self.composite_score_exit_enabled = False  # デフォルト無効
+        self.composite_exit_adx_drop      = 5.0   # ADX低下判定閾値
+        self.composite_exit_pvo_threshold = 0.0   # PVO閾値
+        self.composite_exit_volume_ratio  = 0.8   # Volume比率閾値
+        self.composite_exit_min_score     = 2     # EXIT最低スコア
+        self.composite_exit_min_profit    = 0.005 # 最低含み益率
+
     def load_config(self, config_module):
         """Configモジュールから設定を読み込む（bot.pyから呼び出し）"""
         try:
@@ -58,6 +97,33 @@ class ExitStrategyV2:
             self.max_holding_hours = config_module.get_max_holding_hours()
         except Exception as e:
             print(f"⚠️  ExitStrategyV2: Config読み込みエラー（デフォルト値使用）: {e}")
+        try:
+            self.chandelier_exit_enabled  = config_module.get_enable_chandelier_exit()
+            self.chandelier_period        = config_module.get_chandelier_period()
+            self.chandelier_mult          = config_module.get_chandelier_mult()
+            self.chandelier_replaces_psar = config_module.get_chandelier_replaces_psar()
+        except Exception:
+            pass  # デフォルト値を使用
+        try:
+            self.profit_step_lock_enabled = config_module.get_enable_profit_step_lock()
+        except Exception:
+            pass  # デフォルト値を使用
+        try:
+            self.volume_climax_exit_enabled = config_module.get_enable_volume_climax_exit()
+            self.volume_climax_threshold    = config_module.get_volume_climax_threshold()
+            self.volume_climax_lookback     = config_module.get_volume_climax_lookback()
+            self.volume_climax_min_profit   = config_module.get_volume_climax_min_profit_pct()
+        except Exception:
+            pass  # デフォルト値を使用
+        try:
+            self.composite_score_exit_enabled = config_module.get_enable_composite_score_exit()
+            self.composite_exit_adx_drop      = config_module.get_composite_exit_adx_drop()
+            self.composite_exit_pvo_threshold = config_module.get_composite_exit_pvo_threshold()
+            self.composite_exit_volume_ratio  = config_module.get_composite_exit_volume_ratio()
+            self.composite_exit_min_score     = config_module.get_composite_exit_min_score()
+            self.composite_exit_min_profit    = config_module.get_composite_exit_min_profit_pct()
+        except Exception:
+            pass  # デフォルト値を使用
     
     def evaluate_exit_condition(self, current_ohlcv, position_info, entry_info):
         """
@@ -148,7 +214,24 @@ class ExitStrategyV2:
             
             # Stage判定
             stage = self._identify_stage(entry_adx, entry_pvo, current_adx, current_pvo)
-            
+
+            # Chandelier Exit チェック（Task 44a: PSARより先に発動する可能性がある精密ストップ）
+            if self.chandelier_exit_enabled:
+                current_high = safe_get(current_ohlcv.get('high_price', 0))
+                current_low  = safe_get(current_ohlcv.get('low_price', 0))
+                current_atr  = safe_get(current_ohlcv.get('volatility', 0))
+                chandelier_check = self._check_chandelier_exit(
+                    current_price=current_price,
+                    current_high=current_high,
+                    current_low=current_low,
+                    current_atr=current_atr,
+                    entry_price=entry_price,
+                    position_info=position_info,
+                    entry_info=entry_info,
+                )
+                if chandelier_check['should_exit']:
+                    return chandelier_check
+
             # Stage 4: PSAR Stop Loss (最優先)
             if self._check_stop_loss(current_price, current_psar, position_info):
                 return {
@@ -258,7 +341,301 @@ class ExitStrategyV2:
         # デフォルト
         else:
             return 'UNSTABLE'
-    
+
+    def _check_chandelier_exit(self, current_price, current_high, current_low,
+                                current_atr, entry_price, position_info, entry_info):
+        """
+        Chandelier Exit チェック（Task 44a）
+
+        ロング: chandelier_stop = highest_high(過去N期間) - ATR × mult
+        ショート: chandelier_stop = lowest_low(過去N期間) + ATR × mult
+
+        ポジションオープン以降の最高値/最安値を内部状態として追跡し、
+        価格がChandelier Stopを下回った（ロング）または上回った（ショート）
+        タイミングでEXITを発動する。
+
+        ATRとしては current_ohlcv['volatility'] を使用（平均true range相当）。
+        """
+        try:
+            side = position_info.get('side', 'NONE')
+            if side not in ('BUY', 'SELL'):
+                return {'should_exit': False, 'exit_reason': 'NO_SIDE', 'close_ratio': 0.0,
+                        'stage': 'CHANDELIER', 'confidence': 0.0}
+
+            # trade_keyでポジション状態を識別（entry_priceをキーに使用）
+            trade_key = f"{side}_{entry_price}"
+
+            if side == 'BUY':
+                # ロング: 最高値を追跡
+                state = self.chandelier_states.get(trade_key, {'highest': entry_price})
+                if current_high > state.get('highest', entry_price):
+                    state['highest'] = current_high
+                self.chandelier_states[trade_key] = state
+
+                highest_high = state['highest']
+                if current_atr > 0:
+                    chandelier_stop = highest_high - current_atr * self.chandelier_mult
+                else:
+                    return {'should_exit': False, 'exit_reason': 'CHANDELIER_NO_ATR',
+                            'close_ratio': 0.0, 'stage': 'CHANDELIER', 'confidence': 0.0}
+
+                if current_price <= chandelier_stop:
+                    return {
+                        'should_exit': True,
+                        'exit_reason': 'CHANDELIER_STOP',
+                        'close_ratio': 1.0,
+                        'stage': 'CHANDELIER',
+                        'confidence': 0.95,
+                        'chandelier_stop': chandelier_stop,
+                        'highest_high': highest_high,
+                    }
+
+            elif side == 'SELL':
+                # ショート: 最安値を追跡
+                state = self.chandelier_states.get(trade_key, {'lowest': entry_price})
+                if current_low < state.get('lowest', entry_price):
+                    state['lowest'] = current_low
+                self.chandelier_states[trade_key] = state
+
+                lowest_low = state['lowest']
+                if current_atr > 0:
+                    chandelier_stop = lowest_low + current_atr * self.chandelier_mult
+                else:
+                    return {'should_exit': False, 'exit_reason': 'CHANDELIER_NO_ATR',
+                            'close_ratio': 0.0, 'stage': 'CHANDELIER', 'confidence': 0.0}
+
+                if current_price >= chandelier_stop:
+                    return {
+                        'should_exit': True,
+                        'exit_reason': 'CHANDELIER_STOP',
+                        'close_ratio': 1.0,
+                        'stage': 'CHANDELIER',
+                        'confidence': 0.95,
+                        'chandelier_stop': chandelier_stop,
+                        'lowest_low': lowest_low,
+                    }
+
+            return {'should_exit': False, 'exit_reason': 'CHANDELIER_HOLD',
+                    'close_ratio': 0.0, 'stage': 'CHANDELIER', 'confidence': 0.0}
+
+        except Exception as e:
+            return {'should_exit': False, 'exit_reason': f'CHANDELIER_ERROR:{e}',
+                    'close_ratio': 0.0, 'stage': 'CHANDELIER', 'confidence': 0.0}
+
+    def _check_profit_step_lock(self, current_price, entry_price, position_info):
+        """
+        Profit Step Lock チェック（Task 44b）
+
+        含み益（unrealized PnL%）が段階目標を達成した後、
+        利益が大きく引き込んだらEXITして確定益を保護する。
+
+        段階設定（デフォルト）:
+            Tier1: MFE ≥ 2%  → 含み益 1%  以下に戻ったらEXIT
+            Tier2: MFE ≥ 4%  → 含み益 2.5%以下に戻ったらEXIT
+            Tier3: MFE ≥ 8%  → 含み益 6%  以下に戻ったらEXIT
+        """
+        try:
+            if entry_price <= 0:
+                return {'should_exit': False, 'exit_reason': 'PSL_NO_ENTRY',
+                        'close_ratio': 0.0, 'stage': 'PROFIT_STEP_LOCK', 'confidence': 0.0}
+
+            side = position_info.get('side', 'NONE')
+            trade_key = f"{side}_{entry_price}"
+
+            # 現在の含み益率を計算
+            if side == 'BUY':
+                pnl_pct = (current_price - entry_price) / entry_price
+            elif side == 'SELL':
+                pnl_pct = (entry_price - current_price) / entry_price
+            else:
+                return {'should_exit': False, 'exit_reason': 'PSL_NO_SIDE',
+                        'close_ratio': 0.0, 'stage': 'PROFIT_STEP_LOCK', 'confidence': 0.0}
+
+            # MFE追跡
+            state = self.psl_states.get(trade_key, {'max_pnl_pct': 0.0})
+            if pnl_pct > state['max_pnl_pct']:
+                state['max_pnl_pct'] = pnl_pct
+                self.psl_states[trade_key] = state
+
+            max_pnl_pct = state['max_pnl_pct']
+
+            # 段階判定（上位Tierから評価）
+            active_tier = None
+            for tier in reversed(self.psl_tiers):
+                if max_pnl_pct >= tier['mfe_threshold']:
+                    active_tier = tier
+                    break
+
+            if active_tier and pnl_pct <= active_tier['lock_level']:
+                return {
+                    'should_exit': True,
+                    'exit_reason': f"PROFIT_LOCK_{active_tier['name']}",
+                    'close_ratio': 1.0,
+                    'stage': 'PROFIT_STEP_LOCK',
+                    'confidence': 0.9,
+                    'mfe_pct': max_pnl_pct,
+                    'current_pnl_pct': pnl_pct,
+                    'tier': active_tier['name'],
+                }
+
+            return {'should_exit': False, 'exit_reason': 'PSL_HOLD',
+                    'close_ratio': 0.0, 'stage': 'PROFIT_STEP_LOCK', 'confidence': 0.0}
+
+        except Exception as e:
+            return {'should_exit': False, 'exit_reason': f'PSL_ERROR:{e}',
+                    'close_ratio': 0.0, 'stage': 'PROFIT_STEP_LOCK', 'confidence': 0.0}
+
+    def _check_volume_climax_exit(self, current_volume, current_price, entry_price, position_info):
+        """
+        Volume Climax Exit チェック（Task 44d）
+
+        出来高が移動平均の threshold倍に急増したとき、
+        最低含み益率以上の利益があれば EXIT（クライマックス利確）。
+
+        Args:
+            current_volume: 現在バーの出来高
+            current_price:  現在の終値
+            entry_price:    エントリー価格
+            position_info:  {'side': 'BUY'|'SELL', ...}
+
+        Returns:
+            dict: should_exit, exit_reason, etc.
+        """
+        try:
+            if entry_price <= 0:
+                return {'should_exit': False, 'exit_reason': 'VCE_NO_ENTRY'}
+
+            side = position_info.get('side', 'NONE')
+
+            # 出来高履歴を更新（最大 lookback+1 件保持）
+            self.volume_history.append(current_volume)
+            max_hist = self.volume_climax_lookback + 1
+            if len(self.volume_history) > max_hist:
+                self.volume_history = self.volume_history[-max_hist:]
+
+            # 移動平均を計算（lookback本分）
+            if len(self.volume_history) < self.volume_climax_lookback:
+                return {'should_exit': False, 'exit_reason': 'VCE_WARMUP'}
+
+            avg_volume = sum(self.volume_history[-self.volume_climax_lookback:]) / self.volume_climax_lookback
+            if avg_volume <= 0:
+                return {'should_exit': False, 'exit_reason': 'VCE_NO_AVG'}
+
+            volume_ratio = current_volume / avg_volume
+
+            # 出来高急増チェック
+            if volume_ratio < self.volume_climax_threshold:
+                return {'should_exit': False, 'exit_reason': 'VCE_NORMAL_VOL'}
+
+            # 含み益チェック
+            if side == 'BUY':
+                pnl_pct = (current_price - entry_price) / entry_price
+            elif side == 'SELL':
+                pnl_pct = (entry_price - current_price) / entry_price
+            else:
+                return {'should_exit': False, 'exit_reason': 'VCE_NO_SIDE'}
+
+            if pnl_pct < self.volume_climax_min_profit:
+                # 含み益不足（損失中または利益が閾値未満）→ EXIT しない
+                return {'should_exit': False, 'exit_reason': 'VCE_LOW_PROFIT',
+                        'volume_ratio': volume_ratio, 'pnl_pct': pnl_pct}
+
+            return {
+                'should_exit': True,
+                'exit_reason': 'VOLUME_CLIMAX',
+                'close_ratio': 1.0,
+                'stage': 'VOLUME_CLIMAX_EXIT',
+                'confidence': 0.85,
+                'volume_ratio': volume_ratio,
+                'avg_volume': avg_volume,
+                'pnl_pct': pnl_pct,
+            }
+
+        except Exception as e:
+            return {'should_exit': False, 'exit_reason': f'VCE_ERROR:{e}'}
+
+    def _check_composite_score_exit(self, current_adx, current_pvo, current_volume,
+                                    entry_adx, entry_price, current_price, position_info):
+        """
+        Composite Score Exit チェック（Task 44e）
+
+        ADX低下・PVO低下・Volume低下の3指標をスコアリングし、
+        スコアが閾値以上で、かつ最低含み益率を満たす場合にEXIT。
+
+        Args:
+            current_adx:    現在のADX値
+            current_pvo:    現在のPVO値
+            current_volume: 現在の出来高
+            entry_adx:      エントリー時のADX値
+            entry_price:    エントリー価格
+            current_price:  現在の終値
+            position_info:  {'side': 'BUY'|'SELL', ...}
+
+        Returns:
+            dict: should_exit, exit_reason, score, etc.
+        """
+        try:
+            if entry_price <= 0:
+                return {'should_exit': False, 'exit_reason': 'CSE_NO_ENTRY'}
+
+            side = position_info.get('side', 'NONE')
+
+            # 含み益チェック（最低利益要件）
+            if side == 'BUY':
+                pnl_pct = (current_price - entry_price) / entry_price
+            elif side == 'SELL':
+                pnl_pct = (entry_price - current_price) / entry_price
+            else:
+                return {'should_exit': False, 'exit_reason': 'CSE_NO_SIDE'}
+
+            if pnl_pct < self.composite_exit_min_profit:
+                return {'should_exit': False, 'exit_reason': 'CSE_LOW_PROFIT', 'pnl_pct': pnl_pct}
+
+            # スコア計算
+            score = 0
+            reasons = []
+
+            # 1. ADX低下チェック
+            if entry_adx > 0 and (entry_adx - current_adx) >= self.composite_exit_adx_drop:
+                score += 1
+                reasons.append(f'ADX低下({entry_adx:.1f}→{current_adx:.1f})')
+
+            # 2. PVO低下チェック（PVO値が閾値以下）
+            if current_pvo <= self.composite_exit_pvo_threshold:
+                score += 1
+                reasons.append(f'PVO低下({current_pvo:.2f})')
+
+            # 3. Volume低下チェック（出来高が移動平均の割合以下）
+            # VCEが無効の場合、ここでvolumeHistoryを更新する
+            if current_volume > 0 and not self.volume_climax_exit_enabled:
+                self.volume_history.append(current_volume)
+                max_hist = self.volume_climax_lookback + 1
+                if len(self.volume_history) > max_hist:
+                    self.volume_history = self.volume_history[-max_hist:]
+
+            if len(self.volume_history) >= self.volume_climax_lookback and current_volume > 0:
+                avg_vol = sum(self.volume_history[-self.volume_climax_lookback:]) / self.volume_climax_lookback
+                if avg_vol > 0 and (current_volume / avg_vol) <= self.composite_exit_volume_ratio:
+                    score += 1
+                    reasons.append(f'Volume低下({current_volume/avg_vol:.2f}x)')
+
+            if score >= self.composite_exit_min_score:
+                return {
+                    'should_exit': True,
+                    'exit_reason': 'COMPOSITE_SCORE_EXIT',
+                    'close_ratio': 1.0,
+                    'stage': 'COMPOSITE_SCORE',
+                    'confidence': 0.8,
+                    'score': score,
+                    'reasons': reasons,
+                    'pnl_pct': pnl_pct,
+                }
+
+            return {'should_exit': False, 'exit_reason': 'CSE_LOW_SCORE', 'score': score}
+
+        except Exception as e:
+            return {'should_exit': False, 'exit_reason': f'CSE_ERROR:{e}'}
+
     def _check_stop_loss(self, current_price, psar_price, position_info):
         """
         PSAR Stop Loss チェック

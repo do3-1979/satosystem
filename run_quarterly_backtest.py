@@ -212,7 +212,7 @@ def run_backtest(year, q, start_str, end_str):
         # backtest_summary_*.json を優先的に探す
         summary_logs = glob.glob('logs/backtest_summary_*.json')
         if summary_logs:
-            latest_log = max(summary_logs, key=os.path.getctime)
+            latest_log = max(summary_logs, key=os.path.getmtime)
         else:
             # 見つからない場合は全JSONファイルから探す
             log_files = glob.glob('logs/*.json')
