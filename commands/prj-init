@@ -68,20 +68,29 @@ print(f"📊 タスク統計: TODO={action_list['summary']['todo']}, PROGRESS={a
 print()
 print('📌 作業中タスク (PROGRESS):')
 for task in action_list['tasks']['progress'][:3]:
-    priority = '★' * task['priority']
-    print(f"  • {task['id']}: {task['title']} ({priority})")
+    p = task.get('priority', 3)
+    priority = p if isinstance(p, str) else '★' * p
+    tid = task.get('id') or task.get('task_id', '?')
+    print(f"  • {tid}: {task['title']} ({priority})")
 print()
 print('🎯 次の優先タスク (TODO):')
-for task in sorted(action_list['tasks']['todo'], key=lambda x: x['priority'], reverse=True)[:3]:
-    priority = '★' * task['priority']
+def _pkey(t):
+    p = t.get('priority', 0)
+    return p if isinstance(p, int) else len(p)
+for task in sorted(action_list['tasks']['todo'], key=_pkey, reverse=True)[:3]:
+    p = task.get('priority', 3)
+    priority = p if isinstance(p, str) else '★' * p
+    tid = task.get('id') or task.get('task_id', '?')
     impact = ''
     if task.get('estimated_impact_usd'):
         impact = f" → 期待効果: +${task['estimated_impact_usd'][0]}-{task['estimated_impact_usd'][1]}/年"
-    print(f"  • {task['id']}: {task['title']} ({priority}){impact}")
+    print(f"  • {tid}: {task['title']} ({priority}){impact}")
 print()
 print('✅ 最近完了したタスク (DONE):')
-for task in action_list['tasks']['done'][:3]:
-    print(f"  • {task['id']}: {task['title']} ({task['completed_date']})")
+for task in action_list['tasks']['done'][-3:]:
+    tid = task.get('id') or task.get('task_id', '?')
+    cdate = task.get('completed_date') or task.get('completed_at', '?')
+    print(f"  • {tid}: {task['title']} ({cdate})")
 PYEOF
 
 echo ""
