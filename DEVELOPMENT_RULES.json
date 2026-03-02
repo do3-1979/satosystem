@@ -181,10 +181,37 @@
       },
       {
         "file": "ACTION_LIST.json",
-        "purpose": "TODO/PROGRESS/DONEのセクションを含み、作業課題と進捗を常に更新",
+        "purpose": "取り組んだすべてのアクションをTODO/PROGRESS/DONEのステータスで管理。完了・却下したものはDONEに結果とともに記録する（正規記録を担う）",
+        "required": true
+      },
+      {
+        "file": "PROGRESS.json",
+        "purpose": "実行中アクションの途中経過・現在状態を一時的に記録する。ベースライン・コミット情報・テスト結果などプロジェクトメタデータも管理。終わったアクションはACTION_LISTに反映し、PROGRESS.jsonから削除する",
         "required": true
       }
     ],
+    "document_roles": {
+      "ACTION_LIST.json": {
+        "role": "正規記録（Single Source of Truth）",
+        "manages": "全アクションのライフサイクル: TODO → PROGRESS → DONE",
+        "done_policy": "完了・却下のいずれも結果サマリ付きでDONEに記録",
+        "baseline_management": {
+          "requirement": "summary.baseline_performance と summary.baseline_history に常に最新のバックテスト累積損益を記録する",
+          "update_trigger": "run_quarterly_backtest.py 実行後、またはバックテスト結果がベースラインを更新したとき",
+          "fields": {
+            "summary.cumulative_impact_usd": "最新の累積損益 (USD)",
+            "summary.baseline_performance": "人が読める形のベースライン概要文字列",
+            "summary.baseline_history": "過去ベースラインの履歴リスト（日付・タスク・改善額・バックアップファイルを含む）"
+          },
+          "backup_policy": "更新時は baseline_backup/ に結果JSONをコピーして履歴を保存する"
+        }
+      },
+      "PROGRESS.json": {
+        "role": "一時的な途中経過・プロジェクトメタデータの記録",
+        "manages": "active_tasks（実行中アクションの中間状態）、ベースライン性能、最新コミット情報、テストスイート状況",
+        "sync_policy": "アクションが完了したらACTION_LIST.jsonのDONEに反映し、active_tasksから削除する"
+      }
+    },
     "workflow": [
       {
         "phase": "設計変更前",
@@ -286,6 +313,16 @@
           "コミット時: python3 tools/update_progress.py --commit"
         ],
         "manual_update": "必要に応じてPROGRESS.jsonを直接編集（JSON形式を壊さないよう注意）"
+      },
+      "baseline_updates": {
+        "requirement": "バックテスト結果がベースラインを更新したとき、ACTION_LIST.json の summary を必ず最新化する",
+        "update_targets": [
+          "ACTION_LIST.json summary.cumulative_impact_usd",
+          "ACTION_LIST.json summary.baseline_performance",
+          "ACTION_LIST.json summary.baseline_history（履歴に追記）",
+          "PROGRESS.json project.baseline_performance"
+        ],
+        "backup": "baseline_backup/ に結果JSONをコピーして履歴を保存する"
       }
     },
     "design_review": {

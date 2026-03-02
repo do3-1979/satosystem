@@ -1,8 +1,8 @@
 {
   "meta": {
     "version": "1.0",
-    "last_updated": "2026-03-01",
-    "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE) - Task 42追加（バックテスト・ホットテスト統一化）",
+    "last_updated": "2026-03-02",
+    "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE) - ベースライン更新 1985.14 USD (Task 40e)",
     "replaces": "docs/ACTION_LIST.md",
     "workflow_rules": {
       "baseline_before_action": "アクションリスト実行前に必ずレグレッションテストを実行し、PROGRESS.json baseline_regressionに保存すること",
@@ -11,29 +11,6 @@
   },
   "tasks": {
     "todo": [
-      {
-        "task_id": "43",
-        "title": "RPiホットテスト1週間耐久テスト - ログ検証",
-        "description": "RPi上でホットテストダミーモードを1週間稼働させ、ログを回収・検証する。確認項目: (1)プロセスが1週間連続稼働したか、(2)エラー/クラッシュがないか、(3)トレードシグナルが期待通り発火しているか、(4)メモリリーク等の異常がないか。",
-        "priority": "★★★★★",
-        "category": "運用・信頼性",
-        "expected_benefit": "本番運用前の耐久性確認",
-        "due_date": "2026-03-08",
-        "created_date": "2026-03-01",
-        "notes": "start_bot.sh で 2026-03-01 起動済み。RPi: 192.168.1.19, back_test=0, hot_test_dummy_mode=1。ログ: ~/satosystem/src/logs/bot_*.log"
-      },
-      {
-        "id": "39f",
-        "category": "2026年利益拡大戦略",
-        "title": "Weekend/Holiday Avoidance 実装",
-        "description": "低流動性時間回避（+$100-200/年期待）",
-        "priority": 4,
-        "related_doc": "PROFIT_ENHANCEMENT_STRATEGY_2026",
-        "estimated_impact_usd": [
-          100,
-          200
-        ]
-      },
       {
         "id": "40h",
         "category": "戦略拡張",
@@ -144,6 +121,19 @@
         "deadline": "2026-02-28",
         "related_doc": "docs/ARCHITECTURE_OVERVIEW.md, Task 40a (過学習検出)",
         "estimated_impact_usd": null
+      },
+      {
+        "task_id": "43",
+        "title": "RPiホットテスト1週間耐久テスト - ログ検証",
+        "description": "RPi上でホットテストダミーモードを1週間稼働させ、ログを回収・検証する。確認項目: (1)プロセスが1週間連続稼働したか、(2)エラー/クラッシュがないか、(3)トレードシグナルが期待通り発火しているか、(4)メモリリーク等の異常がないか。",
+        "priority": "★★★★★",
+        "category": "運用・信頼性",
+        "expected_benefit": "本番運用前の耐久性確認",
+        "due_date": "2026-03-08",
+        "created_date": "2026-03-01",
+        "notes": "start_bot.sh で 2026-03-01 起動済み。RPi: 192.168.1.19, back_test=0, hot_test_dummy_mode=1。ログ: ~/satosystem/src/logs/bot_*.log",
+        "status": "in_progress",
+        "started_date": "2026-03-01"
       }
     ],
     "done": [
@@ -963,15 +953,58 @@
         "priority": 5,
         "impact_usd": null,
         "result": "完了"
+      },
+      {
+        "id": "39f",
+        "category": "2026年利益拡大戦略",
+        "title": "Weekend/Holiday Avoidance 実装",
+        "description": "低流動性時間回避（+$100-200/年期待）",
+        "priority": 4,
+        "related_doc": "PROFIT_ENHANCEMENT_STRATEGY_2026",
+        "estimated_impact_usd": [
+          100,
+          200
+        ],
+        "status": "done",
+        "completed_at": "2026-03-02",
+        "completion_note": "Task 40eで weekend_filter_enabled を Config/TradingStrategy に実装済み。config.ini EntryFilters セクションで有効化可能。"
       }
     ]
   },
   "summary": {
     "total_tasks": 62,
-    "todo": 15,
-    "progress": 1,
-    "done": 46,
-    "cumulative_impact_usd": 1403.49,
-    "baseline_performance": "1403.49 USD (8 quarters, Task 39e完了後)"
+    "todo": 10,
+    "progress": 2,
+    "done": 50,
+    "cumulative_impact_usd": 1985.14,
+    "baseline_performance": "1985.14 USD (8 quarters, Task 40e完了後, 2026-03-02)",
+    "baseline_history": [
+      {
+        "cumulative_pnl_usd": 1985.14,
+        "date": "2026-03-02",
+        "task": "40e",
+        "note": "Volatility Filter (ATR>2500) 採用: +581.65 USD (+41.4%)",
+        "backup_file": "baseline_backup/BASELINE_1985.14USD_20260302.json"
+      },
+      {
+        "cumulative_pnl_usd": 1403.49,
+        "date": "2026-02-08",
+        "task": "39e",
+        "note": "Dynamic Stop Loss実装: +120.87 USD (+9.4%)"
+      },
+      {
+        "cumulative_pnl_usd": 1282.62,
+        "date": "2026-02-01",
+        "task": "39b",
+        "note": "Two-Tier Entry System実装: +378.27 USD"
+      },
+      {
+        "cumulative_pnl_usd": 904.35,
+        "date": "2025-12-21",
+        "task": "初期",
+        "note": "初期ベースライン",
+        "backup_file": "baseline_backup/BASELINE_904.35USD_20251221.json"
+      }
+    ]
   }
 }

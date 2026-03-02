@@ -119,6 +119,15 @@
           "status": "実装中",
           "priority": "★★★★★",
           "note": "Walk-Forward分析で過学習検出。戦略の根本的見直しを実施中"
+        },
+        {
+          "task_id": "43",
+          "title": "RPiホットテスト1週間耐久テスト - ログ検証",
+          "status": "稼働中",
+          "priority": "★★★★★",
+          "started_date": "2026-03-01",
+          "note": "start_bot.sh で起動済み。RPi: 192.168.1.19, back_test=0, hot_test_dummy_mode=1。ログ: ~/satosystem/src/logs/bot_*.log",
+          "due_date": "2026-03-08"
         }
       ],
       "next_priority": []
@@ -195,10 +204,10 @@
     }
   },
   "test_suite": {
-    "total_tests": 54,
-    "pass_rate": "97.8%",
+    "total_tests": 122,
+    "pass_rate": "100%",
     "test_files": 26,
-    "last_regression_test": "2025-12-10"
+    "last_regression_test": "2026-03-01"
   },
   "configuration": {
     "current_parameters": {
@@ -221,17 +230,20 @@
   },
   "next_actions": {
     "immediate": [
-      "Task 39d: Time-Based Exit 実装開始（優先度最高）",
-      "Task 22b/22c: Strategy B/C 有効化検討・評価"
+      "Task 43: RPi 1週間耐久テスト継続稼働・2026-03-08にログ回収",
+      "Task 40d: 現行戦略 エントリー/EXIT 整合性監査"
     ],
     "planned": [
-      "Task 39e-f: Dynamic Stop Loss / Weekend Avoidance 実装",
-      "Task 23a-b: Fear & Greed Index / RSI 二重確認実装",
-      "Task 20b: マルチタイムフレーム ADX 実装完了"
+      "Task 40h: レジーム別戦略切替（Trend/Range）実装",
+      "Task 22b-eval: Strategy B 有効化・バックテスト評価",
+      "Task 22c-eval: Strategy C 有効化・バックテスト評価",
+      "Task 23a-b: Fear & Greed Index / RSI 二重確認実装"
     ],
     "backlog": [
-      "Task 38d: Volume Profile Analysis 実装（主要戦略完了後）",
-      "Task 38e: Market Microstructure 実装（Phase 4検討）",
+      "Task 40f: 価格データ健全性チェック",
+      "Task 40i: 銘柄分散・相関管理",
+      "Task 38d: Volume Profile Analysis 実装",
+      "Task 38e: Market Microstructure 実装",
       "Task 6: ログファイル自動整理機能実装"
     ]
   },
@@ -240,10 +252,11 @@
     "strategy_contributions": {
       "39b_two_tier_entry": "+$378.27 (完了・有効化)",
       "39c_multi_timeframe": "不採用（全トレード却下で機能せず）",
-      "39d_time_based_exit": "+$100-200 (計画中)",
-      "39e_dynamic_stop_loss": "+$100-150 (計画中)",
-      "39f_weekend_avoidance": "+$100-200 (計画中)",
-      "current_baseline": "+$1,282.62 (39b実装後)"
+      "39d_time_based_exit": "完了",
+      "39e_dynamic_stop_loss": "完了",
+      "39f_weekend_avoidance": "完了 (Task 40eで実装済み)",
+      "40e_volatility_filter": "+$581.65 (完了・有効化 +41.4%)",
+      "current_baseline": "+$1,985.14 (40e実装後, 2026-03-02)"
     }
   },
   "notes": {
