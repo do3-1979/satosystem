@@ -3,7 +3,7 @@
     "name": "satosystem gen2",
     "description": "Bitcoin auto-trading system - Donchian Breakout + PVO + ADX filter",
     "branch": "gen2",
-    "last_updated": "2026-03-01",
+    "last_updated": "2026-03-02",
     "baseline_performance": {
       "cumulative_pnl_usd": 1403.49,
       "period": "2024-2025 (8 quarters, Task 39e完了後)",
@@ -99,9 +99,9 @@
     }
   },
   "latest_commit": {
-    "hash": "6df6783",
-    "date": "2026-03-01",
-    "message": "feat: Task40c - RiskOverlayキルスイッチ実装（DD/日次損失/連続損失停止）",
+    "hash": "a876ea7",
+    "date": "2026-03-02",
+    "message": "feat: Task 40e - Volatility Filter採用(+41.4%) + 論文ベースフィルター群実装",
     "changes": {
       "files_changed": 1,
       "lines_added": 103,
