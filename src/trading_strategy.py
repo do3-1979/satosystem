@@ -20,6 +20,7 @@ from exit_strategy_v2 import ExitStrategyV2
 from market_regime_detector import MarketRegimeDetector
 from vcp_strategy import VCPStrategy
 from mean_reversion_strategy import MeanReversionStrategy
+from new_indicators import NewIndicators
 from datetime import datetime
 
 class TradingStrategy:
@@ -112,6 +113,18 @@ class TradingStrategy:
 
         # シグナルをチェック
         signals = self.price_data_management.get_signals()
+
+        # =========== 週末エントリー回避フィルター ===========
+        if Config.get_weekend_filter_enabled():
+            try:
+                epoch = self.price_data_management.get_latest_close_time()
+                weekday = datetime.utcfromtimestamp(epoch).weekday()  # 0=Mon, 5=Sat, 6=Sun
+                if weekday >= 5:
+                    day_name = 'Saturday' if weekday == 5 else 'Sunday'
+                    self.logger.log(f"[週末フィルター] {day_name} のエントリーをスキップ")
+                    return
+            except Exception as e:
+                self.logger.log(f"[週末フィルターエラー] {str(e)}")
 
         # 新指標ベースのStrategyを評価
         strategy_result = self._evaluate_new_indicator_strategy()
@@ -395,15 +408,120 @@ class TradingStrategy:
                 enable_volatility_filter = Config.get_enable_volatility_filter()
                 volatility_threshold = Config.get_volatility_filter_threshold()
                 if enable_volatility_filter:
-                    volatility_value = self.price_data_management.get_latest_volatility()
+                    volatility_value = self.price_data_management.get_volatility()
                     if volatility_value > volatility_threshold:
                         filter_results.append(f"Volatility: ✗ ({volatility_value:.2f} > {volatility_threshold:.2f})")
                         if allow_entry:
                             allow_entry = False
                     else:
                         filter_results.append(f"Volatility: ✓ ({volatility_value:.2f} <= {volatility_threshold:.2f})")
-                
-                
+
+                # =========== 方向性フィルター群（論文ベース） ===========
+                # desired_side が確定している場合のみ評価
+                if desired_side and (Config.get_sma_direction_filter_enabled() or
+                                     Config.get_rsi_direction_filter_enabled() or
+                                     Config.get_macd_direction_filter_enabled() or
+                                     Config.get_tsmom_filter_enabled()):
+                    try:
+                        dir_ohlcv = ohlcv_data if ohlcv_data else []
+                        dir_closes = [c['close_price'] for c in dir_ohlcv]
+                        dir_ind = NewIndicators()
+
+                        # SMA方向性フィルター (Brock, Lakonishok, LeBaron 1992 JF; Faber 2007 JOIM)
+                        # 原理: 価格>SMA(N)=上昇トレンド → BUYエントリーを許可
+                        if Config.get_sma_direction_filter_enabled() and dir_closes:
+                            sma_period = Config.get_sma_direction_filter_period()
+                            if len(dir_closes) >= sma_period:
+                                sma_val = sum(dir_closes[-sma_period:]) / sma_period
+                                cur_px = self.price_data_management.get_ticker()
+                                above = cur_px > sma_val
+                                if desired_side == "BUY" and not above:
+                                    filter_results.append(f"SMA方向: ✗ BUY却下(現値<SMA{sma_period}={sma_val:.0f})")
+                                    allow_entry = False
+                                elif desired_side == "SELL" and above:
+                                    filter_results.append(f"SMA方向: ✗ SELL却下(現値>SMA{sma_period}={sma_val:.0f})")
+                                    allow_entry = False
+                                else:
+                                    filter_results.append(f"SMA方向: ✓ ({desired_side}, SMA{sma_period}={sma_val:.0f})")
+                            else:
+                                filter_results.append(f"SMA方向: ⚠ データ不足({len(dir_closes)}<{sma_period})")
+
+                        # RSI方向性フィルター (Wilder 1978; Liu & Tsyvinski 2021 RFS)
+                        # 原理: RSI>50=上昇モメンタム → BUYのみ / RSI<50=下降 → SELLのみ
+                        if Config.get_rsi_direction_filter_enabled() and dir_closes:
+                            rsi_period = Config.get_rsi_direction_filter_period()
+                            rsi_val = dir_ind.calc_rsi(dir_closes, rsi_period)
+                            if rsi_val is not None:
+                                if desired_side == "BUY" and rsi_val < 50:
+                                    filter_results.append(f"RSI方向: ✗ BUY却下(RSI={rsi_val:.1f}<50)")
+                                    allow_entry = False
+                                elif desired_side == "SELL" and rsi_val > 50:
+                                    filter_results.append(f"RSI方向: ✗ SELL却下(RSI={rsi_val:.1f}>50)")
+                                    allow_entry = False
+                                else:
+                                    filter_results.append(f"RSI方向: ✓ ({desired_side}, RSI={rsi_val:.1f})")
+                            else:
+                                filter_results.append(f"RSI方向: ⚠ 計算失敗")
+
+                        # MACD方向性フィルター (Appel 1985; Murphy 1999)
+                        # 原理: MACD>Signal=上昇局面 → BUYのみ / MACD<Signal=下降 → SELLのみ
+                        if Config.get_macd_direction_filter_enabled() and dir_closes:
+                            macd_val, macd_sig, _ = dir_ind.calc_macd(dir_closes, 12, 26, 9)
+                            if macd_val is not None and macd_sig is not None:
+                                macd_bull = macd_val > macd_sig
+                                if desired_side == "BUY" and not macd_bull:
+                                    filter_results.append(f"MACD方向: ✗ BUY却下(MACD={macd_val:.0f}≤Sig={macd_sig:.0f})")
+                                    allow_entry = False
+                                elif desired_side == "SELL" and macd_bull:
+                                    filter_results.append(f"MACD方向: ✗ SELL却下(MACD={macd_val:.0f}>Sig={macd_sig:.0f})")
+                                    allow_entry = False
+                                else:
+                                    filter_results.append(f"MACD方向: ✓ ({desired_side}, MACD={macd_val:.0f})")
+                            else:
+                                filter_results.append(f"MACD方向: ⚠ データ不足")
+
+                        # 時系列モメンタムフィルター TSMOM (Moskowitz, Ooi, Pedersen 2012 JFE)
+                        # 原理: N期間前比リターン>0=上昇モメンタム → BUYのみ
+                        if Config.get_tsmom_filter_enabled() and dir_closes:
+                            lb = Config.get_tsmom_filter_lookback()
+                            if len(dir_closes) > lb:
+                                past_px = dir_closes[-(lb + 1)]
+                                now_px = dir_closes[-1]
+                                tsmom_ret = (now_px / past_px - 1) * 100 if past_px > 0 else 0
+                                positive = tsmom_ret > 0
+                                if desired_side == "BUY" and not positive:
+                                    filter_results.append(f"TSMOM: ✗ BUY却下({lb}期前比{tsmom_ret:.1f}%)")
+                                    allow_entry = False
+                                elif desired_side == "SELL" and positive:
+                                    filter_results.append(f"TSMOM: ✗ SELL却下({lb}期前比{tsmom_ret:.1f}%)")
+                                    allow_entry = False
+                                else:
+                                    filter_results.append(f"TSMOM: ✓ ({desired_side}, {lb}期前比{tsmom_ret:.1f}%)")
+                            else:
+                                filter_results.append(f"TSMOM: ⚠ データ不足({len(dir_closes)}<={lb})")
+
+                        # ADXスロープフィルター (Elder 1993 "Trading for a Living")
+                        # 原理: ADX上昇中 = トレンド強化 = エントリー良好
+                        #       ADX下落中 = トレンド弱体化 = エントリー不良
+                        if Config.get_adx_slope_filter_enabled():
+                            adx_list = getattr(self.risk_manager, 'adx', [])
+                            lb = Config.get_adx_slope_filter_lookback()
+                            if len(adx_list) > lb:
+                                current_adx = adx_list[-1]
+                                past_adx = adx_list[-(lb + 1)]
+                                adx_rising = current_adx > past_adx
+                                if not adx_rising:
+                                    filter_results.append(f"ADXスロープ: ✗ 下落中({current_adx:.1f}<{past_adx:.1f})")
+                                    allow_entry = False
+                                else:
+                                    filter_results.append(f"ADXスロープ: ✓ 上昇中({current_adx:.1f}>{past_adx:.1f})")
+                            else:
+                                filter_results.append(f"ADXスロープ: ⚠ データ不足({len(adx_list)}<={lb})")
+
+                    except Exception as e:
+                        self.logger.log(f"[方向性フィルターエラー] {str(e)}")
+
+
                 # フィルター結果を出力
                 if filter_results:
                     self.logger.log(f"[フィルタ一覧] " + " | ".join(filter_results))

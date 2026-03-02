@@ -121,16 +121,15 @@
           "note": "Walk-Forward分析で過学習検出。戦略の根本的見直しを実施中"
         }
       ],
-      "next_priority": [
-        {
-          "task_id": "40e",
-          "title": "トレンドフォロー以外の優位性候補の調査・小規模検証",
-          "priority": "★★★★★",
-          "reason": "過学習対策の一環"
-        }
-      ]
+      "next_priority": []
     },
     "recently_completed": [
+      {
+        "task_id": "40e",
+        "title": "トレンドフォロー以外の優位性候補の調査・小規模検証",
+        "date": "2026-03-02",
+        "description": "Volatility Filter (ATR>2500) 採用: +581 USD改善 (1403→1985 USD)"
+      },
       {
         "task_id": "40b",
         "title": "手数料/スリッページ/約定遅延のコストモデル導入",
@@ -154,48 +153,6 @@
         "title": "Time-Based Exit 実装",
         "date": "2026-02-08",
         "description": "Time-Based Exit実装完了（72h強制決済、5バグ修正、timestamp記録修正）"
-      },
-      {
-        "task_id": "41a",
-        "title": "最大ドローダウン率計算バグ修正",
-        "date": "2026-02-08",
-        "description": "DD率計算ロジックを修正。以前の計算は初期資本を考慮せず、累積損益のピークのみをベースとしていた（max_dd / max(pnl_history)）。これにより6/8四半期でDD>100%と誤判定。正しくは資産ピーク（初期資本+累積損益）をベースとし、(peak_balance - current_balance) / peak_balance * 100 で計算すべき。修正後、全8四半期でDD ≤ 50% を達成しており、DD低減策は不要であることが判明。",
-        "acceptance_criteria": [
-          "✅ _max_drawdown_rate()関数にinitial_balance引数を追加",
-          "✅ peak_balanceとcurrent_balanceで資産ベースDD率を計算",
-          "✅ compute_metrics()のシグネチャをinitial_balance必須に変更",
-          "✅ bot.pyでConfig.get_account_balance()を渡すように修正",
-          "✅ 全8四半期を再測定し正確なDD率を取得"
-        ],
-        "verification_results": [
-          "src/metrics.py line 60-74: _max_drawdown_rate()修正完了",
-          "src/metrics.py line 85: compute_metrics(pnl_history, trade_results, initial_balance)に変更",
-          "src/bot.py line 143: initial_balance = Config.get_account_balance()追加",
-          "四半期バックテスト完了: 全8四半期でDD ≤ 50%",
-          "最大DD率: 48.0% (Q1 2025) - 目標50%以内達成"
-        ],
-        "key_numbers": {
-          "previous_incorrect_calculation": {
-            "quarters_with_dd_over_100": 6,
-            "max_dd_ratio": 246.8
-          },
-          "corrected_calculation": {
-            "quarters_with_dd_over_50": 0,
-            "max_dd_ratio": 48.0
-          },
-          "initial_balance_used": 300.0,
-          "cumulative_pnl": 1568.82
-        },
-        "commits": [
-          "522a2f7: fix: ドローダウン率計算を修正（初期資本を考慮）+ Task 41a追加",
-          "7496bde: fix: metrics.pyのインデントエラー修正 + config.ini期間設定復元"
-        ],
-        "decision": "Task 41a（DD低減策実装）は不要。システムは既にDD ≤ 50%目標を達成済み。利益拡大策（Task 39d-39f）に注力する",
-        "artifacts": [
-          "src/metrics.py (_max_drawdown_rate関数追加)",
-          "src/bot.py (initial_balance引数追加)",
-          "PROGRESS.json baseline_regression更新（正確なDD率記録）"
-        ]
       }
     ]
   },

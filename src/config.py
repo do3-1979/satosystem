@@ -653,6 +653,92 @@ class Config:
         except (KeyError, ValueError):
             return 1000  # デフォルト: 1000
 
+    @classmethod
+    def get_weekend_filter_enabled(cls):
+        """
+        週末エントリー回避フィルターの有効/無効を取得します.
+        土曜日・日曜日（UTC）のエントリーをスキップします.
+
+        Returns:
+            int: 1=有効, 0=無効
+        """
+        try:
+            return int(cls.config['EntryFilters']['weekend_filter_enabled'])
+        except (KeyError, ValueError):
+            return 0  # デフォルト: 無効
+
+    @classmethod
+    def get_sma_direction_filter_enabled(cls):
+        """SMA方向性フィルター有効/無効 (Brock et al. 1992 JF, Faber 2007 JOIM)"""
+        try:
+            return int(cls.config['EntryFilters']['sma_direction_filter_enabled'])
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_sma_direction_filter_period(cls):
+        """SMAフィルター期間"""
+        try:
+            return int(cls.config['EntryFilters']['sma_direction_filter_period'])
+        except (KeyError, ValueError):
+            return 200
+
+    @classmethod
+    def get_rsi_direction_filter_enabled(cls):
+        """RSI方向性フィルター有効/無効 (Wilder 1978, Liu & Tsyvinski 2021 RFS)"""
+        try:
+            return int(cls.config['EntryFilters']['rsi_direction_filter_enabled'])
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_rsi_direction_filter_period(cls):
+        """RSI計算期間"""
+        try:
+            return int(cls.config['EntryFilters']['rsi_direction_filter_period'])
+        except (KeyError, ValueError):
+            return 14
+
+    @classmethod
+    def get_macd_direction_filter_enabled(cls):
+        """MACD方向性フィルター有効/無効 (Appel 1985, Murphy 1999)"""
+        try:
+            return int(cls.config['EntryFilters']['macd_direction_filter_enabled'])
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_tsmom_filter_enabled(cls):
+        """時系列モメンタムフィルター有効/無効 (Moskowitz, Ooi, Pedersen 2012 JFE)"""
+        try:
+            return int(cls.config['EntryFilters']['tsmom_filter_enabled'])
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_tsmom_filter_lookback(cls):
+        """TSMOM ルックバック期間"""
+        try:
+            return int(cls.config['EntryFilters']['tsmom_filter_lookback'])
+        except (KeyError, ValueError):
+            return 100
+
+    @classmethod
+    def get_adx_slope_filter_enabled(cls):
+        """ADXスロープフィルター有効/無効 (Elder 1993 Trading for a Living)"""
+        try:
+            return int(cls.config['EntryFilters']['adx_slope_filter_enabled'])
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_adx_slope_filter_lookback(cls):
+        """ADXスロープ比較期間 (N期前のADXと比較)"""
+        try:
+            return int(cls.config['EntryFilters']['adx_slope_filter_lookback'])
+        except (KeyError, ValueError):
+            return 10
+
     # ==================== Seasonality セクション ====================
 
     @classmethod

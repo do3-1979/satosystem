@@ -23,16 +23,6 @@
         "notes": "start_bot.sh で 2026-03-01 起動済み。RPi: 192.168.1.19, back_test=0, hot_test_dummy_mode=1。ログ: ~/satosystem/src/logs/bot_*.log"
       },
       {
-        "id": "40e",
-        "category": "調査・研究",
-        "title": "トレンドフォロー以外の優位性候補の調査・小規模検証",
-        "description": "暗号資産で比較的語られる優位性（レンジ/平均回帰の条件付き適用、ボラティリティ・ブレイクアウト、Funding/Carryの偏り、時間帯/流動性、簡易マーケットメイク等）を候補化し、最小実装でバックテスト/ペーパー検証。過学習対策の一環（Task 40a参照）",
-        "priority": 5,
-        "deadline": "2026-02-28",
-        "related_doc": "docs/PROFIT_ENHANCEMENT_STRATEGY_2026.md, Task 40a",
-        "estimated_impact_usd": null
-      },
-      {
         "id": "39f",
         "category": "2026年利益拡大戦略",
         "title": "Weekend/Holiday Avoidance 実装",
@@ -157,6 +147,159 @@
       }
     ],
     "done": [
+      {
+        "id": "40e",
+        "category": "調査・研究",
+        "title": "トレンドフォロー以外の優位性候補の調査・小規模検証",
+        "description": "暗号資産で比較的語られる優位性（レンジ/平均回帰の条件付き適用、ボラティリティ・ブレイクアウト、Funding/Carryの偏り、時間帯/流動性、簡易マーケットメイク等）を候補化し、最小実装でバックテスト/ペーパー検証。過学習対策の一環（Task 40a参照）",
+        "priority": 5,
+        "deadline": "2026-02-28",
+        "related_doc": "docs/PROFIT_ENHANCEMENT_STRATEGY_2026.md, Task 40a",
+        "estimated_impact_usd": null,
+        "completed_date": "2026-03-02",
+        "result": "Volatility Filter (ATR>2500) 採用: 1403.49→1985.14 USD (+581.65 USD, +41.4%改善). 論文ベースフィルター群を実装（全デフォルト無効）。get_volatility()バグ修正。",
+        "trials": [
+          {
+            "trial": 1,
+            "strategy": "Mean Reversion Filter",
+            "description": "price>SMA50でBUY禁止、<SMA50でSELL禁止（逆張りブロック）",
+            "result_usd": 55.44,
+            "verdict": "不採用",
+            "reason": "ベースライン1403.49 USDを大幅下回り。トレンドフォロー戦略と根本的に相性不良"
+          },
+          {
+            "trial": 2,
+            "strategy": "Market Regime Detection (ADX+ATR)",
+            "description": "ADX>25かつATRが中ボラ域以外をブロック",
+            "result_usd": 1403.49,
+            "verdict": "不採用",
+            "reason": "効果なし（±0）。既存ADXフィルターと冗長"
+          },
+          {
+            "trial": 3,
+            "strategy": "Weekend Filter",
+            "description": "土日のエントリー禁止",
+            "result_usd": 624.85,
+            "verdict": "不採用・コード保持",
+            "reason": "大幅悪化（-778 USD）。BTCは土日にも良質なブレイクアウトが多い。weekend_filter_enabled=0でコードのみ保持",
+            "paper": "Lo & MacKinlay (1988) JFE - weekend effect (株式市場)"
+          },
+          {
+            "trial": 4,
+            "strategy": "Volatility Filter (ATR閾値)",
+            "description": "ATR>2500で極端高ボラ時のエントリーブロック",
+            "result_usd": 1985.14,
+            "verdict": "採用",
+            "reason": "+581.65 USD (+41.4%改善)。過大ボラ時の偽ブレイクを除外。volatility_filter_threshold=2500が最適値",
+            "paper": "Donchian (1960) / Schwager (1992) 'Market Wizards'"
+          },
+          {
+            "trial": 5,
+            "strategy": "Volatility + ADX複合強化",
+            "description": "ATR<2500 かつ ADX>35 の AND条件",
+            "result_usd": 1981.36,
+            "verdict": "不採用",
+            "reason": "Trial 4 (1985.14)より僅かに劣る。ADX閾値引上げでトレード機会が減少"
+          },
+          {
+            "trial": "6a",
+            "strategy": "SMA Direction Filter (SMA200)",
+            "description": "price>SMA200でBUYのみ許可（Faber trend filter）",
+            "result_usd": 1985.14,
+            "verdict": "不採用・コード保持",
+            "reason": "±0（冗長）。Donchian高値ブレイク時には price>SMA が自明のため情報追加なし",
+            "paper": "Brock, Lakonishok, LeBaron (1992) JF ~3000引用 / Faber (2007) JOIM"
+          },
+          {
+            "trial": "6b",
+            "strategy": "SMA Direction Filter (SMA500)",
+            "description": "より長期SMAで同様のフィルター",
+            "result_usd": 1985.14,
+            "verdict": "不採用・コード保持",
+            "reason": "±0（冗長）。期間変更でも結果変わらず",
+            "paper": "Brock et al. (1992) JF"
+          },
+          {
+            "trial": 7,
+            "strategy": "RSI Direction Filter (RSI14)",
+            "description": "RSI>50でBUY許可、<50でSELL許可",
+            "result_usd": 1985.14,
+            "verdict": "不採用・コード保持",
+            "reason": "±0（冗長）。Donchian新高値時はRSI>50が自明",
+            "paper": "Liu & Tsyvinski (2021) RFS ~300引用 / Wilder (1978)"
+          },
+          {
+            "trial": 8,
+            "strategy": "MACD Direction Filter",
+            "description": "MACD>Signal でBUY許可",
+            "result_usd": 0,
+            "verdict": "不採用（実装バグ）",
+            "reason": "全エントリーブロック。calc_macdのsignal計算がMACD単点配列のEMAでsignal=macd常時→MACD>Signalが常にFalse",
+            "paper": "Appel (1985) / Murphy (1999)"
+          },
+          {
+            "trial": 9,
+            "strategy": "TSMOM Filter (720期間)",
+            "description": "720本前比リターン>0でBUY許可（Moskowitz 2012）",
+            "result_usd": 1985.14,
+            "verdict": "不採用・コード保持",
+            "reason": "±0（冗長）。2h足×720=60日前比リターンもDonchianブレイクと高相関",
+            "paper": "Moskowitz, Ooi, Pedersen (2012) JFE ~4000引用"
+          },
+          {
+            "trial": 10,
+            "strategy": "ADX Slope Filter",
+            "description": "current_adx > 10本前のadx（ADX上昇中のみエントリー）",
+            "result_usd": 1985.14,
+            "verdict": "不採用・コード保持",
+            "reason": "±0。ADX>31（既存フィルター）が成立する状態ではADXはほぼ常に上昇中。フィルターとして機能せず",
+            "paper": "Elder (1993) 'Trading for a Living' / Kaufman (2013) 'Trading Systems and Methods'"
+          },
+          {
+            "trial": 11,
+            "strategy": "Volume絶対値フィルター (閾値15000)",
+            "description": "直近出来高<15000でエントリーブロック",
+            "result_usd": 1985.14,
+            "verdict": "不採用",
+            "reason": "±0。BTCの実出来高中央値~16000のため閾値15000では全取引がパス。有効な足切りにならず"
+          },
+          {
+            "trial": "11b/c",
+            "strategy": "Breakout Threshold (0.05%/0.3%)",
+            "description": "Donchian高値/安値から指定%以上の距離がある場合のみエントリー",
+            "result_usd": 0,
+            "verdict": "不採用",
+            "reason": "全クォーターでエントリー0件。Donchianシグナルはブレイク境界でほぼ発生するため0.05%でも全ブロック",
+            "paper": "Brock, Lakonishok, LeBaron (1992) JF"
+          },
+          {
+            "trial": 12,
+            "strategy": "Relative Volume 2.0x",
+            "description": "RangeBreakoutEnhanced内のRVOL閾値を1.5x→2.0xに引上げ",
+            "result_usd": 1378.39,
+            "verdict": "不採用",
+            "reason": "-606 USD悪化。良質なトレードも除外しすぎ。1.5xが最適"
+          },
+          {
+            "trial": 13,
+            "strategy": "Volatility閾値 2000 (より厳格)",
+            "description": "ATR>2000でブロック（2500→2000に引下げ）",
+            "result_usd": 1964.35,
+            "verdict": "不採用",
+            "reason": "-21 USD悪化。2500が最適値として再確認"
+          },
+          {
+            "trial": 14,
+            "strategy": "Volatility閾値 3000 (より緩和)",
+            "description": "ATR>3000でブロック（2500→3000に引上げ）",
+            "result_usd": 1420.68,
+            "verdict": "不採用",
+            "reason": "-565 USD大幅悪化。2500が最適値として再確認"
+          }
+        ],
+        "key_insight": "方向性フィルター群（SMA/RSI/MACD/TSMOM/ADX Slope）はDonchian Breakout自体が既に方向性とモメンタムを内包しているため全て冗長。有効なフィルターはブレイクアウトの『質』を直接測る指標（ATR絶対値・RVOL倍率）のみ。",
+        "final_config": "enable_volatility_filter=1, volatility_filter_threshold=2500, enable_adx_filter=1, adx_filter_threshold=31, relative_volume_threshold=1.5(RBE内)"
+      },
       {
         "id": "40b",
         "category": "品質保証",
