@@ -5,14 +5,14 @@
     "branch": "gen2",
     "last_updated": "2026-03-02",
     "baseline_performance": {
-      "cumulative_pnl_usd": 1403.49,
-      "period": "2024-2025 (8 quarters, Task 39e完了後)",
-      "baseline_file": "run_quarterly_backtest.py最新実行結果 (2026-02-08)",
+      "cumulative_pnl_usd": 1985.14,
+      "period": "2024-2025 (8 quarters, Task 40e完了後)",
+      "baseline_file": "run_quarterly_backtest.py最新実行結果 (2026-03-02)",
       "previous_baseline": {
-        "cumulative_pnl_usd": 1282.62,
-        "improvement_usd": 120.87,
-        "improvement_percent": 9.4,
-        "note": "Task 39e (Dynamic Stop Loss) 完了後の改善"
+        "cumulative_pnl_usd": 1403.49,
+        "improvement_usd": 581.65,
+        "improvement_percent": 41.4,
+        "note": "Task 40e (Volatility Filter ATR>2500) 採用後の改善"
       }
     },
     "baseline_regression_300usd": {
@@ -99,9 +99,9 @@
     }
   },
   "latest_commit": {
-    "hash": "a876ea7",
+    "hash": "d419cc9",
     "date": "2026-03-02",
-    "message": "feat: Task 40e - Volatility Filter採用(+41.4%) + 論文ベースフィルター群実装",
+    "message": "test: cost_modelレグレッションテスト追加・スイート登録",
     "changes": {
       "files_changed": 1,
       "lines_added": 103,
