@@ -155,7 +155,7 @@ def test_use_cached_data_for_hot_test_flag():
 
 
 def test_tsmom_filter_config():
-    """Task40d: TSMOMフィルター設定値の確認（psar_lookback=300, tsmom_lookback=200）"""
+    """パラメータスイープ採用: TSMOMフィルター設定値の確認（psar_lookback=300, tsmom_lookback=150）"""
     try:
         from config import Config
 
@@ -172,17 +172,17 @@ def test_tsmom_filter_config():
         if tsmom_enabled != 1:
             return False, f"❌ tsmom_filter_enabled={tsmom_enabled}（期待値: 1）。Task40d採用設定が反映されていません"
 
-        # TSMOMルックバックが200か確認
+        # TSMOMルックバックが150か確認（スイープ採用値）
         tsmom_lb = Config.get_tsmom_filter_lookback()
-        if tsmom_lb != 200:
-            return False, f"❌ tsmom_filter_lookback={tsmom_lb}（期待値: 200）"
+        if tsmom_lb != 150:
+            return False, f"❌ tsmom_filter_lookback={tsmom_lb}（期待値: 150、パラメータスイープ採用値）"
 
         # psar_lookback_term が300か確認
         max_term = Config.get_test_initial_max_term()
-        if max_term < 200:
-            return False, f"❌ get_test_initial_max_term()={max_term}（TSMOM-200動作に必要な最小200本未満）"
+        if max_term < 150:
+            return False, f"❌ get_test_initial_max_term()={max_term}（TSMOM-150動作に必要な最小150本未満）"
 
-        return True, f"✅ Task40d TSMOM設定確認: enabled={tsmom_enabled}, lookback={tsmom_lb}, window={max_term}本"
+        return True, f"✅ Task40d+sweep TSMOM設定確認: enabled={tsmom_enabled}, lookback={tsmom_lb}, window={max_term}本"
     except Exception as e:
         return False, f"❌ TSMOM設定テストエラー: {e}"
 

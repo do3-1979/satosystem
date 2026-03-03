@@ -127,6 +127,11 @@
     },
     "recently_completed": [
       {
+        "id": "sweep_metrics",
+        "description": "パラメータスイープ: tsmom_lookback=150採用 (+245 USD), 評価指標5種追加",
+        "completed_at": "2026-03-04"
+      },
+      {
         "task_id": "40d",
         "title": "現行戦略の見直し（エントリー精度PDCA）",
         "date": "2026-03-04",
@@ -149,18 +154,6 @@
         "title": "本番運用の耐障害性（API障害/再試行/部分約定/ログ監視）",
         "date": "2026-03-02",
         "description": "API耐障害性bot統合完了 - Alert統合(Discord通知)、config.py interpolation=None修正、テスト12件追加"
-      },
-      {
-        "task_id": "40c",
-        "title": "リスク・オーバーレイ（DD制限/日次損失上限/取引停止）",
-        "date": "2026-03-01",
-        "description": "RiskOverlayキルスイッチ実装完了（DD/日次損失/連続損失の3種停止、122/122 PASS）"
-      },
-      {
-        "task_id": "39d",
-        "title": "Time-Based Exit 実装",
-        "date": "2026-02-08",
-        "description": "Time-Based Exit実装完了（72h強制決済、5バグ修正、timestamp記録修正）"
       }
     ]
   },
@@ -227,7 +220,7 @@
       "enable_mean_reversion_strategy": false,
       "enable_range_breakout_enhanced": false
     },
-    "baseline": "2157.10 USD (2026-03-04, Task40d完了後)"
+    "baseline": "2402.94 USD (2026-03-04, ParamSweep tsmom_lookback=150)"
   },
   "next_actions": {
     "immediate": [

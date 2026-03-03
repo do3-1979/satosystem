@@ -1,0 +1,420 @@
+{
+  "timestamp": "20260304_065957",
+  "param_grid": [
+    [
+      200,
+      200,
+      "psar200_tsmom200"
+    ],
+    [
+      300,
+      150,
+      "psar300_tsmom150"
+    ],
+    [
+      300,
+      200,
+      "psar300_tsmom200"
+    ],
+    [
+      300,
+      250,
+      "psar300_tsmom250"
+    ],
+    [
+      300,
+      300,
+      "psar300_tsmom300"
+    ],
+    [
+      400,
+      200,
+      "psar400_tsmom200"
+    ],
+    [
+      400,
+      250,
+      "psar400_tsmom250"
+    ]
+  ],
+  "results": [
+    {
+      "label": "psar200_tsmom200",
+      "psar_lookback": 200,
+      "tsmom_lookback": 200,
+      "elapsed_sec": 146.3,
+      "annual": {
+        "2024": {
+          "total_pnl": 1920.529,
+          "profit_factor_avg": 5.612,
+          "max_drawdown_rate": 37.159,
+          "max_drawdown": 142.086,
+          "sharpe_avg": 0.25,
+          "sortino_avg": 0.413,
+          "win_rate": 70.0,
+          "payoff_ratio_avg": 3.783,
+          "expectancy_avg": 121.776,
+          "recovery_factor": 13.517,
+          "max_consec_losses": 4,
+          "total_trades": 20,
+          "profit_quarters": 2,
+          "total_quarters": 4
+        },
+        "2025": {
+          "total_pnl": 225.189,
+          "profit_factor_avg": 0.959,
+          "max_drawdown_rate": 52.955,
+          "max_drawdown": 233.562,
+          "sharpe_avg": 0.214,
+          "sortino_avg": 0.499,
+          "win_rate": 84.62,
+          "payoff_ratio_avg": 0.0,
+          "expectancy_avg": 90.295,
+          "recovery_factor": 0.964,
+          "max_consec_losses": 2,
+          "total_trades": 13,
+          "profit_quarters": 2,
+          "total_quarters": 4
+        }
+      },
+      "annual_combined": {
+        "total_pnl": 2145.718,
+        "total_trades": 33,
+        "win_rate": 75.76,
+        "sharpe_avg": 0.236,
+        "sortino_avg": 0.447,
+        "payoff_ratio_avg": 2.293,
+        "expectancy_avg": 109.374,
+        "recovery_factor": 9.187,
+        "max_drawdown_rate": 52.955,
+        "max_consec_losses": 4
+      },
+      "composite_score": 0.8478,
+      "result_file": "/home/satoshi/work/satosystem/docs/quarterly_backtest_results/quarterly_results_20260304_063915.json"
+    },
+    {
+      "label": "psar300_tsmom150",
+      "psar_lookback": 300,
+      "tsmom_lookback": 150,
+      "elapsed_sec": 213.1,
+      "annual": {
+        "2024": {
+          "total_pnl": 1927.566,
+          "profit_factor_avg": 5.612,
+          "max_drawdown_rate": 36.246,
+          "max_drawdown": 142.086,
+          "sharpe_avg": 0.392,
+          "sortino_avg": 0.449,
+          "win_rate": 73.68,
+          "payoff_ratio_avg": 3.982,
+          "expectancy_avg": 130.04,
+          "recovery_factor": 13.566,
+          "max_consec_losses": 3,
+          "total_trades": 19,
+          "profit_quarters": 2,
+          "total_quarters": 4
+        },
+        "2025": {
+          "total_pnl": 475.374,
+          "profit_factor_avg": 0.459,
+          "max_drawdown_rate": 28.766,
+          "max_drawdown": 206.094,
+          "sharpe_avg": 0.465,
+          "sortino_avg": 1.037,
+          "win_rate": 91.67,
+          "payoff_ratio_avg": 0.0,
+          "expectancy_avg": 138.341,
+          "recovery_factor": 2.307,
+          "max_consec_losses": 1,
+          "total_trades": 12,
+          "profit_quarters": 3,
+          "total_quarters": 4
+        }
+      },
+      "annual_combined": {
+        "total_pnl": 2402.94,
+        "total_trades": 31,
+        "win_rate": 80.64,
+        "sharpe_avg": 0.42,
+        "sortino_avg": 0.677,
+        "payoff_ratio_avg": 2.441,
+        "expectancy_avg": 133.253,
+        "recovery_factor": 11.659,
+        "max_drawdown_rate": 36.246,
+        "max_consec_losses": 3
+      },
+      "composite_score": 1.0942,
+      "result_file": "/home/satoshi/work/satosystem/docs/quarterly_backtest_results/quarterly_results_20260304_064247.json"
+    },
+    {
+      "label": "psar300_tsmom200",
+      "psar_lookback": 300,
+      "tsmom_lookback": 200,
+      "elapsed_sec": 215.7,
+      "annual": {
+        "2024": {
+          "total_pnl": 1920.529,
+          "profit_factor_avg": 5.612,
+          "max_drawdown_rate": 37.159,
+          "max_drawdown": 142.086,
+          "sharpe_avg": 0.25,
+          "sortino_avg": 0.413,
+          "win_rate": 70.0,
+          "payoff_ratio_avg": 3.783,
+          "expectancy_avg": 121.776,
+          "recovery_factor": 13.517,
+          "max_consec_losses": 4,
+          "total_trades": 20,
+          "profit_quarters": 2,
+          "total_quarters": 4
+        },
+        "2025": {
+          "total_pnl": 236.568,
+          "profit_factor_avg": 0.959,
+          "max_drawdown_rate": 52.955,
+          "max_drawdown": 233.562,
+          "sharpe_avg": 0.216,
+          "sortino_avg": 0.499,
+          "win_rate": 84.62,
+          "payoff_ratio_avg": 0.0,
+          "expectancy_avg": 90.295,
+          "recovery_factor": 1.013,
+          "max_consec_losses": 2,
+          "total_trades": 13,
+          "profit_quarters": 2,
+          "total_quarters": 4
+        }
+      },
+      "annual_combined": {
+        "total_pnl": 2157.097,
+        "total_trades": 33,
+        "win_rate": 75.76,
+        "sharpe_avg": 0.237,
+        "sortino_avg": 0.447,
+        "payoff_ratio_avg": 2.293,
+        "expectancy_avg": 109.374,
+        "recovery_factor": 9.236,
+        "max_drawdown_rate": 52.955,
+        "max_consec_losses": 4
+      },
+      "composite_score": 0.8499,
+      "result_file": "/home/satoshi/work/satosystem/docs/quarterly_backtest_results/quarterly_results_20260304_064622.json"
+    },
+    {
+      "label": "psar300_tsmom250",
+      "psar_lookback": 300,
+      "tsmom_lookback": 250,
+      "elapsed_sec": 208.9,
+      "annual": {
+        "2024": {
+          "total_pnl": 1681.839,
+          "profit_factor_avg": 4.282,
+          "max_drawdown_rate": 37.159,
+          "max_drawdown": 117.754,
+          "sharpe_avg": 0.258,
+          "sortino_avg": 0.973,
+          "win_rate": 61.11,
+          "payoff_ratio_avg": 6.383,
+          "expectancy_avg": 97.274,
+          "recovery_factor": 14.283,
+          "max_consec_losses": 4,
+          "total_trades": 18,
+          "profit_quarters": 2,
+          "total_quarters": 4
+        },
+        "2025": {
+          "total_pnl": 198.796,
+          "profit_factor_avg": 0.72,
+          "max_drawdown_rate": 52.955,
+          "max_drawdown": 206.094,
+          "sharpe_avg": 0.176,
+          "sortino_avg": 0.423,
+          "win_rate": 86.67,
+          "payoff_ratio_avg": 0.0,
+          "expectancy_avg": 109.492,
+          "recovery_factor": 0.965,
+          "max_consec_losses": 2,
+          "total_trades": 15,
+          "profit_quarters": 3,
+          "total_quarters": 4
+        }
+      },
+      "annual_combined": {
+        "total_pnl": 1880.635,
+        "total_trades": 33,
+        "win_rate": 72.73,
+        "sharpe_avg": 0.221,
+        "sortino_avg": 0.723,
+        "payoff_ratio_avg": 3.482,
+        "expectancy_avg": 102.828,
+        "recovery_factor": 9.125,
+        "max_drawdown_rate": 52.955,
+        "max_consec_losses": 4
+      },
+      "composite_score": 0.937,
+      "result_file": "/home/satoshi/work/satosystem/docs/quarterly_backtest_results/quarterly_results_20260304_064946.json"
+    },
+    {
+      "label": "psar300_tsmom300",
+      "psar_lookback": 300,
+      "tsmom_lookback": 300,
+      "elapsed_sec": 218.2,
+      "annual": {
+        "2024": {
+          "total_pnl": 1681.684,
+          "profit_factor_avg": 4.281,
+          "max_drawdown_rate": 37.159,
+          "max_drawdown": 117.754,
+          "sharpe_avg": 0.332,
+          "sortino_avg": 1.03,
+          "win_rate": 64.71,
+          "payoff_ratio_avg": 6.758,
+          "expectancy_avg": 107.116,
+          "recovery_factor": 14.281,
+          "max_consec_losses": 4,
+          "total_trades": 17,
+          "profit_quarters": 2,
+          "total_quarters": 4
+        },
+        "2025": {
+          "total_pnl": 193.344,
+          "profit_factor_avg": 2.257,
+          "max_drawdown_rate": 52.955,
+          "max_drawdown": 158.866,
+          "sharpe_avg": 0.084,
+          "sortino_avg": 0.673,
+          "win_rate": 78.57,
+          "payoff_ratio_avg": 0.684,
+          "expectancy_avg": 90.35,
+          "recovery_factor": 1.217,
+          "max_consec_losses": 2,
+          "total_trades": 14,
+          "profit_quarters": 2,
+          "total_quarters": 4
+        }
+      },
+      "annual_combined": {
+        "total_pnl": 1875.028,
+        "total_trades": 31,
+        "win_rate": 70.97,
+        "sharpe_avg": 0.22,
+        "sortino_avg": 0.869,
+        "payoff_ratio_avg": 4.015,
+        "expectancy_avg": 99.544,
+        "recovery_factor": 11.803,
+        "max_drawdown_rate": 52.955,
+        "max_consec_losses": 4
+      },
+      "composite_score": 1.0108,
+      "result_file": "/home/satoshi/work/satosystem/docs/quarterly_backtest_results/quarterly_results_20260304_065331.json"
+    },
+    {
+      "label": "psar400_tsmom200",
+      "psar_lookback": 400,
+      "tsmom_lookback": 200,
+      "elapsed_sec": 208.1,
+      "annual": {
+        "2024": {
+          "total_pnl": 1920.529,
+          "profit_factor_avg": 5.612,
+          "max_drawdown_rate": 37.159,
+          "max_drawdown": 142.086,
+          "sharpe_avg": 0.25,
+          "sortino_avg": 0.413,
+          "win_rate": 70.0,
+          "payoff_ratio_avg": 3.783,
+          "expectancy_avg": 121.776,
+          "recovery_factor": 13.517,
+          "max_consec_losses": 4,
+          "total_trades": 20,
+          "profit_quarters": 2,
+          "total_quarters": 4
+        },
+        "2025": {
+          "total_pnl": 225.189,
+          "profit_factor_avg": 0.959,
+          "max_drawdown_rate": 52.955,
+          "max_drawdown": 233.562,
+          "sharpe_avg": 0.214,
+          "sortino_avg": 0.499,
+          "win_rate": 84.62,
+          "payoff_ratio_avg": 0.0,
+          "expectancy_avg": 90.295,
+          "recovery_factor": 0.964,
+          "max_consec_losses": 2,
+          "total_trades": 13,
+          "profit_quarters": 2,
+          "total_quarters": 4
+        }
+      },
+      "annual_combined": {
+        "total_pnl": 2145.718,
+        "total_trades": 33,
+        "win_rate": 75.76,
+        "sharpe_avg": 0.236,
+        "sortino_avg": 0.447,
+        "payoff_ratio_avg": 2.293,
+        "expectancy_avg": 109.374,
+        "recovery_factor": 9.187,
+        "max_drawdown_rate": 52.955,
+        "max_consec_losses": 4
+      },
+      "composite_score": 0.8478,
+      "result_file": "/home/satoshi/work/satosystem/docs/quarterly_backtest_results/quarterly_results_20260304_065702.json"
+    },
+    {
+      "label": "psar400_tsmom250",
+      "psar_lookback": 400,
+      "tsmom_lookback": 250,
+      "elapsed_sec": 173.9,
+      "annual": {
+        "2024": {
+          "total_pnl": 1681.839,
+          "profit_factor_avg": 4.282,
+          "max_drawdown_rate": 37.159,
+          "max_drawdown": 117.754,
+          "sharpe_avg": 0.258,
+          "sortino_avg": 0.973,
+          "win_rate": 61.11,
+          "payoff_ratio_avg": 6.383,
+          "expectancy_avg": 97.274,
+          "recovery_factor": 14.283,
+          "max_consec_losses": 4,
+          "total_trades": 18,
+          "profit_quarters": 2,
+          "total_quarters": 4
+        },
+        "2025": {
+          "total_pnl": 187.417,
+          "profit_factor_avg": 0.72,
+          "max_drawdown_rate": 52.955,
+          "max_drawdown": 206.094,
+          "sharpe_avg": 0.174,
+          "sortino_avg": 0.423,
+          "win_rate": 86.67,
+          "payoff_ratio_avg": 0.0,
+          "expectancy_avg": 109.492,
+          "recovery_factor": 0.909,
+          "max_consec_losses": 2,
+          "total_trades": 15,
+          "profit_quarters": 3,
+          "total_quarters": 4
+        }
+      },
+      "annual_combined": {
+        "total_pnl": 1869.256,
+        "total_trades": 33,
+        "win_rate": 72.73,
+        "sharpe_avg": 0.22,
+        "sortino_avg": 0.723,
+        "payoff_ratio_avg": 3.482,
+        "expectancy_avg": 102.828,
+        "recovery_factor": 9.07,
+        "max_drawdown_rate": 52.955,
+        "max_consec_losses": 4
+      },
+      "composite_score": 0.9348,
+      "result_file": "/home/satoshi/work/satosystem/docs/quarterly_backtest_results/quarterly_results_20260304_065956.json"
+    }
+  ]
+}

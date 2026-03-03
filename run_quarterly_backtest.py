@@ -288,11 +288,9 @@ def run_backtest(year, q, start_str, end_str):
                 print(f"   ⚠️  古いログ削除エラー: {e}")
         
         print(f"   ✅ バックテスト完了")
-        print(f"      - 総損益: {metrics.get('total_pnl', 'N/A')} USD")
-        print(f"      - 利益因子: {metrics.get('profit_factor', 'N/A')}")
-        print(f"      - 最大DD率: {metrics.get('max_drawdown_rate', 'N/A')}%")
-        print(f"      - Sharpe: {metrics.get('sharpe', 'N/A')}")
-        print(f"      - 勝率: {metrics.get('win_rate', 'N/A')}%")
+        print(f"      - 総損益: {metrics.get('total_pnl', 'N/A')} USD  |  利益因子: {metrics.get('profit_factor', 'N/A')}")
+        print(f"      - 最大DD率: {metrics.get('max_drawdown_rate', 'N/A')}%  |  Sharpe: {metrics.get('sharpe', 'N/A')}  |  Sortino: {metrics.get('sortino', 'N/A')}")
+        print(f"      - 勝率: {metrics.get('win_rate', 'N/A')}%  |  PayoffR: {metrics.get('payoff_ratio', 'N/A')}  |  Expectancy: {metrics.get('expectancy', 'N/A')} USD")
         
         return metrics
     
@@ -316,16 +314,83 @@ def save_results(results):
     return output_file
 
 
+def compute_annual_metrics(quarterly_results):
+    """複数の四半期結果から年間集計メトリクスを計算"""
+    valid = [r for r in quarterly_results if r.get('metrics')]
+    if not valid:
+        return None
+    
+    total_pnl = sum(r['metrics'].get('total_pnl', 0) for r in valid)
+    total_trades = sum(r['metrics'].get('trades', 0) for r in valid)
+    total_wins = sum(
+        round(r['metrics'].get('win_rate', 0) / 100.0 * r['metrics'].get('trades', 0))
+        for r in valid
+    )
+    win_rate = (total_wins / total_trades * 100) if total_trades > 0 else 0.0
+    
+    # 最悪ドローダウン
+    max_dd_rate = max((r['metrics'].get('max_drawdown_rate', 0) for r in valid), default=0.0)
+    max_dd_usd = max((r['metrics'].get('max_drawdown', 0) for r in valid), default=0.0)
+    
+    # Sharpe: 加重平均（trades比率）
+    sharpe_vals = [(r['metrics'].get('sharpe', 0), r['metrics'].get('trades', 0)) for r in valid]
+    total_w = sum(w for _, w in sharpe_vals)
+    sharpe_avg = sum(s * w for s, w in sharpe_vals) / total_w if total_w > 0 else 0.0
+    
+    # Sortino: 加重平均
+    sortino_vals = [(r['metrics'].get('sortino', 0), r['metrics'].get('trades', 0)) for r in valid]
+    sortino_avg = sum(s * w for s, w in sortino_vals) / total_w if total_w > 0 else 0.0
+    
+    # Profit Factor: 年間合算
+    pf_vals = [r['metrics'].get('profit_factor', 0) for r in valid]
+    pf_avg = sum(pf_vals) / len(pf_vals) if pf_vals else 0.0
+    
+    # Payoff Ratio: 加重平均
+    pr_vals = [(r['metrics'].get('payoff_ratio', 0), r['metrics'].get('trades', 0)) for r in valid]
+    pr_avg = sum(p * w for p, w in pr_vals) / total_w if total_w > 0 else 0.0
+    
+    # Expectancy: 加重平均
+    exp_vals = [(r['metrics'].get('expectancy', 0), r['metrics'].get('trades', 0)) for r in valid]
+    exp_avg = sum(e * w for e, w in exp_vals) / total_w if total_w > 0 else 0.0
+    
+    # Recovery Factor: 年間(総損益/最大DD)
+    recovery = round(total_pnl / max_dd_usd, 3) if max_dd_usd > 0 else 0.0
+    
+    # Max Consec Losses
+    max_consec = max((r['metrics'].get('max_consec_losses', 0) for r in valid), default=0)
+    
+    # 勝ち/負け四半期数
+    profit_quarters = sum(1 for r in valid if r['metrics'].get('total_pnl', 0) > 0)
+    
+    return {
+        "total_pnl": round(total_pnl, 3),
+        "profit_factor_avg": round(pf_avg, 3),
+        "max_drawdown_rate": round(max_dd_rate, 3),
+        "max_drawdown": round(max_dd_usd, 3),
+        "sharpe_avg": round(sharpe_avg, 3),
+        "sortino_avg": round(sortino_avg, 3),
+        "win_rate": round(win_rate, 2),
+        "payoff_ratio_avg": round(pr_avg, 3),
+        "expectancy_avg": round(exp_avg, 3),
+        "recovery_factor": round(recovery, 3),
+        "max_consec_losses": max_consec,
+        "total_trades": total_trades,
+        "profit_quarters": profit_quarters,
+        "total_quarters": len(valid),
+    }
+
+
 def print_summary(results):
     """結果の要約を表示"""
-    print("\n" + "=" * 100)
-    print("📊 四半期別バックテスト成績一覧")
-    print("=" * 100)
+    print("\n" + "=" * 120)
+    print("📊 四半期別バックテスト成績一覧（拡張指標）")
+    print("=" * 120)
     
-    print("\n{:<12} {:<15} {:<15} {:<15} {:<12} {:<12}".format(
-        "期間", "総損益 (USD)", "利益因子", "最大DD率", "Sharpe", "勝率"
+    # 基本指標テーブル
+    print("\n{:<12} {:<12} {:<10} {:<10} {:<10} {:<10} {:<10} {:<12} {:<8}".format(
+        "期間", "損益(USD)", "PF", "MaxDD%", "Sharpe", "Sortino", "Recov.", "Expectancy", "勝率"
     ))
-    print("-" * 100)
+    print("-" * 120)
     
     total_pnl = 0
     successful_quarters = 0
@@ -333,33 +398,49 @@ def print_summary(results):
     for result in results:
         if result['metrics']:
             q_str = f"Q{result['quarter']} {result['year']}"
-            total_pnl_val = result['metrics'].get('total_pnl', 0)
+            m = result['metrics']
+            total_pnl_val = m.get('total_pnl', 0)
             total_pnl += total_pnl_val
             successful_quarters += 1
             
-            # max_drawdown_rate（%）を使用（修正済み：初期資産込み計算で100%以下）
-            max_dd_rate = result['metrics'].get('max_drawdown_rate', 0)
-            
-            print("{:<12} {:<15.2f} {:<15.3f} {:<14.2f}% {:<12.3f} {:<12.2f}%".format(
+            print("{:<12} {:<12.2f} {:<10.3f} {:<9.2f}% {:<10.3f} {:<10.3f} {:<10.3f} {:<12.2f} {:<8.1f}%".format(
                 q_str,
                 total_pnl_val,
-                result['metrics'].get('profit_factor', 0),
-                max_dd_rate,
-                result['metrics'].get('sharpe', 0),
-                result['metrics'].get('win_rate', 0)
+                m.get('profit_factor', 0),
+                m.get('max_drawdown_rate', 0),
+                m.get('sharpe', 0),
+                m.get('sortino', 0),
+                m.get('recovery_factor', 0),
+                m.get('expectancy', 0),
+                m.get('win_rate', 0),
             ))
         else:
             q_str = f"Q{result['quarter']} {result['year']}"
-            print("{:<12} {:<15} {:<15} {:<15} {:<12} {:<12}".format(
-                q_str, "失敗", "-", "-", "-", "-"
-            ))
+            print("{:<12} {:<12}".format(q_str, "失敗"))
     
-    print("-" * 100)
+    print("-" * 120)
     print(f"\n📈 統計:")
     print(f"  - 成功した四半期: {successful_quarters}/{len(results)}")
     print(f"  - 累積損益: {total_pnl:.2f} USD")
     print(f"  - 平均四半期損益: {total_pnl / successful_quarters if successful_quarters > 0 else 0:.2f} USD")
+    
+    # 年間評価を計算・表示
+    results_2024 = [r for r in results if r['year'] == 2024 and r['metrics']]
+    results_2025 = [r for r in results if r['year'] == 2025 and r['metrics']]
+    
+    annual_evals = {}
+    for year, qresults in [(2024, results_2024), (2025, results_2025)]:
+        if qresults:
+            ann = compute_annual_metrics(qresults)
+            annual_evals[year] = ann
+            print(f"\n  📅 {year}年 通年評価:")
+            print(f"     総損益: {ann['total_pnl']:.2f} USD  |  勝率: {ann['win_rate']:.1f}%  |  総トレード: {ann['total_trades']}")
+            print(f"     PF平均: {ann['profit_factor_avg']:.3f}  |  最大DD率: {ann['max_drawdown_rate']:.2f}%  |  RecovFactor: {ann['recovery_factor']:.3f}")
+            print(f"     Sharpe: {ann['sharpe_avg']:.3f}  |  Sortino: {ann['sortino_avg']:.3f}  |  PayoffRatio: {ann['payoff_ratio_avg']:.3f}")
+            print(f"     期待値/取引: {ann['expectancy_avg']:.2f} USD  |  最大連続損失: {ann['max_consec_losses']}回  |  利益Q: {ann['profit_quarters']}/{ann['total_quarters']}")
+    
     print()
+    return annual_evals
 
 
 def main():
@@ -416,10 +497,15 @@ def main():
         })
     
     # 結果を表示
-    print_summary(results)
+    annual_evals = print_summary(results)
     
-    # 結果をファイルに保存
-    output_file = save_results(results)
+    # 結果をファイルに保存（年間評価も含む）
+    save_data = {
+        "quarterly": results,
+        "annual": {str(k): v for k, v in annual_evals.items()},
+        "generated_at": datetime.now().isoformat(),
+    }
+    output_file = save_results(save_data)
     print(f"✅ 結果を保存しました: {output_file}")
     
     # ログファイルの確認（要約情報のみ）

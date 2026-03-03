@@ -69,6 +69,8 @@ class Bot:
         self.pnl_history = []
         # 約定履歴カウント (勝率計算用)
         self.trade_results = []  # list of bool win( True ) / loss( False )
+        # per-trade損益リスト (期待値・RR比率計算用)
+        self.trade_pnls = []  # list of float per-trade PnL (USD)
         # Task 40c: リスク・オーバーレイ（キルスイッチ）
         self.risk_overlay = RiskOverlay()
         # Task 40g: アラート通知（Discord Webhook, alert_enabled=0でデフォルト無効）
@@ -161,8 +163,10 @@ class Bot:
 
                         # 追加メトリクス計算（初期資本を渡してDD率を正しく計算）
                         initial_balance = Config.get_account_balance()
-                        metrics = compute_metrics(self.pnl_history, self.trade_results, initial_balance)
-                        self.logger.log(f"Sharpe: {metrics['sharpe']:.3f}")
+                        metrics = compute_metrics(self.pnl_history, self.trade_results, initial_balance, trade_pnls=self.trade_pnls)
+                        self.logger.log(f"Sharpe: {metrics['sharpe']:.3f}  Sortino: {metrics['sortino']:.3f}")
+                        self.logger.log(f"RecoveryFactor: {metrics['recovery_factor']:.3f}  PayoffRatio: {metrics['payoff_ratio']:.3f}")
+                        self.logger.log(f"Expectancy: {metrics['expectancy']:.2f} USD  MaxConseqLoss: {metrics['max_consec_losses']}")
                         self.logger.log(f"WinRate: {metrics['win_rate']:.2f}% Trades: {metrics['trades']}")
                         # JSON出力
                         try:
@@ -307,6 +311,8 @@ class Bot:
                         self.portfolio.clear_position_quantity(price, is_backtest=is_backtest)
                         # EXITで確定した損益を勝敗判定 (正なら勝ち)
                         self.trade_results.append(pnl >= 0)
+                        # per-trade損益を記録 (期待値・RR比率計算用)
+                        self.trade_pnls.append(pnl)
                         # Task 40c: RiskOverlayに損益を通知
                         self.risk_overlay.notify_trade_result(pnl)
                         # Task 40g: EXIT取引実行通知（ライブモードのみ）
