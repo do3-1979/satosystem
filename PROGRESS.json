@@ -114,13 +114,6 @@
     "active_tasks": {
       "in_progress": [
         {
-          "task_id": "40d",
-          "title": "現行戦略の見直し（エントリー/EXITの整合性監査）",
-          "status": "実装中",
-          "priority": "★★★★★",
-          "note": "Walk-Forward分析で過学習検出。戦略の根本的見直しを実施中"
-        },
-        {
           "task_id": "43",
           "title": "RPiホットテスト1週間耐久テスト - ログ検証",
           "status": "稼働中",
@@ -133,6 +126,12 @@
       "next_priority": []
     },
     "recently_completed": [
+      {
+        "task_id": "40d",
+        "title": "現行戦略の見直し（エントリー精度PDCA）",
+        "date": "2026-03-04",
+        "description": "PDCA #3採用: psar_lookback_term=100→300 + tsmom_filter(lookback=200)で+172 USD改善 (1985→2157 USD, +8.7%)"
+      },
       {
         "task_id": "40e",
         "title": "トレンドフォロー以外の優位性候補の調査・小規模検証",
@@ -204,10 +203,11 @@
     }
   },
   "test_suite": {
-    "total_tests": 122,
+    "total_tests": 129,
     "pass_rate": "100%",
     "test_files": 26,
-    "last_regression_test": "2026-03-01"
+    "last_regression_test": "2026-03-04",
+    "regression_status": "129/129 PASS (100%)"
   },
   "configuration": {
     "current_parameters": {
@@ -226,7 +226,8 @@
       "enable_vcp_strategy": false,
       "enable_mean_reversion_strategy": false,
       "enable_range_breakout_enhanced": false
-    }
+    },
+    "baseline": "2157.10 USD (2026-03-04, Task40d完了後)"
   },
   "next_actions": {
     "immediate": [

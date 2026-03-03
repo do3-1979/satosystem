@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0",
-    "last_updated": "2026-03-03",
+    "last_updated": "2026-03-04",
     "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE) - ベースライン更新 1985.14 USD (Task 40e). Task 44イグジット戦略PDCA完了（全5案不採用）",
     "replaces": "docs/ACTION_LIST.md",
     "workflow_rules": {
@@ -112,17 +112,6 @@
     ],
     "progress": [
       {
-        "id": "40d",
-        "category": "戦略監査",
-        "title": "現行戦略の見直し（エントリー/EXITの整合性監査）",
-        "description": "Donchian/PVO/ADX/新指標/Exit(PSAR等)の相互作用を点検し、(1)過剰フィルタで機会損失、(2)Exitが早すぎて期待値棄損、(3)反転局面で逆行、のどれが支配的かを定量化して改善案を作る。本番運用前必須、過学習リスクあり（Task 40a参照）",
-        "status": "分析中",
-        "priority": 5,
-        "deadline": "2026-02-28",
-        "related_doc": "docs/ARCHITECTURE_OVERVIEW.md, Task 40a (過学習検出)",
-        "estimated_impact_usd": null
-      },
-      {
         "task_id": "43",
         "title": "RPiホットテスト1週間耐久テスト - ログ検証",
         "description": "RPi上でホットテストダミーモードを1週間稼働させ、ログを回収・検証する。確認項目: (1)プロセスが1週間連続稼働したか、(2)エラー/クラッシュがないか、(3)トレードシグナルが期待通り発火しているか、(4)メモリリーク等の異常がないか。",
@@ -138,6 +127,62 @@
     ],
     "done": [
       {
+        "id": "40d",
+        "title": "現行戦略の見直し（エントリー精度PDCA・戦略監査）",
+        "category": "戦略監査",
+        "completed_date": "2026-03-04",
+        "baseline_before": "1985.14 USD",
+        "baseline_after": "2157.10 USD (+172.0 USD, +8.7%)",
+        "result": "5回PDCA実施。PDCA #3採用: psar_lookback_term=100→300 + tsmom_filter(lookback=200)で+172 USD改善。根本発見: OHLCVウィンドウが100本しかなく既存方向フィルター(RSI/MACD/SMA/ADX傾き)がlookbackデータ不足で全て素通り。psar_lookback拡大でPSAR精度向上+TSMOM-200(33日)で下降局面BUYを一部阻止。",
+        "pdca_results": [
+          {
+            "pdca": 1,
+            "name": "RSI方向フィルター(period=14)",
+            "result_usd": 1985.14,
+            "delta_usd": 0.0,
+            "verdict": "不採用",
+            "reason": "Donchianと冗長・変化なし"
+          },
+          {
+            "pdca": 2,
+            "name": "Donchian 55期間",
+            "result_usd": 1460.65,
+            "delta_usd": -524.49,
+            "verdict": "不採用",
+            "reason": "Q4 2024エントリー遅延で-524 USD"
+          },
+          {
+            "pdca": 3,
+            "name": "TSMOM-200 + psar_lookback=300",
+            "result_usd": 2157.1,
+            "delta_usd": 172.0,
+            "verdict": "採用",
+            "reason": "+172 USD。PSAR精度向上+33日モメンタム整合で複数四半期改善"
+          },
+          {
+            "pdca": 4,
+            "name": "ADX傾きフィルター",
+            "result_usd": 1645.52,
+            "delta_usd": -511.0,
+            "verdict": "不採用",
+            "reason": "トレンド開始時ADXまだ上昇中でなく最良エントリーを阻止"
+          },
+          {
+            "pdca": 5,
+            "name": "MACD方向フィルター",
+            "result_usd": 0.0,
+            "delta_usd": -2157.1,
+            "verdict": "不採用",
+            "reason": "全トレード阻止(0 USD)"
+          }
+        ],
+        "config_changes": [
+          "psar_lookback_term: 100 → 300",
+          "tsmom_filter_enabled: 0 → 1",
+          "tsmom_filter_lookback: 100 → 200"
+        ]
+      },
+      {
         "id": "44",
         "title": "イグジット戦略PDCA改善プロジェクト (Exit Strategy Optimization)",
         "priority": 5,
@@ -151,7 +196,13 @@
           "run_quarterly_backtest.py: getCtime→getMtime修正（2143個の古いsummaryファイルで誤ファイル参照バグ修正）",
           "TBE backward compatibility確認（entry_price=0でTBEが意図的に無効化されていたことを文書化）"
         ],
-        "sub_tasks": ["44a", "44b", "44c", "44d", "44e"]
+        "sub_tasks": [
+          "44a",
+          "44b",
+          "44c",
+          "44d",
+          "44e"
+        ]
       },
       {
         "id": "44a",
@@ -165,7 +216,12 @@
         "delta_usd": -1809.71,
         "verdict": "不採用",
         "reason": "ATR×3.0がPSAR常に優先→augmentモード発動なし。replace modeでは強トレンドでもChandelierが発動せずポジション未決済問題が発生。mult=3.0は大きすぎてPSARより常にルーズ",
-        "files_modified": ["src/exit_strategy_v2.py", "src/trading_strategy.py", "src/config.py", "src/config.ini"]
+        "files_modified": [
+          "src/exit_strategy_v2.py",
+          "src/trading_strategy.py",
+          "src/config.py",
+          "src/config.ini"
+        ]
       },
       {
         "id": "44b",
@@ -179,7 +235,12 @@
         "delta_usd": -42.92,
         "verdict": "不採用",
         "reason": "PSLのTier1（MFE≥2%→1%以下でEXIT）がBTCの通常の2-3%揺れで早期発動→その後回復し損失拡大。Q3 2024で確認: MFE=3.4%→0.5%でEXITしたが相場継続",
-        "files_modified": ["src/exit_strategy_v2.py", "src/trading_strategy.py", "src/config.py", "src/config.ini"]
+        "files_modified": [
+          "src/exit_strategy_v2.py",
+          "src/trading_strategy.py",
+          "src/config.py",
+          "src/config.ini"
+        ]
       },
       {
         "id": "44c",
@@ -193,7 +254,9 @@
         "delta_usd": 0.0,
         "verdict": "不採用（未発動）",
         "reason": "augmentモード（mult=1.5）: PSAR常に優先で発動不可。replaceモード（mult=1.5）: 強トレンドでChandelierが発動せずポジション未決済→0 USD。ATR trailing stopはこのシステムのPSAR補完として機能しない",
-        "files_modified": ["src/config.ini (既存実装のパラメータ変更のみ)"]
+        "files_modified": [
+          "src/config.ini (既存実装のパラメータ変更のみ)"
+        ]
       },
       {
         "id": "44d",
@@ -207,7 +270,12 @@
         "delta_usd": -460.18,
         "verdict": "不採用",
         "reason": "Volume Climaxが強トレンドの途中でEXIT→その後トレンド継続で損失。Q1 2024: +357→-50 USD。強トレンドはしばしば出来高急増を伴うため、このシステムと根本的に相性不良",
-        "files_modified": ["src/exit_strategy_v2.py", "src/trading_strategy.py", "src/config.py", "src/config.ini"]
+        "files_modified": [
+          "src/exit_strategy_v2.py",
+          "src/trading_strategy.py",
+          "src/config.py",
+          "src/config.ini"
+        ]
       },
       {
         "id": "44e",
@@ -221,7 +289,12 @@
         "delta_usd": -1795.69,
         "verdict": "不採用",
         "reason": "ADX/PVO一時低下でもトレンドが継続するケースが多く、Q4 2024の主要利益（+1831→+294 USD）の大部分を損失。Donchian Breakoutシステムのトレンド継続性を阻害する",
-        "files_modified": ["src/exit_strategy_v2.py", "src/trading_strategy.py", "src/config.py", "src/config.ini"]
+        "files_modified": [
+          "src/exit_strategy_v2.py",
+          "src/trading_strategy.py",
+          "src/config.py",
+          "src/config.ini"
+        ]
       },
       {
         "id": "40e",

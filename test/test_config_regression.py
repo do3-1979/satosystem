@@ -154,6 +154,55 @@ def test_use_cached_data_for_hot_test_flag():
         return False, f"❌ get_use_cached_data_for_hot_test テストエラー: {e}"
 
 
+def test_tsmom_filter_config():
+    """Task40d: TSMOMフィルター設定値の確認（psar_lookback=300, tsmom_lookback=200）"""
+    try:
+        from config import Config
+
+        # get_tsmom_filter_enabled メソッド存在確認
+        if not hasattr(Config, 'get_tsmom_filter_enabled'):
+            return False, "❌ get_tsmom_filter_enabled メソッドが存在しません"
+
+        # get_tsmom_filter_lookback メソッド存在確認
+        if not hasattr(Config, 'get_tsmom_filter_lookback'):
+            return False, "❌ get_tsmom_filter_lookback メソッドが存在しません"
+
+        # TSMOMが有効（=1）か確認
+        tsmom_enabled = Config.get_tsmom_filter_enabled()
+        if tsmom_enabled != 1:
+            return False, f"❌ tsmom_filter_enabled={tsmom_enabled}（期待値: 1）。Task40d採用設定が反映されていません"
+
+        # TSMOMルックバックが200か確認
+        tsmom_lb = Config.get_tsmom_filter_lookback()
+        if tsmom_lb != 200:
+            return False, f"❌ tsmom_filter_lookback={tsmom_lb}（期待値: 200）"
+
+        # psar_lookback_term が300か確認
+        max_term = Config.get_test_initial_max_term()
+        if max_term < 200:
+            return False, f"❌ get_test_initial_max_term()={max_term}（TSMOM-200動作に必要な最小200本未満）"
+
+        return True, f"✅ Task40d TSMOM設定確認: enabled={tsmom_enabled}, lookback={tsmom_lb}, window={max_term}本"
+    except Exception as e:
+        return False, f"❌ TSMOM設定テストエラー: {e}"
+
+
+def test_psar_lookback_window():
+    """Task40d: psar_lookback_term=300によるOHLCVウィンドウ拡張確認"""
+    try:
+        from config import Config
+
+        max_term = Config.get_test_initial_max_term()
+
+        # 300本以上のウィンドウが確保されているか確認
+        if max_term < 300:
+            return False, f"❌ get_test_initial_max_term()={max_term}（期待値: ≥300。psar_lookback_term=300が未反映）"
+
+        return True, f"✅ OHLCVウィンドウ: {max_term}本（psar_lookback_term=300有効）"
+    except Exception as e:
+        return False, f"❌ psar_lookbackウィンドウテストエラー: {e}"
+
+
 def run_all_tests():
     """全テストを実行"""
     tests = [
@@ -163,6 +212,8 @@ def run_all_tests():
         ("Config classmethod 確認", test_config_classmethods),
         ("Config インスタンス化確認", test_config_instantiation),
         ("Task42: use_cached_data_for_hot_test フラグ確認", test_use_cached_data_for_hot_test_flag),
+        ("Task40d: TSMOMフィルター設定確認", test_tsmom_filter_config),
+        ("Task40d: psar_lookback_term=300ウィンドウ確認", test_psar_lookback_window),
     ]
     
     results = []

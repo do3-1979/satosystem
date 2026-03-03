@@ -100,6 +100,29 @@ def test_trading_strategy_init_signature():
         return False, f"❌ シグネチャ確認エラー: {e}"
 
 
+def test_tsmom_filter_logic():
+    """Task40d: trading_strategy.pyにTSMOMフィルターロジックが実装されているか確認"""
+    try:
+        ts_file = os.path.join(SRC_DIR, "trading_strategy.py")
+        with open(ts_file, encoding="utf-8") as f:
+            content = f.read()
+
+        checks = [
+            ("TSMOMフィルター有効チェック", "get_tsmom_filter_enabled" in content),
+            ("TSMOMルックバック取得", "get_tsmom_filter_lookback" in content),
+            ("TSMOMリターン計算", "tsmom_ret" in content),
+            ("TSMOMBUYフィルター", 'TSMOM: ✗ BUY却下' in content),
+            ("TSMOMSELLフィルター", 'TSMOM: ✗ SELL却下' in content),
+        ]
+
+        all_passed = all(c[1] for c in checks)
+        details = "; ".join([f"{c[0]}: {'✓' if c[1] else '✗'}" for c in checks])
+        return all_passed, (f"✅ Task40d TSMOMフィルターロジック確認: {details}" if all_passed
+                            else f"❌ Task40d TSMOMロジック不足: {details}")
+    except Exception as e:
+        return False, f"❌ TSMOMロジックテストエラー: {e}"
+
+
 def run_all_tests():
     """全テストを実行"""
     tests = [
@@ -107,6 +130,7 @@ def run_all_tests():
         ("TradingStrategy メソッド確認", test_trading_strategy_methods),
         ("判定メソッド確認", test_trading_decision_methods),
         ("TradingStrategy.__init__ シグネチャ確認", test_trading_strategy_init_signature),
+        ("Task40d: TSMOMフィルターロジック確認", test_tsmom_filter_logic),
     ]
     
     results = []
