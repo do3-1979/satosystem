@@ -359,8 +359,8 @@ class BybitExchange(Exchange):
         Returns:
             dict or bool: 注文結果
         """
-        # バックテスト時のみダミー注文
-        if self.is_backtest_mode:
+        # バックテスト・ペーパートレード時はダミー注文（実APIを呼ばない）
+        if self.is_backtest_mode or self.is_papertrading_mode:
             return self._dummy_entry_order(side, quantity, current_price)
         
         # 現時点では成行注文を優先（早期約定を重視）
@@ -471,17 +471,18 @@ class BybitExchange(Exchange):
         Returns:
             dict or bool: 注文結果
         """
-        # バックテスト時のみダミー取引
-        if self.is_backtest_mode:
+        # バックテスト・ペーパートレード時はダミー取引（実APIを呼ばない）
+        if self.is_backtest_mode or self.is_papertrading_mode:
             return self._dummy_exit_order(side, quantity)
         
         # 現時点では成行注文を優先（早期約定を重視）
+        # reduceOnly=True: 既存ポジションのみクローズ（Bybit先物でreduce-onlyに変換される）
         try:
             order = self.exchange.create_market_order(
                 symbol=self.market,
                 side=side,
                 amount=quantity,
-                params={'timeout': 10000}
+                params={'timeout': 10000, 'reduceOnly': True}
             )
             self.logger.log(f"✅ 決済成功 (成行): {side} {quantity}")
             return order
@@ -526,7 +527,7 @@ class BybitExchange(Exchange):
                     side=side,
                     amount=quantity,
                     price=limit_price,
-                    params={'timeout': 10000}
+                    params={'timeout': 10000, 'reduceOnly': True}
                 )
                 order_id = order.get('id')
                 previous_order_id = order_id

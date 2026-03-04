@@ -286,7 +286,7 @@ class Bot:
                     #self.logger.log(order.to_dict())
                     try:
                         self.events.emit(EventType.ORDER_SUBMITTED, order.to_dict())
-                        order_response = self.execute_order(order.to_dict())
+                        order_response = self.execute_order(order.to_dict(), trade_decision["decision"])
                         #self.logger.log(f"注文実行: {order_response}")
                         self.events.emit(EventType.ORDER_EXECUTED, order.to_dict())
                     except Exception as e:
@@ -514,7 +514,7 @@ class Bot:
                 if back_test_mode == 0 and not use_cached_hot_test:
                     time.sleep(self.bot_operation_cycle)
 
-    def execute_order(self, order):
+    def execute_order(self, order, decision='ENTRY'):
         """
         注文を実行します。
 
@@ -528,6 +528,7 @@ class Bot:
                 - quantity: 注文数量
                 - price: 注文価格（market注文時は無視）
                 - order_type: 'limit' または 'market'
+            decision (str): 取引決定種別 'ENTRY'/'ADD'/'EXIT'
 
         Returns:
             dict: 注文の実行結果
@@ -547,18 +548,24 @@ class Bot:
             # 現在値を取得
             current_price = self.price_data_management.get_ticker()
             
-            # エントリー注文と決済注文を判定
             # 内部表記 'BUY'/'SELL' を取引所API用の 'buy'/'sell' に変換
             exchange_side = to_exchange_side(side)
             if exchange_side in ['buy', 'sell']:
-                # エントリー注文：指値で約定を狙う
-                # 失敗時は成行にフォールバック
-                order_response = self.exchange.execute_entry_order(
-                    side=exchange_side,
-                    quantity=quantity,
-                    current_price=current_price
-                )
-                self.logger.log(f"✅ エントリー注文実行: {exchange_side.upper()} {quantity} @ {current_price:.2f}")
+                if decision == 'EXIT':
+                    # 決済注文: reduceOnly=Trueで既存ポジションのみクローズ
+                    order_response = self.exchange.execute_exit_order(
+                        side=exchange_side,
+                        quantity=quantity
+                    )
+                    self.logger.log(f"✅ 決済注文実行: {exchange_side.upper()} {quantity} @ {current_price:.2f}")
+                else:
+                    # エントリー/追加注文
+                    order_response = self.exchange.execute_entry_order(
+                        side=exchange_side,
+                        quantity=quantity,
+                        current_price=current_price
+                    )
+                    self.logger.log(f"✅ エントリー注文実行: {exchange_side.upper()} {quantity} @ {current_price:.2f}")
             else:
                 # 予期しないサイドの場合
                 self.logger.log_error(f"❌ 不正なサイド: {side}")

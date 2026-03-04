@@ -119,6 +119,7 @@ class BitgetExchange(Exchange):
                 'enableRateLimit': True,
                 'options': {
                     'defaultType': 'swap',  # 先物取引
+                    'fetchCurrencies': False,  # load_markets時の不要なAPI呼び出しを防止
                 }
             })
             self.logger.log(f"🎭 バックテストモード ON（balance: {self.dummy_balance} USD）")
@@ -130,6 +131,7 @@ class BitgetExchange(Exchange):
                 'enableRateLimit': True,
                 'options': {
                     'defaultType': 'swap',  # 先物取引
+                    'fetchCurrencies': False,  # load_markets時の不要なAPI呼び出しを防止
                 }
             })
             if self.is_papertrading_mode:
@@ -140,12 +142,39 @@ class BitgetExchange(Exchange):
         """内部ヘルパー: API経由で残高取得（リトライ付き）"""
         return self.exchange.fetchBalance()
 
-    def get_account_balance(self):
+    def _fetch_futures_union_available(self):
         """
-        口座の残高情報を取得します.
+        内部ヘルパー: Bitget USDT-M先物の利用可能証拠金を取得する。
+
+        合算証拠金モード（assetMode=union）では fetchBalance() の USDT['total'] が
+        0 を返すため、V2 Mix API から unionAvailable を直接取得する。
 
         Returns:
-            dict: 口座の残高情報
+            float or None: unionAvailable (USDT換算の利用可能証拠金)、取得失敗時は None
+        """
+        try:
+            result = self.exchange.privateMixGetV2MixAccountAccounts(
+                {'productType': 'USDT-FUTURES'}
+            )
+            data = result.get('data', [])
+            if data:
+                item = data[0]
+                union_available = float(item.get('unionAvailable') or 0)
+                return union_available
+        except Exception as e:
+            self.logger.log(f"⚠️ _fetch_futures_union_available 失敗: {e}")
+        return None
+
+    def get_account_balance(self):
+        """
+        口座の残高情報を取得します。
+
+        合算証拠金モード（assetMode=union, BTC担保など）の場合、
+        fetchBalance() の USDT['total'] は 0 になるため、
+        V2 Mix API の unionAvailable で補完します。
+
+        Returns:
+            dict: 口座の残高情報 {'USDT': {'total': float, 'used': float, 'free': float}}
         """
         # バックテスト・ペーパートレード時のダミー残高
         if self.is_backtest_mode or self.is_papertrading_mode:
@@ -156,25 +185,110 @@ class BitgetExchange(Exchange):
                     'free': self.dummy_balance
                 }
             }
-        
-        return self._fetch_balance_from_api()
-    
+
+        balance = self._fetch_balance_from_api()
+        usdt = balance.get('USDT', {})
+        total = float(usdt.get('total') or 0)
+
+        # 合算証拠金モード対応: USDT残高が 0 の場合は unionAvailable で補完
+        if total == 0:
+            union_available = self._fetch_futures_union_available()
+            if union_available is not None and union_available > 0:
+                self.logger.log(
+                    f"💡 合算証拠金モード: USDT残高=0 → unionAvailable={union_available:.4f} USDT を使用"
+                )
+                return {
+                    'USDT': {
+                        'total': union_available,
+                        'used': 0,
+                        'free': union_available
+                    }
+                }
+
+        return balance
+
     def get_account_balance_total(self):
         """
-        口座上の使用可能な証拠金残高を取得します.
+        口座上の使用可能な証拠金残高を取得します（float）。
+
+        合算証拠金モード（BTC担保など）の場合は unionAvailable を返します。
 
         Returns:
-            int: 口座上の使用可能な証拠金残高
+            float: 利用可能証拠金残高 (USDT換算)
         """
         # バックテスト・ペーパートレード時のダミー残高
         if self.is_backtest_mode or self.is_papertrading_mode:
             return self.dummy_balance
-        
-        balance = self._fetch_balance_from_api()
-        # Bitget の場合は USDT 残高を取得
-        usdt_balance = balance['USDT']['total']
 
-        return usdt_balance
+        balance = self._fetch_balance_from_api()
+        usdt_total = float((balance.get('USDT') or {}).get('total') or 0)
+
+        # 合算証拠金モード対応: USDT残高が 0 の場合は unionAvailable で補完
+        if usdt_total == 0:
+            union_available = self._fetch_futures_union_available()
+            if union_available is not None and union_available > 0:
+                self.logger.log(
+                    f"💡 合算証拠金モード: USDT残高=0 → unionAvailable={union_available:.4f} USDT を使用"
+                )
+                return union_available
+
+        return usdt_total
+
+    def _fetch_positions_from_api(self, symbol=None):
+        """内部ヘルパー: API経由でポジション一覧を取得"""
+        target = symbol or self.market
+        return self.exchange.fetchPositions([target])
+
+    def get_open_position(self, symbol=None):
+        """
+        現在のオープンポジション情報を返す。
+
+        ダミー/バックテストモードでは None を返す。
+        ライブ時はBitget APIから取得し、ポジションがなければ None を返す。
+
+        Returns:
+            dict or None: ccxt position dict
+                {
+                  'symbol':      'BTC/USDT:USDT',
+                  'side':        'long' | 'short',
+                  'contracts':   0.001,   # ポジション数量
+                  'entryPrice':  80000.0,
+                  'unrealizedPnl': 10.0,
+                  ...
+                }
+                ポジションなし / ダミーモード → None
+        """
+        if self.is_backtest_mode or self.is_papertrading_mode:
+            return None
+
+        try:
+            positions = self._fetch_positions_from_api(symbol)
+            for pos in positions:
+                contracts = abs(float(pos.get('contracts') or 0))
+                if contracts > 0:
+                    return pos
+            return None
+        except Exception as e:
+            self.logger.log(f"⚠️ get_open_position 失敗: {e}")
+            return None
+
+    def get_position_quantity(self, symbol=None):
+        """
+        現在のポジション保有数量を返す（コントラクト数 / BTC枚数）。
+
+        ダミー/バックテストモードでは 0.0 を返す。
+        ライブ時はBitget APIから取得し、ポジションがなければ 0.0 を返す。
+
+        Returns:
+            float: ポジション数量（0.0 = ポジションなし）
+        """
+        if self.is_backtest_mode or self.is_papertrading_mode:
+            return 0.0
+
+        pos = self.get_open_position(symbol)
+        if pos is None:
+            return 0.0
+        return abs(float(pos.get('contracts') or 0))
 
     def get_market_symbol(self) -> str:
         """
@@ -366,8 +480,8 @@ class BitgetExchange(Exchange):
         Returns:
             dict or bool: 注文結果
         """
-        # バックテスト時のみダミー注文
-        if self.is_backtest_mode:
+        # バックテスト・ペーパートレード時はダミー注文（実APIを呼ばない）
+        if self.is_backtest_mode or self.is_papertrading_mode:
             return self._dummy_entry_order(side, quantity, current_price)
         
         # 現時点では成行注文を優先（早期約定を重視）
@@ -461,6 +575,7 @@ class BitgetExchange(Exchange):
         
         現時点では成行注文を優先（早期約定を重視）。
         成行失敗時は指値でリトライします。
+        reduceOnly=Trueで既存ポジションのみクローズし、逆張りポジション開設を防止。
         
         Args:
             side (str): 'buy' または 'sell' (ポジション反対側)
@@ -469,17 +584,18 @@ class BitgetExchange(Exchange):
         Returns:
             dict or bool: 注文結果
         """
-        # バックテスト時のみダミー取引
-        if self.is_backtest_mode:
+        # バックテスト・ペーパートレード時はダミー取引（実APIを呼ばない）
+        if self.is_backtest_mode or self.is_papertrading_mode:
             return self._dummy_exit_order(side, quantity)
         
         # 現時点では成行注文を優先（早期約定を重視）
+        # reduceOnly=True: 既存ポジションのみクローズ（Bitget先物でtradeSide=Closeに変換される）
         try:
             order = self.exchange.create_market_order(
                 symbol=self.market,
                 side=side,
                 amount=quantity,
-                params={'timeout': 10000}
+                params={'timeout': 10000, 'reduceOnly': True}
             )
             self.logger.log(f"✅ 決済成功 (成行): {side} {quantity}")
             return order
@@ -524,7 +640,7 @@ class BitgetExchange(Exchange):
                     side=side,
                     amount=quantity,
                     price=limit_price,
-                    params={'timeout': 10000}
+                    params={'timeout': 10000, 'reduceOnly': True}
                 )
                 order_id = order.get('id')
                 previous_order_id = order_id
@@ -1042,6 +1158,25 @@ if __name__ == "__main__":
     print("----------")
     balance = exchange.get_account_balance_total()
     print(f"balance : {balance}")
+
+    print("----------")
+    print("オープンポジション情報を取得")
+    print("----------")
+    position = exchange.get_open_position()
+    if position:
+        contracts = abs(float(position.get('contracts') or 0))
+        side     = position.get('side', 'N/A')
+        entry_p  = position.get('entryPrice', 'N/A')
+        upnl     = position.get('unrealizedPnl', 'N/A')
+        print(f"ポジションあり: side={side}, 数量={contracts}, エントリー価格={entry_p}, 含み損益={upnl}")
+    else:
+        print("オープンポジションなし")
+
+    print("----------")
+    print("ポジション数量のみ取得")
+    print("----------")
+    qty = exchange.get_position_quantity()
+    print(f"position_quantity : {qty}")
 
     print(f"{Config.get_market()} の最新価格情報")
     price = exchange.fetch_ticker()
