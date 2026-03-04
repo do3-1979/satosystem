@@ -106,6 +106,9 @@ class BybitExchange(Exchange):
                 'apiKey': api_key if api_key != 'YOUR_API_KEY' else '',
                 'secret': api_secret if api_secret != 'YOUR_API_SECRET' else '',
                 'enableRateLimit': True,
+                'options': {
+                    'fetchCurrencies': False,  # /v5/asset/coin/query-info 呼び出しを防止
+                },
             })
             self.logger.log(f"🎭 バックテストモード ON（balance: {self.dummy_balance} USD）")
         else:
@@ -113,6 +116,9 @@ class BybitExchange(Exchange):
                 'apiKey': api_key,
                 'secret': api_secret,
                 'enableRateLimit': True,
+                'options': {
+                    'fetchCurrencies': False,  # /v5/asset/coin/query-info 呼び出しを防止
+                },
             })
             if self.is_papertrading_mode:
                 self.logger.log(f"🎭 ペーパートレード（ダミー取引）モード ON（balance: {self.dummy_balance} USD）")
@@ -121,6 +127,11 @@ class BybitExchange(Exchange):
     def _fetch_balance_from_api(self):
         """内部ヘルパー: API経由で残高取得（リトライ付き）"""
         return self.exchange.fetchBalance()
+
+    @retry_with_backoff()
+    def _fetch_ticker_from_api(self, symbol):
+        """内部ヘルパー: API経由でティッカー取得（リトライ付き）"""
+        return self.exchange.fetch_ticker(symbol)
 
     def get_account_balance(self):
         """
