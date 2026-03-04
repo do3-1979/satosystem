@@ -696,6 +696,14 @@ class BybitExchange(Exchange):
                         params={'timeout': 10000}  # 10秒のタイムアウト
                     )
                     break
+                except ccxt.RateLimitExceeded as e:
+                    retry_count += 1
+                    if err_occuerd == False:
+                        self.logger.log_error(f"【RATE LIMIT】価格取得レートリミット超過（60秒待機）: {str(e)}")
+                        err_occuerd = True
+                    if retry_count >= max_retries:
+                        break
+                    time.sleep(60)  # レートリミットは60秒待機
                 except (ccxt.BaseError, TimeoutError) as e:
                     retry_count += 1
                     if retry_count >= max_retries:
@@ -717,6 +725,7 @@ class BybitExchange(Exchange):
 
             if err_occuerd == True and retry_count < max_retries:
                 self.logger.log_error("価格取得エラー復帰")
+                err_occuerd = False  # エラーフラグをリセット（リセット漏れ修正）
             # データ成型
             for i in range(len(ohlcv)):
                 # 終端時間を超えないかぎり取得
@@ -794,6 +803,14 @@ class BybitExchange(Exchange):
                     params={'timeout': 10000}  # 10秒のタイムアウト
                 )
                 break
+            except ccxt.RateLimitExceeded as e:
+                retry_count += 1
+                if err_occuerd == False:
+                    self.logger.log_error(f"【RATE LIMIT】最新価格取得レートリミット超過（60秒待機）: {str(e)}")
+                    err_occuerd = True
+                if retry_count >= max_retries:
+                    raise
+                time.sleep(60)  # レートリミットは60秒待機
             except (ccxt.BaseError, TimeoutError) as e:
                 retry_count += 1
                 if retry_count >= max_retries:
@@ -809,6 +826,7 @@ class BybitExchange(Exchange):
 
         if err_occuerd == True:
             self.logger.log_error("最新価格取得エラー復帰")
+            err_occuerd = False  # エラーフラグをリセット（リセット漏れ修正）
         
         latest_ohlcv = ohlcv[-1]
         tmp_time = latest_ohlcv[0] / 1000 
