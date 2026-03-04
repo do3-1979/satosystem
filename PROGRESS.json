@@ -3,16 +3,25 @@
     "name": "satosystem gen2",
     "description": "Bitcoin auto-trading system - Donchian Breakout + PVO + ADX filter",
     "branch": "gen2",
-    "last_updated": "2026-03-02",
+    "last_updated": "2026-03-04",
     "baseline_performance": {
-      "cumulative_pnl_usd": 1985.14,
-      "period": "2024-2025 (8 quarters, Task 40e完了後)",
-      "baseline_file": "run_quarterly_backtest.py最新実行結果 (2026-03-02)",
+      "cumulative_pnl_usd": 2402.94,
+      "period": "2024-2025 (8 quarters, ParamSweep TSMOM150+PSAR300採用後)",
+      "baseline_file": "baseline_backup/BASELINE_2402.94USD_ParamSweep_20260304.json",
+      "config": {
+        "psar_lookback_term": 300,
+        "tsmom_filter_enabled": 1,
+        "tsmom_filter_lookback": 150,
+        "donchian_buy_term": 30,
+        "donchian_sell_term": 30,
+        "risk_percentage": 0.3,
+        "leverage": 10
+      },
       "previous_baseline": {
-        "cumulative_pnl_usd": 1403.49,
-        "improvement_usd": 581.65,
-        "improvement_percent": 41.4,
-        "note": "Task 40e (Volatility Filter ATR>2500) 採用後の改善"
+        "cumulative_pnl_usd": 1985.14,
+        "improvement_usd": 417.8,
+        "improvement_percent": 21.0,
+        "note": "ParamSweep (psar_lookback_term=300, tsmom_filter_lookback=150) 採用後の改善 (2026-03-04)"
       }
     },
     "baseline_regression_300usd": {
