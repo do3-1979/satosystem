@@ -184,7 +184,7 @@ class Bot:
                         self.logger.log(f"WinRate: {metrics['win_rate']:.2f}% Trades: {metrics['trades']}")
                         # JSON出力
                         try:
-                            import json, os, time as _t
+                            import json, time as _t
                             log_dir = Config.get_log_dir_name()
                             ts = _t.strftime('%Y%m%d%H%M%S')
                             summary_path = os.path.join(log_dir, f"backtest_summary_{ts}.json")
