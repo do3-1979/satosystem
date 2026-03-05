@@ -1,0 +1,10 @@
+#!/bin/bash
+# ============================================================
+#  satosystem Web Monitor 起動スクリプト
+#  使い方: ./commands/monitor_web [--port 8080]
+#  ブラウザで http://localhost:8080 を開く
+# ============================================================
+
+cd "$(git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/work/satosystem")" || exit 1
+
+python3 tools/web_monitor/server.py "$@"

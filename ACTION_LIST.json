@@ -1,8 +1,8 @@
 {
   "meta": {
     "version": "1.0",
-    "last_updated": "2026-03-04",
-    "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE) - ベースライン更新 1985.14 USD (Task 40e). Task 44イグジット戦略PDCA完了（全5案不採用）",
+    "last_updated": "2026-03-06",
+    "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE) - Web Monitorダッシュボード実装完了（web-monitor）",
     "replaces": "docs/ACTION_LIST.md",
     "workflow_rules": {
       "baseline_before_action": "アクションリスト実行前に必ずレグレッションテストを実行し、PROGRESS.json baseline_regressionに保存すること",
@@ -113,6 +113,15 @@
     "progress": [],
     "progress_memo": "現在は本番運用中（PID 600690, RPi 192.168.1.19）。Task 43完了済み。",
     "done": [
+      {
+        "id": "web-monitor",
+        "title": "Web Monitor ダッシュボード実装",
+        "category": "運用ツール",
+        "completed_date": "2026-03-06",
+        "result": "ホストPC上で動作するブラウザ向けBOT監視ダッシュボードを実装。SSH経由でRPiのログを取得しリアルタイム表示。ラズパイへの負荷ゼロ（tail -n 500 + 30秒キャッシュ）。Chart.jsによるBTC価格・損益・出来高・ボラティリティグラフ、プロセス状態・残高・エラー表示を含む洗練されたダークテーマUI。",
+        "files": ["tools/web_monitor/server.py", "commands/monitor_web"],
+        "usage": "cd satosystem && ./commands/monitor_web  →  http://localhost:8080"
+      },
       {
         "id": "43",
         "title": "RPi本番運用開始・耐久テスト完了",
@@ -1126,10 +1135,10 @@
     ]
   },
   "summary": {
-    "total_tasks": 62,
+    "total_tasks": 63,
     "todo": 16,
     "progress": 0,
-    "done": 51,
+    "done": 52,
     "cumulative_impact_usd": 1985.14,
     "baseline_performance": "1985.14 USD (8 quarters, Task 40e完了後, 2026-03-02)",
     "baseline_history": [
