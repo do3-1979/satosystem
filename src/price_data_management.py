@@ -567,15 +567,24 @@ class PriceDataManagement:
             self.signals['pvo']['info']['value'] = value
 
             # データの更新時
-            if self.prev_close_time < last_ohlcv_data['close_time']:
+            if is_new_candle:
+                # 新しい足が確定した場合: prev_close_timeをlatest_close_timeに更新し
+                # fetch_ohlcvキャッシュを最新データで全置換する
+                # 【Task 40g バグ修正】fetch_ohlcvはend_epoch_fixed未満の足しか返さないため
+                # last_ohlcv_dataは前の足（例:03:00）になる。prev_close_timeに03:00をセットしても
+                # is_new_candle判定（latest=07:00 > prev=03:00）が解消されず無限にfetch_ohlcvが
+                # 呼ばれてRate Limitを多発させていた。latest_close_timeで更新することで解消。
+                self.volatility = self.calcurate_volatility(tmp_ohlcv_data_1)
+                self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data_1, self.time_frame)
+                self.prev_close_time = latest_close_time
+            elif self.prev_close_time < last_ohlcv_data['close_time']:
+                # キャッシュ使用時でもclose_timeが進んだ場合（通常は発生しないが保険）
                 # update volatility
                 self.volatility = self.calcurate_volatility(tmp_ohlcv_data_1)
                 # update last data
                 self.prev_close_time = last_ohlcv_data['close_time']
                 # 最新行を追加し、最古を削除する
-                # バックテストの場合は、2h経過時にデータ一覧を追加してからシグナル再計算する
                 self.append_ohlcv_data_by_time_frame(last_ohlcv_data, self.time_frame)
-                # 最新行を追加し、最古を削除する
                 self.del_ohlcv_data_by_time_frame(self.time_frame)
 
             return True
