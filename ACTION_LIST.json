@@ -110,22 +110,17 @@
         "estimated_impact_usd": null
       }
     ],
-    "progress": [
-      {
-        "task_id": "43",
-        "title": "RPiホットテスト1週間耐久テスト - ログ検証",
-        "description": "RPi上でホットテストダミーモードを1週間稼働させ、ログを回収・検証する。確認項目: (1)プロセスが1週間連続稼働したか、(2)エラー/クラッシュがないか、(3)トレードシグナルが期待通り発火しているか、(4)メモリリーク等の異常がないか。",
-        "priority": "★★★★★",
-        "category": "運用・信頼性",
-        "expected_benefit": "本番運用前の耐久性確認",
-        "due_date": "2026-03-08",
-        "created_date": "2026-03-01",
-        "notes": "start_bot.sh で 2026-03-01 起動済み。RPi: 192.168.1.19, back_test=0, hot_test_dummy_mode=1。ログ: ~/satosystem/src/logs/bot_*.log",
-        "status": "in_progress",
-        "started_date": "2026-03-01"
-      }
-    ],
+    "progress": [],
+    "progress_memo": "現在は本番運用中（PID 600690, RPi 192.168.1.19）。Task 43完了済み。",
     "done": [
+      {
+        "id": "43",
+        "title": "RPi本番運用開始・耐久テスト完了",
+        "category": "運用・信頼性",
+        "completed_date": "2026-03-06",
+        "result": "2026-03-05に本番運用開始（back_test=0, hot_test_dummy_mode=0, LIVE MODE）。PID 600690でRPi稼働中。Task 40g（APIレートリミット修正）適用後、Rate Limitエラー解消を確認。残高約69.5 USDT（合算証拠金モード）。本番運用は継続中のため停止しない。",
+        "notes": "耐久テスト期限2026-03-08は本番運用開始により意味を持たなくなった。BOTは継続稼働。commit: b05f96c (Task 40g)"
+      },
       {
         "id": "40d",
         "title": "現行戦略の見直し（エントリー精度PDCA・戦略監査）",
@@ -1133,8 +1128,8 @@
   "summary": {
     "total_tasks": 62,
     "todo": 16,
-    "progress": 2,
-    "done": 50,
+    "progress": 0,
+    "done": 51,
     "cumulative_impact_usd": 1985.14,
     "baseline_performance": "1985.14 USD (8 quarters, Task 40e完了後, 2026-03-02)",
     "baseline_history": [
