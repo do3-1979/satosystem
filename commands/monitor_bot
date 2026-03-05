@@ -1,0 +1,206 @@
+#!/bin/bash
+# ============================================================
+#  satosystem BOT ライブモニター
+#  使い方: ./commands/monitor_bot
+#  更新間隔: 10秒
+# ============================================================
+
+LOGS_DIR="$HOME/work/satosystem/src/logs"
+INTERVAL=10
+
+# カラーコード
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+BLUE='\033[0;34m'
+MAGENTA='\033[0;35m'
+WHITE='\033[1;37m'
+GRAY='\033[0;37m'
+BOLD='\033[1m'
+RESET='\033[0m'
+
+# ANSI対応チェック
+if [ -t 1 ]; then COLOR=1; else COLOR=0; fi
+
+parse_log_line() {
+    local line="$1"
+    # 例: 時刻: 2026/03/06 01:18:15  高値: 71629  安値: 70753  終値: 70898  購入価格:     0  STOP:     0  ボラ: 1923.90  出来高: 5120.74  SIGNAL: NONE -> NONE  購入量: 0.0000  資産: 0.0000  ポジ: NONE  みなし損益:    0  累計損益:    0
+    REAL_TIME=$(echo "$line"  | grep -oP '時刻: \K[0-9/]+ [0-9:]+')
+    HIGH=$(echo "$line"      | grep -oP '高値:\s+\K[0-9]+')
+    LOW=$(echo "$line"       | grep -oP '安値:\s+\K[0-9]+')
+    CLOSE=$(echo "$line"     | grep -oP '終値:\s+\K[0-9]+')
+    BUY_PRICE=$(echo "$line" | grep -oP '購入価格:\s+\K[0-9]+')
+    STOP=$(echo "$line"      | grep -oP 'STOP:\s+\K[0-9]+')
+    VOLA=$(echo "$line"      | grep -oP 'ボラ:\s+\K[0-9.]+')
+    VOLUME=$(echo "$line"    | grep -oP '出来高:\s+\K[0-9.]+')
+    SIGNAL=$(echo "$line"    | grep -oP 'SIGNAL:\s+\K\S+ -> \S+')
+    QTY=$(echo "$line"       | grep -oP '資産:\s+\K[0-9.]+')
+    POS=$(echo "$line"       | grep -oP 'ポジ:\s+\K\S+')
+    PNL=$(echo "$line"       | grep -oP 'みなし損益:\s+\K[-0-9]+')
+    TOTAL_PNL=$(echo "$line" | grep -oP '累計損益:\s+\K[-0-9]+')
+}
+
+get_balance() {
+    grep -oP 'unionAvailable=\K[0-9.]+' "$1" | tail -1
+}
+
+get_errors() {
+    local logfile="$1"
+    local since_lines=200
+    local err_count
+    err_count=$(tail -n "$since_lines" "$logfile" | grep -c "ERROR\|RATE LIMIT\|Exception" 2>/dev/null || echo 0)
+    echo "$err_count"
+}
+
+get_pid() {
+    pgrep -f "python3.*bot.py" | head -1
+}
+
+bar() {
+    # 数値バー表示: bar 現在値 最大値 幅
+    local val=$1 max=$2 width=${3:-20}
+    local filled=$(( val * width / max ))
+    [ $filled -gt $width ] && filled=$width
+    local empty=$(( width - filled ))
+    printf '['
+    printf '%0.s█' $(seq 1 $filled 2>/dev/null) 2>/dev/null
+    printf '%0.s░' $(seq 1 $empty  2>/dev/null) 2>/dev/null
+    printf ']'
+}
+
+show_dashboard() {
+    # 最新ログファイル取得
+    local logfile
+    logfile=$(ls -t "$LOGS_DIR"/bot_*.log 2>/dev/null | head -1)
+
+    clear
+    local now
+    now=$(date '+%Y-%m-%d %H:%M:%S')
+
+    echo -e "${BOLD}${CYAN}╔══════════════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${BOLD}${CYAN}║        satosystem BOT モニター   ${WHITE}${now}${CYAN}   ║${RESET}"
+    echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════════════════════════╝${RESET}"
+    echo ""
+
+    # プロセス状態
+    local pid
+    pid=$(get_pid)
+    if [ -n "$pid" ]; then
+        local cpu mem
+        cpu=$(ps -p "$pid" -o %cpu --no-headers 2>/dev/null | tr -d ' ')
+        mem=$(ps -p "$pid" -o %mem --no-headers 2>/dev/null | tr -d ' ')
+        local started
+        started=$(ps -p "$pid" -o lstart --no-headers 2>/dev/null | xargs)
+        echo -e "  ${BOLD}プロセス${RESET}  ${GREEN}● 稼働中${RESET}  PID:${WHITE}${pid}${RESET}  CPU:${YELLOW}${cpu}%${RESET}  MEM:${YELLOW}${mem}%${RESET}"
+        echo -e "  ${GRAY}起動時刻: ${started}${RESET}"
+    else
+        echo -e "  ${BOLD}プロセス${RESET}  ${RED}● 停止中${RESET}"
+    fi
+
+    echo ""
+
+    if [ -z "$logfile" ]; then
+        echo -e "  ${RED}ログファイルが見つかりません: $LOGS_DIR${RESET}"
+        return
+    fi
+
+    echo -e "  ${GRAY}ログ: $(basename "$logfile")${RESET}"
+    echo ""
+
+    # 最新のシグナル行を解析
+    local last_line
+    last_line=$(grep "時刻:" "$logfile" | tail -1)
+
+    if [ -n "$last_line" ]; then
+        parse_log_line "$last_line"
+
+        # 残高取得
+        local balance
+        balance=$(get_balance "$logfile")
+
+        echo -e "${BOLD}${WHITE}  ┌─── 最新データ ────────────────────────────────────────────┐${RESET}"
+        echo -e "  │  ${GRAY}時刻   ${RESET}${WHITE}${REAL_TIME}${RESET}"
+        echo -e "  │"
+        echo -e "  │  ${GRAY}BTC価格${RESET}  終値: ${WHITE}${CLOSE}${RESET}  高値: ${YELLOW}${HIGH}${RESET}  安値: ${BLUE}${LOW}${RESET}"
+
+        # シグナル色分け
+        local sig_color="$GRAY"
+        if echo "$SIGNAL" | grep -q "ENTRY\|BUY\|SELL" 2>/dev/null; then
+            sig_color="$GREEN"
+        fi
+        echo -e "  │  ${GRAY}シグナル${RESET} ${sig_color}${BOLD}${SIGNAL}${RESET}"
+
+        # ポジション状態
+        local pos_color="$GRAY"
+        if [ "$POS" = "BUY" ]; then pos_color="$GREEN"
+        elif [ "$POS" = "SELL" ]; then pos_color="$RED"
+        fi
+        echo -e "  │  ${GRAY}ポジション${RESET} ${pos_color}${POS}${RESET}  保有量: ${WHITE}${QTY} BTC${RESET}  購入価格: ${WHITE}${BUY_PRICE}${RESET}  STOP: ${RED}${STOP}${RESET}"
+
+        # 損益色分け
+        local pnl_color="$GRAY"
+        if [ -n "$PNL" ] && [ "$PNL" -gt 0 ] 2>/dev/null; then pnl_color="$GREEN"
+        elif [ -n "$PNL" ] && [ "$PNL" -lt 0 ] 2>/dev/null; then pnl_color="$RED"
+        fi
+        local tpnl_color="$GRAY"
+        if [ -n "$TOTAL_PNL" ] && [ "$TOTAL_PNL" -gt 0 ] 2>/dev/null; then tpnl_color="$GREEN"
+        elif [ -n "$TOTAL_PNL" ] && [ "$TOTAL_PNL" -lt 0 ] 2>/dev/null; then tpnl_color="$RED"
+        fi
+        echo -e "  │  ${GRAY}みなし損益${RESET} ${pnl_color}${PNL} USD${RESET}   ${GRAY}累計損益${RESET} ${tpnl_color}${TOTAL_PNL} USD${RESET}"
+
+        echo -e "  │"
+        # ボラティリティバー（閾値2500）
+        local vola_int=${VOLA%.*}
+        [ -z "$vola_int" ] && vola_int=0
+        local vola_color="$GREEN"
+        [ "$vola_int" -ge 2500 ] 2>/dev/null && vola_color="$RED"
+        [ "$vola_int" -ge 2000 ] 2>/dev/null && [ "$vola_int" -lt 2500 ] && vola_color="$YELLOW"
+        echo -e "  │  ${GRAY}ボラティリティ${RESET} ${vola_color}${VOLA}${RESET}${GRAY}/2500 (閾値)${RESET}  出来高: ${WHITE}${VOLUME}${RESET}"
+
+        if [ -n "$balance" ]; then
+            echo -e "  │  ${GRAY}残高(USDT)${RESET}  ${WHITE}${balance}${RESET}"
+        fi
+        echo -e "${BOLD}${WHITE}  └──────────────────────────────────────────────────────────┘${RESET}"
+    fi
+
+    echo ""
+
+    # 直近エラー数
+    local err_count
+    err_count=$(get_errors "$logfile")
+    if [ "$err_count" -gt 0 ] 2>/dev/null; then
+        echo -e "  ${RED}${BOLD}⚠  直近200行 エラー: ${err_count}件${RESET}"
+        tail -n 200 "$logfile" | grep "ERROR\|RATE LIMIT\|Exception" | tail -3 | while read -r eline; do
+            echo -e "  ${RED}  → ${eline}${RESET}"
+        done
+    else
+        echo -e "  ${GREEN}✓  直近200行 エラー: なし${RESET}"
+    fi
+
+    echo ""
+
+    # 直近5件のシグナル履歴
+    echo -e "  ${BOLD}${WHITE}直近シグナル履歴:${RESET}"
+    grep "時刻:" "$logfile" | tail -6 | head -5 | while read -r hline; do
+        local ht hs hc hpos
+        ht=$(echo "$hline"  | grep -oP '時刻: \K[0-9/]+ [0-9:]+')
+        hs=$(echo "$hline"  | grep -oP 'SIGNAL:\s+\K\S+ -> \S+')
+        hc=$(echo "$hline"  | grep -oP '終値:\s+\K[0-9]+')
+        hpos=$(echo "$hline" | grep -oP 'ポジ:\s+\K\S+')
+        local hcolor="$GRAY"
+        echo "$hs" | grep -q "ENTRY\|BUY\|SELL" 2>/dev/null && hcolor="$GREEN"
+        echo -e "  ${GRAY}  ${ht}${RESET}  ${hcolor}${hs}${RESET}  ${GRAY}終値:${hc}  ポジ:${hpos}${RESET}"
+    done
+
+    echo ""
+    echo -e "  ${GRAY}更新間隔: ${INTERVAL}秒  終了: Ctrl+C${RESET}"
+}
+
+# メインループ
+trap 'echo -e "\n${CYAN}モニター終了${RESET}"; exit 0' INT TERM
+
+while true; do
+    show_dashboard
+    sleep "$INTERVAL"
+done
