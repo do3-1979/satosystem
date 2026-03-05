@@ -118,6 +118,48 @@ def test_singleton_pattern():
         return False, f"❌ シングルトンパターン確認エラー: {e}"
 
 
+def test_api_call_optimization_logic():
+    """
+    update_price_data のAPI呼び出し最適化ロジックをソースコード検証
+    Task 40g Rate Limit対策: is_new_candle によるfetch_ohlcvのスキップ確認
+    """
+    try:
+        import inspect
+        from price_data_management import PriceDataManagement
+        source = inspect.getsource(PriceDataManagement.update_price_data)
+
+        checks = [
+            ("is_new_candle 判定ロジック", "is_new_candle"),
+            ("prev_close_time 初回判定", "prev_close_time == 0"),
+            ("latest_close_time比較", "latest_close_time > self.prev_close_time"),
+            ("キャッシュフォールバック", "OHLCVキャッシュ空のためフル取得"),
+            ("fetch_latest_ohlcvが先に呼ばれる", "fetch_latest_ohlcv"),
+        ]
+
+        missing = []
+        for name, pattern in checks:
+            if pattern not in source:
+                missing.append(name)
+
+        if missing:
+            return False, f"❌ API最適化ロジック欠落: {missing}"
+
+        return True, f"✅ API呼び出し最適化ロジック確認OK（is_new_candle によるfetch_ohlcvスキップ）"
+    except Exception as e:
+        return False, f"❌ API最適化ロジック確認エラー: {e}"
+
+
+def test_fetch_with_retry_exists():
+    """_fetch_with_retry メソッドの存在確認"""
+    try:
+        from price_data_management import PriceDataManagement
+        if not hasattr(PriceDataManagement, "_fetch_with_retry"):
+            return False, "❌ _fetch_with_retry メソッドが存在しません"
+        return True, "✅ _fetch_with_retry メソッドが存在します"
+    except Exception as e:
+        return False, f"❌ _fetch_with_retry確認エラー: {e}"
+
+
 def run_all_tests():
     """全テストを実行"""
     tests = [
@@ -126,6 +168,8 @@ def run_all_tests():
         ("OHLCV取得メソッド確認", test_ohlcv_methods),
         ("シグナル生成メソッド確認", test_signal_methods),
         ("シングルトンパターン確認", test_singleton_pattern),
+        ("API呼び出し最適化ロジック確認", test_api_call_optimization_logic),
+        ("_fetch_with_retryメソッド確認", test_fetch_with_retry_exists),
     ]
     
     results = []

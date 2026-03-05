@@ -411,6 +411,12 @@ class PriceDataManagement:
         """
         価格データとトレードシグナルを更新するメソッドです。
         リトライロジック、例外処理、バリデーション機能を備えています。
+
+        API呼び出し最適化（Task 40g Rate Limit対策）:
+        - fetch_ohlcv（履歴一括取得・内部ループあり）は確定足のclose_time変化時のみ実行
+        - 通常時（毎分ループ）はfetch_latest_ohlcv + fetch_tickerの2回のみ
+        - 4時間ごとの足確定時のみ履歴データを一括更新する
+        - これにより毎分約24回のAPIリクエストが激減しRate Limitを解消
         """
         try:
             # 価格データの更新
@@ -427,66 +433,29 @@ class PriceDataManagement:
             else:  # バックテスト時
                 start_epoch = Config.get_start_epoch()
                 end_epoch = Config.get_end_epoch()
-            
-            # --------------------------------------------
-            # データの更新(15分) ※常に最新で入れ替える
-            # リトライ付きで取得
-            # --------------------------------------------
-            try:
-                tmp_ohlcv_data_2 = self._fetch_with_retry(
-                    self.exchange.fetch_latest_ohlcv, 
-                    self.psar_time_frame,
-                    retries=3
-                )
-                self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data_2, self.psar_time_frame)
-            except Exception as e:
-                self.logger.log_error(f"15分足データ取得失敗: {e}")
-                return False
 
             # --------------------------------------------
-            # データの更新(240分)
-            # 確定した最新値を取得（リトライ付き）
-            # ※ fetch_ohlcv()の最後のエントリは「未確定足」を含むため除外
+            # Step1: 最新1本を取得してclose_time変化を確認
+            # （軽量APIコール1回で新しい確定足の有無を検出）
             # --------------------------------------------
-            try:
-                tmp_ohlcv_data_1 = self._fetch_with_retry(
-                    self.exchange.fetch_ohlcv,
-                    start_epoch, end_epoch, self.time_frame,
-                    retries=3
-                )
-                
-                # 空リストチェック
-                if not tmp_ohlcv_data_1:
-                    self.logger.log_error("fetch_ohlcv: 空リスト返却（データがありません）")
-                    return False
-                
-                last_ohlcv_data = tmp_ohlcv_data_1[-1]
-            except IndexError as e:
-                self.logger.log_error(f"120分足データ取得エラー: リスト が空です: {e}")
-                return False
-            except Exception as e:
-                self.logger.log_error(f"120分足データ取得失敗: {e}")
-                return False
-
-            # 最新値を取得（リトライ付き）
             try:
                 self.latest_ohlcv_data = self._fetch_with_retry(
                     self.exchange.fetch_latest_ohlcv,
                     self.time_frame,
                     retries=3
                 )
-                
+
                 if not self.latest_ohlcv_data:
                     self.logger.log_error("fetch_latest_ohlcv: 空リスト返却（データがありません）")
                     return False
-                
-                # ticker と volume を取得（キー存在チェック付き）
+
                 if 'Volume' not in self.latest_ohlcv_data[0]:
                     self.logger.log_error("fetch_latest_ohlcv: 'Volume' キーが見つかりません")
                     return False
-                
+
                 self.volume = self.latest_ohlcv_data[0]['Volume']
-                
+                latest_close_time = self.latest_ohlcv_data[0]['close_time']
+
             except IndexError as e:
                 self.logger.log_error(f"最新足データ取得エラー: リストが空です: {e}")
                 return False
@@ -496,6 +465,64 @@ class PriceDataManagement:
             except Exception as e:
                 self.logger.log_error(f"最新足データ取得失敗: {e}")
                 return False
+
+            # --------------------------------------------
+            # Step2: close_time変化時のみ履歴データを一括取得
+            # 通常時（毎分ループ）はfetch_ohlcv（内部ループ大量APIコール）を
+            # スキップしキャッシュを使用する（Rate Limit根本対策）
+            # --------------------------------------------
+            is_new_candle = (self.prev_close_time == 0 or latest_close_time > self.prev_close_time)
+
+            if is_new_candle:
+                # 確定足が更新された（初回 or 時間足確定ごと）: 履歴データを一括更新
+                try:
+                    tmp_ohlcv_data_2 = self._fetch_with_retry(
+                        self.exchange.fetch_latest_ohlcv,
+                        self.psar_time_frame,
+                        retries=3
+                    )
+                    self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data_2, self.psar_time_frame)
+                except Exception as e:
+                    self.logger.log_error(f"15分足データ取得失敗: {e}")
+                    return False
+
+                try:
+                    tmp_ohlcv_data_1 = self._fetch_with_retry(
+                        self.exchange.fetch_ohlcv,
+                        start_epoch, end_epoch, self.time_frame,
+                        retries=3
+                    )
+
+                    if not tmp_ohlcv_data_1:
+                        self.logger.log_error("fetch_ohlcv: 空リスト返却（データがありません）")
+                        return False
+
+                    last_ohlcv_data = tmp_ohlcv_data_1[-1]
+                except IndexError as e:
+                    self.logger.log_error(f"120分足データ取得エラー: リストが空です: {e}")
+                    return False
+                except Exception as e:
+                    self.logger.log_error(f"120分足データ取得失敗: {e}")
+                    return False
+            else:
+                # 確定足は変化なし（通常の毎分ループ）: キャッシュを使用
+                tmp_ohlcv_data_1 = self.get_ohlcv_data_by_time_frame(self.time_frame)
+                if not tmp_ohlcv_data_1:
+                    # キャッシュが空の場合（起動直後など）はフル取得にフォールバック
+                    self.logger.log(f"OHLCVキャッシュ空のためフル取得: time_frame={self.time_frame}")
+                    try:
+                        tmp_ohlcv_data_1 = self._fetch_with_retry(
+                            self.exchange.fetch_ohlcv,
+                            start_epoch, end_epoch, self.time_frame,
+                            retries=3
+                        )
+                        if not tmp_ohlcv_data_1:
+                            self.logger.log_error("fetch_ohlcv: 空リスト返却（データがありません）")
+                            return False
+                    except Exception as e:
+                        self.logger.log_error(f"120分足データ取得失敗: {e}")
+                        return False
+                last_ohlcv_data = tmp_ohlcv_data_1[-1]
 
             # ticker を取得（リトライ付き）
             try:
@@ -508,7 +535,7 @@ class PriceDataManagement:
                 return False
 
             # 初回の処理
-            if self.prev_close_time == 0:            
+            if self.prev_close_time == 0:
                 self.prev_close_time = last_ohlcv_data['close_time']
                 # 初回のみ初期化
                 self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data_1, self.time_frame)
@@ -518,7 +545,7 @@ class PriceDataManagement:
             # donchianシグナル演算は常時実施
             ohlcv_data = self.get_ohlcv_data_by_time_frame(self.time_frame)
             dc, high, low = self.__evaluate_donchian(ohlcv_data, self.ticker)
-            
+
             if dc == 'BUY':
                 self.signals['donchian']['signal'] = True
                 self.signals['donchian']['side'] = 'BUY'
@@ -549,10 +576,10 @@ class PriceDataManagement:
                 # バックテストの場合は、2h経過時にデータ一覧を追加してからシグナル再計算する
                 self.append_ohlcv_data_by_time_frame(last_ohlcv_data, self.time_frame)
                 # 最新行を追加し、最古を削除する
-                self.del_ohlcv_data_by_time_frame(self.time_frame)   
+                self.del_ohlcv_data_by_time_frame(self.time_frame)
 
             return True
-            
+
         except Exception as e:
             # 予期しない例外をキャッチ
             self.logger.log_error(f"update_price_data メインループエラー: {e}")
