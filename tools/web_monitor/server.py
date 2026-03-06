@@ -185,6 +185,11 @@ def _entries_to_candles(entries: list) -> list:
             "adx":          float(td.get("adx") or 0),
             "pvo_val":      float(td.get("pvo_val") or 0),
             "total_pnl":    float(td.get("total_profit_and_loss") or 0),
+            "volume":       float(td.get("Volume") or td.get("volume") or 0),
+            "stop_price":   float(td.get("stop_price") or 0),
+            "pnl":          float(td.get("profit_and_loss") or 0),
+            "position_qty": float(td.get("position_quantity") or 0),
+            "volatility":   float(td.get("volatility") or 0),
         })
     return candles
 
@@ -260,6 +265,11 @@ for fpath in files:
                 'adx':          float(td.get('adx') or 0),
                 'pvo_val':      float(td.get('pvo_val') or 0),
                 'total_pnl':    float(td.get('total_profit_and_loss') or 0),
+                'volume':       float(td.get('Volume') or td.get('volume') or 0),
+                'stop_price':   float(td.get('stop_price') or 0),
+                'pnl':          float(td.get('profit_and_loss') or 0),
+                'position_qty': float(td.get('position_quantity') or 0),
+                'volatility':   float(td.get('volatility') or 0),
             })
     except Exception:
         pass
@@ -469,10 +479,11 @@ canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important
     <div class="cs b" id="indDCL">—</div>
   </div>
   <div class="card">
-    <div class="ct">ボラ / エラー</div>
-    <div class="cv" id="valVola">—</div>
+    <div class="ct">出来高 / ボラ</div>
+    <div class="cv b" id="kpiVolume">—</div>
     <div class="mtrk"><div class="mfill" id="volaMeter" style="width:0%;background:var(--green);"></div></div>
-    <div class="cs"><span id="errCount" class="g">0</span> errs &nbsp;<span id="indPosSize" class="m"></span></div>
+    <div class="cs"><span id="valVola">—</span> vola &nbsp;<span id="errCount" class="g">0</span> err</div>
+    <div class="cs"><span id="indPosSize" class="m"></span></div>
   </div>
 </div>
 
@@ -481,10 +492,14 @@ canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important
   <div class="card chart-card">
     <div class="ct">BTC ローソク足（最大1ヶ月）<span id="candleCount" style="margin-left:6px;font-size:9px;color:var(--muted)"></span></div>
     <div class="chart-wrap"><div id="chartCandle" style="position:absolute;top:0;left:0;width:100%;height:100%;"></div></div>
+    <div class="ct" style="font-size:8px;padding-top:4px;margin-top:4px;border-top:1px solid var(--border);">累計損益推移</div>
+    <div style="height:65px;position:relative;flex-shrink:0;"><div id="chartPnl" style="position:absolute;top:0;left:0;width:100%;height:100%;"></div></div>
     <div class="ind-bar">
       <div class="ind"><span class="ind-lbl">累計損益</span><span class="ind-val" id="indTotalPnl2">—</span></div>
+      <div class="ind"><span class="ind-lbl">含み損益</span><span class="ind-val m" id="indUnrealPnl">—</span></div>
       <div class="ind"><span class="ind-lbl">出来高</span><span class="ind-val m" id="indVol">—</span></div>
       <div class="ind"><span class="ind-lbl">ポジSZ</span><span class="ind-val m" id="indPS2">—</span></div>
+      <div class="ind"><span class="ind-lbl">SLライン</span><span class="ind-val m" id="indStopBar">—</span></div>
     </div>
   </div>
   <div class="card chart-card">
@@ -493,7 +508,7 @@ canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important
       <table class="tbl">
         <thead><tr>
           <th>時刻</th><th>シグナル</th><th>終値</th><th>ポジ</th>
-          <th>ADX</th><th>PVO</th><th>みなし</th><th>累計</th>
+          <th>ADX</th><th>PVO</th><th>出来高</th><th>みなし</th><th>累計</th>
         </tr></thead>
         <tbody id="historyBody"></tbody>
       </table>
@@ -513,7 +528,7 @@ canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important
 <script>
 const REFRESH_INTERVAL = 30;
 let countdown = REFRESH_INTERVAL;
-let lwChart, lwCandle, lwDCH, lwDCL, lwPSAR;
+let lwChart, lwCandle, lwDCH, lwDCL, lwPSAR, lwVolume, lwStop, lwPnlChart, lwPnlSeries;
 
 function initCandleChart(){
   const wrap = document.getElementById('chartCandle');
@@ -536,6 +551,30 @@ function initCandleChart(){
     priceLineVisible:false, lastValueVisible:false, title:'DCL' });
   lwPSAR = lwChart.addLineSeries({ color:'#8b949e', lineWidth:1, lineStyle:3,
     priceLineVisible:false, lastValueVisible:false, title:'PSAR' });
+  lwVolume = lwChart.addHistogramSeries({
+    color:'rgba(88,166,255,0.4)', priceFormat:{type:'volume'},
+    priceScaleId:'vol', lastValueVisible:false, priceLineVisible:false,
+  });
+  lwChart.priceScale('vol').applyOptions({ scaleMargins:{top:0.78,bottom:0} });
+  lwStop = lwChart.addLineSeries({ color:'#ff6b6b', lineWidth:1, lineStyle:2,
+    priceLineVisible:false, lastValueVisible:false, title:'SL' });
+}
+
+function initPnlChart(){
+  const wrap = document.getElementById('chartPnl');
+  if(!wrap) return;
+  lwPnlChart = LightweightCharts.createChart(wrap, {
+    autoSize:true,
+    layout:{ background:{type:'solid',color:'#161b22'}, textColor:'#8b949e', fontSize:9 },
+    grid:{ vertLines:{color:'#30363d'}, horzLines:{color:'#30363d'} },
+    timeScale:{ timeVisible:true, secondsVisible:false, borderColor:'#30363d' },
+    rightPriceScale:{ borderColor:'#30363d' },
+    crosshair:{mode:1}, handleScroll:false, handleScale:false,
+  });
+  lwPnlSeries = lwPnlChart.addLineSeries({
+    color:'#3fb950', lineWidth:2,
+    priceLineVisible:false, lastValueVisible:true, title:'PnL',
+  });
 }
 
 function _mkLine(candles, key){
@@ -560,6 +599,16 @@ function updateCandleChart(candles){
   lwDCH.setData(_mkLine(candles,'dc_h'));
   lwDCL.setData(_mkLine(candles,'dc_l'));
   lwPSAR.setData(_mkLine(candles,'psar'));
+  if(lwVolume){
+    const vSeen=new Set(); const vols=[];
+    candles.filter(c=>c.time>0&&c.volume>0).sort((a,b)=>a.time-b.time).forEach(c=>{
+      if(!vSeen.has(c.time)){ vSeen.add(c.time);
+        vols.push({time:c.time,value:c.volume,color:c.close>=c.open?'rgba(63,185,80,0.45)':'rgba(248,81,73,0.45)'});
+      }
+    });
+    lwVolume.setData(vols);
+  }
+  if(lwStop) lwStop.setData(_mkLine(candles,'stop_price'));
   // エントリーシグナルマーカー
   const markers=[];
   candles.filter(c=>c.time>0&&c.decision&&c.decision.includes('ENTRY'))
@@ -574,12 +623,26 @@ function updateCandleChart(candles){
   lwCandle.setMarkers(markers);
 }
 
+function updatePnlChart(candles){
+  if(!lwPnlSeries||!candles||!candles.length) return;
+  const seen=new Set(); const data=[];
+  candles.filter(c=>c.time>0).sort((a,b)=>a.time-b.time).forEach(c=>{
+    if(!seen.has(c.time)){ seen.add(c.time); data.push({time:c.time,value:c.total_pnl||0}); }
+  });
+  if(!data.length) return;
+  const lastVal=(data[data.length-1]||{}).value||0;
+  lwPnlSeries.applyOptions({color:lastVal>=0?'#3fb950':'#f85149'});
+  lwPnlSeries.setData(data);
+  if(lwPnlChart) lwPnlChart.timeScale().fitContent();
+}
+
 async function fetchCandles(){
   try{
     const res=await fetch('/api/candles');
     if(!res.ok) return;
     const candles=await res.json();
     updateCandleChart(candles);
+    updatePnlChart(candles);
     const el=document.getElementById('candleCount');
     if(el) el.textContent=candles.length+'件';
   }catch(e){ console.warn('candles fetch error:',e); }
@@ -653,6 +716,16 @@ function render(d){
   document.getElementById('indPosSize').textContent='sz:'+psz;
   document.getElementById('indPS2').textContent=psz;
 
+  // 含み損益
+  const unrealPnl=parseFloat(l.pnl||0);
+  const upEl=document.getElementById('indUnrealPnl');
+  if(upEl){ upEl.textContent=isNaN(unrealPnl)?'—':fmtPnl(unrealPnl); upEl.className='ind-val '+(unrealPnl>0?'g':unrealPnl<0?'r':'m'); }
+
+  // SLライン
+  const stopVal=parseInt(l.stop||l.stop_price||0);
+  const stopBarEl=document.getElementById('indStopBar');
+  if(stopBarEl) stopBarEl.textContent=stopVal>0?stopVal.toLocaleString():'—';
+
   // ボラ
   const vola=parseFloat(l.volatility||0);
   document.getElementById('valVola').textContent=vola.toFixed(0);
@@ -665,6 +738,8 @@ function render(d){
 
   // 出来高
   document.getElementById('indVol').textContent=fmt(l.volume,0);
+  const kpiVol=document.getElementById('kpiVolume');
+  if(kpiVol) kpiVol.textContent=l.volume&&parseFloat(l.volume)>0?Math.round(parseFloat(l.volume)).toLocaleString()+' btc':'—';
 
   // エラー数
   const ec=d.error_count||0;
@@ -738,6 +813,7 @@ setInterval(()=>{
 },1000);
 
 initCandleChart();
+initPnlChart();
 fetchCandles();                        // 初回: ログファイルから最大1ヶ月分取得
 setInterval(fetchCandles, 300000);     // 5分毎にキャンドル更新
 refresh();                             // 30秒毎のステータス更新も開始
