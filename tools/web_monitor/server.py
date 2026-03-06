@@ -78,7 +78,7 @@ def fetch_remote(host: str) -> dict:
 def fetch_process_status(host: str) -> dict:
     """BOTプロセスの状態を SSH で取得（リモートモード用）"""
     cmd = (
-        "PID=$(pgrep -f 'python3.*bot.py' | head -1); "
+        "PID=$(pgrep -f 'python3 -u bot.py' | head -1); "
         "if [ -n \"$PID\" ]; then "
         "  CPU=$(ps -p $PID -o %cpu --no-headers 2>/dev/null | tr -d ' '); "
         "  MEM=$(ps -p $PID -o %mem --no-headers 2>/dev/null | tr -d ' '); "
@@ -112,7 +112,7 @@ def fetch_local_process_status() -> dict:
     import re
     try:
         result = subprocess.run(
-            ["pgrep", "-f", "python3.*bot.py"],
+            ["pgrep", "-f", "python3 -u bot.py"],
             capture_output=True, text=True
         )
         pid = result.stdout.strip().splitlines()[0] if result.stdout.strip() else ""

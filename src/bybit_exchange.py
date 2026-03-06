@@ -105,6 +105,7 @@ class BybitExchange(Exchange):
             self.exchange = ccxt.bybit({
                 'apiKey': api_key if api_key != 'YOUR_API_KEY' else '',
                 'secret': api_secret if api_secret != 'YOUR_API_SECRET' else '',
+                'timeout': 30000,  # 30秒タイムアウト（無限待機防止）
                 'enableRateLimit': True,
                 'options': {
                     'fetchCurrencies': False,  # /v5/asset/coin/query-info 呼び出しを防止
@@ -115,6 +116,7 @@ class BybitExchange(Exchange):
             self.exchange = ccxt.bybit({
                 'apiKey': api_key,
                 'secret': api_secret,
+                'timeout': 30000,  # 30秒タイムアウト（無限待機防止）
                 'enableRateLimit': True,
                 'options': {
                     'fetchCurrencies': False,  # /v5/asset/coin/query-info 呼び出しを防止
@@ -693,7 +695,6 @@ class BybitExchange(Exchange):
                         symbol = self.market,
                         timeframe = time_frame,
                         since = int(get_time * 1000), # bybitはミリ秒なので1000倍
-                        params={'timeout': 10000}  # 10秒のタイムアウト
                     )
                     break
                 except ccxt.RateLimitExceeded as e:
@@ -800,7 +801,6 @@ class BybitExchange(Exchange):
                 ohlcv = self.exchange.fetch_ohlcv(
                     symbol = self.market,
                     timeframe = time_frame,
-                    params={'timeout': 10000}  # 10秒のタイムアウト
                 )
                 break
             except ccxt.RateLimitExceeded as e:
