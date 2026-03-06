@@ -2,7 +2,7 @@
   "meta": {
     "version": "1.0",
     "last_updated": "2026-03-06",
-    "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE) - Web Monitorダッシュボード実装完了（web-monitor）",
+    "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE) - monitor_webローソク足チャート実装完了（2026-03-06）",
     "replaces": "docs/ACTION_LIST.md",
     "workflow_rules": {
       "baseline_before_action": "アクションリスト実行前に必ずレグレッションテストを実行し、PROGRESS.json baseline_regressionに保存すること",
@@ -1131,6 +1131,16 @@
         "status": "done",
         "completed_at": "2026-03-02",
         "completion_note": "Task 40eで weekend_filter_enabled を Config/TradingStrategy に実装済み。config.ini EntryFilters セクションで有効化可能。"
+      },
+      {
+        "id": "web-monitor-v2",
+        "category": "モニタリング",
+        "title": "monitor_web ローソク足チャート実装 / monitor_bot JSON化 / config.iniコメント復活",
+        "description": "monitor_webの左パネルをChart.js折れ線からlightweight-charts v4ローソク足に置き換え。DCH/DCL/PSAR/ENTRYマーカーオーバーレイ。/api/candlesエンドポイントでログファイルから最大1ヶ月分(180本)取得。monitor_botをJSON化で刷新。config.iniコメント95箇所復活。",
+        "status": "done",
+        "completed_at": "2026-03-06",
+        "commit": "335d848",
+        "completion_note": "logger.py: MAX_CANDLE_HISTORY=180、open/timeフィールド追加。server.py: /api/candles追加(5分キャッシュ)、lightweight-charts実装。レグレッション159/159 PASS。"
       }
     ]
   },
@@ -1138,7 +1148,7 @@
     "total_tasks": 63,
     "todo": 16,
     "progress": 0,
-    "done": 52,
+    "done": 53,
     "cumulative_impact_usd": 1985.14,
     "baseline_performance": "1985.14 USD (8 quarters, Task 40e完了後, 2026-03-02)",
     "baseline_history": [
