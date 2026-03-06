@@ -801,6 +801,7 @@ class BybitExchange(Exchange):
                 ohlcv = self.exchange.fetch_ohlcv(
                     symbol = self.market,
                     timeframe = time_frame,
+                    limit = 1,  # 最新1本のみ取得（Rate Limit対策）
                 )
                 break
             except ccxt.RateLimitExceeded as e:
