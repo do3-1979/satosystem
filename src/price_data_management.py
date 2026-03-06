@@ -69,6 +69,9 @@ class PriceDataManagement:
         self.signals = {'donchian': {'signal': False, 'side': None, 'info': {'highest': 0, 'lowest': 0} }, 'pvo': {'signal': False, 'side': None, 'info':{'value': 0} }}
         self.volatility = 0
         self.prev_close_time = 0
+        # Funding Rateデータ辞書 {epoch秒(int): rate(float)}
+        # バックテスト時は一括ロード、ホットテスト時は都度取得
+        self.funding_rate_dict = {}
         
         # Task42: キャッシュベースホットテスト(use_cached=1)でもバックテスト用属性が必要
         if Config.get_back_test_mode() == 1 or Config.get_use_cached_data_for_hot_test() == 1:
@@ -637,7 +640,39 @@ class PriceDataManagement:
 
         self.logger.log("時間足データ初期化 done")
 
+        # Funding Rate履歴を一括取得（Funding Rateフィルター有効時のみ）
+        if Config.get_funding_rate_filter_enabled():
+            start_epoch = int(Config.get_start_epoch())
+            end_epoch = int(Config.get_end_epoch())
+            self.logger.log(f"Funding Rate履歴を取得中 (start={start_epoch}, end={end_epoch})")
+            self.funding_rate_dict = self.exchange.fetch_funding_rate_history_bulk(start_epoch, end_epoch)
+            self.logger.log(f"Funding Rate履歴取得完了: {len(self.funding_rate_dict)}件")
+
         return
+
+    def get_funding_rate(self, current_epoch=None):
+        """
+        現在時刻のFunding Rateを返す.
+        - バックテスト時: funding_rate_dictよる最近時刻をルックアップ
+        - ホットテスト時: 取引所からリアルタイム取得
+
+        Args:
+            current_epoch (int, optional): バックテスト用の対象時刻（epoch秒）
+
+        Returns:
+            float: Funding Rate値（取得失敗時は0.0）
+        """
+        if Config.get_back_test_mode() == 1:
+            if current_epoch is None or not self.funding_rate_dict:
+                return 0.0
+            # 8時間ごとのデータから最近の値を取得 (current_epoch以前で最大のタイムスタンプ)
+            past_keys = [k for k in self.funding_rate_dict if k <= current_epoch]
+            if not past_keys:
+                return 0.0
+            return self.funding_rate_dict[max(past_keys)]
+        else:
+            # リアルタイム: 取引所から直接取得
+            return self.exchange.fetch_current_funding_rate()
 
     def del_ohlcv_data_by_time_frame(self, target_time_frame):
         """

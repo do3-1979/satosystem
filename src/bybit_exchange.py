@@ -842,6 +842,59 @@ class BybitExchange(Exchange):
         
         return ohlcv_data
 
+    def fetch_funding_rate_history_bulk(self, start_epoch, end_epoch):
+        """
+        指定期間のFunding Rate履歴を一括取得して辞書で返す.
+
+        Args:
+            start_epoch (int): 開始エポック秒
+            end_epoch (int): 終了エポック秒
+
+        Returns:
+            dict: {epoch秒(int): funding_rate(float)} Bybitは8時間ごと
+        """
+        result = {}
+        since_ms = int(start_epoch * 1000)
+        end_ms = int(end_epoch * 1000)
+        # Bybitは1リクエスト最大200件: 200 * 8h = 1600h ≒ 67日
+        # 長期間の場合はページングが必要
+        while since_ms < end_ms:
+            try:
+                history = self.exchange.fetch_funding_rate_history(
+                    'BTC/USDT:USDT',
+                    since=since_ms,
+                    limit=200
+                )
+                if not history:
+                    break
+                for r in history:
+                    epoch_sec = int(r['timestamp'] / 1000)
+                    result[epoch_sec] = r['fundingRate']
+                # 最後のタイムスタンプの次から続行
+                last_ts = history[-1]['timestamp']
+                if last_ts <= since_ms:
+                    break  # 進んでいなければ終了
+                since_ms = last_ts + 1
+                time.sleep(0.1)  # API負荷軽減
+            except Exception as e:
+                self.logger.log_error(f"Funding Rate履歴取得エラー: {e}")
+                break
+        return result
+
+    def fetch_current_funding_rate(self):
+        """
+        現在のFunding Rateを取得する.
+
+        Returns:
+            float: Funding Rate (例: 0.0001 = 0.01%)
+        """
+        try:
+            fr = self.exchange.fetch_funding_rate('BTC/USDT:USDT')
+            return float(fr['fundingRate'])
+        except Exception as e:
+            self.logger.log_error(f"Funding Rate取得エラー: {e}")
+            return 0.0
+
     def fetch_ticker(self):
         """
         指定されたペアの最新の価格情報を取得します.

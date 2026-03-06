@@ -739,6 +739,30 @@ class Config:
         except (KeyError, ValueError):
             return 10
 
+    @classmethod
+    def get_funding_rate_filter_enabled(cls):
+        """Funding Rateフィルター有効/無効"""
+        try:
+            return int(cls.config['EntryFilters']['funding_rate_filter_enabled'])
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_funding_rate_buy_threshold(cls):
+        """BUYエントリー抑制となるFunding Rate上限 (デフォルト +0.05%)"""
+        try:
+            return float(cls.config['EntryFilters']['funding_rate_buy_threshold'])
+        except (KeyError, ValueError):
+            return 0.0005
+
+    @classmethod
+    def get_funding_rate_sell_threshold(cls):
+        """SELLエントリー抑制となるFunding Rate下限 (デフォルト -0.05%)"""
+        try:
+            return float(cls.config['EntryFilters']['funding_rate_sell_threshold'])
+        except (KeyError, ValueError):
+            return -0.0005
+
     # ==================== Seasonality セクション ====================
 
     @classmethod

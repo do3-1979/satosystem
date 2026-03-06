@@ -521,6 +521,23 @@ class TradingStrategy:
                     except Exception as e:
                         self.logger.log(f"[方向性フィルターエラー] {str(e)}")
 
+                # Funding Rate フィルター (Funding Rate過熱によるエントリー抑制)
+                if Config.get_funding_rate_filter_enabled() and desired_side and allow_entry:
+                    try:
+                        current_epoch = self.price_data_management.get_latest_close_time()
+                        fr_value = self.price_data_management.get_funding_rate(current_epoch)
+                        buy_threshold = Config.get_funding_rate_buy_threshold()
+                        sell_threshold = Config.get_funding_rate_sell_threshold()
+                        if desired_side == "BUY" and fr_value >= buy_threshold:
+                            filter_results.append(f"FundingRate: ✗ BUY却下(FR={fr_value*100:.4f}%>={buy_threshold*100:.4f}%)")
+                            allow_entry = False
+                        elif desired_side == "SELL" and fr_value <= sell_threshold:
+                            filter_results.append(f"FundingRate: ✗ SELL却下(FR={fr_value*100:.4f}%<={sell_threshold*100:.4f}%)")
+                            allow_entry = False
+                        else:
+                            filter_results.append(f"FundingRate: ✓ ({desired_side}, FR={fr_value*100:.4f}%)")
+                    except Exception as e:
+                        self.logger.log(f"[Funding Rateフィルターエラー] {str(e)}")
 
                 # フィルター結果を出力
                 if filter_results:
