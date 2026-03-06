@@ -78,30 +78,10 @@ class Bot:
         self.alert = Alert()
 
     def show_trade_data(self, trade_data):
-        self.logger.log(f"時刻: {trade_data['real_time']}"
-            f"  高値: {trade_data['high_price']:>5.0f}"
-            f"  安値: {trade_data['low_price']:>5.0f}"
-            f"  終値: {trade_data['close_price']:>5.0f}"
-            f"  購入価格: {trade_data['positions']['position_price']:>5.0f}"
-            f"  STOP: {trade_data['stop_price']:>5.0f}"
-            f"  ボラ: {trade_data['volatility']:>7.2f}"
-            f"  出来高: {trade_data['Volume']:>7.2f}"
-            f"  SIGNAL: {trade_data['decision']}"
-            f" -> {trade_data['side']}"
-            f"  購入量: {trade_data['position_size']:.4f}"
-            f"  資産: {trade_data['positions']['quantity']:.4f}"
-            f"  ポジ: {trade_data['positions']['side']}"
-            f"  みなし損益: {trade_data['profit_and_loss']:>4.0f}"
-            f"  累計損益: {trade_data['total_profit_and_loss']:>4.0f}"
-            #f"  PSAR: {trade_data['psar']:>5.0f}"
-            #f"  総量: {trade_data['total_size']}"
-            #f"  DCH: {trade_data['dc_h']}"
-            #f"  DCL: {trade_data['dc_l']}"
-            #f"  PVO: {trade_data['pvo_val']}"
-            #f"  出来高: {trade_data['stop_offset']}"
-            #f"  出来高: {trade_data['stop_psar_stop_offset']}"
-            #f"  出来高: {trade_data['stop_price_surge_stop_offset']}"
-        )
+        # 毎周期データは JSON ログ（latest_status.json）に記録するため、
+        # テキストログへの出力は廃止。エラーは log_error() で出力される。
+        pass
+
         return
 
     def run(self):
@@ -191,7 +171,7 @@ class Bot:
                             with open(summary_path, 'w', encoding='utf-8') as f:
                                 json.dump(metrics, f, ensure_ascii=False, indent=2)
                             self.logger.log(f"バックテストサマリ出力: {summary_path}")
-                            
+
                             # トレードログを JSON で保存
                             trade_log_path = self.trade_logger.save_trades_json(f"trade_log_{ts}.json")
                             if trade_log_path:
@@ -199,6 +179,14 @@ class Bot:
                                 # トレードログの統計情報を表示
                                 stats = self.trade_logger.get_statistics()
                                 self.logger.log(f"トレード統計: 総数={stats['total_trades']}, 完了={stats['completed_trades']}, 勝={stats['wins']}, 負={stats['losses']}, 勝率={stats['win_rate']:.1f}%")
+
+                            # latest_status.json にバックテスト結果を書き出し
+                            self.logger.set_backtest_result({
+                                **metrics,
+                                "summary_file": os.path.basename(summary_path),
+                                "total_pnl": self.portfolio.get_profit_and_loss(),
+                                "finished_at": _t.strftime('%Y/%m/%d %H:%M:%S'),
+                            })
                         except Exception as e:
                             self.logger.log_error(f"バックテストメトリクス/トレードログ出力失敗: {e}")
                         
@@ -513,8 +501,8 @@ class Bot:
                             last_memory_check = current_timestamp
                         except Exception as e:
                             self.logger.log_error(f"メモリ監視エラー: {e}")
-                if log_zipped == False and int(current_time.strftime("%H")) % 2 == 0 and int(current_time.strftime("%M")) == 0:
-                    # ログをローテート
+                if log_zipped == False and int(current_time.strftime("%H")) == 0 and int(current_time.strftime("%M")) == 0:
+                    # 深夜0時に1日1回ログをローテート（以前は2時間ごとで細かすぎた）
                     self.logger.close_log_file()
                     self.logger.compress_logs()  # 圧縮
                     self.logger.open_log_file()

@@ -3,7 +3,7 @@
     "name": "satosystem gen2",
     "description": "Bitcoin auto-trading system - Donchian Breakout + PVO + ADX filter",
     "branch": "gen2",
-    "last_updated": "2026-03-04",
+    "last_updated": "2026-03-06",
     "baseline_performance": {
       "cumulative_pnl_usd": 2402.94,
       "period": "2024-2025 (8 quarters, ParamSweep TSMOM150+PSAR300採用後)",
@@ -108,9 +108,9 @@
     }
   },
   "latest_commit": {
-    "hash": "d419cc9",
-    "date": "2026-03-02",
-    "message": "test: cost_modelレグレッションテスト追加・スイート登録",
+    "hash": "b05f96c",
+    "date": "2026-03-06",
+    "message": "fix: Task 40g - APIレートリミット根本対策（fetch_ohlcv呼び出し最適化）",
     "changes": {
       "files_changed": 1,
       "lines_added": 103,

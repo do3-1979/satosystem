@@ -1,10 +1,30 @@
 #!/bin/bash
 # ============================================================
 #  satosystem Web Monitor 起動スクリプト
-#  使い方: ./commands/monitor_web [--port 8080]
+#  使い方:
+#    ./commands/monitor_web --local            # ローカルJSON直読み（ホストPC確認用）
+#    ./commands/monitor_web --host raspberry_pi --port 8080  # SSH経由
 #  ブラウザで http://localhost:8080 を開く
 # ============================================================
 
 cd "$(git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/work/satosystem")" || exit 1
+
+# ポート番号をコマンドライン引数から取得（デフォルト8080）
+PORT=8080
+for i in "$@"; do
+  case "$i" in --port=*) PORT="${i#*=}" ;; esac
+done
+for i in "${@:1}"; do
+  if [ "$PREV" = "--port" ]; then PORT="$i"; fi
+  PREV="$i"
+done
+
+# 同ポートを使用中のプロセスを終了
+OLD_PID=$(lsof -t -i:"$PORT" 2>/dev/null)
+if [ -n "$OLD_PID" ]; then
+  echo "⏹  既存のmonitor_web (PID $OLD_PID) を終了します..."
+  kill "$OLD_PID" 2>/dev/null
+  sleep 1
+fi
 
 python3 tools/web_monitor/server.py "$@"
