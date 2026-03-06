@@ -422,6 +422,20 @@
     ]
   },
   
+  "infrastructure": {
+    "raspberry_pi": {
+      "description": "本番稼働環境のRaspberry Pi",
+      "ssh_command": "ssh raspberry_pi",
+      "auth": "公開鍵認証（パスワード不要）",
+      "ip": "192.168.1.19",
+      "work_dir": "/home/satoshi/work/satosystem",
+      "bot_start": "echo 'yes' | ./src/start_bot.sh  # または -t 0 でTTY不要",
+      "bot_stop": "./src/stop_bot.sh",
+      "log_dir": "/home/satoshi/work/satosystem/src/logs/",
+      "note": "start_bot.sh はstdinがTTYでない場合（nohup/ssh等）はLIVE確認プロンプトを自動スキップ"
+    }
+  },
+
   "metadata": {
     "schema_version": "2.0",
     "compatible_with": ["PROGRESS.json", "ACTION_LIST.json", "ARCHITECTURE_OVERVIEW.md"],

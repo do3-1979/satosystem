@@ -51,13 +51,17 @@ echo "📁 作業ディレクトリ: $SCRIPT_DIR"
 echo "⚙️  実行モード: $MODE"
 echo ""
 
-# 本番モードは確認を求める
+# 本番モードは確認を求める（非インタラクティブ時はスキップ）
 if [ "$MODE" = "LIVE" ]; then
     echo "⚠️  警告: 本番取引モードで起動します！"
-    read -p "本当に続けますか？ (yes/no): " confirm
-    if [ "$confirm" != "yes" ]; then
-        echo "❌ 起動をキャンセルしました"
-        exit 1
+    if [ -t 0 ]; then
+        read -p "本当に続けますか？ (yes/no): " confirm
+        if [ "$confirm" != "yes" ]; then
+            echo "❌ 起動をキャンセルしました"
+            exit 1
+        fi
+    else
+        echo "ℹ️  非インタラクティブモード: 確認プロンプトをスキップして起動します"
     fi
 fi
 
