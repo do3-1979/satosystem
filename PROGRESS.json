@@ -119,20 +119,39 @@
     }
   },
   "current_status": {
-    "phase": "Phase 2 - パラメータ最適化・2026年戦略実装",
+    "phase": "Phase 3 - 本番稼働・取引所移行フェーズ",
     "active_tasks": {
       "in_progress": [
         {
           "task_id": "43",
-          "title": "RPiホットテスト1週間耐久テスト - ログ検証",
-          "status": "稼働中",
+          "title": "RPi本番稼働 - ライブ運用監視",
+          "status": "本番稼働中",
           "priority": "★★★★★",
-          "started_date": "2026-03-01",
-          "note": "start_bot.sh で起動済み。RPi: 192.168.1.19, back_test=0, hot_test_dummy_mode=1。ログ: ~/satosystem/src/logs/bot_*.log",
-          "due_date": "2026-03-08"
+          "started_date": "2026-03-05",
+          "note": "本番運用開始（back_test=0, hot_test_dummy_mode=0）。RPi: 192.168.1.19。3月23日Bybit Close-Onlyまでに取引所移行必須",
+          "due_date": "2026-03-22"
+        },
+        {
+          "task_id": "44",
+          "title": "取引所移行（Bybit → 代替取引所）",
+          "status": "調査中",
+          "priority": "★★★★★",
+          "started_date": "2026-03-07",
+          "note": "Bybit日本向けClose-Only期限: 2026-03-23 12:00 JST。Bitgetは4H足240日制限あり（バックテスト不可、ライブは可）。OKX/Gate.ioも候補",
+          "due_date": "2026-03-22",
+          "subtasks": [
+            {"id": "44a", "title": "代替取引所OHLCV取得テスト（2年分4H足）", "due": "2026-03-09"},
+            {"id": "44b", "title": "新取引所exchange.py実装", "due": "2026-03-13"},
+            {"id": "44c", "title": "バックテスト同等性確認・レグレッションテスト", "due": "2026-03-16"},
+            {"id": "44d", "title": "RPiデプロイ・本番切り替えテスト", "due": "2026-03-19"}
+          ]
         }
       ],
-      "next_priority": []
+      "next_priority": [
+        {"task_id": "40h", "title": "レジーム別戦略切替（Trend/Range）", "priority": "★★★★☆"},
+        {"task_id": "40f", "title": "価格データ健全性チェック（新取引所移行後）", "priority": "★★★★☆"},
+        {"task_id": "22b-eval", "title": "Strategy B有効化・バックテスト評価", "priority": "★★★☆☆"}
+      ]
     },
     "recently_completed": [
       {

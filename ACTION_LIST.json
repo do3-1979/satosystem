@@ -2,7 +2,7 @@
   "meta": {
     "version": "1.0",
     "last_updated": "2026-03-06",
-    "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE) - monitor_webローソク足チャート実装完了（2026-03-06）",
+    "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE) - OHLCVキャッシュDB更新ツール実装完了（2026-03-06）",
     "replaces": "docs/ACTION_LIST.md",
     "workflow_rules": {
       "baseline_before_action": "アクションリスト実行前に必ずレグレッションテストを実行し、PROGRESS.json baseline_regressionに保存すること",
@@ -10,6 +10,29 @@
     }
   },
   "tasks": {
+    "progress": [
+      {
+        "id": "44",
+        "category": "インフラ・移行",
+        "title": "取引所移行（Bybit → 代替取引所）",
+        "description": "Bybit日本向けClose-Only期限（2026-03-23 12:00 JST）前に代替取引所への移行完了。Bitgetは4H足240日制限（バックテスト不可・ライブは可）。OKX/Gate.ioを候補として調査・実装。",
+        "priority": 5,
+        "due_date": "2026-03-22",
+        "started_date": "2026-03-07",
+        "subtasks": [
+          {"id": "44a", "title": "代替取引所OHLCV取得テスト（2年分4H足）", "due": "2026-03-09", "status": "todo"},
+          {"id": "44b", "title": "新取引所exchange.py実装（okx/gateio）", "due": "2026-03-13", "status": "todo"},
+          {"id": "44c", "title": "バックテスト同等性確認・レグレッションテスト", "due": "2026-03-16", "status": "todo"},
+          {"id": "44d", "title": "RPiデプロイ・本番切り替えテスト", "due": "2026-03-19", "status": "todo"}
+        ],
+        "exchange_notes": {
+          "bitget": "ライブ取引○・バックテスト用4H足は240日制限で不足（OKX/Gate.ioと組み合わせ要）",
+          "okx": "4H過去2年以上取得可・ccxt.okx・日本アクセス要確認",
+          "gateio": "4H過去2年以上取得可・ccxt.gateio・日本からアクセス可"
+        },
+        "critical_deadline": "2026-03-23 12:00 JST（Bybit Close-Only開始）"
+      }
+    ],
     "todo": [
       {
         "id": "40h",
@@ -110,9 +133,24 @@
         "estimated_impact_usd": null
       }
     ],
-    "progress": [],
-    "progress_memo": "現在は本番運用中（PID 600690, RPi 192.168.1.19）。Task 43完了済み。",
+    "progress_memo": "2026-03-06: OHLCVキャッシュDB更新ツール（tools/update_ohlcv_db.py）実装完了。Bybit公開API経由でデータ蓄積可。docs/analysis/をアーカイブ化（更新コスト>メリットのため運用終了）。Bybit Close-Only期限: 2026-03-23。",
     "done": [
+      {
+        "id": "ohlcv-db-tool",
+        "title": "OHLCVキャッシュDB更新ツール実装",
+        "category": "運用ツール",
+        "completed_date": "2026-03-06",
+        "result": "Bybit公開API（APIキー不要）経由で4H足BTC/USDT:USDTデータを取得しohlcv_cache.dbを更新するツールを実装。--append（追記）/--year 2024〜2026（年次取得）/--full（全件re-fetch）/--statsオプション対応。Bybit Close-Only期限（2026-03-23）までにデータを蓄積済みにする目的。",
+        "files": ["tools/update_ohlcv_db.py", "commands/prj-update-ohlcv-db"],
+        "usage": "commands/prj-update-ohlcv-db [--stats|--append|--year N|--full]"
+      },
+      {
+        "id": "archive-analysis",
+        "title": "docs/analysis JSON分析ファイルのアーカイブ化",
+        "category": "保守",
+        "completed_date": "2026-03-06",
+        "result": "docs/analysis/（26ファイル）と commands/prj-update-analysis を _archive/docs_analysis/ および _archive/ に移動。23モジュール規模では更新コスト > 活用メリットのため運用終了。AI直接ソース分析に統一。"
+      },
       {
         "id": "web-monitor",
         "title": "Web Monitor ダッシュボード実装",
@@ -1145,13 +1183,20 @@
     ]
   },
   "summary": {
-    "total_tasks": 63,
+    "total_tasks": 64,
     "todo": 16,
-    "progress": 0,
+    "progress": 1,
     "done": 53,
-    "cumulative_impact_usd": 1985.14,
-    "baseline_performance": "1985.14 USD (8 quarters, Task 40e完了後, 2026-03-02)",
+    "cumulative_impact_usd": 2402.94,
+    "baseline_performance": "2402.94 USD (8 quarters, ParamSweep TSMOM150+PSAR300採用後, 2026-03-04)",
     "baseline_history": [
+      {
+        "cumulative_pnl_usd": 2402.94,
+        "date": "2026-03-04",
+        "task": "param_sweep",
+        "note": "ParamSweep: psar_lookback=300, tsmom_lookback=150採用 (+417.80 USD, +21.0%)",
+        "backup_file": "baseline_backup/BASELINE_2402.94USD_ParamSweep_20260304.json"
+      },
       {
         "cumulative_pnl_usd": 1985.14,
         "date": "2026-03-02",

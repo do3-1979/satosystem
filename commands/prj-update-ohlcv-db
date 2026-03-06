@@ -1,0 +1,14 @@
+#!/bin/bash
+# OHLCVキャッシュDB更新コマンド
+# Bybit APIから4H足データを取得し ohlcv_data/ohlcv_cache.db を更新します
+#
+# 使用例:
+#   commands/prj-update-ohlcv-db                  # 最新日以降を追記
+#   commands/prj-update-ohlcv-db --stats           # DB統計表示
+#   commands/prj-update-ohlcv-db --year 2024       # 2024年データ取得
+#   commands/prj-update-ohlcv-db --year 2025       # 2025年データ取得
+#   commands/prj-update-ohlcv-db --year 2026       # 2026年データ取得
+#   commands/prj-update-ohlcv-db --full            # 2023/11以降を全件取得
+
+cd "$(dirname "$0")/.."
+python3 tools/update_ohlcv_db.py "$@"
