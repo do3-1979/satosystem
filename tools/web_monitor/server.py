@@ -14,6 +14,7 @@ BOTの latest_status.json を読んでブラウザに表示するダッシュボ
 """
 
 import argparse
+import glob
 import json
 import os
 import subprocess
@@ -33,7 +34,9 @@ LOCAL_LOG_DIR       = os.path.join(
     os.path.dirname(__file__), "..", "..", "src", "logs"
 )
 LATEST_STATUS_FILE  = "latest_status.json"
-CACHE_TTL           = 30   # 秒: キャッシュ有効期限
+CACHE_TTL           = 30    # 秒: ステータスキャッシュ有効期限
+MAX_CHART_CANDLES   = 180   # 240分足で約1ヶ月分
+CANDLES_CACHE_TTL   = 300   # 秒: キャンドルキャッシュ有効期限 (5分)
 
 # ──────────────────────────────────────────
 #  グローバルキャッシュ
@@ -42,6 +45,9 @@ _cache_lock = threading.Lock()
 _cache = {"data": None, "timestamp": 0}
 _ssh_host   = DEFAULT_SSH_HOST
 _local_mode = False   # True = ローカルファイル直読み
+
+_candles_lock  = threading.Lock()
+_candles_cache = {"data": None, "timestamp": 0}
 
 
 # ──────────────────────────────────────────
@@ -130,8 +136,184 @@ def fetch_local_process_status() -> dict:
     return {"pid": "", "cpu": "", "mem": "", "started": ""}
 
 
+# ──────────────────────────────────────────
+#  キャンドルデータ取得
+# ──────────────────────────────────────────
+
+def _read_log_file_safe(filepath: str) -> list:
+    """不完全な JSON ログファイル（ボット稼働中でも）を安全に読む"""
+    try:
+        with open(filepath, "rb") as f:
+            raw = f.read().decode("utf-8", errors="replace").rstrip()
+        if not raw:
+            return []
+        if not raw.endswith("]"):
+            # ボット稼働中は末尾の ] がない。最後の完全な } を探して補完する
+            idx = raw.rfind("}")
+            if idx < 0:
+                return []
+            raw = raw[: idx + 1] + "]"
+            if not raw.startswith("["):
+                raw = "[" + raw
+        return json.loads(raw)
+    except Exception:
+        return []
+
+
+def _entries_to_candles(entries: list) -> list:
+    """trade_data エントリリストをチャート用キャンドル形式に変換"""
+    candles = []
+    for td in entries:
+        if not isinstance(td, dict):
+            continue
+        positions = td.get("positions") or {}
+        if not isinstance(positions, dict):
+            positions = {}
+        candles.append({
+            "ts":           td.get("close_time_dt", td.get("real_time", "")),
+            "time":         int(td.get("close_time") or td.get("timestamp") or 0),
+            "open":         float(td.get("open_price") or 0),
+            "high":         float(td.get("high_price") or 0),
+            "low":          float(td.get("low_price") or 0),
+            "close":        float(td.get("close_price") or 0),
+            "decision":     str(td.get("decision") or ""),
+            "side":         str(td.get("side") or ""),
+            "position_side": positions.get("side", ""),
+            "psar":         float(td.get("psar") or 0),
+            "dc_h":         float(td.get("dc_h") or 0),
+            "dc_l":         float(td.get("dc_l") or 0),
+            "adx":          float(td.get("adx") or 0),
+            "pvo_val":      float(td.get("pvo_val") or 0),
+            "total_pnl":    float(td.get("total_profit_and_loss") or 0),
+        })
+    return candles
+
+
+def fetch_candles_local(max_candles: int = MAX_CHART_CANDLES) -> list:
+    """ローカルの logs/*.json からキャンドルデータを組み立てる"""
+    log_dir = os.path.normpath(LOCAL_LOG_DIR)
+    # YYYYMMDDHHMMSS.json 形式のファイルのみ（latest_status.json は除外）
+    files = sorted(
+        [f for f in glob.glob(os.path.join(log_dir, "????????*.json"))
+         if "latest_status" not in os.path.basename(f)],
+        reverse=True,
+    )
+    candles: list = []
+    for fpath in files:
+        entries = _read_log_file_safe(fpath)
+        candles.extend(_entries_to_candles(entries))
+        if len(candles) >= max_candles * 2:
+            break
+    candles.sort(key=lambda c: c["time"])
+    seen: set = set()
+    unique: list = []
+    for c in candles:
+        if c["time"] not in seen:
+            seen.add(c["time"])
+            unique.append(c)
+    return unique[-max_candles:]
+
+
+# RPi 側で実行する Python スクリプト（SSH モード用）
+_REMOTE_CANDLE_SCRIPT = """
+import json, glob, os, sys
+log_dir = os.path.expanduser('~/work/satosystem/src/logs')
+files = sorted(
+    [f for f in glob.glob(os.path.join(log_dir, '????????*.json'))
+     if 'latest_status' not in os.path.basename(f)],
+    reverse=True
+)
+candles = []
+for fpath in files:
+    try:
+        with open(fpath, 'rb') as fp:
+            raw = fp.read().decode('utf-8', errors='replace').rstrip()
+        if not raw:
+            continue
+        if not raw.endswith(']'):
+            idx = raw.rfind('}')
+            if idx < 0:
+                continue
+            raw = raw[:idx+1] + ']'
+            if not raw.startswith('['):
+                raw = '[' + raw
+        entries = json.loads(raw)
+        for td in entries:
+            if not isinstance(td, dict):
+                continue
+            pos = td.get('positions') or {}
+            if not isinstance(pos, dict):
+                pos = {}
+            candles.append({
+                'ts':           td.get('close_time_dt', td.get('real_time', '')),
+                'time':         int(td.get('close_time') or td.get('timestamp') or 0),
+                'open':         float(td.get('open_price') or 0),
+                'high':         float(td.get('high_price') or 0),
+                'low':          float(td.get('low_price') or 0),
+                'close':        float(td.get('close_price') or 0),
+                'decision':     str(td.get('decision') or ''),
+                'side':         str(td.get('side') or ''),
+                'position_side': pos.get('side', ''),
+                'psar':         float(td.get('psar') or 0),
+                'dc_h':         float(td.get('dc_h') or 0),
+                'dc_l':         float(td.get('dc_l') or 0),
+                'adx':          float(td.get('adx') or 0),
+                'pvo_val':      float(td.get('pvo_val') or 0),
+                'total_pnl':    float(td.get('total_profit_and_loss') or 0),
+            })
+    except Exception:
+        pass
+    if len(candles) >= 360:
+        break
+candles.sort(key=lambda c: c['time'])
+seen = set()
+unique = []
+for c in candles:
+    if c['time'] not in seen:
+        seen.add(c['time'])
+        unique.append(c)
+print(json.dumps(unique[-180:]))
+"""
+
+
+def fetch_candles_remote(host: str, max_candles: int = MAX_CHART_CANDLES) -> list:
+    """SSH 経由でラズパイの logs/*.json からキャンドルデータを取得"""
+    result = subprocess.run(
+        ["ssh", host, "python3"],
+        input=_REMOTE_CANDLE_SCRIPT,
+        capture_output=True, text=True, timeout=30,
+    )
+    if result.returncode != 0 or not result.stdout.strip():
+        return []
+    return json.loads(result.stdout.strip())
+
+
+def get_candles() -> list:
+    """キャッシュ付き: キャンドルデータを取得して返す"""
+    now = time.time()
+    with _candles_lock:
+        if _candles_cache["data"] is not None and (now - _candles_cache["timestamp"]) < CANDLES_CACHE_TTL:
+            return _candles_cache["data"]
+
+    try:
+        data = fetch_candles_local() if _local_mode else fetch_candles_remote(_ssh_host)
+    except Exception:
+        with _candles_lock:
+            if _candles_cache["data"] is not None:
+                return _candles_cache["data"]
+        return []
+
+    with _candles_lock:
+        _candles_cache["data"] = data
+        _candles_cache["timestamp"] = now
+    return data
+
+
+# ──────────────────────────────────────────
+#  ステータスデータ取得
+# ──────────────────────────────────────────
+
 def get_status() -> dict:
-    """キャッシュ付き: データ取得して返す"""
     now = time.time()
     with _cache_lock:
         if _cache["data"] and (now - _cache["timestamp"]) < CACHE_TTL:
@@ -179,7 +361,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>satosystem BOT Monitor</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
 <style>
 :root{--bg:#0d1117;--card:#161b22;--card2:#1c2128;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--green:#3fb950;--red:#f85149;--yellow:#d29922;--blue:#58a6ff;--purple:#bc8cff;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -297,8 +479,8 @@ canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important
 <!-- ROW2: チャート(左) + 履歴テーブル(右) -->
 <div class="row2">
   <div class="card chart-card">
-    <div class="ct">BTC 価格（直近 60件）</div>
-    <div class="chart-wrap"><canvas id="chartPrice"></canvas></div>
+    <div class="ct">BTC ローソク足（最大1ヶ月）<span id="candleCount" style="margin-left:6px;font-size:9px;color:var(--muted)"></span></div>
+    <div class="chart-wrap"><div id="chartCandle" style="position:absolute;top:0;left:0;width:100%;height:100%;"></div></div>
     <div class="ind-bar">
       <div class="ind"><span class="ind-lbl">累計損益</span><span class="ind-val" id="indTotalPnl2">—</span></div>
       <div class="ind"><span class="ind-lbl">出来高</span><span class="ind-val m" id="indVol">—</span></div>
@@ -331,37 +513,76 @@ canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important
 <script>
 const REFRESH_INTERVAL = 30;
 let countdown = REFRESH_INTERVAL;
-let chartPrice;
+let lwChart, lwCandle, lwDCH, lwDCL, lwPSAR;
 
-const baseOpts = {
-  responsive:true, maintainAspectRatio:false, animation:{duration:200},
-  plugins:{legend:{display:true,labels:{color:'#8b949e',font:{size:9},boxWidth:12}},
-    tooltip:{backgroundColor:'#1c2128',borderColor:'#30363d',borderWidth:1,titleColor:'#8b949e',bodyColor:'#e6edf3'}},
-  scales:{
-    x:{ticks:{color:'#8b949e',maxTicksLimit:6,font:{size:8}},grid:{color:'rgba(48,54,61,.4)'}},
-    y:{ticks:{color:'#8b949e',font:{size:8}},grid:{color:'rgba(48,54,61,.4)'}}
-  }
-};
-
-function initCharts(){
-  chartPrice = new Chart(document.getElementById('chartPrice'),{type:'line',
-    data:{labels:[],datasets:[
-      {label:'終値',data:[],borderColor:'#58a6ff',backgroundColor:'rgba(88,166,255,.07)',fill:true,tension:.3,pointRadius:1,borderWidth:1.5},
-      {label:'高',data:[],borderColor:'#d29922',borderDash:[3,3],tension:.3,pointRadius:0,backgroundColor:'transparent',borderWidth:1},
-      {label:'安',data:[],borderColor:'#3fb950',borderDash:[3,3],tension:.3,pointRadius:0,backgroundColor:'transparent',borderWidth:1},
-    ]},
-    options:{...baseOpts}
+function initCandleChart(){
+  const wrap = document.getElementById('chartCandle');
+  lwChart = LightweightCharts.createChart(wrap, {
+    autoSize: true,
+    layout:{ background:{type:'solid',color:'#161b22'}, textColor:'#8b949e', fontSize:10 },
+    grid:{ vertLines:{color:'#30363d'}, horzLines:{color:'#30363d'} },
+    timeScale:{ timeVisible:true, secondsVisible:false, borderColor:'#30363d' },
+    rightPriceScale:{ borderColor:'#30363d' },
+    crosshair:{ mode:1 },
   });
+  lwCandle = lwChart.addCandlestickSeries({
+    upColor:'#3fb950', downColor:'#f85149',
+    borderUpColor:'#3fb950', borderDownColor:'#f85149',
+    wickUpColor:'#3fb950', wickDownColor:'#f85149',
+  });
+  lwDCH = lwChart.addLineSeries({ color:'#d29922', lineWidth:1, lineStyle:2,
+    priceLineVisible:false, lastValueVisible:false, title:'DCH' });
+  lwDCL = lwChart.addLineSeries({ color:'#58a6ff', lineWidth:1, lineStyle:2,
+    priceLineVisible:false, lastValueVisible:false, title:'DCL' });
+  lwPSAR = lwChart.addLineSeries({ color:'#8b949e', lineWidth:1, lineStyle:3,
+    priceLineVisible:false, lastValueVisible:false, title:'PSAR' });
 }
 
-function updateCharts(candles){
-  if(!candles||!candles.length) return;
-  const labels = candles.map(c=>c.ts?c.ts.slice(5):'');
-  chartPrice.data.labels = labels;
-  chartPrice.data.datasets[0].data = candles.map(c=>c.close);
-  chartPrice.data.datasets[1].data = candles.map(c=>c.high);
-  chartPrice.data.datasets[2].data = candles.map(c=>c.low);
-  chartPrice.update();
+function _mkLine(candles, key){
+  const d=[]; const s=new Set();
+  candles.filter(c=>c.time>0 && c[key]>0).sort((a,b)=>a.time-b.time).forEach(c=>{
+    if(!s.has(c.time)){ s.add(c.time); d.push({time:c.time, value:c[key]}); }
+  });
+  return d;
+}
+
+function updateCandleChart(candles){
+  if(!candles||!candles.length||!lwCandle) return;
+  const seen=new Set(); const ohlc=[];
+  candles.filter(c=>c.time>0).sort((a,b)=>a.time-b.time).forEach(c=>{
+    if(!seen.has(c.time)){
+      seen.add(c.time);
+      ohlc.push({time:c.time, open:c.open||c.close, high:c.high, low:c.low, close:c.close});
+    }
+  });
+  if(!ohlc.length) return;
+  lwCandle.setData(ohlc);
+  lwDCH.setData(_mkLine(candles,'dc_h'));
+  lwDCL.setData(_mkLine(candles,'dc_l'));
+  lwPSAR.setData(_mkLine(candles,'psar'));
+  // エントリーシグナルマーカー
+  const markers=[];
+  candles.filter(c=>c.time>0&&c.decision&&c.decision.includes('ENTRY'))
+    .sort((a,b)=>a.time-b.time).forEach(c=>{
+      const isSell=(c.side==='SELL'||c.position_side==='SELL');
+      markers.push({time:c.time,
+        position:isSell?'aboveBar':'belowBar',
+        color:isSell?'#f85149':'#3fb950',
+        shape:isSell?'arrowDown':'arrowUp',
+        text:(c.decision||'').replace('ENTRY_','').replace('ENTRY','E'), size:1});
+    });
+  lwCandle.setMarkers(markers);
+}
+
+async function fetchCandles(){
+  try{
+    const res=await fetch('/api/candles');
+    if(!res.ok) return;
+    const candles=await res.json();
+    updateCandleChart(candles);
+    const el=document.getElementById('candleCount');
+    if(el) el.textContent=candles.length+'件';
+  }catch(e){ console.warn('candles fetch error:',e); }
 }
 
 function fmt(n,d=2){
@@ -450,8 +671,8 @@ function render(d){
   const ecEl=document.getElementById('errCount');
   ecEl.textContent=ec; ecEl.className=ec>0?'r':'g';
 
-  // チャート
-  if(d.candles&&d.candles.length>0) updateCharts(d.candles);
+  // ローソク足チャート（latest_status.json の candles でリアルタイム更新）
+  if(d.candles&&d.candles.length>0) updateCandleChart(d.candles);
 
   // 履歴 (最新5件)
   const tbody=document.getElementById('historyBody');
@@ -516,8 +737,10 @@ setInterval(()=>{
   if(countdown<=0){countdown=REFRESH_INTERVAL;refresh();}
 },1000);
 
-initCharts();
-refresh();
+initCandleChart();
+fetchCandles();                        // 初回: ログファイルから最大1ヶ月分取得
+setInterval(fetchCandles, 300000);     // 5分毎にキャンドル更新
+refresh();                             // 30秒毎のステータス更新も開始
 </script>
 </body>
 </html>
@@ -544,6 +767,14 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 data = get_status()
                 body = json.dumps(data, ensure_ascii=False).encode("utf-8")
+                self._send(200, "application/json; charset=utf-8", body)
+            except Exception as e:
+                body = json.dumps({"error": str(e)}).encode("utf-8")
+                self._send(500, "application/json; charset=utf-8", body)
+        elif path == "/api/candles":
+            try:
+                candles = get_candles()
+                body = json.dumps(candles, ensure_ascii=False).encode("utf-8")
                 self._send(200, "application/json; charset=utf-8", body)
             except Exception as e:
                 body = json.dumps({"error": str(e)}).encode("utf-8")

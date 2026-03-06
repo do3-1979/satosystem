@@ -16,7 +16,7 @@ import logging
 from config import Config
 
 # latest_status.json のローリングバッファサイズ
-MAX_CANDLE_HISTORY = 60
+MAX_CANDLE_HISTORY = 180
 MAX_ERROR_HISTORY  = 20
 LATEST_STATUS_FILE = "latest_status.json"
 
@@ -124,6 +124,8 @@ class Logger:
         pos = td.get('positions', {})
         return {
             "ts":            td.get('real_time', ''),
+            "time":          int(td.get('close_time') or td.get('timestamp') or 0),
+            "open":          float(td.get('open_price') or 0),
             "high":          td.get('high_price', 0),
             "low":           td.get('low_price', 0),
             "close":         td.get('close_price', 0),
