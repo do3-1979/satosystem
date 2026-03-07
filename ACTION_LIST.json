@@ -20,10 +20,30 @@
         "due_date": "2026-03-22",
         "started_date": "2026-03-07",
         "subtasks": [
-          {"id": "44a", "title": "代替取引所OHLCV取得テスト（2年分4H足）", "due": "2026-03-09", "status": "todo"},
-          {"id": "44b", "title": "新取引所exchange.py実装（okx/gateio）", "due": "2026-03-13", "status": "todo"},
-          {"id": "44c", "title": "バックテスト同等性確認・レグレッションテスト", "due": "2026-03-16", "status": "todo"},
-          {"id": "44d", "title": "RPiデプロイ・本番切り替えテスト", "due": "2026-03-19", "status": "todo"}
+          {
+            "id": "44a",
+            "title": "代替取引所OHLCV取得テスト（2年分4H足）",
+            "due": "2026-03-09",
+            "status": "todo"
+          },
+          {
+            "id": "44b",
+            "title": "新取引所exchange.py実装（okx/gateio）",
+            "due": "2026-03-13",
+            "status": "todo"
+          },
+          {
+            "id": "44c",
+            "title": "バックテスト同等性確認・レグレッションテスト",
+            "due": "2026-03-16",
+            "status": "todo"
+          },
+          {
+            "id": "44d",
+            "title": "RPiデプロイ・本番切り替えテスト",
+            "due": "2026-03-19",
+            "status": "todo"
+          }
         ],
         "exchange_notes": {
           "bitget": "ライブ取引○・バックテスト用4H足は240日制限で不足（OKX/Gate.ioと組み合わせ要）",
@@ -136,12 +156,37 @@
     "progress_memo": "2026-03-06: OHLCVキャッシュDB更新ツール（tools/update_ohlcv_db.py）実装完了。Bybit公開API経由でデータ蓄積可。docs/analysis/をアーカイブ化（更新コスト>メリットのため運用終了）。Bybit Close-Only期限: 2026-03-23。",
     "done": [
       {
+        "id": "45",
+        "title": "シグナル・フィルター最適組み合わせ探索（パラメータスイープ）",
+        "description": "全エントリー/イグジットシグナル・フィルターの特性を整理し、相乗効果が期待できる5種類の組み合わせを決定。各組み合わせでパラメータスイープを実施し、ベースライン(2402.94 USD)超えを目指す。",
+        "priority": "★★★★★",
+        "status": "TODO",
+        "subtasks": [
+          "45a: SIGNAL_FILTER_MATRIX.json作成 ✅",
+          "45b: 5コンボ組み合わせ決定 ✅",
+          "45c: パラメータスイープ実行 ✅（36ケース）",
+          "45d: ベースライン比較 ✅ → C04+101.52USD（誤差範囲のため不採用）"
+        ],
+        "due": "2026-03-15",
+        "created": "2026-03-07",
+        "sweep_result": {
+          "winner": "C04",
+          "gain": "+101.52 USD (+4.2%)",
+          "params": "sma_direction_filter_enabled=1, sma_direction_filter_period=300"
+        },
+        "completed": "2026-03-07",
+        "result": "36ケーススイープ実施。C04 SMA(300)+TSMOM(150)がPnL+101.52USDだが誤差範囲。config変更なし・現状維持。"
+      },
+      {
         "id": "ohlcv-db-tool",
         "title": "OHLCVキャッシュDB更新ツール実装",
         "category": "運用ツール",
         "completed_date": "2026-03-06",
         "result": "Bybit公開API（APIキー不要）経由で4H足BTC/USDT:USDTデータを取得しohlcv_cache.dbを更新するツールを実装。--append（追記）/--year 2024〜2026（年次取得）/--full（全件re-fetch）/--statsオプション対応。Bybit Close-Only期限（2026-03-23）までにデータを蓄積済みにする目的。",
-        "files": ["tools/update_ohlcv_db.py", "commands/prj-update-ohlcv-db"],
+        "files": [
+          "tools/update_ohlcv_db.py",
+          "commands/prj-update-ohlcv-db"
+        ],
         "usage": "commands/prj-update-ohlcv-db [--stats|--append|--year N|--full]"
       },
       {
@@ -157,7 +202,10 @@
         "category": "運用ツール",
         "completed_date": "2026-03-06",
         "result": "ホストPC上で動作するブラウザ向けBOT監視ダッシュボードを実装。SSH経由でRPiのログを取得しリアルタイム表示。ラズパイへの負荷ゼロ（tail -n 500 + 30秒キャッシュ）。Chart.jsによるBTC価格・損益・出来高・ボラティリティグラフ、プロセス状態・残高・エラー表示を含む洗練されたダークテーマUI。",
-        "files": ["tools/web_monitor/server.py", "commands/monitor_web"],
+        "files": [
+          "tools/web_monitor/server.py",
+          "commands/monitor_web"
+        ],
         "usage": "cd satosystem && ./commands/monitor_web  →  http://localhost:8080"
       },
       {

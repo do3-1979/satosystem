@@ -122,10 +122,24 @@ class Logger:
     def _build_candle_entry(self, td: dict) -> dict:
         """trade_data から latest_status.json 用のエントリを構築"""
         pos = td.get('positions', {})
+        # close_time / timestamp がなければ real_time から変換
+        _ts = td.get('close_time') or td.get('timestamp')
+        if _ts:
+            _time = int(float(_ts))
+        else:
+            real_time = td.get('real_time', '')
+            _time = 0
+            if real_time:
+                for fmt in ('%Y/%m/%d %H:%M:%S', '%Y/%m/%d %H:%M'):
+                    try:
+                        _time = int(datetime.strptime(real_time, fmt).timestamp())
+                        break
+                    except Exception:
+                        pass
         return {
             "ts":            td.get('real_time', ''),
-            "time":          int(td.get('close_time') or td.get('timestamp') or 0),
-            "open":          float(td.get('open_price') or 0),
+            "time":          _time,
+            "open":          float(td.get('open_price') or td.get('close_price') or 0),
             "high":          td.get('high_price', 0),
             "low":           td.get('low_price', 0),
             "close":         td.get('close_price', 0),

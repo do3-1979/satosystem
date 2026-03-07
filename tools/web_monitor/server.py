@@ -17,10 +17,12 @@ import argparse
 import glob
 import json
 import os
+import re
 import subprocess
 import sys
 import threading
 import time
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse
 
@@ -160,6 +162,20 @@ def _read_log_file_safe(filepath: str) -> list:
         return []
 
 
+# YYYYMMDDHHMMSS.json 形式（14桁数字）のみマッチ
+_OHLCV_LOG_RE = re.compile(r"^\d{14}\.json$")
+
+
+def _real_time_to_ts(rt: str) -> int:
+    """real_time 文字列（例 '2026/03/06 10:00:00'）を Unix 秒に変換"""
+    for fmt in ("%Y/%m/%d %H:%M:%S", "%Y/%m/%d %H:%M"):
+        try:
+            return int(datetime.strptime(rt, fmt).timestamp())
+        except Exception:
+            pass
+    return 0
+
+
 def _entries_to_candles(entries: list) -> list:
     """trade_data エントリリストをチャート用キャンドル形式に変換"""
     candles = []
@@ -169,10 +185,17 @@ def _entries_to_candles(entries: list) -> list:
         positions = td.get("positions") or {}
         if not isinstance(positions, dict):
             positions = {}
+        # close_time / timestamp がなければ real_time から変換
+        _ts = td.get("close_time") or td.get("timestamp")
+        if _ts:
+            _time = int(float(_ts))
+        else:
+            _time = _real_time_to_ts(td.get("real_time", ""))
         candles.append({
             "ts":           td.get("close_time_dt", td.get("real_time", "")),
-            "time":         int(td.get("close_time") or td.get("timestamp") or 0),
-            "open":         float(td.get("open_price") or 0),
+            "time":         _time,
+            "open":         float(td.get("open_price") or td.get("close_price") or 0),
+            "high":         float(td.get("high_price") or 0),
             "high":         float(td.get("high_price") or 0),
             "low":          float(td.get("low_price") or 0),
             "close":        float(td.get("close_price") or 0),
@@ -195,12 +218,12 @@ def _entries_to_candles(entries: list) -> list:
 
 
 def fetch_candles_local(max_candles: int = MAX_CHART_CANDLES) -> list:
-    """ローカルの logs/*.json からキャンドルデータを組み立てる"""
+    """ローカルの logs/*.json と latest_status.json からキャンドルデータを組み立てる"""
     log_dir = os.path.normpath(LOCAL_LOG_DIR)
-    # YYYYMMDDHHMMSS.json 形式のファイルのみ（latest_status.json は除外）
+    # YYYYMMDDHHMMSS.json 形式（14桁数字）のファイルのみ
     files = sorted(
-        [f for f in glob.glob(os.path.join(log_dir, "????????*.json"))
-         if "latest_status" not in os.path.basename(f)],
+        [f for f in glob.glob(os.path.join(log_dir, "*.json"))
+         if _OHLCV_LOG_RE.match(os.path.basename(f))],
         reverse=True,
     )
     candles: list = []
@@ -209,23 +232,54 @@ def fetch_candles_local(max_candles: int = MAX_CHART_CANDLES) -> list:
         candles.extend(_entries_to_candles(entries))
         if len(candles) >= max_candles * 2:
             break
-    candles.sort(key=lambda c: c["time"])
+    # latest_status.json の candles も統合（BOT稼働中のリアルタイムデータ）
+    ls_path = os.path.normpath(os.path.join(LOCAL_LOG_DIR, LATEST_STATUS_FILE))
+    if os.path.exists(ls_path):
+        try:
+            with open(ls_path, encoding="utf-8") as _f:
+                ls_data = json.load(_f)
+            ls_candles = ls_data.get("candles", [])
+            if ls_candles:
+                # 旧バージョンの logger.py は time/open がない場合がある
+                for lc in ls_candles:
+                    if not lc.get("time"):
+                        ts_str = lc.get("ts", "")
+                        lc["time"] = _real_time_to_ts(ts_str) if ts_str else 0
+                    if "open" not in lc:
+                        lc["open"] = lc.get("close", 0)
+                candles.extend(ls_candles)
+        except Exception:
+            pass
+    candles.sort(key=lambda c: c.get("time", 0))
     seen: set = set()
     unique: list = []
     for c in candles:
-        if c["time"] not in seen:
-            seen.add(c["time"])
+        t = c.get("time", 0)
+        if t > 0 and t not in seen:
+            seen.add(t)
             unique.append(c)
     return unique[-max_candles:]
 
 
 # RPi 側で実行する Python スクリプト（SSH モード用）
 _REMOTE_CANDLE_SCRIPT = """
-import json, glob, os, sys
+import json, glob, os, re, sys
+from datetime import datetime as _dt
+
 log_dir = os.path.expanduser('~/work/satosystem/src/logs')
+OHLCV_LOG_RE = re.compile(r'^\\d{14}\\.json$')
+
+def _rt_to_ts(rt):
+    for fmt in ('%Y/%m/%d %H:%M:%S', '%Y/%m/%d %H:%M'):
+        try:
+            return int(_dt.strptime(rt, fmt).timestamp())
+        except Exception:
+            pass
+    return 0
+
 files = sorted(
-    [f for f in glob.glob(os.path.join(log_dir, '????????*.json'))
-     if 'latest_status' not in os.path.basename(f)],
+    [f for f in glob.glob(os.path.join(log_dir, '*.json'))
+     if OHLCV_LOG_RE.match(os.path.basename(f))],
     reverse=True
 )
 candles = []
@@ -249,10 +303,12 @@ for fpath in files:
             pos = td.get('positions') or {}
             if not isinstance(pos, dict):
                 pos = {}
+            _ts = td.get('close_time') or td.get('timestamp')
+            _time = int(float(_ts)) if _ts else _rt_to_ts(td.get('real_time', ''))
             candles.append({
                 'ts':           td.get('close_time_dt', td.get('real_time', '')),
-                'time':         int(td.get('close_time') or td.get('timestamp') or 0),
-                'open':         float(td.get('open_price') or 0),
+                'time':         _time,
+                'open':         float(td.get('open_price') or td.get('close_price') or 0),
                 'high':         float(td.get('high_price') or 0),
                 'low':          float(td.get('low_price') or 0),
                 'close':        float(td.get('close_price') or 0),
@@ -275,12 +331,30 @@ for fpath in files:
         pass
     if len(candles) >= 360:
         break
-candles.sort(key=lambda c: c['time'])
+# latest_status.json の candles(リアルタイムデータ)も統合
+ls_path = os.path.join(log_dir, 'latest_status.json')
+if os.path.exists(ls_path):
+    try:
+        ls_data = json.load(open(ls_path, encoding='utf-8'))
+        ls_candles = ls_data.get('candles', [])
+        if ls_candles:
+            # 旧バージョンの logger.py は time/open がない場合がある
+            for lc in ls_candles:
+                if not lc.get('time'):
+                    ts_str = lc.get('ts', '')
+                    lc['time'] = _rt_to_ts(ts_str) if ts_str else 0
+                if 'open' not in lc:
+                    lc['open'] = lc.get('close', 0)
+            candles.extend(ls_candles)
+    except Exception:
+        pass
+candles.sort(key=lambda c: c.get('time', 0))
 seen = set()
 unique = []
 for c in candles:
-    if c['time'] not in seen:
-        seen.add(c['time'])
+    t = c.get('time', 0)
+    if t > 0 and t not in seen:
+        seen.add(t)
         unique.append(c)
 print(json.dumps(unique[-180:]))
 """
