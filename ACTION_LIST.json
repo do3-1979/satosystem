@@ -1,8 +1,8 @@
 {
   "meta": {
     "version": "1.0",
-    "last_updated": "2026-03-06",
-    "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE) - OHLCVキャッシュDB更新ツール実装完了（2026-03-06）",
+    "last_updated": "2026-03-07",
+    "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE) - monitor_webローソク足チャート修正完了（2026-03-07）。RPi Liveモード稼働中・3日間見守りフェーズ。",
     "replaces": "docs/ACTION_LIST.md",
     "workflow_rules": {
       "baseline_before_action": "アクションリスト実行前に必ずレグレッションテストを実行し、PROGRESS.json baseline_regressionに保存すること",
@@ -11,6 +11,31 @@
   },
   "tasks": {
     "progress": [
+      {
+        "id": "43",
+        "category": "インフラ・移行",
+        "title": "RPi Live BOT 3日間稼働監視フェーズ",
+        "description": "monitor_webローソク足修正後（2026-03-07）のRPi Liveモード稼働確認。3日間（〜2026-03-10）ログを監視し、正常動作を確認する。",
+        "priority": 5,
+        "due_date": "2026-03-10",
+        "started_date": "2026-03-07",
+        "subtasks": [
+          {
+            "id": "43a",
+            "title": "RPiログ取得・正当性チェック",
+            "description": "3日後にRPiからログ（YYYYMMDDHHMMSS.json, latest_status.json）を取得し、timeフィールド・OHLCV値・PnL累計の整合性を確認する",
+            "due": "2026-03-10",
+            "status": "todo"
+          }
+        ],
+        "notes": {
+          "bot_pid": 992614,
+          "mode": "LIVE",
+          "restarted_at": "2026-03-07 13:00:15",
+          "commit": "186ef94",
+          "fix_summary": "real_time→timestamp変換、glob14桁数字化、latest_status.json統合"
+        }
+      },
       {
         "id": "44",
         "category": "インフラ・移行",
@@ -54,33 +79,6 @@
       }
     ],
     "todo": [
-      {
-        "id": "40h",
-        "category": "戦略拡張",
-        "title": "レジーム別の戦略切替（Trend/Rangeで別ロジック）",
-        "description": "単一のトレンドフォロー固定ではなく、市場体制（トレンド/レンジ/遷移）に応じてエントリー条件・Exit・許可時間帯を切替。過学習対策＋利益拡大。Task 39c (MTF)の失敗を踏まえ「厳しすぎて0件」にならない設計で実装",
-        "priority": 4,
-        "related_doc": "docs/ADX_FILTER_ANALYSIS.md, Task 39c (失敗例)",
-        "estimated_impact_usd": null
-      },
-      {
-        "id": "22b-eval",
-        "category": "Phase 0改善戦略",
-        "title": "Strategy B 有効化・バックテスト評価",
-        "description": "Strategy B（Bollinger+RSI+SMA）実装完了済みだが未評価。全8四半期バックテストで効果測定",
-        "priority": 4,
-        "related_doc": "Task 22b (実装済み)",
-        "estimated_impact_usd": null
-      },
-      {
-        "id": "22c-eval",
-        "category": "Phase 0改善戦略",
-        "title": "Strategy C 有効化・バックテスト評価",
-        "description": "Strategy C（複合戦略A+B）実装完了済みだが未評価。全8四半期バックテストで効果測定",
-        "priority": 4,
-        "related_doc": "Task 22c (実装済み)",
-        "estimated_impact_usd": null
-      },
       {
         "id": "40f",
         "category": "データ品質",
@@ -1227,14 +1225,50 @@
         "completed_at": "2026-03-06",
         "commit": "335d848",
         "completion_note": "logger.py: MAX_CANDLE_HISTORY=180、open/timeフィールド追加。server.py: /api/candles追加(5分キャッシュ)、lightweight-charts実装。レグレッション159/159 PASS。"
+      },
+      {
+        "id": "40h",
+        "category": "戦略拡張",
+        "title": "レジーム別の戦略切替（Trend/Rangeで別ロジック）",
+        "description": "単一のトレンドフォロー固定ではなく、市場体制（トレンド/レンジ/遷移）に応じてエントリー条件・Exit・許可時間帯を切替。過学習対策＋利益拡大。Task 39c (MTF)の失敗を踏まえ「厳しすぎて0件」にならない設計で実装",
+        "priority": 4,
+        "related_doc": "docs/ADX_FILTER_ANALYSIS.md, Task 39c (失敗例)",
+        "estimated_impact_usd": null,
+        "status": "done",
+        "completed_at": "2026-03-07",
+        "completion_note": "ユーザー指示によりDONEに変更"
+      },
+      {
+        "id": "22b-eval",
+        "category": "Phase 0改善戦略",
+        "title": "Strategy B 有効化・バックテスト評価",
+        "description": "Strategy B（Bollinger+RSI+SMA）実装完了済みだが未評価。全8四半期バックテストで効果測定",
+        "priority": 4,
+        "related_doc": "Task 22b (実装済み)",
+        "estimated_impact_usd": null,
+        "status": "done",
+        "completed_at": "2026-03-07",
+        "completion_note": "ユーザー指示によりDONEに変更"
+      },
+      {
+        "id": "22c-eval",
+        "category": "Phase 0改善戦略",
+        "title": "Strategy C 有効化・バックテスト評価",
+        "description": "Strategy C（複合戦略A+B）実装完了済みだが未評価。全8四半期バックテストで効果測定",
+        "priority": 4,
+        "related_doc": "Task 22c (実装済み)",
+        "estimated_impact_usd": null,
+        "status": "done",
+        "completed_at": "2026-03-07",
+        "completion_note": "ユーザー指示によりDONEに変更"
       }
     ]
   },
   "summary": {
     "total_tasks": 64,
-    "todo": 16,
+    "todo": 13,
     "progress": 1,
-    "done": 53,
+    "done": 56,
     "cumulative_impact_usd": 2402.94,
     "baseline_performance": "2402.94 USD (8 quarters, ParamSweep TSMOM150+PSAR300採用後, 2026-03-04)",
     "baseline_history": [

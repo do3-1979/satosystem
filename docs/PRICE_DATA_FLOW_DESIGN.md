@@ -12,10 +12,13 @@
 
 ホットテストモードは、**リアルタイムデータに基づいて**売買判定・実行を行うモードです。
 
+> **取引所分離設計（2026-03以降）**: config.ini にて `exchange_data = bybit`（OHLCVデータ取得）と `exchange_trade = bitget`（注文執行）が独立して設定されています。
+
 | 項目 | 値 |
 |-----|-----|
 | **実行単位** | 60秒ごと（`bot_operation_cycle` = 60）|
-| **データソース** | Bybit REST API（実データ）|
+| **データ取得** | Bybit REST API（`exchange_data=bybit`）|
+| **注文執行** | Bitget API（`exchange_trade=bitget`）|
 | **価格タイムフレーム** | 240分足（4時間足、config.ini の `time_frame=240` に従う）|
 | **PSAR タイムフレーム** | 240分足（config.ini の `psar_time_frame=240` に従う）|
 | **取引モード** | ペーパートレード（`hot_test_dummy_mode=1`） or 本番取引（`hot_test_dummy_mode=0`）|
@@ -240,7 +243,8 @@ def update_price_data_backtest(self):
 | 項目 | ホットテスト | バックテスト |
 |------|-----------|----------|
 | **実行モード** | リアルタイム | バッチ |
-| **データソース** | Bybit API | SQLite キャッシュ |
+| **データ取得** | Bybit API（exchange_data=bybit） | SQLite キャッシュ |
+| **注文執行** | Bitget API（exchange_trade=bitget） | ダミー（実執行なし） |
 | **タイムフレーム** | 240分足（config.ini） | 240分足（config.ini） |
 | **実行頻度** | 60秒ごと | 全期間一括（バッチ） |
 | **価格タイプ** | 実データ | 過去データ |

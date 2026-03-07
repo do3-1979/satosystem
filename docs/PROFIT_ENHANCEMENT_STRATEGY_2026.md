@@ -1,7 +1,8 @@
 # 利益拡大戦略 2026 - 包括的提案
 
 **作成日**: 2026-01-11  
-**現状**: 累積損益 +1,936.98 USD（ADX=31適用後）、2025年 -48.17 USD  
+**最終更新**: 2026-03-07 (実装状況反映)  
+**現状**: 累積損益 +2,402.94 USD（8四半期バックテスト、ParamSweep PSAR/TSMOM最適化後）  
 **目的**: 損失削減と利益拡大による事業資金確保
 
 ---
@@ -40,7 +41,9 @@
 - Q1 2025: -143 USD (20%勝率) → **STOP_LOSSによる強制退場**
 - 平均保有時間が不明だが、早期Exit/遅延Exitの可能性
 
-#### 提案A1: **Trailing Profit Target（トレーリング利確）**
+#### 提案A1: **Trailing Profit Target（トレーリング利確）** — ✖ **不採用（Task 39a, 2026-01-11）**
+
+> **失敗結果**: バックテストでベースライン比 -1,077 USD悪化。不採用とし、ExitStrategyV2内で `trailing_profit_enabled = False` に固定。
 
 **コンセプト**: 利益が一定額に達したら、逆方向の押し・戻りでStopを段階的に上げる
 
@@ -63,7 +66,9 @@ if unrealized_pnl > entry_price * 0.05:  # 5%利益
 
 ---
 
-#### 提案A2: **Time-Based Exit（時間ベース強制決済）**
+#### 提案A2: **Time-Based Exit（時間ベース強制決済）** — ✅ **実装済み（Task 39d, 2026-02-08）**
+
+> **実装**: ExitStrategyV2._check_time_based_exit() で実装。config.ini `enable_time_based_exit=1`, `max_holding_hours=72`。
 
 **コンセプト**: 長期ポジション（48-72時間以上）は強制決済
 
@@ -94,7 +99,9 @@ if holding_duration_hours > 72:  # 3日間
 
 ---
 
-#### 提案A3: **Dynamic Stop Loss Width（動的ストップ幅）**
+#### 提案A3: **Dynamic Stop Loss Width（動的ストップ幅）** — ✅ **実装済み（Task 39e）**
+
+> **実装**: RiskManagement.get_dynamic_stop_range() でADXに応じた動的ストップ幅を実装。
 
 **現状**: `stop_range = 2` で固定 → ボラティリティ変化に非対応
 
@@ -126,7 +133,10 @@ stop_width = volatility * 2.5  # 広いストップ（ノイズ回避）
 - ADX=31フィルターが厳しすぎる可能性
 - PVO=10も保守的
 
-#### 提案B1: **Two-Tier Entry System（二段階エントリー）**
+#### 提案B1: **Two-Tier Entry System（二段階エントリー）** — ✅ **実装済み (+378 USD, Task 39b, 2026-02-01)**
+
+> **実装結果**: +904.35 USD → +1,282.62 USD (+378.27 USD, +41.8%).
+> TradingStrategy.evaluate_entry() 内でTier1/Tier2分岐とポジションサイズ比調整を実装。
 
 **コンセプト**: 高確度（現行）と中確度（新規）の2種類のエントリー
 
@@ -150,7 +160,9 @@ elif adx >= 25 and pvo >= 5:
 
 ---
 
-#### 提案B2: **Mean Reversion Hybrid（平均回帰ハイブリッド）**
+#### 提案B2: **Mean Reversion Hybrid（平均回帰ハイブリッド）** — ✖ **不採用（Phase 1評価完了, 2026-01-07）**
+
+> **実装結果**: バックテストPF=0.07, 勝率=7.14%。不採用基準未達。config.ini `enable_mean_reversion_strategy=0`。
 
 **これまでの失敗を踏まえた改良版**:
 
@@ -192,7 +204,9 @@ if donchian_signal == "BUY" and adx >= 31:
 - 240分足（4時間足）のみ → 中期トレンドの見落とし
 - 短期ノイズに振り回される可能性
 
-#### 提案C1: **1時間 + 4時間 + 日足の三重確認**
+#### 提案C1: **1時間 + 4時間 + 日足の三重確認** — ✖ **不採用（Task 39c, 2026-02-01）**
+
+> **実装結果**: フィルターが厳しすぎてトレード数=0になったため破棄。MTFは現在不採用。
 
 ```python
 # 1h足: エントリータイミング（細かい押し目/戻り）
@@ -229,7 +243,9 @@ def multi_timeframe_check():
 
 ### **Priority 4: リスク管理の高度化** ⭐⭐⭐☆☆
 
-#### 提案D1: **Maximum Drawdown Limit（最大DD制限）**
+#### 提案D1: **Maximum Drawdown Limit（最大DD制限）** — ✅ **実装済み（RiskOverlay, Task 40c, 2026-03-01）**
+
+> **実装**: src/risk_overlay.py。DD_STOP / DAILY_STOP / CONSEC_STOPの3種停止条件。config.ini `enabled=0`でデフォルト無効。
 
 ```python
 # 月次DD制限
@@ -283,7 +299,9 @@ elif btc_sp500_correlation < -0.3:
 
 ### **Priority 5: 時間フィルター（逆説的アプローチ）** ⭐⭐⭐☆☆
 
-#### 提案E1: **Weekend/Holiday Avoidance（週末・休日回避）**
+#### 提案E1: **Weekend/Holiday Avoidance（週末・休日回避）** — ✅ **実装済み（Task 39f, 2026-03-02）**
+
+> **実装**: TradingStrategy.evaluate_entry()内の週末フィルター。config.ini `weekend_filter_enabled=0`でデフォルト無効。
 
 **根拠**: 
 - 週末・休日は流動性低下
@@ -359,47 +377,47 @@ else:
 
 ## 💰 Expected ROI（期待投資収益率）
 
-| 戦略 | 実装時間 | 期待利益増加 | ROI |
-|------|---------|------------|-----|
-| A1: Trailing Profit | 2-3h | +$200-400 | ⭐⭐⭐⭐⭐ |
-| A2: Time-Based Exit | 1-2h | +$100-200 | ⭐⭐⭐⭐⭐ |
-| A3: Dynamic Stop | 2-3h | +$100-150 | ⭐⭐⭐⭐☆ |
-| B1: Two-Tier Entry | 3-4h | +$300-600 | ⭐⭐⭐⭐⭐ |
-| B2: MR Hybrid | 4-5h | +$200-400 | ⭐⭐⭐⭐☆ |
-| C1: Multi-Timeframe | 6-8h | +$400-700 | ⭐⭐⭐⭐⭐ |
-| D1: DD Limit | 2-3h | +$100-200 | ⭐⭐⭐☆☆ |
-| D2: Correlation | 5-6h | +$200-300 | ⭐⭐⭐☆☆ |
-| E1: Weekend Avoid | 2h | +$100-200 | ⭐⭐⭐⭐☆ |
-| E2: Peak Hours | 2-3h | +$150-300 | ⭐⭐⭐⭐☆ |
+| 戦略 | 実装状況 | 実装時間 | 期待利益増加 | ROI |
+|------|------|----|----------|-----|
+| A1: Trailing Profit | ✖ 不採用 (-1,077 USD悪化) | 2-3h | N/A | — |
+| A2: Time-Based Exit | ✅ 実装済み | 1-2h | +$100-200 | ⭐⭐⭐⭐⭐ |
+| A3: Dynamic Stop | ✅ 実装済み | 2-3h | +$100-150 | ⭐⭐⭐⭐☆ |
+| B1: Two-Tier Entry | ✅ 実装済み (+378 USD) | 3-4h | +$300-600 | ⭐⭐⭐⭐⭐ |
+| B2: MR Hybrid | ✖ 不採用 (PF=0.07) | 4-5h | N/A | — |
+| C1: Multi-Timeframe | ✖ 不採用 (トレード数=0) | 6-8h | N/A | — |
+| D1: DD Limit | ✅ 実装済み (RiskOverlay) | 2-3h | +$100-200 | ⭐⭐⭐☆☆ |
+| D2: Correlation | 未実装 | 5-6h | +$200-300 | ⭐⭐⭐☆☆ |
+| E1: Weekend Avoid | ✅ 実装済み | 2h | +$100-200 | ⭐⭐⭐⭐☆ |
+| E2: Peak Hours | 未実装 | 2-3h | +$150-300 | ⭐⭐⭐⭐☆ |
 
-**合計期待値**: +$1,850-3,450 USD / 年（現在の+1,936 USDに追加）
+**実賟効果合計**: +1,282.62 USD（ベースライン +2,402.94 USD、導入戦略による「ParamSweep」追加含む）
 
 ---
 
 ## 📋 実装ロードマップ
 
 ### Phase 1: Quick Wins（1-2週間）
-1. ✅ A2: Time-Based Exit
-2. ✅ E1: Weekend Avoidance
-3. ✅ A1: Trailing Profit Target
+1. ✅ A2: Time-Based Exit — 実装済み
+2. ✅ E1: Weekend Avoidance — 実装済み
+3. ✖ A1: Trailing Profit Target — 不採用 (-1,077 USD悪化)
 
 **期待効果**: +$400-800 / 年
 
 ---
 
 ### Phase 2: High-Impact（2-4週間）
-4. ✅ B1: Two-Tier Entry System
-5. ✅ A3: Dynamic Stop Loss
-6. ✅ E2: Peak Volatility Hours
+4. ✅ B1: Two-Tier Entry System — 実装済み (+378 USD)
+5. ✅ A3: Dynamic Stop Loss — 実装済み
+6. E2: Peak Volatility Hours — 未実装
 
 **期待効果**: +$550-1,250 / 年（累積）
 
 ---
 
 ### Phase 3: Advanced（1-2ヶ月）
-7. ✅ C1: Multi-Timeframe Integration
-8. ✅ B2: Mean Reversion Hybrid
-9. ✅ D1: Drawdown Limit
+7. ✖ C1: Multi-Timeframe Integration — 不採用 (トレード数 0件)
+8. ✖ B2: Mean Reversion Hybrid — 不採用 (PF=0.07)
+9. ✅ D1: Drawdown Limit (RiskOverlay) — 実装済み
 
 **期待効果**: +$700-1,300 / 年（累積）
 
@@ -470,15 +488,18 @@ else:
 
 ## 結論
 
-現在のシステムは**堅実だが保守的すぎる**。トレード機会を増やし、利益確定を最適化することで、**年間+$1,850-3,450 USDの追加利益**が見込めます。
+実装済み戦略の効果まとめ（現時点）：
+- **Two-Tier Entry System** (+378 USD): 最大の貢献、ベースライン向上を確認
+- **RiskOverlay (DDキルスイッチ)**: 資産保護セーフティネット（デフォルト無効）
+- **Time-Based Exit / Dynamic Stop / Weekend Filter**: リスク微調整として実装済み
 
-最優先事項:
-1. Trailing Profit Target（即実装可能）
-2. Two-Tier Entry System（機会損失削減）
-3. Multi-Timeframe Integration（根本改善）
+不採用戦略の教訓：
+- **A1 Trailing Profit** / **B2 MR Hybrid** / **C1 Multi-Timeframe**: バックテストでネガティブまたはトレード数=0。複雑化しすぎるより現行システムを維持する方が良い
 
-これらを段階的に実装することで、**事業資金として十分な収益**を達成できる可能性が高いです。
+次の優先タスク候補：
+1. **D2: Correlation-Based Sizing**—マクロ環境適応
+2. **E2: Peak Volatility Hours**—高流動性時間帯フィルター
+3. **Chandelier Exit / Profit Step Lock**—細かい利益確定改善
+4. **Volume Climax Exit / Composite Score Exit**—トレンド失速検出
 
----
-
-**次のステップ**: どの戦略から実装を開始するか決定してください。推奨は**A1: Trailing Profit Target**です。
+現在のドライバー: Donchian 30期間 + ADXフィルター(=31) + PVOフィルター + TSMOMフィルター(lookback=150) + PSARストップ。バックテストベースライン: +2,402.94 USD (8四半期)。

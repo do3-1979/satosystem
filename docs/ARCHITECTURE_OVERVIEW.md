@@ -18,14 +18,13 @@
 | Exchange             | src/exchange.py         | 取引所基底クラス                                | __init__, get_account_balance, execute_order        |
 | Side                 | src/side.py             | 売買サイドEnum・変換関数                        | normalize_side, to_exchange_side                   |
 | OHLCVCache           | src/ohlcv_cache.py      | OHLCV SQLiteキャッシュ管理                      | __init__, get_ohlcv_data, save_ohlcv_data, get_ohlcv_data_partial, migrate_from_json |
-| OHLCVCacheInspector  | src/ohlcv_cache_inspector.py | キャッシュ分析・検査ツール            | __init__, get_cache_parameters, get_data_coverage, print_summary, print_detailed_analysis |
-| ExitStrategyV2       | src/exit_strategy_v2.py      | 4段階出口戦略（Stage1～4）実装        | __init__, evaluate_exit_condition, _identify_stage, _check_stop_loss, safe_get |
-| PathUtils            | src/path_utils.py            | パス管理・ファイル操作一元化          | get_src_dir, get_project_root, get_module_path |
-| RiskOverlay          | src/risk_overlay.py          | DDキルスイッチ・資産保護自動停止 (Task40c) | check_can_trade, notify_trade_result, get_status |
-| CostModel            | src/cost_model.py            | バックテスト取引コスト織り込み (Task40b) | calculate_entry_cost, calculate_exit_cost, get_cost_summary |
+| ExitStrategyV2       | src/exit_strategy_v2.py      | 複合シグナルベース出口戦略（Stage1〜4・Chandelier・PSL・VolumeClimax・CompositeScore） | __init__, load_config, evaluate_exit_condition, _identify_stage, _check_stop_loss |
+| RiskOverlay          | src/risk_overlay.py          | DDキルスイッチ・資産保護自動停止 (Task40c, enabled=0 by default) | check_can_trade, notify_trade_result, get_status |
+| CostModel            | src/cost_model.py            | バックテスト取引コスト織り込み (Task40b, enabled=0 by default) | calculate_entry_cost, calculate_exit_cost, get_cost_summary |
+| BitgetExchange       | src/bitget_exchange.py       | Bitget用取引所ラッパー（注文執行）              | __init__, fetch_ohlcv, fetch_ticker, get_account_balance, execute_order |
 # Architecture Overview
 
-## 最新の実行モード・データ型検証 (2025-12-29 更新)
+## 最新の実行モード・データ型検証 (2026-03-07 更新)
 
 ### ExitStrategyV2 型安全化
 December 29日のコミット `7029c70` で以下を実装（issue: bgmode実行時のエラー）：
@@ -42,19 +41,25 @@ December 29日のコミット `7029c70` で以下を実装（issue: bgmode実行
 ### 実行パイプライン の安定性確認
 ペーパートレード（ホットテスト）とバックテストで正常に動作確認済み：
 - **バックテストモード（back_test=1）**: SQLiteキャッシュから価格取得、ダミー売買 ✅
-- **ペーパートレードモード（back_test=0, hot_test_dummy_mode=1）**: Bybit実APIから価格取得、ダミー売買 ✅
-- **本番トレード（back_test=0, hot_test_dummy_mode=0）**: Bybit実APIから価格取得、実取引実行 ✅
+- **ペーパートレードモード（back_test=0, hot_test_dummy_mode=1）**: Bybit OHLCV取得 + Bitgetダミー売買 ✅
+- **本番トレード（back_test=0, hot_test_dummy_mode=0）**: Bybit OHLCV取得 + Bitget実取引実行 ✅
 
-### 品質保証（2025-12-29）
-- **レグレッションテスト**: 122テスト全PASS（成功率100%）✅ （2026-03-01時点）
-- **全四半期テスト**: 2024Q1～2025Q4 全8四半期実施、累積損益 +856.50 USD ✅
-- **個別ファイルテスト**: すべてのモジュールで4～38テスト成功
+### 取引所分離設計（2026-03以降）
+- **exchange_data = bybit**: OHLCV・Ticker・シグナル計算は常にBybitデータから取得
+- **exchange_trade = bitget**: 注文執行（エントリー・エグジット）はBitgetで実行
+- これにより「データ品質（Bybit）」と「取引執行（Bitget）」を独立して切り替え可能
+
+### 品質保証（2026-03-07）
+- **レグレッションテスト**: 164テスト全PASS（成功率100%）✅
+- **全四半期テスト**: 2024Q1～2025Q4 全8四半期実施、累積損益 +2,402.94 USD ✅
+- **個別ファイルテスト**: すべてのモジュールで動作確認済み
 
 ## Component Responsibilities
 | Component | Responsibility | Key Interactions |
 |-----------|---------------|------------------|
 | Config | Centralized parameter access from config.ini | All modules read cached values |
-| BybitExchange | ccxt wrapper for market/balance/order/OHLCV | PriceDataManagement, Bot (orders) |
+| BybitExchange | ccxt wrapper for OHLCV/ticker data (exchange_data=bybit) | PriceDataManagement |
+| BitgetExchange | ccxt wrapper for order execution (exchange_trade=bitget) | Bot (orders) |
 | PriceDataManagement | Fetches & buffers OHLCV, derives signals (Donchian, PVO) & volatility; backtest time progression | TradingStrategy, RiskManagement |
 | TradingStrategy | Decides ENTRY / ADD / EXIT based on signals & portfolio state | Bot (decision consumer), Portfolio |
 | RiskManagement | Position sizing, STOP trailing (PSAR, surge), ADX state | Bot, Portfolio, PriceDataManagement |
@@ -65,19 +70,22 @@ December 29日のコミット `7029c70` で以下を実装（issue: bgmode実行
 | Visualizer | Interactive backtest visualization & reporting | Logger outputs |
 | Metrics | Post-backtest performance metrics (Sharpe, MaxDD, PF, WinRate) | Bot (backtest summary) |
 | OHLCVCache | SQLite-based OHLCV caching for fast data retrieval | PriceDataManagement, Bot |
-| OHLCVCacheInspector | Cache analysis & inspection tool | OHLCVCache || RiskOverlay          | Kill-switch: DD / daily-loss / consecutive-loss auto-stop (Task40c, enabled=0 by default) | Bot (check_can_trade before ENTRY/ADD, notify_trade_result after EXIT) |
-| CostModel            | Backtest cost modelling: fee, slippage, execution delay (Task40b, is_enabled=False by default) | Bot (cost adjustments at order execution) |
+| ExitStrategyV2 | Multi-stage exit (Stage1-4 + Chandelier + PSL + VolumeClimax + CompositeScore) | TradingStrategy |
+| RiskOverlay | Kill-switch: DD / daily-loss / consecutive-loss auto-stop (Task40c, enabled=0 by default) | Bot (check_can_trade before ENTRY/ADD, notify_trade_result after EXIT) |
+| CostModel | Backtest cost modelling: fee, slippage, execution delay (Task40b, enabled=0 by default) | Bot (cost adjustments at order execution) |
 ## Data Flow (Backtest & Live)
 ```
           +-------------+
           |   Config    |
-          +------+------+         +------------------+
-                 |                |  BybitExchange    |
-                 | OHLCV/ticker   +---------+---------+
-          +------+------++-------------------+
-          | PriceData   | signals/volatility |
-          | Management  |<-------------------+
-          +------+------+                    |
+          +------+------+    +------------------+    +-------------------+
+                 |           |  BybitExchange    |    |  BitgetExchange   |
+                 |           | (data: OHLCV)     |    | (trade: orders)   |
+                 | OHLCV/    +---------+---------+    +--------+----------+
+                 | ticker              |                        |
+          +------+------+             |                        |
+          | PriceData   |<------------+      (order exec)      |
+          | Management  | signals/volatility                    |
+          +------+------+                                       |
                  |                           |
           +------+------+
           |  Strategy   | ENTRY/ADD/EXIT
@@ -96,7 +104,7 @@ December 29日のコミット `7029c70` で以下を実装（issue: bgmode実行
              |             |
              |   exec      v
           +--v-------------+--+
-          |    Exchange       |
+          |  BitgetExchange   |  (exchange_trade=bitget)
           +--+----------------+
              |
              | fills/update
