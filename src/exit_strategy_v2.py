@@ -253,11 +253,14 @@ class ExitStrategyV2:
                 }
             
             elif stage == 'WEAK_TREND':
-                # Stage 2: 部分利確を検討
+                # Stage 2: トレンド減衰 → ホールド継続（PSAR / MOMENTUM_EXHAUSTED でEXITを待つ）
+                # NOTE: 部分利確（close_ratio=0.5）はportfolio.clear_position_quantity()が
+                #       部分クローズ非対応のため未実装。should_exit=False の場合 close_ratio は 0.0 とする。
+                #       部分EXIT実装は別途タスク（PARTIAL_EXIT Decision型の追加）が必要。
                 return {
-                    'should_exit': False,  # 全出口ではなく部分利確
-                    'exit_reason': 'PARTIAL_EXIT_WEAK_TREND',
-                    'close_ratio': self.PARTIAL_EXIT_RATIO,
+                    'should_exit': False,
+                    'exit_reason': 'HOLD_WEAK_TREND',
+                    'close_ratio': 0.0,
                     'stage': 'WEAK_TREND',
                     'confidence': 0.7,
                 }
