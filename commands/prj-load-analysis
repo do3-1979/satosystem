@@ -8,8 +8,12 @@ echo ""
 
 # プロジェクトルート確認
 if [ ! -d "docs/analysis" ]; then
-    echo "❌ エラー: docs/analysis が見つかりません"
-    exit 1
+    echo "⚠️  docs/analysis ディレクトリは _archive/ に移動済みです"
+    echo ""
+    echo "  アーカイブ場所: _archive/analysis/"
+    echo "  分析ファイルは廃止されました。"
+    echo "  ソースコードは src/ を直接参照してください。"
+    exit 0
 fi
 
 # README.md完全表示

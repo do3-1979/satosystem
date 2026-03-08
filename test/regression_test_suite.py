@@ -235,30 +235,21 @@ def test_hot():
 
 def test_class_methods():
     """
-    project_structure.jsonを参照し、各ファイルの存在をチェック
+    src/ 配下の主要 .py ファイルの存在をチェック
+    （旧: docs/analysis/project_structure.json 参照 → docs/analysis は廃止済み）
     """
     test_name = "class_methods"
     try:
-        if not os.path.exists(PROJECT_STRUCTURE):
-            log_result(test_name, False, f"project_structure.json が見つかりません: {PROJECT_STRUCTURE}")
-            return
-        with open(PROJECT_STRUCTURE, encoding="utf-8") as f:
-            structure = json.load(f)
-        errors = []
-        
-        for comp in structure.get("key_components", []):
-            cls_name = comp["name"]
-            file = comp["file"]
-            # ファイルの存在チェック
-            file_path = os.path.join(WORKSPACE_ROOT, file)
-            if not os.path.exists(file_path):
-                # 存在しないファイルは警告のみ（設定ファイルで定義されているが未実装のもの）
-                print(f"[WARN] {cls_name}: {file} が見つかりません")
-        
-        # project_structure.json に記載されているコンポーネントが存在することを確認
-        passed = len([c for c in structure.get("key_components", []) if 
-                     os.path.exists(os.path.join(WORKSPACE_ROOT, c["file"]))]) > 0
-        log_result(test_name, True, f"✅ {len(structure.get('key_components', []))} コンポーネント定義を確認")
+        core_modules = [
+            "bot.py", "trading_strategy.py", "exit_strategy_v2.py",
+            "risk_management.py", "price_data_management.py", "config.py",
+            "order.py", "portfolio.py", "trade_logger.py",
+        ]
+        missing = [m for m in core_modules if not os.path.exists(os.path.join(SRC_DIR, m))]
+        if missing:
+            log_result(test_name, False, f"必須モジュールが見つかりません: {missing}")
+        else:
+            log_result(test_name, True, f"✅ {len(core_modules)} コアモジュールの存在を確認")
     except Exception as e:
         log_result(test_name, False, str(e))
 
