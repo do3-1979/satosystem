@@ -22,6 +22,7 @@ import subprocess
 import sys
 import threading
 import time
+import zipfile
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse
@@ -164,6 +165,8 @@ def _read_log_file_safe(filepath: str) -> list:
 
 # YYYYMMDDHHMMSS.json 形式（14桁数字）のみマッチ
 _OHLCV_LOG_RE = re.compile(r"^\d{14}\.json$")
+# YYYYMMDDHHMMSS_N.zip 形式（圧縮アーカイブ）のみマッチ
+_ZIP_LOG_RE   = re.compile(r"^\d{14}_\d+\.zip$")
 
 
 def _real_time_to_ts(rt: str) -> int:
@@ -218,7 +221,7 @@ def _entries_to_candles(entries: list) -> list:
 
 
 def fetch_candles_local(max_candles: int = MAX_CHART_CANDLES) -> list:
-    """ローカルの logs/*.json と latest_status.json からキャンドルデータを組み立てる"""
+    """ローカルの logs/*.json / *_N.zip と latest_status.json からキャンドルデータを組み立てる"""
     log_dir = os.path.normpath(LOCAL_LOG_DIR)
     # YYYYMMDDHHMMSS.json 形式（14桁数字）のファイルのみ
     files = sorted(
@@ -230,8 +233,38 @@ def fetch_candles_local(max_candles: int = MAX_CHART_CANDLES) -> list:
     for fpath in files:
         entries = _read_log_file_safe(fpath)
         candles.extend(_entries_to_candles(entries))
-        if len(candles) >= max_candles * 2:
-            break
+    # zip アーカイブからも読み込む（YYYYMMDDHHMMSS_N.zip 形式）– 最新 20 ファイルまで
+    zip_files = sorted(
+        [f for f in glob.glob(os.path.join(log_dir, "*.zip"))
+         if _ZIP_LOG_RE.match(os.path.basename(f))],
+        reverse=True,
+    )
+    for zpath in zip_files[:20]:
+        try:
+            with zipfile.ZipFile(zpath) as zf:
+                for info in sorted(zf.infolist(), key=lambda i: i.filename, reverse=True):
+                    if not _OHLCV_LOG_RE.match(info.filename):
+                        continue
+                    if info.file_size == 0:
+                        continue
+                    with zf.open(info.filename) as fp:
+                        raw = fp.read().decode("utf-8", errors="replace").rstrip()
+                    if not raw:
+                        continue
+                    if not raw.endswith("]"):
+                        idx = raw.rfind("}")
+                        if idx < 0:
+                            continue
+                        raw = raw[: idx + 1] + "]"
+                        if not raw.startswith("["):
+                            raw = "[" + raw
+                    try:
+                        entries = json.loads(raw)
+                        candles.extend(_entries_to_candles(entries))
+                    except Exception:
+                        pass
+        except Exception:
+            pass
     # latest_status.json の candles も統合（BOT稼働中のリアルタイムデータ）
     ls_path = os.path.normpath(os.path.join(LOCAL_LOG_DIR, LATEST_STATUS_FILE))
     if os.path.exists(ls_path):
@@ -251,23 +284,24 @@ def fetch_candles_local(max_candles: int = MAX_CHART_CANDLES) -> list:
         except Exception:
             pass
     candles.sort(key=lambda c: c.get("time", 0))
-    seen: set = set()
-    unique: list = []
+    # same close_time の中で最後のエントリを使う（累積済みの真の4H OHLCVを取得するため）
+    candle_map: dict = {}
     for c in candles:
         t = c.get("time", 0)
-        if t > 0 and t not in seen:
-            seen.add(t)
-            unique.append(c)
+        if t > 0:
+            candle_map[t] = c   # last wins
+    unique: list = sorted(candle_map.values(), key=lambda c: c["time"])
     return unique[-max_candles:]
 
 
 # RPi 側で実行する Python スクリプト（SSH モード用）
 _REMOTE_CANDLE_SCRIPT = """
-import json, glob, os, re, sys
+import json, glob, os, re, sys, zipfile
 from datetime import datetime as _dt
 
 log_dir = os.path.expanduser('~/work/satosystem/src/logs')
 OHLCV_LOG_RE = re.compile(r'^\\d{14}\\.json$')
+ZIP_LOG_RE   = re.compile(r'^\\d{14}_\\d+\\.zip$')
 
 def _rt_to_ts(rt):
     for fmt in ('%Y/%m/%d %H:%M:%S', '%Y/%m/%d %H:%M'):
@@ -277,60 +311,87 @@ def _rt_to_ts(rt):
             pass
     return 0
 
+def _td_to_candle(td):
+    pos = td.get('positions') or {}
+    if not isinstance(pos, dict):
+        pos = {}
+    _ts = td.get('close_time') or td.get('timestamp')
+    _time = int(float(_ts)) if _ts else _rt_to_ts(td.get('real_time', ''))
+    return {
+        'ts':           td.get('close_time_dt', td.get('real_time', '')),
+        'time':         _time,
+        'open':         float(td.get('open_price') or td.get('close_price') or 0),
+        'high':         float(td.get('high_price') or 0),
+        'low':          float(td.get('low_price') or 0),
+        'close':        float(td.get('close_price') or 0),
+        'decision':     str(td.get('decision') or ''),
+        'side':         str(td.get('side') or ''),
+        'position_side': pos.get('side', ''),
+        'psar':         float(td.get('psar') or 0),
+        'dc_h':         float(td.get('dc_h') or 0),
+        'dc_l':         float(td.get('dc_l') or 0),
+        'adx':          float(td.get('adx') or 0),
+        'pvo_val':      float(td.get('pvo_val') or 0),
+        'total_pnl':    float(td.get('total_profit_and_loss') or 0),
+        'volume':       float(td.get('Volume') or td.get('volume') or 0),
+        'stop_price':   float(td.get('stop_price') or 0),
+        'pnl':          float(td.get('profit_and_loss') or 0),
+        'position_qty': float(td.get('position_quantity') or 0),
+        'volatility':   float(td.get('volatility') or 0),
+    }
+
+def _parse_raw(raw):
+    raw = raw.rstrip()
+    if not raw:
+        return []
+    if not raw.endswith(']'):
+        idx = raw.rfind('}')
+        if idx < 0:
+            return []
+        raw = raw[:idx+1] + ']'
+        if not raw.startswith('['):
+            raw = '[' + raw
+    try:
+        return json.loads(raw)
+    except Exception:
+        return []
+
+candles = []
+
+# 直接 JSON ファイルを読む
 files = sorted(
     [f for f in glob.glob(os.path.join(log_dir, '*.json'))
      if OHLCV_LOG_RE.match(os.path.basename(f))],
     reverse=True
 )
-candles = []
 for fpath in files:
     try:
         with open(fpath, 'rb') as fp:
-            raw = fp.read().decode('utf-8', errors='replace').rstrip()
-        if not raw:
-            continue
-        if not raw.endswith(']'):
-            idx = raw.rfind('}')
-            if idx < 0:
-                continue
-            raw = raw[:idx+1] + ']'
-            if not raw.startswith('['):
-                raw = '[' + raw
-        entries = json.loads(raw)
-        for td in entries:
-            if not isinstance(td, dict):
-                continue
-            pos = td.get('positions') or {}
-            if not isinstance(pos, dict):
-                pos = {}
-            _ts = td.get('close_time') or td.get('timestamp')
-            _time = int(float(_ts)) if _ts else _rt_to_ts(td.get('real_time', ''))
-            candles.append({
-                'ts':           td.get('close_time_dt', td.get('real_time', '')),
-                'time':         _time,
-                'open':         float(td.get('open_price') or td.get('close_price') or 0),
-                'high':         float(td.get('high_price') or 0),
-                'low':          float(td.get('low_price') or 0),
-                'close':        float(td.get('close_price') or 0),
-                'decision':     str(td.get('decision') or ''),
-                'side':         str(td.get('side') or ''),
-                'position_side': pos.get('side', ''),
-                'psar':         float(td.get('psar') or 0),
-                'dc_h':         float(td.get('dc_h') or 0),
-                'dc_l':         float(td.get('dc_l') or 0),
-                'adx':          float(td.get('adx') or 0),
-                'pvo_val':      float(td.get('pvo_val') or 0),
-                'total_pnl':    float(td.get('total_profit_and_loss') or 0),
-                'volume':       float(td.get('Volume') or td.get('volume') or 0),
-                'stop_price':   float(td.get('stop_price') or 0),
-                'pnl':          float(td.get('profit_and_loss') or 0),
-                'position_qty': float(td.get('position_quantity') or 0),
-                'volatility':   float(td.get('volatility') or 0),
-            })
+            entries = _parse_raw(fp.read().decode('utf-8', errors='replace'))
+        candles.extend(_td_to_candle(td) for td in entries if isinstance(td, dict))
     except Exception:
         pass
-    if len(candles) >= 360:
-        break
+
+# zip アーカイブからも読み込む（YYYYMMDDHHMMSS_N.zip 形式）– 最新 20 ファイルまで
+zip_files = sorted(
+    [f for f in glob.glob(os.path.join(log_dir, '*.zip'))
+     if ZIP_LOG_RE.match(os.path.basename(f))],
+    reverse=True
+)
+for zpath in zip_files[:20]:
+    try:
+        with zipfile.ZipFile(zpath) as zf:
+            for info in sorted(zf.infolist(), key=lambda i: i.filename, reverse=True):
+                if not OHLCV_LOG_RE.match(info.filename):
+                    continue
+                if info.file_size == 0:
+                    continue
+                with zf.open(info.filename) as fp:
+                    entries = _parse_raw(fp.read().decode('utf-8', errors='replace'))
+                candles.extend(_td_to_candle(td) for td in entries if isinstance(td, dict))
+    except Exception:
+        pass
+
 # latest_status.json の candles(リアルタイムデータ)も統合
 ls_path = os.path.join(log_dir, 'latest_status.json')
 if os.path.exists(ls_path):
@@ -338,7 +399,6 @@ if os.path.exists(ls_path):
         ls_data = json.load(open(ls_path, encoding='utf-8'))
         ls_candles = ls_data.get('candles', [])
         if ls_candles:
-            # 旧バージョンの logger.py は time/open がない場合がある
             for lc in ls_candles:
                 if not lc.get('time'):
                     ts_str = lc.get('ts', '')
@@ -349,13 +409,13 @@ if os.path.exists(ls_path):
     except Exception:
         pass
 candles.sort(key=lambda c: c.get('time', 0))
-seen = set()
-unique = []
+# same close_time の中で最後のエントリを使う（累積済みの真の4H OHLCVを取得するため）
+candle_map = {}
 for c in candles:
     t = c.get('time', 0)
-    if t > 0 and t not in seen:
-        seen.add(t)
-        unique.append(c)
+    if t > 0:
+        candle_map[t] = c   # last wins
+unique = sorted(candle_map.values(), key=lambda c: c['time'])
 print(json.dumps(unique[-180:]))
 """
 
@@ -820,8 +880,9 @@ function render(d){
   const ecEl=document.getElementById('errCount');
   ecEl.textContent=ec; ecEl.className=ec>0?'r':'g';
 
-  // ローソク足チャート（latest_status.json の candles でリアルタイム更新）
-  if(d.candles&&d.candles.length>0) updateCandleChart(d.candles);
+  // ローソク足チャートは /api/candles (fetchCandles) からのみ更新する
+  // ※ d.candles は latest_status.json の直近データのみでユニーク件数が少なく
+  //    チャートを上書きすると過去足が消えてしまうため、ここでは更新しない
 
   // 履歴 (最新5件)
   const tbody=document.getElementById('historyBody');
