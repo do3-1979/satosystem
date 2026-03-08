@@ -5,14 +5,14 @@
 #  使い方:
 #    ./commands/monitor_bot                      # ローカル
 #    ./commands/monitor_bot --host raspberry_pi  # SSH経由
-#  更新間隔: 10秒
+#  更新間隔: 30秒
 # ============================================================
 
 cd "$(git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/work/satosystem")" || exit 1
 
 LOCAL_LOGS_DIR="src/logs"
 STATUS_FILE="$LOCAL_LOGS_DIR/latest_status.json"
-INTERVAL=10
+INTERVAL=30
 SSH_HOST=""
 
 # 引数解析
@@ -71,6 +71,22 @@ get_proc_info() {
     fi
 }
 
+# ラベルを固定幅で出力（等幅フォント用: 全角2字=半角4字 として揃える）
+# 使い方: lbl "ラベル" 半角換算幅
+lbl() {
+    local text="$1" width="${2:-14}"
+    # 全角文字数をカウント（日本語等）して実バイト幅を補正
+    local visual
+    visual=$(echo -n "$text" | python3 -c "
+import sys, unicodedata
+s = sys.stdin.read()
+w = sum(2 if unicodedata.east_asian_width(c) in ('W','F') else 1 for c in s)
+print(w)" 2>/dev/null || echo ${#text})
+    local pad=$(( width - visual ))
+    [ $pad -lt 0 ] && pad=0
+    printf "%s%*s" "$text" $pad ""
+}
+
 show_dashboard() {
     clear
     local now
@@ -78,9 +94,11 @@ show_dashboard() {
     local target_label=""
     [ -n "$SSH_HOST" ] && target_label=" [${SSH_HOST}]"
 
-    echo -e "${BOLD}${CYAN}╔══════════════════════════════════════════════════════════════╗${RESET}"
-    echo -e "${BOLD}${CYAN}║   satosystem BOT モニター${target_label}  ${WHITE}${now}${CYAN}  ║${RESET}"
-    echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════════════════════════╝${RESET}"
+    # ヘッダー（固定68文字幅）
+    echo -e "${BOLD}${CYAN}╔════════════════════════════════════════════════════════════════════╗${RESET}"
+    printf "${BOLD}${CYAN}║${RESET}  ${WHITE}satosystem BOT モニター${target_label}${RESET}  ${GRAY}${now}${RESET}
+"
+    echo -e "${BOLD}${CYAN}╚════════════════════════════════════════════════════════════════════╝${RESET}"
     echo ""
 
     # ── プロセス状態 ──
@@ -93,10 +111,11 @@ show_dashboard() {
     started_val=$(echo "$proc_out" | grep -oP 'started=\K.*')
 
     if [ -n "$pid" ]; then
-        echo -e "  ${BOLD}プロセス${RESET}  ${GREEN}● 稼働中${RESET}  PID:${WHITE}${pid}${RESET}  CPU:${YELLOW}${cpu_val}%${RESET}  MEM:${YELLOW}${mem_val}%${RESET}"
-        [ -n "$started_val" ] && echo -e "  ${GRAY}起動時刻: ${started_val}${RESET}"
+        printf "  ${BOLD}%-14s${RESET}  ${GREEN}● 稼働中${RESET}  PID:${WHITE}%-8s${RESET}  CPU:${YELLOW}%s%%${RESET}  MEM:${YELLOW}%s%%${RESET}\n" \
+            "プロセス" "$pid" "$cpu_val" "$mem_val"
+        [ -n "$started_val" ] && printf "  ${GRAY}%-14s${RESET}  %s\n" "起動時刻" "$started_val"
     else
-        echo -e "  ${BOLD}プロセス${RESET}  ${RED}● 停止中${RESET}"
+        printf "  ${BOLD}%-14s${RESET}  ${RED}● 停止中${RESET}\n" "プロセス"
     fi
     echo ""
 
@@ -105,9 +124,9 @@ show_dashboard() {
     json_data=$(fetch_status_json)
 
     if [ -z "$json_data" ]; then
-        echo -e "  ${RED}latest_status.json が見つかりません${RESET}"
+        printf "  ${RED}latest_status.json が見つかりません${RESET}\n"
         echo ""
-        echo -e "  ${GRAY}更新間隔: ${INTERVAL}秒  終了: Ctrl+C${RESET}"
+        printf "  ${GRAY}更新間隔: %s秒  終了: Ctrl+C${RESET}\n" "$INTERVAL"
         return
     fi
 
@@ -166,43 +185,13 @@ except Exception as ex:
 " 2>/dev/null)"
 
     if [ "${J_OK:-0}" != "1" ]; then
-        echo -e "  ${RED}JSON解析エラー: ${J_PARSE_ERROR}${RESET}"
+        printf "  ${RED}JSON解析エラー: %s${RESET}\n" "$J_PARSE_ERROR"
         echo ""
-        echo -e "  ${GRAY}更新間隔: ${INTERVAL}秒  終了: Ctrl+C${RESET}"
+        printf "  ${GRAY}更新間隔: %s秒  終了: Ctrl+C${RESET}\n" "$INTERVAL"
         return
     fi
 
-    # ── 最新データパネル ──
-    echo -e "${BOLD}${WHITE}  ┌─── 最新データ  ${GRAY}(更新: ${J_UPDATED})${WHITE} ──────────────────────────────┐${RESET}"
-    echo -e "  │  ${GRAY}時刻     ${RESET}${WHITE}${J_TS}${RESET}"
-    echo -e "  │"
-    echo -e "  │  ${GRAY}BTC価格 ${RESET} 終値:${WHITE}${J_CLOSE}${RESET}  高値:${YELLOW}${J_HIGH}${RESET}  安値:${BLUE}${J_LOW}${RESET}  PSAR:${GRAY}${J_PSAR}${RESET}"
-    echo -e "  │  ${GRAY}DC帯    ${RESET} 上限:${YELLOW}${J_DC_H}${RESET}  下限:${BLUE}${J_DC_L}${RESET}"
-    echo -e "  │"
-
-    # シグナル色分け
-    local sig_color="$GRAY"
-    echo "$J_DECISION" | grep -qiE "entry|buy|sell" && sig_color="$GREEN"
-    echo -e "  │  ${GRAY}判断     ${RESET}${sig_color}${BOLD}${J_DECISION}${RESET}  ${GRAY}サイド:${J_SIDE}${RESET}"
-
-    # ポジション色分け
-    local pos_color="$GRAY"
-    [ "$J_POS" = "BUY"  ] && pos_color="$GREEN"
-    [ "$J_POS" = "SELL" ] && pos_color="$RED"
-    echo -e "  │  ${GRAY}ポジション${RESET} ${pos_color}${J_POS}${RESET}  保有量:${WHITE}${J_QTY} BTC${RESET}  購入価格:${WHITE}${J_BUY_PRICE}${RESET}  STOP:${RED}${J_STOP}${RESET}"
-
-    # 損益色分け
-    local pnl_color="$GRAY"
-    [ "$J_PNL"       -gt 0 ] 2>/dev/null && pnl_color="$GREEN"
-    [ "$J_PNL"       -lt 0 ] 2>/dev/null && pnl_color="$RED"
-    local tpnl_color="$GRAY"
-    [ "$J_TOTAL_PNL" -gt 0 ] 2>/dev/null && tpnl_color="$GREEN"
-    [ "$J_TOTAL_PNL" -lt 0 ] 2>/dev/null && tpnl_color="$RED"
-    echo -e "  │  ${GRAY}みなし損益${RESET} ${pnl_color}${J_PNL} USD${RESET}   ${GRAY}累計損益${RESET} ${tpnl_color}${J_TOTAL_PNL} USD${RESET}"
-
-    echo -e "  │"
-
-    # ボラティリティ（閾値2500）
+    # ボラティリティ色分け（閾値2500）
     local vola_int=${J_VOLA%.*}
     local vola_color="$GREEN"
     [ "${vola_int:-0}" -ge 2500 ] 2>/dev/null && vola_color="$RED"
@@ -217,27 +206,65 @@ except Exception as ex:
     local pvo_color="$GRAY"
     python3 -c "exit(0 if float('${J_PVO:-0}') >= 10 else 1)" 2>/dev/null && pvo_color="$GREEN"
 
-    echo -e "  │  ${GRAY}ボラ${RESET} ${vola_color}${J_VOLA}${RESET}${GRAY}/2500${RESET}  ADX:${adx_color}${J_ADX}${RESET}${GRAY}/31${RESET}  PVO:${pvo_color}${J_PVO}${RESET}${GRAY}/10${RESET}  出来高:${WHITE}${J_VOLUME}${RESET}"
-    echo -e "${BOLD}${WHITE}  └──────────────────────────────────────────────────────────┘${RESET}"
+    # シグナル色分け
+    local sig_color="$GRAY"
+    echo "$J_DECISION" | grep -qiE "entry|buy|sell" && sig_color="$GREEN"
+
+    # ポジション色分け
+    local pos_color="$GRAY"
+    [ "$J_POS" = "BUY"  ] && pos_color="$GREEN"
+    [ "$J_POS" = "SELL" ] && pos_color="$RED"
+
+    # 損益色分け
+    local pnl_color="$GRAY"
+    [ "${J_PNL:-0}"       -gt 0 ] 2>/dev/null && pnl_color="$GREEN"
+    [ "${J_PNL:-0}"       -lt 0 ] 2>/dev/null && pnl_color="$RED"
+    local tpnl_color="$GRAY"
+    [ "${J_TOTAL_PNL:-0}" -gt 0 ] 2>/dev/null && tpnl_color="$GREEN"
+    [ "${J_TOTAL_PNL:-0}" -lt 0 ] 2>/dev/null && tpnl_color="$RED"
+
+    # ── 最新データパネル（等幅: 右辺枠なし・printf固定幅）──
+    printf "  ${BOLD}${WHITE}\u250c\u2500\u2500 ${GRAY}\u6700\u65b0\u30c7\u30fc\u30bf  (\u66f4\u65b0: %s) ${WHITE}\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500${RESET}\n" "$J_UPDATED"
+    printf "  ${GRAY}\u2502${RESET}  %-14s  ${WHITE}%s${RESET}\n"                        "$(lbl '時刻' 14)" "$J_TS"
+    printf "  ${GRAY}\u2502${RESET}\n"
+    printf "  ${GRAY}\u2502${RESET}  %-14s  ${WHITE}%-10s${RESET}  ${GRAY}高値:${RESET}${YELLOW}%-10s${RESET}  ${GRAY}安値:${RESET}${BLUE}%-10s${RESET}  ${GRAY}PSAR:${RESET}${GRAY}%s${RESET}\n" \
+        "$(lbl 'BTC終値' 14)" "$J_CLOSE" "$J_HIGH" "$J_LOW" "$J_PSAR"
+    printf "  ${GRAY}\u2502${RESET}  %-14s  ${GRAY}上限:${RESET}${YELLOW}%-10s${RESET}  ${GRAY}下限:${RESET}${BLUE}%s${RESET}\n" \
+        "$(lbl 'DC帯' 14)" "$J_DC_H" "$J_DC_L"
+    printf "  ${GRAY}\u2502${RESET}  ${GRAY}\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500${RESET}\n"
+    printf "  ${GRAY}\u2502${RESET}  %-14s  ${sig_color}${BOLD}%-10s${RESET}  ${GRAY}サイド:${RESET}%s\n" \
+        "$(lbl '判断' 14)" "$J_DECISION" "$J_SIDE"
+    printf "  ${GRAY}\u2502${RESET}  %-14s  ${pos_color}%-8s${RESET}  ${GRAY}保有:${RESET}${WHITE}%s BTC${RESET}  ${GRAY}購入価:${RESET}${WHITE}%-10s${RESET}  ${GRAY}STOP:${RESET}${RED}%s${RESET}\n" \
+        "$(lbl 'ポジション' 14)" "$J_POS" "$J_QTY" "$J_BUY_PRICE" "$J_STOP"
+    printf "  ${GRAY}\u2502${RESET}  %-14s  ${pnl_color}%-10s${RESET}  ${GRAY}累計損益:${RESET}  ${tpnl_color}%s USD${RESET}\n" \
+        "$(lbl 'みなし損益' 14)" "${J_PNL} USD" "$J_TOTAL_PNL"
+    printf "  ${GRAY}\u2502${RESET}  ${GRAY}\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500${RESET}\n"
+    printf "  ${GRAY}\u2502${RESET}  %-14s  ${vola_color}%-6s${RESET}${GRAY}/2500${RESET}  ${GRAY}ADX:${RESET}${adx_color}%-6s${RESET}${GRAY}/31${RESET}  ${GRAY}PVO:${RESET}${pvo_color}%-8s${RESET}${GRAY}/10${RESET}  ${GRAY}出来高:${RESET}${WHITE}%s${RESET}\n" \
+        "$(lbl 'ボラ' 14)" "$J_VOLA" "$J_ADX" "$J_PVO" "$J_VOLUME"
+    printf "  ${BOLD}${WHITE}\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500${RESET}\n"
     echo ""
 
     # ── エラー表示 ──
     if [ "${J_ERR_COUNT:-0}" -gt 0 ] 2>/dev/null; then
-        echo -e "  ${RED}${BOLD}⚠  エラー: ${J_ERR_COUNT}件${RESET}"
+        printf "  ${RED}${BOLD}⚠  エラー: %s件${RESET}\n" "$J_ERR_COUNT"
         for i in 0 1 2; do
             local ts_var="J_ERR${i}_TS"
             local msg_var="J_ERR${i}_MSG"
             local ts="${!ts_var}" msg="${!msg_var}"
-            [ -n "$ts" ] && echo -e "  ${RED}  ${ts}  ${msg}${RESET}"
+            [ -n "$ts" ] && printf "  ${RED}  %-17s  %s${RESET}\n" "$ts" "$msg"
         done
     else
-        echo -e "  ${GREEN}✓  エラー: なし${RESET}"
+        printf "  ${GREEN}✓  エラー: なし${RESET}\n"
     fi
     echo ""
 
-    # ── 直近カーソル履歴 ──
+    # ── 直近ローソク足履歴 ──
     if [ "${J_CANDLE_COUNT:-0}" -gt 0 ] 2>/dev/null; then
-        echo -e "  ${BOLD}${WHITE}直近ローソク足履歴 (${J_CANDLE_COUNT}本):${RESET}"
+        printf "  ${BOLD}${WHITE}直近ローソク足履歴 (%s本):${RESET}\n" "$J_CANDLE_COUNT"
+        printf "  ${GRAY}  %-17s  %-10s  %-10s  %-6s  %s${RESET}\n" \
+            "時刻" "判断" "終値" "ポジ" "累計損益"
+        printf "  ${GRAY}  %-17s  %-10s  %-10s  %-6s  %s${RESET}\n" \
+            "─────────────────" "──────────" "──────────" "──────" "────────"
         for i in 4 3 2 1 0; do
             local ts_var="J_CH${i}_TS"
             local dec_var="J_CH${i}_DEC"
@@ -251,12 +278,13 @@ except Exception as ex:
             local cpnl_color="$GRAY"
             [ "${cpnl:-0}" -gt 0 ] 2>/dev/null && cpnl_color="$GREEN"
             [ "${cpnl:-0}" -lt 0 ] 2>/dev/null && cpnl_color="$RED"
-            echo -e "  ${GRAY}  ${cts}${RESET}  ${hcolor}${cdec}${RESET}  ${GRAY}終値:${cclose}  ポジ:${cpos}  累計損益:${RESET}${cpnl_color}${cpnl}${RESET}"
+            printf "  ${GRAY}  %-17s${RESET}  ${hcolor}%-10s${RESET}  ${GRAY}%-10s  %-6s${RESET}  ${cpnl_color}%s USD${RESET}\n" \
+                "$cts" "$cdec" "$cclose" "$cpos" "$cpnl"
         done
     fi
 
     echo ""
-    echo -e "  ${GRAY}更新間隔: ${INTERVAL}秒  終了: Ctrl+C${RESET}"
+    printf "  ${GRAY}更新間隔: %s秒  終了: Ctrl+C${RESET}\n" "$INTERVAL"
 }
 
 # メインループ
