@@ -25,7 +25,7 @@
             "title": "RPiログ取得・正当性チェック",
             "description": "3日後にRPiからログ（YYYYMMDDHHMMSS.json, latest_status.json）を取得し、timeフィールド・OHLCV値・PnL累計の整合性を確認する",
             "due": "2026-03-10",
-            "status": "todo"
+            "status": "done"
           }
         ],
         "notes": {
@@ -1261,6 +1261,30 @@
         "status": "done",
         "completed_at": "2026-03-07",
         "completion_note": "ユーザー指示によりDONEに変更"
+      },
+      {
+        "id": "45",
+        "category": "バグ修正",
+        "title": "ADX計算ルックバック不足バグ修正",
+        "description": "Task 40g（APIレートリミット最適化）でルックバック短縮の副作用として、4H足でADX計算に必要な本数（adx_period×2=28本）が確保されず全期間ADX=0となりエントリが封鎖されていた。fix: lookback = max(volatility_term, adx_term*2) + 10 に修正",
+        "priority": 5,
+        "related_doc": "src/price_data_management.py L431-436",
+        "estimated_impact_usd": null,
+        "status": "done",
+        "completed_at": "2026-03-09",
+        "completion_note": "レグレッション164/164 PASS、全8四半期テスト PASS、ベースライン2402.94 USD維持。RPiにデプロイ済み（BOT再起動後にstrategy_A: BUY を確認）"
+      },
+      {
+        "id": "46",
+        "category": "バグ修正",
+        "title": "monitor_web ローソク足チャートJST表示修正",
+        "description": "LightweightChartsのデフォルトUTC表示をJST（UTC+9）に修正。tickMarkFormatter / timeFormatter に JST変換ヘルパーを追加。チャートタイトルにJSTバッジを追加",
+        "priority": 3,
+        "related_doc": "tools/web_monitor/server.py",
+        "estimated_impact_usd": null,
+        "status": "done",
+        "completed_at": "2026-03-08",
+        "completion_note": "monitor_web起動確認済み。JST時刻が正しく表示されることを確認"
       }
     ]
   },

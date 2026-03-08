@@ -428,9 +428,12 @@ class PriceDataManagement:
                 # 現在時刻
                 now = int(time.time())
                 # 過去N期間分のデータを取得
-                # ボラティリティ計算に必要な期間（14期間）+ 安全マージン
+                # ADX計算には adx_term * 2 本のデータが必要（Task 40g最適化で不足が発生していた）
+                # volatility_term(14) と adx_term*2(28) のうち大きい方に安全マージンを加算
                 volatility_term = Config.get_volatility_term()
-                lookback_minutes = (volatility_term + 10) * self.time_frame  # 余裕を持たせる
+                adx_term = Config.get_config_int('Strategy', 'adx_term', 14)
+                required_candles = max(volatility_term, adx_term * 2) + 10
+                lookback_minutes = required_candles * self.time_frame  # ADX計算に十分なデータを確保
                 start_epoch = now - (lookback_minutes * 60)
                 end_epoch = now
             else:  # バックテスト時

@@ -624,7 +624,7 @@ canvas{position:absolute;top:0;left:0;width:100%!important;height:100%!important
 <!-- ROW2: チャート(左) + 履歴テーブル(右) -->
 <div class="row2">
   <div class="card chart-card">
-    <div class="ct">BTC ローソク足（最大1ヶ月）<span id="candleCount" style="margin-left:6px;font-size:9px;color:var(--muted)"></span></div>
+    <div class="ct">BTC ローソク足（最大1ヶ月）<span id="candleCount" style="margin-left:6px;font-size:9px;color:var(--muted)"></span><span style="margin-left:8px;font-size:9px;color:var(--muted)">JST</span></div>
     <div class="chart-wrap"><div id="chartCandle" style="position:absolute;top:0;left:0;width:100%;height:100%;"></div></div>
     <div class="ct" style="font-size:8px;padding-top:4px;margin-top:4px;border-top:1px solid var(--border);">累計損益推移</div>
     <div style="height:65px;position:relative;flex-shrink:0;"><div id="chartPnl" style="position:absolute;top:0;left:0;width:100%;height:100%;"></div></div>
@@ -664,13 +664,34 @@ const REFRESH_INTERVAL = 30;
 let countdown = REFRESH_INTERVAL;
 let lwChart, lwCandle, lwDCH, lwDCL, lwPSAR, lwVolume, lwStop, lwPnlChart, lwPnlSeries;
 
+// UTC timestamp → JST Date（UTC+9）変換ヘルパー
+const _toJST = ts => new Date((ts + 9*3600) * 1000);
+const _jstTickFmt = (ts, type) => {
+  const d = _toJST(ts);
+  const TM = LightweightCharts.TickMarkType;
+  if(type === TM.Year)       return d.getUTCFullYear()+'年';
+  if(type === TM.Month)      return (d.getUTCMonth()+1)+'月';
+  if(type === TM.DayOfMonth) return d.getUTCDate()+'日';
+  const h = String(d.getUTCHours()).padStart(2,'0');
+  const m = String(d.getUTCMinutes()).padStart(2,'0');
+  return h+':'+m;
+};
+const _jstTimeFmt = ts => {
+  const d = _toJST(ts);
+  return d.getUTCFullYear()+'/'+String(d.getUTCMonth()+1).padStart(2,'0')+'/'+
+         String(d.getUTCDate()).padStart(2,'0')+' '+
+         String(d.getUTCHours()).padStart(2,'0')+':'+
+         String(d.getUTCMinutes()).padStart(2,'0')+' JST';
+};
+
 function initCandleChart(){
   const wrap = document.getElementById('chartCandle');
   lwChart = LightweightCharts.createChart(wrap, {
     autoSize: true,
     layout:{ background:{type:'solid',color:'#161b22'}, textColor:'#8b949e', fontSize:10 },
     grid:{ vertLines:{color:'#30363d'}, horzLines:{color:'#30363d'} },
-    timeScale:{ timeVisible:true, secondsVisible:false, borderColor:'#30363d' },
+    localization:{ timeFormatter: _jstTimeFmt },
+    timeScale:{ timeVisible:true, secondsVisible:false, borderColor:'#30363d', tickMarkFormatter: _jstTickFmt },
     rightPriceScale:{ borderColor:'#30363d' },
     crosshair:{ mode:1 },
   });
@@ -701,7 +722,8 @@ function initPnlChart(){
     autoSize:true,
     layout:{ background:{type:'solid',color:'#161b22'}, textColor:'#8b949e', fontSize:9 },
     grid:{ vertLines:{color:'#30363d'}, horzLines:{color:'#30363d'} },
-    timeScale:{ timeVisible:true, secondsVisible:false, borderColor:'#30363d' },
+    localization:{ timeFormatter: _jstTimeFmt },
+    timeScale:{ timeVisible:true, secondsVisible:false, borderColor:'#30363d', tickMarkFormatter: _jstTickFmt },
     rightPriceScale:{ borderColor:'#30363d' },
     crosshair:{mode:1}, handleScroll:false, handleScale:false,
   });
