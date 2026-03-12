@@ -2,7 +2,7 @@
   "meta": {
     "version": "1.0",
     "last_updated": "2026-03-13",
-    "description": "satosystem gen2 - Task management - ETH PDCA#1完了(不採用)・Task44(Bybit→代替取引所)進行中。期限: 2026-03-23。",
+    "description": "satosystem gen2 - Task management - Task44(Bybit→代替取引所)・Task46(RPi USB安定化)進行中。期限: 2026-03-23。",
     "replaces": "docs/ACTION_LIST.md",
     "workflow_rules": {
       "baseline_before_action": "アクションリスト実行前に必ずレグレッションテストを実行し、PROGRESS.json baseline_regressionに保存すること",
@@ -11,6 +11,27 @@
   },
   "tasks": {
     "progress": [
+      {
+        "id": "46",
+        "category": "インフラ・安定化",
+        "title": "RPi USB安定稼働 Ubuntu Server設定最適化",
+        "description": "Transcend JetFlash USB(sda 58.9G)からのブート環境で長期安定稼働するためのLinux設定最適化。journaldのvolatile化(USB→RAM)、vm.dirty書き込み頻度削減、noatime設定、unattended-upgrades自動再起動無効化。スクリプト: ~/rpi_stability_setup.sh",
+        "priority": 3,
+        "started_date": "2026-03-13",
+        "status": "in_progress",
+        "steps": [
+          "設定スクリプト作成・RPiに転送済み (rpi_stability_setup.sh)",
+          "ユーザーがRPiで sudo bash ~/rpi_stability_setup.sh を実行",
+          "設定確認・完了報告"
+        ],
+        "optimizations": {
+          "sysctl": "vm.dirty_writeback_centisecs:500→1500 / vm.dirty_expire_centisecs:3000→6000 / dirty_ratio:20→40",
+          "journald": "Storage=volatile (214MB USBジャーナルをRAMへ)",
+          "fstab": "defaults,noatime,nodiratime (アクセス時刻書き込み削減)",
+          "unattended_upgrades": "Automatic-Reboot=false (意図しない再起動防止)"
+        },
+        "note": "BOT稼働中(uptime 111日)のため再起動不要手順で実施。noatimeはremount即時適用。"
+      },
       {
         "id": "44",
         "category": "インフラ・移行",
