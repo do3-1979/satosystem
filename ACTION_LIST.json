@@ -1,8 +1,8 @@
 {
   "meta": {
     "version": "1.0",
-    "last_updated": "2026-03-07",
-    "description": "satosystem gen2 - Task management (TODO/PROGRESS/DONE) - monitor_webローソク足チャート修正完了（2026-03-07）。RPi Liveモード稼働中・3日間見守りフェーズ。",
+    "last_updated": "2026-03-13",
+    "description": "satosystem gen2 - Task management - ETH PDCA#1完了(不採用)・Task44(Bybit→代替取引所)進行中。期限: 2026-03-23。",
     "replaces": "docs/ACTION_LIST.md",
     "workflow_rules": {
       "baseline_before_action": "アクションリスト実行前に必ずレグレッションテストを実行し、PROGRESS.json baseline_regressionに保存すること",
@@ -11,31 +11,6 @@
   },
   "tasks": {
     "progress": [
-      {
-        "id": "43",
-        "category": "インフラ・移行",
-        "title": "RPi Live BOT 3日間稼働監視フェーズ",
-        "description": "monitor_webローソク足修正後（2026-03-07）のRPi Liveモード稼働確認。3日間（〜2026-03-10）ログを監視し、正常動作を確認する。",
-        "priority": 5,
-        "due_date": "2026-03-10",
-        "started_date": "2026-03-07",
-        "subtasks": [
-          {
-            "id": "43a",
-            "title": "RPiログ取得・正当性チェック",
-            "description": "3日後にRPiからログ（YYYYMMDDHHMMSS.json, latest_status.json）を取得し、timeフィールド・OHLCV値・PnL累計の整合性を確認する",
-            "due": "2026-03-10",
-            "status": "done"
-          }
-        ],
-        "notes": {
-          "bot_pid": 992614,
-          "mode": "LIVE",
-          "restarted_at": "2026-03-07 13:00:15",
-          "commit": "186ef94",
-          "fix_summary": "real_time→timestamp変換、glob14桁数字化、latest_status.json統合"
-        }
-      },
       {
         "id": "44",
         "category": "インフラ・移行",
@@ -154,6 +129,29 @@
     "progress_memo": "2026-03-06: OHLCVキャッシュDB更新ツール（tools/update_ohlcv_db.py）実装完了。Bybit公開API経由でデータ蓄積可。docs/analysis/をアーカイブ化（更新コスト>メリットのため運用終了）。Bybit Close-Only期限: 2026-03-23。",
     "done": [
       {
+        "id": "40i-eth-pdca1",
+        "title": "ETH/USDT PDCA #1 パラメータスイープ検証",
+        "category": "ETH検証・銘柄分散",
+        "completed_date": "2026-03-13",
+        "result": "donchian_buy_term(20〜40) × pvo_threshold(5〜20) の20ケース × 6四半期スイープ実施。結論: BTC優位(2402.94 USD vs ETH換算421 USD、差-1981 USD)。ETH採用不可。発見: PVO閾値はETHで完全無効(出来高がつねに閾値超)、トレード数が6Q合計7回と極端に少ない。構造的問題のためパラメータ調整では解決困難。ETH採用は一時保留。",
+        "files": [
+          "run_eth_sweep.py",
+          "sweep_results/eth_sweep_results/"
+        ],
+        "key_findings": {
+          "eth_8q_estimated_pnl": 421.37,
+          "btc_8q_pnl": 2402.94,
+          "gap_usd": -1981.57,
+          "best_params": {
+            "donchian_buy_term": 30,
+            "pvo_threshold": 10
+          },
+          "root_cause": "PVO閾値が実質無効(ETH出来高が大きい), トレード数少なすぎ(6Q合計7回)",
+          "oos_positive": true,
+          "recommendation": "ETH採用保留。Task44(Bybit移行)を優先。"
+        }
+      },
+      {
         "id": "45",
         "title": "シグナル・フィルター最適組み合わせ探索（パラメータスイープ）",
         "description": "全エントリー/イグジットシグナル・フィルターの特性を整理し、相乗効果が期待できる5種類の組み合わせを決定。各組み合わせでパラメータスイープを実施し、ベースライン(2402.94 USD)超えを目指す。",
@@ -208,11 +206,10 @@
       },
       {
         "id": "43",
-        "title": "RPi本番運用開始・耐久テスト完了",
-        "category": "運用・信頼性",
-        "completed_date": "2026-03-06",
-        "result": "2026-03-05に本番運用開始（back_test=0, hot_test_dummy_mode=0, LIVE MODE）。PID 600690でRPi稼働中。Task 40g（APIレートリミット修正）適用後、Rate Limitエラー解消を確認。残高約69.5 USDT（合算証拠金モード）。本番運用は継続中のため停止しない。",
-        "notes": "耐久テスト期限2026-03-08は本番運用開始により意味を持たなくなった。BOTは継続稼働。commit: b05f96c (Task 40g)"
+        "title": "RPi Live BOT 5日間稼働監視フェーズ（完了）",
+        "category": "インフラ・移行",
+        "completed_date": "2026-03-13",
+        "result": "2026-03-08〜2026-03-13（5日間）稼働確認。毎分メインループ正常、RATE LIMIT 16回すべて自動回復、メインループエラー1件（単発・Bitget API）のみ。残高65.67→68.63 USDT（+2.96 USDT増加）。エントリーなし（PVO<0・ADX<25・Donchian未ブレイク）は正常動作。"
       },
       {
         "id": "40d",

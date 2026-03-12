@@ -1,0 +1,187 @@
+{
+  "baseline": {
+    "label": "baseline_btc_params",
+    "params": {
+      "label": "baseline_btc_params",
+      "donchian_buy_term": "30",
+      "donchian_sell_term": "30",
+      "pvo_threshold": "10"
+    },
+    "insample_results": [
+      {
+        "year": 2024,
+        "quarter": 1,
+        "metrics": {
+          "total_pnl": 209.819158,
+          "profit_factor": 2.173879,
+          "max_drawdown": 91.307997,
+          "max_drawdown_rate": 30.435999,
+          "sharpe": 0.756914,
+          "sortino": 0.100451,
+          "recovery_factor": 2.297928,
+          "win_rate": 57.142857,
+          "payoff_ratio": 2.239025,
+          "expectancy": 43.544411,
+          "max_consec_losses": 3,
+          "trades": 7,
+          "samples": 546
+        }
+      },
+      {
+        "year": 2024,
+        "quarter": 2,
+        "metrics": {
+          "total_pnl": 78.080136,
+          "profit_factor": 1.879687,
+          "max_drawdown": 81.135893,
+          "max_drawdown_rate": 17.668349,
+          "sharpe": 0.420196,
+          "sortino": 0.057988,
+          "recovery_factor": 0.962338,
+          "win_rate": 66.666667,
+          "payoff_ratio": 10.442931,
+          "expectancy": 50.53096,
+          "max_consec_losses": 1,
+          "trades": 3,
+          "samples": 546
+        }
+      },
+      {
+        "year": 2024,
+        "quarter": 3,
+        "metrics": {
+          "total_pnl": -0.122031,
+          "profit_factor": 0.998666,
+          "max_drawdown": 70.495086,
+          "max_drawdown_rate": 19.033535,
+          "sharpe": -0.00104,
+          "sortino": -0.0001,
+          "recovery_factor": -0.001731,
+          "win_rate": 66.666667,
+          "payoff_ratio": 1.676806,
+          "expectancy": 16.462932,
+          "max_consec_losses": 1,
+          "trades": 3,
+          "samples": 552
+        }
+      },
+      {
+        "year": 2024,
+        "quarter": 4,
+        "metrics": {
+          "total_pnl": 230.027735,
+          "profit_factor": 2.139261,
+          "max_drawdown": 137.084027,
+          "max_drawdown_rate": 21.608539,
+          "sharpe": 0.526657,
+          "sortino": 0.091309,
+          "recovery_factor": 1.678005,
+          "win_rate": 50.0,
+          "payoff_ratio": 3.452036,
+          "expectancy": 65.191325,
+          "max_consec_losses": 2,
+          "trades": 4,
+          "samples": 552
+        }
+      },
+      {
+        "year": 2025,
+        "quarter": 1,
+        "metrics": {
+          "total_pnl": 0,
+          "profit_factor": 0.0,
+          "max_drawdown": 0.0,
+          "max_drawdown_rate": 0.0,
+          "sharpe": 0.0,
+          "sortino": 0.0,
+          "recovery_factor": 0.0,
+          "win_rate": 0.0,
+          "payoff_ratio": 0.0,
+          "expectancy": 0.0,
+          "max_consec_losses": 0,
+          "trades": 0,
+          "samples": 540
+        }
+      },
+      {
+        "year": 2025,
+        "quarter": 2,
+        "metrics": {
+          "total_pnl": 175.764686,
+          "profit_factor": 1.941613,
+          "max_drawdown": 186.663415,
+          "max_drawdown_rate": 28.178668,
+          "sharpe": 0.43082,
+          "sortino": 3.0,
+          "recovery_factor": 0.941613,
+          "win_rate": 100.0,
+          "payoff_ratio": 0.0,
+          "expectancy": 181.214051,
+          "max_consec_losses": 0,
+          "trades": 2,
+          "samples": 546
+        }
+      }
+    ],
+    "oos_results": [
+      {
+        "year": 2025,
+        "quarter": 3,
+        "metrics": {
+          "total_pnl": 203.055781,
+          "profit_factor": 2.007361,
+          "max_drawdown": 201.572077,
+          "max_drawdown_rate": 35.49287,
+          "sharpe": 0.597966,
+          "sortino": 0.074064,
+          "recovery_factor": 1.007361,
+          "win_rate": 100.0,
+          "payoff_ratio": 0.0,
+          "expectancy": 103.782441,
+          "max_consec_losses": 0,
+          "trades": 5,
+          "samples": 552
+        }
+      },
+      {
+        "year": 2025,
+        "quarter": 4,
+        "metrics": {
+          "total_pnl": 83.608382,
+          "profit_factor": 0.0,
+          "max_drawdown": 0.0,
+          "max_drawdown_rate": 0.0,
+          "sharpe": 1.13945,
+          "sortino": 3.0,
+          "recovery_factor": 0.0,
+          "win_rate": 100.0,
+          "payoff_ratio": 0.0,
+          "expectancy": 5.524439,
+          "max_consec_losses": 0,
+          "trades": 2,
+          "samples": 552
+        }
+      }
+    ],
+    "summary": {
+      "total_pnl": 693.57,
+      "sharpe_avg": 0.3556,
+      "maxdd_avg_pct": 19.49,
+      "pf_avg": 1.5222,
+      "winrate_avg_pct": 56.75,
+      "calmar": 47.454,
+      "total_trades": 19,
+      "valid_quarters": 6
+    },
+    "oos_summary": {
+      "total_pnl": 286.66,
+      "sharpe_avg": 0.8687,
+      "maxdd_avg_pct": 17.75,
+      "pf_avg": 1.0037,
+      "winrate_avg_pct": 100.0,
+      "calmar": 64.6134,
+      "total_trades": 7,
+      "valid_quarters": 2
+    }
+  }
+}

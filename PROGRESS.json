@@ -123,15 +123,6 @@
     "active_tasks": {
       "in_progress": [
         {
-          "task_id": "43",
-          "title": "RPi本番稼働 - ライブ運用監視",
-          "status": "本番稼働中",
-          "priority": "★★★★★",
-          "started_date": "2026-03-05",
-          "note": "本番運用開始（back_test=0, hot_test_dummy_mode=0）。RPi: 192.168.1.19。3月23日Bybit Close-Onlyまでに取引所移行必須",
-          "due_date": "2026-03-22"
-        },
-        {
           "task_id": "44",
           "title": "取引所移行（Bybit → 代替取引所）",
           "status": "調査中",
@@ -140,20 +131,54 @@
           "note": "Bybit日本向けClose-Only期限: 2026-03-23 12:00 JST。Bitgetは4H足240日制限あり（バックテスト不可、ライブは可）。OKX/Gate.ioも候補",
           "due_date": "2026-03-22",
           "subtasks": [
-            {"id": "44a", "title": "代替取引所OHLCV取得テスト（2年分4H足）", "due": "2026-03-09"},
-            {"id": "44b", "title": "新取引所exchange.py実装", "due": "2026-03-13"},
-            {"id": "44c", "title": "バックテスト同等性確認・レグレッションテスト", "due": "2026-03-16"},
-            {"id": "44d", "title": "RPiデプロイ・本番切り替えテスト", "due": "2026-03-19"}
+            {
+              "id": "44a",
+              "title": "代替取引所OHLCV取得テスト（2年分4H足）",
+              "due": "2026-03-09"
+            },
+            {
+              "id": "44b",
+              "title": "新取引所exchange.py実装",
+              "due": "2026-03-13"
+            },
+            {
+              "id": "44c",
+              "title": "バックテスト同等性確認・レグレッションテスト",
+              "due": "2026-03-16"
+            },
+            {
+              "id": "44d",
+              "title": "RPiデプロイ・本番切り替えテスト",
+              "due": "2026-03-19"
+            }
           ]
         }
       ],
       "next_priority": [
-        {"task_id": "40h", "title": "レジーム別戦略切替（Trend/Range）", "priority": "★★★★☆"},
-        {"task_id": "40f", "title": "価格データ健全性チェック（新取引所移行後）", "priority": "★★★★☆"},
-        {"task_id": "22b-eval", "title": "Strategy B有効化・バックテスト評価", "priority": "★★★☆☆"}
+        {
+          "task_id": "40h",
+          "title": "レジーム別戦略切替（Trend/Range）",
+          "priority": "★★★★☆"
+        },
+        {
+          "task_id": "40f",
+          "title": "価格データ健全性チェック（新取引所移行後）",
+          "priority": "★★★★☆"
+        },
+        {
+          "task_id": "22b-eval",
+          "title": "Strategy B有効化・バックテスト評価",
+          "priority": "★★★☆☆"
+        }
       ]
     },
     "recently_completed": [
+      {
+        "task_id": "43",
+        "title": "RPi本番稼働 - ライブ運用監視",
+        "date": "2026-03-13",
+        "description": "RPi Live BOT 3日間稼働監視フェーズ: 実装完了"
+      },
       {
         "id": "sweep_metrics",
         "description": "パラメータスイープ: tsmom_lookback=150採用 (+245 USD), 評価指標5種追加",
@@ -176,12 +201,6 @@
         "title": "手数料/スリッページ/約定遅延のコストモデル導入",
         "date": "2026-03-02",
         "description": "コストモデル統合確認済み - cost_model.py実装済み、portfolio.pyに統合、bot.pyから呼び出し確認済み（実装は過去セッションにて完了済み）"
-      },
-      {
-        "task_id": "40g",
-        "title": "本番運用の耐障害性（API障害/再試行/部分約定/ログ監視）",
-        "date": "2026-03-02",
-        "description": "API耐障害性bot統合完了 - Alert統合(Discord通知)、config.py interpolation=None修正、テスト12件追加"
       }
     ]
   },
