@@ -126,6 +126,21 @@ class Bot:
         if back_test_mode == 0:
             mode_str = "HOT_TEST (DUMMY)" if Config.get_hot_test_dummy_mode() == 1 else "LIVE"
             self.alert.notify_system_start(mode_str, Config.get_account_balance())
+
+        # ライブ本番モードのみ: Bitgetの実ポジションをPortfolioに同期
+        if back_test_mode == 0 and Config.get_hot_test_dummy_mode() == 0:
+            try:
+                live_qty = self.exchange.get_position_quantity()
+                live_pos = self.exchange.get_open_position()
+                if live_qty and live_qty > 0 and live_pos is not None:
+                    live_side = 'BUY' if live_pos.get('side', '').lower() == 'long' else 'SELL'
+                    live_entry = float(live_pos.get('entryPrice') or 0)
+                    self.portfolio.add_position_quantity(live_qty, live_side, live_entry, is_backtest=False)
+                    self.logger.log(f"🔄 起動時ポジション同期: {live_side} {live_qty} BTC @ {live_entry:.2f} (Bitgetから取得)")
+                else:
+                    self.logger.log("🔄 起動時ポジション同期: ポジションなし (Bitgetから確認)")
+            except Exception as e:
+                self.logger.log_error(f"起動時ポジション同期失敗: {e}")
         
         # メモリ監視機能の初期化（リアルタイムモードのみ）
         memory_check_interval = 3600  # 1時間ごと
@@ -289,7 +304,9 @@ class Bot:
                     try:
                         self.events.emit(EventType.ORDER_SUBMITTED, order.to_dict())
                         order_response = self.execute_order(order.to_dict(), trade_decision["decision"])
-                        #self.logger.log(f"注文実行: {order_response}")
+                        if order_response is False:
+                            self.logger.log_error("注文失敗（order_response=False）: ポートフォリオ更新をスキップ")
+                            continue  # 注文失敗時はポートフォリオ更新をスキップ
                         self.events.emit(EventType.ORDER_EXECUTED, order.to_dict())
                     except Exception as e:
                         self.logger.log_error(f"注文実行エラー: {e}")

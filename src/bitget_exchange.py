@@ -408,23 +408,28 @@ class BitgetExchange(Exchange):
             # ロング決済（売却）= 高く売る
             return current_price * (1 + slippage_percent / 100)
 
-    def _execute_market_order(self, side, quantity):
+    def _execute_market_order(self, side, quantity, price=None):
         """
         成行注文を実行します（リトライなし）
         
         Args:
             side (str): 'buy' または 'sell'
             quantity (float): 数量
+            price (float, optional): Bitget市場買い注文用価格（コスト計算に使用）
             
         Returns:
             dict or bool: 注文結果
         """
         try:
+            params = {'timeout': 10000}
+            # BitgetのAPIは市場買い注文でpriceが必要（コスト=amount*priceを計算するため）
+            if side == 'buy' and price is not None:
+                params['price'] = price
             order = self.exchange.create_market_order(
                 symbol=self.market,
                 side=side,
                 amount=quantity,
-                params={'timeout': 10000}
+                params=params
             )
             self.logger.log(f"✅ 成行注文成功: {side} {quantity}")
             return order
@@ -432,13 +437,14 @@ class BitgetExchange(Exchange):
             self.logger.log_error(f"成行注文失敗: {str(e)}")
             raise
 
-    def _execute_market_order_final(self, side, quantity):
+    def _execute_market_order_final(self, side, quantity, price=None):
         """
         最後のフォールバック成行注文を実行します
         
         Args:
             side (str): 'buy' または 'sell'
             quantity (float): 数量
+            price (float, optional): Bitget市場買い注文用価格（コスト計算に使用）
             
         Returns:
             dict or bool: 注文結果
@@ -446,11 +452,14 @@ class BitgetExchange(Exchange):
         max_retries = 2
         for attempt in range(max_retries):
             try:
+                params = {'timeout': 10000}
+                if side == 'buy' and price is not None:
+                    params['price'] = price
                 order = self.exchange.create_market_order(
                     symbol=self.market,
                     side=side,
                     amount=quantity,
-                    params={'timeout': 10000}
+                    params=params
                 )
                 self.logger.log(f"✅ 最終成行成功 (試行 {attempt+1}/{max_retries}): {side} {quantity}")
                 return order
@@ -486,7 +495,7 @@ class BitgetExchange(Exchange):
         
         # 現時点では成行注文を優先（早期約定を重視）
         try:
-            return self._execute_market_order(side, quantity)
+            return self._execute_market_order(side, quantity, current_price)
         except Exception as e:
             self.logger.log(f"⚠️ 成行失敗: {str(e)} → 指値にフォールバック")
             return self._execute_entry_order_with_limit_retry(side, quantity, current_price)
@@ -563,7 +572,7 @@ class BitgetExchange(Exchange):
                     # 最後のリトライ失敗 → 成行へ
                     self.logger.log(f"⚠️ 指値全て失敗 → 成行で約定を試みる")
                     try:
-                        return self._execute_market_order_final(side, quantity)
+                        return self._execute_market_order_final(side, quantity, current_price)
                     except Exception as e_market:
                         self.logger.log_error(f"❌ 成行も失敗: {str(e_market)}")
                         raise

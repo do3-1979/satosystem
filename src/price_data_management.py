@@ -69,6 +69,7 @@ class PriceDataManagement:
         self.signals = {'donchian': {'signal': False, 'side': None, 'info': {'highest': 0, 'lowest': 0} }, 'pvo': {'signal': False, 'side': None, 'info':{'value': 0} }}
         self.volatility = 0
         self.prev_close_time = 0
+        self.close_time = 0  # ライブモード・バックテスト共通で使用
         # Funding Rateデータ辞書 {epoch秒(int): rate(float)}
         # バックテスト時は一括ロード、ホットテスト時は都度取得
         self.funding_rate_dict = {}
@@ -81,7 +82,6 @@ class PriceDataManagement:
             ]
             self.progress_time = 0 # 処理中の時刻
             self.progress_diff = 0
-            self.close_time = 0
             self.prev_high_price = 0
             self.prev_low_price = 0
             
@@ -461,6 +461,7 @@ class PriceDataManagement:
 
                 self.volume = self.latest_ohlcv_data[0]['Volume']
                 latest_close_time = self.latest_ohlcv_data[0]['close_time']
+                self.close_time = latest_close_time  # ライブモードでclose_timeを更新
 
             except IndexError as e:
                 self.logger.log_error(f"最新足データ取得エラー: リストが空です: {e}")
