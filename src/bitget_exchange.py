@@ -235,8 +235,11 @@ class BitgetExchange(Exchange):
         return usdt_total
 
     def _fetch_positions_from_api(self, symbol=None):
-        """内部ヘルパー: API経由でポジション一覧を取得"""
+        """内部ヘルパー: API経由でポジション一覧を取得（USDT-FUTURES限定）"""
         target = symbol or self.market
+        # Bitget USDT先物のシンボル形式: 'BTC/USDT' → 'BTC/USDT:USDT'
+        if ':' not in target:
+            target = target + ':USDT'
         return self.exchange.fetchPositions([target])
 
     def get_open_position(self, symbol=None):
