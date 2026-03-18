@@ -98,14 +98,10 @@ class BitgetExchange(Exchange):
 
         # マーケット変換 (Bitget用)
         market_type = Config.get_market()
-        if market_type == 'BTC/USD':
-            self.market = "BTC/USDT"  # BitgetはUSD建てがないのでUSDT建てに統一
-        elif market_type == 'BTC/USDT':
-            self.market = "BTC/USDT"
-        elif market_type == 'ETH/USD':
-            self.market = "ETH/USDT"  # BitgetはUSD建てがないのでUSDT建てに統一
-        elif market_type == 'ETH/USDT':
-            self.market = "ETH/USDT"
+        if market_type == 'BTC/USD' or market_type == 'BTC/USDT':
+            self.market = "BTC/USDT:USDT"  # Bitget USDT-M先物の正式シンボル
+        elif market_type == 'ETH/USD' or market_type == 'ETH/USDT':
+            self.market = "ETH/USDT:USDT"
 
         # バックテスト時のみ exchange を初期化しない
         # ペーパートレード時は本番と同等の exchange を初期化
@@ -424,16 +420,27 @@ class BitgetExchange(Exchange):
             dict or bool: 注文結果
         """
         try:
-            params = {'timeout': 10000}
+            params = {'timeout': 10000, 'type': 'swap'}
             # BitgetのAPIは市場買い注文でpriceが必要（コスト=amount*priceを計算するため）
-            if side == 'buy' and price is not None:
+            if side == 'buy':
+                if price is None:
+                    price = self.fetch_ticker()
+                    self.logger.log(f"[fallback] 成行買い注文: price未指定のため現在値 {price} を使用")
                 params['price'] = price
-            order = self.exchange.create_market_order(
-                symbol=self.market,
-                side=side,
-                amount=quantity,
-                params=params
-            )
+                order = self.exchange.create_market_order(
+                    symbol=self.market,
+                    side=side,
+                    amount=quantity,
+                    price=price,
+                    params=params
+                )
+            else:
+                order = self.exchange.create_market_order(
+                    symbol=self.market,
+                    side=side,
+                    amount=quantity,
+                    params=params
+                )
             self.logger.log(f"✅ 成行注文成功: {side} {quantity}")
             return order
         except (ccxt.BaseError, TimeoutError) as e:
@@ -479,18 +486,29 @@ class BitgetExchange(Exchange):
         max_retries = 2
         for attempt in range(max_retries):
             try:
-                params = {'timeout': 10000}
+                params = {'timeout': 10000, 'type': 'swap'}
                 if is_exit:
                     # 決済注文: reduceOnlyでポジションのみクローズ（新規建てを防止）
                     params['reduceOnly'] = True
-                elif side == 'buy' and price is not None:
+                if side == 'buy':
+                    if price is None:
+                        price = self.fetch_ticker()
+                        self.logger.log(f"[fallback] 成行買い注文: price未指定のため現在値 {price} を使用")
                     params['price'] = price
-                order = self.exchange.create_market_order(
-                    symbol=self.market,
-                    side=side,
-                    amount=quantity,
-                    params=params
-                )
+                    order = self.exchange.create_market_order(
+                        symbol=self.market,
+                        side=side,
+                        amount=quantity,
+                        price=price,
+                        params=params
+                    )
+                else:
+                    order = self.exchange.create_market_order(
+                        symbol=self.market,
+                        side=side,
+                        amount=quantity,
+                        params=params
+                    )
                 self.logger.log(f"✅ 最終成行成功 (試行 {attempt+1}/{max_retries}): {side} {quantity}")
                 return order
             except (ccxt.BaseError, TimeoutError) as e:
