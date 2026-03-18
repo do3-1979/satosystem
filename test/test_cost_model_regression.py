@@ -170,6 +170,7 @@ def run_all_tests():
 
     # 結果をJSONで保存
     output = {
+        "test": "test_cost_model_regression",
         "test_suite": "test_cost_model_regression",
         "timestamp": datetime.now().isoformat(),
         "passed": passed_count,
@@ -177,9 +178,9 @@ def run_all_tests():
         "results": results
     }
 
-    result_dir = os.path.join(WORKSPACE_ROOT, "test", "results")
+    result_dir = os.path.join(WORKSPACE_ROOT, "docs", "regression_test_results")
     os.makedirs(result_dir, exist_ok=True)
-    result_path = os.path.join(result_dir, "test_cost_model_regression_result.json")
+    result_path = os.path.join(result_dir, "test_cost_model_regression.json")
     with open(result_path, "w", encoding="utf-8") as f:
         json.dump(output, f, ensure_ascii=False, indent=2)
 

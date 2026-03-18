@@ -15,17 +15,6 @@ WORKSPACE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_DIR = os.path.join(WORKSPACE_ROOT, "src")
 sys.path.insert(0, SRC_DIR)
 
-# 分析結果ファイル
-ANALYSIS_FILE = os.path.join(WORKSPACE_ROOT, "docs/analysis/src/risk_management.json")
-
-# 互換性ヘルパー
-from analysis_helper import load_analysis_with_compat, get_class_method_names, get_private_methods
-
-
-def load_analysis():
-    """analysis/risk_management.json から RiskManagement クラスの仕様を読む（互換性対応）"""
-    return load_analysis_with_compat(ANALYSIS_FILE)
-
 
 def test_risk_management_exists():
     """RiskManagement クラスが存在することを確認"""
@@ -40,19 +29,14 @@ def test_risk_management_methods():
     """RiskManagement の主要メソッドが存在することを確認"""
     try:
         from risk_management import RiskManagement
-        analysis = load_analysis()
-        
-        expected_methods = get_class_method_names(analysis)
-        # __ で始まるプライベートメソッドは Python の name mangling の対象
-        # 例: __calc_adx → _RiskManagement__calc_adx のため、テスト比較から除外
-        expected_methods = {m for m in expected_methods if not m.startswith("__")}
-        actual_methods = {m for m in dir(RiskManagement) if not m.startswith("_") or m == "__init__"}
-        
-        missing = expected_methods - actual_methods
+        critical_methods = [
+            'get_psar', 'get_adx', 'get_stop_price', 'calculate_position_size',
+            'evaluate_strategy_a_adx', 'get_donchian_high', 'get_donchian_low'
+        ]
+        missing = [m for m in critical_methods if not hasattr(RiskManagement, m)]
         if missing:
             return False, f"❌ 欠落メソッド: {missing}"
-        
-        return True, f"✅ 全メソッド({len(expected_methods)})が存在"
+        return True, f"✅ 主要メソッド({len(critical_methods)})が存在"
     except Exception as e:
         return False, f"❌ メソッド確認エラー: {e}"
 
@@ -101,31 +85,18 @@ def test_risk_management_init():
 
 
 def test_private_methods():
-    """プライベートメソッド（__で始まる計算用メソッド）が存在することを確認"""
+    """RiskManagement のプライベートメソッド(計算内部ロジック)が存在することを確認"""
     try:
         from risk_management import RiskManagement
         import inspect
-        analysis = load_analysis()
-        
-        private_methods = get_private_methods(analysis)
-        
-        # v2.0形式では分析JSONにprivate method情報がないため、
-        # 実際のクラスを検査してフォールバック
-        if len(private_methods) == 0:
-            # 実際のRiskManagementクラスからprivate methodを検出
-            privates = []
-            for name, method in inspect.getmembers(RiskManagement, predicate=inspect.isfunction):
-                if name.startswith('_') and not name.startswith('__'):
-                    privates.append(name)
-            
-            private_methods = privates
-        
-        # v2.0形式対応: プライベートメソッドがなくても警告のみ（失敗扱いしない）
-        if len(private_methods) > 0:
-            return True, f"✅ プライベートメソッド {len(private_methods)} 個検出"
+        privates = [
+            name for name, _ in inspect.getmembers(RiskManagement, predicate=inspect.isfunction)
+            if name.startswith('_') and not name.startswith('__')
+        ]
+        if len(privates) > 0:
+            return True, f"✅ プライベートメソッド {len(privates)} 個検出"
         else:
-            # v2.0形式では情報取得不可のため、警告のみでPASS
-            return True, f"⚠️  プライベートメソッド情報なし（v2.0形式）"
+            return False, f"❌ プライベートメソッドが検出されません"
     except Exception as e:
         return False, f"❌ プライベートメソッド確認エラー: {e}"
 

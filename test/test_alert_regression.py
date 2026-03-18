@@ -116,4 +116,27 @@ class TestAlertEnabledWithMock(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    import json
+    from datetime import datetime
+
+    WORKSPACE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    RESULTS_DIR = os.path.join(WORKSPACE_ROOT, "docs/regression_test_results")
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+
+    loader = unittest.TestLoader()
+    suite = loader.loadTestsFromModule(sys.modules[__name__])
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
+
+    total = result.testsRun
+    passed = total - len(result.failures) - len(result.errors)
+
+    with open(os.path.join(RESULTS_DIR, "test_alert_regression.json"), "w", encoding="utf-8") as f:
+        json.dump({
+            "test": "test_alert_regression",
+            "total": total,
+            "passed": passed,
+            "timestamp": datetime.now().isoformat()
+        }, f, ensure_ascii=False, indent=2)
+
+    sys.exit(0 if passed == total else 1)

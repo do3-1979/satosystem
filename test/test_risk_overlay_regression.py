@@ -6,7 +6,9 @@ RiskOverlay クラスのキルスイッチ動作確認
 
 import os
 import sys
+import json
 import configparser
+from datetime import datetime
 
 WORKSPACE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_DIR = os.path.join(WORKSPACE_ROOT, "src")
@@ -137,10 +139,23 @@ def run_all_tests():
         except Exception as e:
             print(f"  ❌ {test.__name__}: {e}")
     print(f"\n  結果: {success}/{len(tests)} 成功")
-    return success == len(tests)
+    return success, len(tests)
 
 
 if __name__ == "__main__":
     print("[Test] RiskOverlay キルスイッチ動作確認")
-    ok = run_all_tests()
-    exit(0 if ok else 1)
+    passed_count, total_count = run_all_tests()
+
+    WORKSPACE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    RESULTS_DIR = os.path.join(WORKSPACE_ROOT, "docs/regression_test_results")
+    os.makedirs(RESULTS_DIR, exist_ok=True)
+
+    with open(os.path.join(RESULTS_DIR, "test_risk_overlay_regression.json"), "w", encoding="utf-8") as f:
+        json.dump({
+            "test": "test_risk_overlay_regression",
+            "total": total_count,
+            "passed": passed_count,
+            "timestamp": datetime.now().isoformat()
+        }, f, ensure_ascii=False, indent=2)
+
+    exit(0 if passed_count == total_count else 1)

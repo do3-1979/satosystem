@@ -15,17 +15,6 @@ WORKSPACE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_DIR = os.path.join(WORKSPACE_ROOT, "src")
 sys.path.insert(0, SRC_DIR)
 
-# 分析結果ファイル
-ANALYSIS_FILE = os.path.join(WORKSPACE_ROOT, "docs/analysis/src/config.json")
-
-# 互換性ヘルパー
-from analysis_helper import load_analysis_with_compat, get_class_methods, get_classmethods
-
-
-def load_analysis():
-    """analysis/config.json から Config クラスの仕様を読む（互換性対応）"""
-    return load_analysis_with_compat(ANALYSIS_FILE)
-
 
 def test_config_class_exists():
     """Config クラスが存在することを確認"""
@@ -37,15 +26,13 @@ def test_config_class_exists():
 
 
 def test_config_methods_count():
-    """Config クラスのメソッド数を確認（36メソッド予定）"""
+    """Config クラスのメソッド数を確認（20個以上予定）"""
     try:
         from config import Config
-        analysis = load_analysis()
-        
-        expected_count = len(get_class_methods(analysis))
         actual_methods = [m for m in dir(Config) if not m.startswith("_") or m in ["__init__", "__str__"]]
-        
-        return True, f"✅ Config メソッド: {len(actual_methods)} 個（予定: {expected_count}）"
+        if len(actual_methods) < 20:
+            return False, f"❌ Config メソッド数が少なすぎます: {len(actual_methods)}（最低20個期待）"
+        return True, f"✅ Config メソッド: {len(actual_methods)} 個"
     except Exception as e:
         return False, f"❌ メソッド数確認エラー: {e}"
 
@@ -82,24 +69,12 @@ def test_config_classmethods():
     try:
         from config import Config
         import inspect
-        analysis = load_analysis()
-        
-        classmethod_list = get_classmethods(analysis)
-        
-        # v2.0形式では分析JSONにclassmethod情報がないため、
-        # 実際のクラスを検査してフォールバック
-        if len(classmethod_list) == 0:
-            # 実際のConfigクラスからclassmethodを検出
-            classmethods = []
-            for name, method in inspect.getmembers(Config):
-                if isinstance(inspect.getattr_static(Config, name), classmethod):
-                    classmethods.append(name)
-            
-            classmethod_list = classmethods
-        
-        # get_api_key, get_api_secret など主要メソッドは classmethod
-        if len(classmethod_list) > 0:
-            return True, f"✅ classmethod が {len(classmethod_list)} 個検出"
+        classmethods = [
+            name for name in dir(Config)
+            if isinstance(inspect.getattr_static(Config, name), classmethod)
+        ]
+        if len(classmethods) > 0:
+            return True, f"✅ classmethod が {len(classmethods)} 個検出"
         else:
             return False, f"❌ classmethod が検出されません"
     except Exception as e:

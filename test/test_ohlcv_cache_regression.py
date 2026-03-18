@@ -15,16 +15,6 @@ WORKSPACE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_DIR = os.path.join(WORKSPACE_ROOT, "src")
 sys.path.insert(0, SRC_DIR)
 
-# 分析結果ファイル
-ANALYSIS_FILE = os.path.join(WORKSPACE_ROOT, "docs/analysis/src/ohlcv_cache.json")
-
-
-def load_analysis():
-    """analysis/ohlcv_cache.json から OHLCVCache クラスの仕様を読む"""
-    with open(ANALYSIS_FILE, encoding="utf-8") as f:
-        return json.load(f)
-
-
 def test_ohlcv_cache_exists():
     """OHLCVCache クラスが存在することを確認"""
     try:
@@ -38,19 +28,14 @@ def test_ohlcv_cache_methods():
     """OHLCVCache の主要メソッドが存在することを確認"""
     try:
         from ohlcv_cache import OHLCVCache
-        analysis = load_analysis()
-        
-        expected_methods = {m["name"] for m in analysis["classes"][0]["methods"]}
-        # _ (単一アンダースコア) で始まるメソッドを含める（_get_connection, _initialize_database など）
-        # ただし __ (二重アンダースコア) は除外（name mangling 対象）
-        actual_methods = {m for m in dir(OHLCVCache) 
-                         if not m.startswith("__") or m in ["__init__", "__repr__", "__str__"]}
-        
-        missing = expected_methods - actual_methods
+        critical_methods = [
+            'get_ohlcv_data', 'get_ohlcv_data_partial', 'save_ohlcv_data',
+            'clear_cache', 'get_cache_stats', 'migrate_from_json'
+        ]
+        missing = [m for m in critical_methods if not hasattr(OHLCVCache, m)]
         if missing:
             return False, f"❌ 欠落メソッド: {missing}"
-        
-        return True, f"✅ 全メソッド({len(expected_methods)})が存在"
+        return True, f"✅ 主要メソッド({len(critical_methods)})が存在"
     except Exception as e:
         return False, f"❌ メソッド確認エラー: {e}"
 

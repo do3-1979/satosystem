@@ -1,0 +1,38 @@
+{
+  "test_suite": "test_cost_model_regression",
+  "timestamp": "2026-03-19T00:51:52.349827",
+  "passed": 6,
+  "total": 6,
+  "results": [
+    {
+      "test_name": "CostModel import/初期化",
+      "passed": true,
+      "message": "✅ CostModel 初期化OK: maker=0.02%, taker=0.05%, slippage=0.02%"
+    },
+    {
+      "test_name": "BUY スリッページ計算",
+      "passed": true,
+      "message": "✅ BUY スリッページOK: 100000.0 → 100020.00"
+    },
+    {
+      "test_name": "SELL スリッページ計算",
+      "passed": true,
+      "message": "✅ SELL スリッページOK: 100000.0 → 99980.00"
+    },
+    {
+      "test_name": "エントリーコスト計算（有効時）",
+      "passed": true,
+      "message": "✅ エントリーコスト計算OK: exec=100020.00, total=0.7001 USD (fee=0.5001, slip=0.2000)"
+    },
+    {
+      "test_name": "エントリーコスト計算（無効時）",
+      "passed": true,
+      "message": "✅ コストモデル無効時: price=50000.0, cost=0.0"
+    },
+    {
+      "test_name": "イグジットコスト計算",
+      "passed": true,
+      "message": "✅ イグジットコスト計算OK: cost=0.7001 USD"
+    }
+  ]
+}
