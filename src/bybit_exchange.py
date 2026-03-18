@@ -313,13 +313,14 @@ class BybitExchange(Exchange):
             self.logger.log_error(f"成行注文失敗: {str(e)}")
             raise
 
-    def _execute_market_order_final(self, side, quantity):
+    def _execute_market_order_final(self, side, quantity, is_exit=False):
         """
         最後のフォールバック成行注文を実行します
         
         Args:
             side (str): 'buy' または 'sell'
             quantity (float): 数量
+            is_exit (bool): True の場合 reduceOnly=True を設定（決済専用）
             
         Returns:
             dict or bool: 注文結果
@@ -327,11 +328,14 @@ class BybitExchange(Exchange):
         max_retries = 2
         for attempt in range(max_retries):
             try:
+                params = {'timeout': 10000}
+                if is_exit:
+                    params['reduceOnly'] = True
                 order = self.exchange.create_market_order(
                     symbol=self.market,
                     side=side,
                     amount=quantity,
-                    params={'timeout': 10000}
+                    params=params
                 )
                 self.logger.log(f"✅ 最終成行成功 (試行 {attempt+1}/{max_retries}): {side} {quantity}")
                 return order
@@ -342,6 +346,26 @@ class BybitExchange(Exchange):
                 else:
                     self.logger.log(f"⚠️ 最終成行失敗 (試行 {attempt+1}/{max_retries}), リトライ中...")
                     time.sleep(1)
+
+    def check_min_order_size(self, quantity):
+        """
+        最小注文数量チェック。quantity が取引所の最小ロットを下回る場合は
+        発注前にエラーを検知して無駄なAPI呼び出しを防ぐ。
+
+        Args:
+            quantity (float): 注文数量（BTC枚数）
+
+        Returns:
+            bool: True = 注文可能, False = 最小数量未満
+        """
+        MIN_ORDER_SIZE = 0.001  # Bybit BTC/USDT 最小注文数量
+        if quantity < MIN_ORDER_SIZE:
+            self.logger.log_error(
+                f"❌ 最小注文数量未達: {quantity} BTC < {MIN_ORDER_SIZE} BTC "
+                f"（証拠金不足または残高目減りにより発注不可）"
+            )
+            return False
+        return True
 
     def execute_entry_order(self, side, quantity, current_price):
         """
@@ -364,6 +388,10 @@ class BybitExchange(Exchange):
         # バックテスト・ペーパートレード時はダミー注文（実APIを呼ばない）
         if self.is_backtest_mode or self.is_papertrading_mode:
             return self._dummy_entry_order(side, quantity, current_price)
+        
+        # 最小注文数量チェック
+        if not self.check_min_order_size(quantity):
+            return False
         
         # 現時点では成行注文を優先（早期約定を重視）
         try:
@@ -477,6 +505,10 @@ class BybitExchange(Exchange):
         if self.is_backtest_mode or self.is_papertrading_mode:
             return self._dummy_exit_order(side, quantity)
         
+        # 最小注文数量チェック（発注前に残高目減りによる注文不可を検知）
+        if not self.check_min_order_size(quantity):
+            return False
+        
         # 現時点では成行注文を優先（早期約定を重視）
         # reduceOnly=True: 既存ポジションのみクローズ（Bybit先物でreduce-onlyに変換される）
         try:
@@ -569,7 +601,7 @@ class BybitExchange(Exchange):
                     # 最後のリトライ失敗 → 成行へ再度トライ
                     self.logger.log(f"⚠️ 決済指値全て失敗 → 最後の成行トライ")
                     try:
-                        return self._execute_market_order_final(side, quantity)
+                        return self._execute_market_order_final(side, quantity, is_exit=True)
                     except Exception as e_final:
                         self.logger.log_error(f"❌ 決済最終失敗: {str(e_final)}")
                         raise

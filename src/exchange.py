@@ -97,9 +97,28 @@ def _is_retryable_error(error: Exception) -> bool:
         'ConnectionError',
         'Timeout'
     ]
+
+    # リトライ不可なエラー（残高不足・無効注文など、リトライしても無意味）
+    non_retryable_errors = [
+        'InsufficientFunds',
+        'InvalidOrder',
+        'BadSymbol',
+        'AuthenticationError',
+        'PermissionDenied',
+        'AccountSuspended',
+        'OrderNotFound',
+        'CancelPending',
+    ]
     
     error_name = type(error).__name__
     error_message = str(error).lower()
+
+    # リトライ不可エラーを先にチェック
+    if any(nr in error_name for nr in non_retryable_errors):
+        return False
+    # Bitget error code 43012 (Insufficient balance) をメッセージで検知
+    if '43012' in error_message or 'insufficient balance' in error_message:
+        return False
     
     # エラー名でチェック
     if any(retryable in error_name for retryable in retryable_errors):

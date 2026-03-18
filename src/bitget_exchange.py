@@ -440,7 +440,30 @@ class BitgetExchange(Exchange):
             self.logger.log_error(f"成行注文失敗: {str(e)}")
             raise
 
-    def _execute_market_order_final(self, side, quantity, price=None):
+    def check_min_order_size(self, quantity):
+        """
+        最小注文数量チェック。quantity が取引所の最小ロットを下回る場合は
+        InsufficientFunds-like なエラーを事前に検知して無駄なAPI呼び出しを防ぐ。
+
+        BTC/USDTの最小注文数量は Bitget で 0.0001 BTC。
+        証拠金不足（balance < quantity * price * (1/leverage) 等）はここでは判定しない。
+
+        Args:
+            quantity (float): 注文数量（BTC枚数）
+
+        Returns:
+            bool: True = 注文可能, False = 最小数量未満
+        """
+        MIN_ORDER_SIZE = 0.0001  # Bitget BTC/USDT 最小注文数量
+        if quantity < MIN_ORDER_SIZE:
+            self.logger.log_error(
+                f"❌ 最小注文数量未達: {quantity} BTC < {MIN_ORDER_SIZE} BTC "
+                f"（証拠金不足または残高目減りにより発注不可）"
+            )
+            return False
+        return True
+
+    def _execute_market_order_final(self, side, quantity, price=None, is_exit=False):
         """
         最後のフォールバック成行注文を実行します
         
@@ -448,6 +471,7 @@ class BitgetExchange(Exchange):
             side (str): 'buy' または 'sell'
             quantity (float): 数量
             price (float, optional): Bitget市場買い注文用価格（コスト計算に使用）
+            is_exit (bool): Trueの場合はreduceOnly=Trueを設定（決済専用）
             
         Returns:
             dict or bool: 注文結果
@@ -456,7 +480,10 @@ class BitgetExchange(Exchange):
         for attempt in range(max_retries):
             try:
                 params = {'timeout': 10000}
-                if side == 'buy' and price is not None:
+                if is_exit:
+                    # 決済注文: reduceOnlyでポジションのみクローズ（新規建てを防止）
+                    params['reduceOnly'] = True
+                elif side == 'buy' and price is not None:
                     params['price'] = price
                 order = self.exchange.create_market_order(
                     symbol=self.market,
@@ -495,6 +522,10 @@ class BitgetExchange(Exchange):
         # バックテスト・ペーパートレード時はダミー注文（実APIを呼ばない）
         if self.is_backtest_mode or self.is_papertrading_mode:
             return self._dummy_entry_order(side, quantity, current_price)
+        
+        # 最小注文数量チェック
+        if not self.check_min_order_size(quantity):
+            return False
         
         # 現時点では成行注文を優先（早期約定を重視）
         try:
@@ -600,6 +631,10 @@ class BitgetExchange(Exchange):
         if self.is_backtest_mode or self.is_papertrading_mode:
             return self._dummy_exit_order(side, quantity)
         
+        # 最小注文数量チェック（発注前に残高目減りによる注文不可を検知）
+        if not self.check_min_order_size(quantity):
+            return False
+        
         # 現時点では成行注文を優先（早期約定を重視）
         # reduceOnly=True: 既存ポジションのみクローズ（Bitget先物でtradeSide=Closeに変換される）
         try:
@@ -682,7 +717,7 @@ class BitgetExchange(Exchange):
                 if attempt == max_exit_retries - 1:
                     self.logger.log(f"⚠️ 決済指値全て失敗 → 成行で約定を試みる")
                     try:
-                        return self._execute_market_order_final(side, quantity)
+                        return self._execute_market_order_final(side, quantity, is_exit=True)
                     except Exception as e_market:
                         self.logger.log_error(f"❌ 決済成行も失敗: {str(e_market)}")
                         raise
