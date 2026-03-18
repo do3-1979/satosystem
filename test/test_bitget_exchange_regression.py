@@ -94,8 +94,6 @@ def test_production_methods_exist():
         "_fetch_futures_union_available",   # 合算証拠金モード対応
         "_execute_market_order",
         "_execute_market_order_final",
-        "_execute_entry_order_with_limit_retry",
-        "_execute_exit_order_with_limit_retry",
     ]
     missing = [m for m in required if not hasattr(BitgetExchange, m)]
     if missing:
