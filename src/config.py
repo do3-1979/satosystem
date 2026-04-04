@@ -37,6 +37,13 @@ class Config:
     _override_end_time = None
 
     @classmethod
+    def load_config(cls, config_path: str):
+        """指定パスの設定ファイルを再読み込みする（マルチアセット対応）"""
+        cls.config_path = config_path
+        cls.config = configparser.ConfigParser(interpolation=None)
+        cls.config.read(config_path, encoding="utf-8_sig")
+
+    @classmethod
     def get_api_key(cls):
         """
         APIキーを取得します (後方互換性のため、Bitgetキーを返す).
@@ -488,7 +495,7 @@ class Config:
     def get_test_initial_max_term(cls):
         """
         テストに必要な初期化期間を取得します
-        PSAR の正しいトレンド形成のため、十分な履歴データが必要
+        全指標の正しい計算のため、十分な履歴データが必要
 
         Returns:
             int: 期間
@@ -497,6 +504,7 @@ class Config:
         d_b_term = int(cls.config['Strategy']['donchian_buy_term'])
         d_s_term = int(cls.config['Strategy']['donchian_sell_term'])
         pv_s_term = int(cls.config['Strategy']['pvo_s_term'])
+        pv_l_term = int(cls.config['Strategy']['pvo_l_term'])
         
         # PSAR用初期化期間を取得（設定があれば）
         psar_term = None
@@ -505,11 +513,11 @@ class Config:
         except (KeyError, ValueError):
             psar_term = None
         
-        # PSAR期間がある場合はそれを優先、なければ他の指標から最大値を取得
+        # 全指標に必要な最大期間を取得
+        terms = [v_term, d_b_term, d_s_term, pv_s_term, pv_l_term]
         if psar_term is not None:
-            max_term = max(v_term, d_b_term, d_s_term, pv_s_term, psar_term)
-        else:
-            max_term = max(v_term, d_b_term, d_s_term, pv_s_term)
+            terms.append(psar_term)
+        max_term = max(terms)
 
         return max_term
 

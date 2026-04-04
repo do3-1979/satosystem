@@ -96,6 +96,13 @@ class BybitExchange(Exchange):
             self.market = "ETH/USD:ETH"
         elif market_type == 'ETH/USDT':
             self.market = "ETH/USDT:USDT"
+        elif market_type == 'XAUT/USDT':
+            self.market = "XAUT/USDT:USDT"
+        elif market_type == 'PAXG/USDT':
+            self.market = "PAXG/USDT:USDT"
+        else:
+            # 汎用: "XXX/USDT" → "XXX/USDT:USDT" 形式
+            self.market = f"{market_type}:USDT" if '/USDT' in market_type else f"{market_type}:BTC"
 
         # バックテスト時のみ exchange を初期化しない
         # ペーパートレード時は本番と同等の exchange を初期化

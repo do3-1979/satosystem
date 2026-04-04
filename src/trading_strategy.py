@@ -571,7 +571,7 @@ class TradingStrategy:
                 'entry_price': current_price.get('close_price', 0),
                 'entry_adx': self.risk_manager.get_adx(),
                 'entry_pvo': current_price.get('pvo_val', 0) or current_price.get('pvo', 0),
-                'entry_time': current_price.get('timestamp', 0),  # タイムスタンプ（数値）を記録
+                'entry_time': current_price.get('timestamp', 0) or current_price.get('close_time', 0),  # タイムスタンプ（数値）を記録
                 'strategy_result': strategy_result,  # Strategy結果も記録
             }
             # self.logger.log(f"[DEBUG ENTRY RECORD] entry_record保存: entry_time={self.entry_record['entry_time']}, entry_price={self.entry_record['entry_price']}")
@@ -764,7 +764,7 @@ class TradingStrategy:
                     current_price=current_ohlcv.get('close_price', 0),
                     current_high=current_ohlcv.get('high_price', 0),
                     current_low=current_ohlcv.get('low_price', 0),
-                    current_atr=current_ohlcv.get('volatility', 0),
+                    current_atr=self.price_data_management.get_volatility(),
                     entry_price=entry_price_for_chandelier,
                     position_info=chandelier_position_info,
                     entry_info=self.entry_record,

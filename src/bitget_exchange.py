@@ -102,6 +102,12 @@ class BitgetExchange(Exchange):
             self.market = "BTC/USDT:USDT"  # Bitget USDT-M先物の正式シンボル
         elif market_type == 'ETH/USD' or market_type == 'ETH/USDT':
             self.market = "ETH/USDT:USDT"
+        elif market_type == 'XAUT/USDT':
+            self.market = "XAUT/USDT:USDT"
+        elif market_type == 'PAXG/USDT':
+            self.market = "PAXG/USDT:USDT"
+        else:
+            self.market = f"{market_type}:USDT"
 
         # バックテスト時のみ exchange を初期化しない
         # ペーパートレード時は本番と同等の exchange を初期化

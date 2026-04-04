@@ -617,7 +617,19 @@ class Bot:
             return False
 
 if __name__ == "__main__":
-    # コマンドライン引数処理: python src/bot.py test 2024-01-01 2024-03-31
+    # コマンドライン引数処理
+    # --config: 設定ファイルパスの指定（マルチアセット対応）
+    config_arg = None
+    for i, arg in enumerate(sys.argv):
+        if arg == '--config' and i + 1 < len(sys.argv):
+            config_arg = sys.argv[i + 1]
+            break
+
+    if config_arg:
+        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), config_arg)
+        Config.load_config(config_path)
+
+    # python src/bot.py test 2024-01-01 2024-03-31
     if len(sys.argv) >= 4 and sys.argv[1] == "test":
         # バックテストモード: 日付範囲を動的に設定
         start_date = sys.argv[2]  # YYYY-MM-DD

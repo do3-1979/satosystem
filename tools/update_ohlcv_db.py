@@ -40,11 +40,23 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(SCRIPT_DIR, '..', 'ohlcv_data', 'ohlcv_cache.db')
 DB_PATH = os.path.normpath(DB_PATH)
 
-SYMBOL = 'BTC/USDT:USDT'
+DEFAULT_SYMBOL = 'BTC/USDT:USDT'
 TIMEFRAME = '4h'
 TIMEFRAME_MIN = 240          # 4H = 240分
 CHUNK_LIMIT = 200            # 1リクエストあたりの取得件数（Bybit上限1000、余裕を持って200）
 RATE_LIMIT_SLEEP = 0.3       # リクエスト間のスリープ（秒）
+
+# グローバル変数（--symbolで動的に設定される）
+SYMBOL = DEFAULT_SYMBOL
+
+# シンボル変換マップ: ショート名 → ccxt形式
+SYMBOL_MAP = {
+    'BTC/USDT':  'BTC/USDT:USDT',
+    'ETH/USDT':  'ETH/USDT:USDT',
+    'XAUT/USDT': 'XAUT/USDT:USDT',
+    'PAXG/USDT': 'PAXG/USDT:USDT',
+    'SOL/USDT':  'SOL/USDT:USDT',
+}
 
 # バックテストのlookback最大値（300足 x 240min = 72,000min ≈ 50日）
 # 2024年バックテスト開始には2023/11中旬以降のデータが必要
@@ -115,7 +127,8 @@ def show_stats(conn: sqlite3.Connection) -> None:
 def fetch_candles_from_bybit(
     start_ts_ms: int,
     end_ts_ms: int,
-    show_progress: bool = True
+    show_progress: bool = True,
+    symbol: str = None
 ) -> list:
     """
     Bybit公開APIから4H足OHLCVをページネーション取得
@@ -126,6 +139,7 @@ def fetch_candles_from_bybit(
     Returns:
         ローソク足リスト（各要素はdict）
     """
+    fetch_symbol = symbol or SYMBOL
     exchange = ccxt.bybit({
         'enableRateLimit': True,
         'timeout': 30000,
@@ -141,7 +155,7 @@ def fetch_candles_from_bybit(
     while current_ms < end_ts_ms:
         try:
             ohlcv = exchange.fetch_ohlcv(
-                SYMBOL, TIMEFRAME,
+                fetch_symbol, TIMEFRAME,
                 since=current_ms,
                 limit=CHUNK_LIMIT
             )
@@ -306,10 +320,12 @@ def upsert_candles(
 # -------------------------------------------------------
 def main():
     parser = argparse.ArgumentParser(
-        description='OHLCVキャッシュDB更新ツール（Bybit 4H足 BTC/USDT）',
+        description='OHLCVキャッシュDB更新ツール（Bybit 4H足）',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""使用例:
-  python3 tools/update_ohlcv_db.py                  DBの最新日以降を追記（デフォルト）
+  python3 tools/update_ohlcv_db.py                  DBの最新日以降を追記（デフォルト: BTC/USDT）
+  python3 tools/update_ohlcv_db.py --symbol XAUT/USDT          金データを追記
+  python3 tools/update_ohlcv_db.py --symbol XAUT/USDT --full   金データを全件取得
   python3 tools/update_ohlcv_db.py --stats           DB統計表示
   python3 tools/update_ohlcv_db.py --check           データ抜け（4H超空白）を検出
   python3 tools/update_ohlcv_db.py --fill            データ抜けをBybitから補完
@@ -318,6 +334,8 @@ def main():
   python3 tools/update_ohlcv_db.py --year 2026       2026年分（年初〜今日）を取得
   python3 tools/update_ohlcv_db.py --full            2023/11以降を全件re-fetch"""
     )
+    parser.add_argument('--symbol', type=str, default=None,
+                        help='取引シンボル（例: XAUT/USDT, SOL/USDT）。省略時はBTC/USDT')
     parser.add_argument('--year',   type=int, choices=[2024, 2025, 2026],
                         help='特定年のデータを取得・保存')
     parser.add_argument('--full',   action='store_true',
@@ -331,6 +349,16 @@ def main():
     parser.add_argument('--stats',  action='store_true',
                         help='DB統計を表示して終了')
     args = parser.parse_args()
+
+    # --symbol指定時はグローバルSYMBOLを更新
+    global SYMBOL
+    if args.symbol:
+        if args.symbol in SYMBOL_MAP:
+            SYMBOL = SYMBOL_MAP[args.symbol]
+        elif ':' in args.symbol:
+            SYMBOL = args.symbol  # 既にccxt形式
+        else:
+            SYMBOL = f"{args.symbol}:USDT"  # 汎用変換
 
     conn = get_connection()
     now_ts = int(time.time())
