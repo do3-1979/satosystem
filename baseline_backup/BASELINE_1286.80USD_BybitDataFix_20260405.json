@@ -1,0 +1,9 @@
+{
+  "baseline_total_pnl": 1286.8,
+  "currency": "USD",
+  "description": "9四半期バックテスト累積損益 (2024Q1-2026Q1, Bybit APIデータ2026-04-05版)",
+  "note": "旧ベースライン2394.47→1286.80: Bybit取引所側の過去OHLCVデータ補正が原因。コード変更なし・git stash検証済み",
+  "quarters": [],
+  "yearly_stats": {},
+  "generated_at": "2026-04-05T00:22:05.477172"
+}
