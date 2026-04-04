@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>satosystem gen2 — プロジェクト概要</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent2: #3fb950;
+    --accent3: #f78166;
+    --accent4: #d2a8ff;
+    --accent5: #e3b341;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --green: #3fb950;
+    --red: #f85149;
+    --yellow: #e3b341;
+    --purple: #d2a8ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  .hero {
+    background: linear-gradient(135deg, #0d1117 0%, #161b22 40%, #1a2332 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 60px 40px 50px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle at 50% 50%, rgba(88,166,255,0.05) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .hero h1 {
+    font-size: 2.8em;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent4) 50%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 12px;
+  }
+  .hero .subtitle {
+    color: var(--text2);
+    font-size: 1.1em;
+    margin-bottom: 28px;
+  }
+  .hero .badges {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 0.82em;
+    font-weight: 600;
+  }
+  .badge.green { border-color: var(--green); color: var(--green); }
+  .badge.blue { border-color: var(--accent); color: var(--accent); }
+  .badge.purple { border-color: var(--purple); color: var(--purple); }
+  .badge.yellow { border-color: var(--yellow); color: var(--yellow); }
+  .badge.red { border-color: var(--red); color: var(--red); }
+
+  nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+  nav a {
+    color: var(--text2);
+    text-decoration: none;
+    padding: 14px 18px;
+    font-size: 0.88em;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+    white-space: nowrap;
+  }
+  nav a:hover { color: var(--text); border-bottom-color: var(--accent); }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 40px 40px; }
+  section { margin-bottom: 64px; scroll-margin-top: 60px; }
+  h2 {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: var(--text);
+    border-left: 4px solid var(--accent);
+    padding-left: 16px;
+    margin-bottom: 24px;
+  }
+  h3 {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: var(--accent4);
+    margin: 24px 0 12px;
+  }
+  p { color: var(--text2); margin-bottom: 12px; }
+  p strong { color: var(--text); }
+
+  /* Cards */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--accent); }
+  .card .icon { font-size: 1.8em; margin-bottom: 8px; }
+  .card .label { font-size: 0.8em; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+  .card .value { font-size: 1.5em; font-weight: 700; color: var(--text); }
+  .card .desc { font-size: 0.82em; color: var(--text2); margin-top: 4px; }
+  .card.highlight { border-color: var(--accent); background: linear-gradient(135deg, rgba(88,166,255,0.05), var(--surface)); }
+  .card.green-card { border-color: var(--green); }
+  .card.red-card { border-color: var(--red); }
+  .card.purple-card { border-color: var(--purple); }
+  .card.yellow-card { border-color: var(--yellow); }
+
+  /* Architecture Diagram */
+  .arch-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 32px;
+    overflow-x: auto;
+  }
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+  .flow-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .flow-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 0.85em;
+    font-weight: 600;
+    text-align: center;
+    min-width: 120px;
+    transition: border-color 0.2s;
+  }
+  .flow-box.primary { border-color: var(--accent); color: var(--accent); }
+  .flow-box.secondary { border-color: var(--accent2); color: var(--accent2); }
+  .flow-box.tertiary { border-color: var(--accent4); color: var(--accent4); }
+  .flow-box.warn { border-color: var(--yellow); color: var(--yellow); }
+  .flow-box.danger { border-color: var(--red); color: var(--red); }
+  .flow-arrow {
+    font-size: 1.4em;
+    color: var(--text2);
+    text-align: center;
+    padding: 4px 0;
+  }
+  .flow-arrow-h {
+    font-size: 1.2em;
+    color: var(--text2);
+  }
+  .flow-label {
+    font-size: 0.72em;
+    color: var(--text2);
+    text-align: center;
+    margin-top: -8px;
+    margin-bottom: 4px;
+  }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); }
+  thead { background: var(--surface2); }
+  th { padding: 12px 16px; text-align: left; font-size: 0.82em; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text2); border-bottom: 1px solid var(--border); }
+  td { padding: 12px 16px; font-size: 0.88em; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  .td-green { color: var(--green); font-weight: 600; }
+  .td-red { color: var(--red); font-weight: 600; }
+  .td-yellow { color: var(--yellow); font-weight: 600; }
+  .td-blue { color: var(--accent); font-weight: 600; }
+  .td-purple { color: var(--purple); }
+
+  /* Bar chart */
+  .bar-chart { padding: 16px 0; }
+  .bar-item { margin-bottom: 10px; }
+  .bar-label { display: flex; justify-content: space-between; font-size: 0.82em; margin-bottom: 4px; }
+  .bar-label .name { color: var(--text2); }
+  .bar-label .val { font-weight: 600; }
+  .bar-track { background: var(--surface2); border-radius: 4px; height: 8px; overflow: hidden; }
+  .bar-fill { height: 8px; border-radius: 4px; transition: width 1s ease; }
+  .bar-fill.pos { background: linear-gradient(90deg, var(--green), #57d163); }
+  .bar-fill.neg { background: linear-gradient(90deg, var(--red), #f47067); }
+
+  /* Strategy flow */
+  .strategy-flow {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    counter-reset: step;
+  }
+  .step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    position: relative;
+    counter-increment: step;
+  }
+  .step::before {
+    content: counter(step);
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.72em;
+    font-weight: 700;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .step.warn::before { background: var(--yellow); }
+  .step.ok::before { background: var(--green); }
+  .step h4 { font-size: 0.88em; font-weight: 700; color: var(--text); margin-bottom: 6px; margin-top: 4px; }
+  .step p { font-size: 0.78em; color: var(--text2); margin: 0; }
+
+  /* Code block */
+  .code-block {
+    background: #010409;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    font-size: 0.82em;
+    color: #e6edf3;
+    overflow-x: auto;
+    margin-bottom: 16px;
+    line-height: 1.7;
+  }
+  .code-block .key { color: var(--accent4); }
+  .code-block .val { color: var(--accent2); }
+  .code-block .comment { color: var(--text2); }
+
+  /* Timeline */
+  .timeline { position: relative; padding-left: 28px; }
+  .timeline::before { content: ''; position: absolute; left: 8px; top: 8px; bottom: 8px; width: 2px; background: var(--border); }
+  .tl-item { position: relative; margin-bottom: 20px; }
+  .tl-item::before {
+    content: '';
+    position: absolute;
+    left: -22px;
+    top: 6px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 2px solid var(--accent);
+  }
+  .tl-item.done::before { background: var(--green); border-color: var(--green); }
+  .tl-item.active::before { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .tl-item.pending::before { background: var(--surface2); border-color: var(--text2); }
+  .tl-date { font-size: 0.75em; color: var(--text2); margin-bottom: 2px; }
+  .tl-title { font-size: 0.92em; font-weight: 600; color: var(--text); }
+  .tl-desc { font-size: 0.80em; color: var(--text2); }
+
+  /* Improvement section */
+  .improvement-list { display: flex; flex-direction: column; gap: 12px; }
+  .imp-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .imp-item .priority { font-size: 1.4em; flex-shrink: 0; margin-top: 2px; }
+  .imp-item .content h4 { font-size: 0.9em; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .imp-item .content p { font-size: 0.8em; color: var(--text2); margin: 0; }
+  .imp-item .tag {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 8px;
+    font-size: 0.72em;
+    color: var(--text2);
+    margin-left: 8px;
+  }
+
+  /* Section divider */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+
+  /* Small perf canvas */
+  canvas { max-width: 100%; border-radius: 8px; display: block; margin: 0 auto; }
+
+  /* Mermaid diagram container */
+  .mermaid-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 16px;
+    overflow-x: auto;
+    margin-bottom: 24px;
+  }
+  .mermaid-wrap > pre { display: block; }
+  .mermaid-wrap svg {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+  }
+
+  footer {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 24px 40px;
+    text-align: center;
+    font-size: 0.80em;
+    color: var(--text2);
+  }
+
+  @media (max-width: 768px) {
+    .hero { padding: 40px 20px 30px; }
+    .hero h1 { font-size: 1.8em; }
+    .container { padding: 24px 20px; }
+    nav { padding: 0 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== HERO ===================== -->
+<div class="hero">
+  <h1>satosystem gen2</h1>
+  <div class="subtitle">Bitcoin 自動取引システム — Donchian Breakout + PVO + ADX</div>
+  <div class="badges">
+    <span class="badge blue">gen2 ブランチ</span>
+    <span class="badge green">Raspberry Pi 稼働中</span>
+    <span class="badge purple">Python 3 / ccxt</span>
+    <span class="badge yellow">初期資本 100 USD</span>
+    <span class="badge green">ベースライン +2,394 USD</span>
+  </div>
+</div>
+
+<!-- ===================== NAV ===================== -->
+<nav>
+  <a href="#overview">概要</a>
+  <a href="#strategy">戦略ロジック</a>
+  <a href="#architecture">アーキテクチャ</a>
+  <a href="#performance">パフォーマンス</a>
+  <a href="#config">設定パラメータ</a>
+  <a href="#exit">エグジット戦略</a>
+  <a href="#roadmap">ロードマップ</a>
+  <a href="#improvement">改善アイデア</a>
+</nav>
+
+<div class="container">
+
+<!-- ===================== OVERVIEW ===================== -->
+<section id="overview">
+  <h2>📊 プロジェクト概要</h2>
+  <div class="card-grid">
+    <div class="card highlight">
+      <div class="icon">💰</div>
+      <div class="label">累積損益（バックテスト）</div>
+      <div class="value" style="color: var(--green)">+$2,394.47</div>
+      <div class="desc">2024 Q1〜2026 Q1（9四半期）</div>
+    </div>
+    <div class="card">
+      <div class="icon">📈</div>
+      <div class="label">初期資本</div>
+      <div class="value">$100 USD</div>
+      <div class="desc">年間利回り目標 50%</div>
+    </div>
+    <div class="card green-card">
+      <div class="icon">⚙️</div>
+      <div class="label">レバレッジ / リスク</div>
+      <div class="value">10× / 0.30%</div>
+      <div class="desc">1トレードあたりのリスク率</div>
+    </div>
+    <div class="card purple-card">
+      <div class="icon">🕐</div>
+      <div class="label">時間足 / 市場</div>
+      <div class="value">4H / BTC/USDT</div>
+      <div class="desc">ドンチャンチャネル 30期間</div>
+    </div>
+    <div class="card yellow-card">
+      <div class="icon">🖥️</div>
+      <div class="label">実行環境</div>
+      <div class="value">Raspberry Pi</div>
+      <div class="desc">継続稼働 100日超</div>
+    </div>
+    <div class="card">
+      <div class="icon">🌐</div>
+      <div class="label">取引所構成</div>
+      <div class="value">Bybit → Bitget</div>
+      <div class="desc">データ取得 / 注文執行を分離</div>
+    </div>
+  </div>
+  <p>
+    <strong>satosystem gen2</strong> は、Raspberry Pi 上で 24 時間 365 日自動稼働する BTC/USDT 先物取引 BOT です。
+    ドンチャンチャネルのブレイクアウトを主軸に、PVO（出来高オシレーター）と ADX（トレンド強度）でフィルタリングし、
+    高確率のトレンドフォローエントリーを目指します。
+  </p>
+  <p>
+    初期資本 <strong>100 USD・レバレッジ 10倍</strong> という小資本から、8四半期バックテストで
+    <strong>+2,402 USD</strong> の累積損益を記録しています。
+    年間利回り目標は <strong>50%</strong> で、継続的なパラメータ最適化と戦略拡張を実施中です。
+  </p>
+</section>
+
+<!-- ===================== STRATEGY ===================== -->
+<section id="strategy">
+  <h2>🎯 戦略ロジック</h2>
+
+  <h3>エントリー条件フロー</h3>
+  <div class="strategy-flow">
+    <div class="step">
+      <h4>PVO フィルター</h4>
+      <p>出来高オシレーター > 閾値 10<br>出来高が平均より大きいことを確認</p>
+    </div>
+    <div class="step">
+      <h4>ドンチャン ブレイクアウト</h4>
+      <p>終値 &gt; dc_h（上限）で LONG<br>終値 &lt; dc_l（下限）で SHORT<br>期間: 30本</p>
+    </div>
+    <div class="step">
+      <h4>Strategy A — ADX</h4>
+      <p>ADX &gt; 24（強トレンド）でエントリー許可<br>ADX &cont; 18 で継続条件</p>
+    </div>
+    <div class="step ok">
+      <h4>エントリー実行</h4>
+      <p>上記 3つが全て成立したときに<br>ポジションオープン</p>
+    </div>
+  </div>
+
+  <h3>指標の役割</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>指標</th><th>役割</th><th>設定値</th><th>判定基準</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Donchian Channel</strong></td>
+          <td>ブレイクアウト検出（メインシグナル）</td>
+          <td class="td-blue">期間 30</td>
+          <td>N本高値抜け / 安値抜け</td>
+        </tr>
+        <tr>
+          <td><strong>PVO</strong></td>
+          <td>出来高確認フィルター</td>
+          <td class="td-blue">短期5/長期70</td>
+          <td class="td-green">PVO &gt; 10 で許可</td>
+        </tr>
+        <tr>
+          <td><strong>ADX</strong></td>
+          <td>トレンド強度フィルター</td>
+          <td class="td-blue">期間 14</td>
+          <td class="td-green">ADX &gt; 24 で許可</td>
+        </tr>
+        <tr>
+          <td><strong>PSAR</strong></td>
+          <td>ストップロス（トレイリング）</td>
+          <td class="td-blue">ルックバック 300</td>
+          <td>PSAR が価格と交差したらEXIT</td>
+        </tr>
+        <tr>
+          <td><strong>TSMOM</strong></td>
+          <td>時系列モメンタムフィルター</td>
+          <td class="td-blue">期間 150</td>
+          <td>長期モメンタム方向確認</td>
+        </tr>
+        <tr>
+          <td><strong>ATR</strong></td>
+          <td>ボラティリティ測定</td>
+          <td class="td-blue">期間 14</td>
+          <td>ストップ距離 / ポジションサイズ計算</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>ポジション管理</h3>
+  <div class="card-grid">
+    <div class="card">
+      <div class="label">エントリー回数（ピラミッディング）</div>
+      <div class="value">最大 2 回</div>
+      <div class="desc">entry_times = 2, entry_range = 4</div>
+    </div>
+    <div class="card">
+      <div class="label">ストップロス方式</div>
+      <div class="value">PSAR トレイリング</div>
+      <div class="desc">初期 AF=0.02, 最大 AF=0.20</div>
+    </div>
+    <div class="card">
+      <div class="label">ポジションサイズ計算</div>
+      <div class="value">ATR ベース</div>
+      <div class="desc">資産 × リスク率 / (ATR × stop_range)</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== ARCHITECTURE ===================== -->
+<section id="architecture">
+  <h2>🏗️ システムアーキテクチャ</h2>
+
+  <div class="mermaid-wrap">
+    <pre class="mermaid">
+flowchart TB
+    CONFIG(["⚙️ Config / config.ini"])
+
+    subgraph DATA ["📡 データ層"]
+        BYBIT["BybitExchange\nOHLCV取得"]
+        CACHE[("OHLCVCache\nSQLite")]
+        PDM["PriceDataManagement\nDonchian · PVO · ADX · TSMOM · ATR"]
+    end
+
+    subgraph STRATEGY ["🧠 戦略層"]
+        TS["TradingStrategy\nENTRY / ADD / EXIT"]
+        EXIT["ExitStrategyV2\nPSAR · Chandelier · PSL · VC"]
+        REGIME["MarketRegimeDetector\nTREND / RANGE / TRANSITION"]
+    end
+
+    BOT(["🤖 Bot — メインループ 60s"])
+
+    subgraph EXEC ["⚡ 実行層"]
+        RISK["RiskManagement\nポジションサイズ · STOP"]
+        ORDER["Order DTO"]
+        PORTFOLIO["Portfolio\nPnL · DD管理"]
+    end
+
+    BITGET["💱 BitgetExchange\n注文執行"]
+
+    subgraph LOG ["📊 ログ · 分析"]
+        LOGGER["Logger"]
+        METRICS["Metrics · Visualizer"]
+    end
+
+    CONFIG -.->|全モジュール参照| DATA
+    CONFIG -.->|全モジュール参照| STRATEGY
+    CONFIG -.->|全モジュール参照| EXEC
+
+    BYBIT --> CACHE
+    CACHE --> PDM
+    PDM -->|signals| STRATEGY
+    TS --> EXIT
+    TS --> REGIME
+    TS -->|decision| BOT
+
+    BOT -->|sizing| RISK
+    BOT -->|create| ORDER
+    BOT --> PORTFOLIO
+    RISK -->|stop price| ORDER
+    ORDER -->|send| BITGET
+    BITGET -->|fills| PORTFOLIO
+    PORTFOLIO --> LOGGER
+    BOT --> LOGGER
+    LOGGER --> METRICS
+    </pre>
+  </div>
+
+  <h3>主要コンポーネント一覧</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>ファイル</th><th>クラス</th><th>役割</th></tr></thead>
+      <tbody>
+        <tr><td>bot.py</td><td class="td-blue">Bot</td><td>メインループ・注文・損益管理の中心</td></tr>
+        <tr><td>trading_strategy.py</td><td class="td-purple">TradingStrategy</td><td>ENTRY/ADD/EXIT シグナル判定</td></tr>
+        <tr><td>risk_management.py</td><td class="td-blue">RiskManagement</td><td>ポジションサイズ・ストップ計算</td></tr>
+        <tr><td>price_data_management.py</td><td class="td-green">PriceDataManagement</td><td>OHLCV 取得・指標計算・バックテスト時刻進行</td></tr>
+        <tr><td>exit_strategy_v2.py</td><td class="td-yellow">ExitStrategyV2</td><td>複合エグジット（Stage 1–4 + Chandelier + PSL + VolumeClimax）</td></tr>
+        <tr><td>portfolio.py</td><td class="td-blue">Portfolio</td><td>ポジション・損益・ドローダウン管理</td></tr>
+        <tr><td>bybit_exchange.py</td><td class="td-purple">BybitExchange</td><td>データ取得専用（ccxt.bybit）</td></tr>
+        <tr><td>bitget_exchange.py</td><td class="td-green">BitgetExchange</td><td>注文執行専用（ccxt.bitget）</td></tr>
+        <tr><td>ohlcv_cache.py</td><td class="td-yellow">OHLCVCache</td><td>SQLite キャッシュ（高速バックテスト）</td></tr>
+        <tr><td>risk_overlay.py</td><td class="td-red" style="color:var(--red)">RiskOverlay</td><td>DD キルスイッチ（デフォルト無効）</td></tr>
+        <tr><td>cost_model.py</td><td class="td-yellow">CostModel</td><td>コスト織り込みモデル（デフォルト無効）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>実行モード</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>モード</th><th>back_test</th><th>hot_test_dummy</th><th>データソース</th><th>取引</th></tr></thead>
+      <tbody>
+        <tr><td><strong>バックテスト</strong></td><td class="td-yellow">1</td><td class="td-yellow">1</td><td>SQLite キャッシュ</td><td>ダミー</td></tr>
+        <tr><td><strong>ペーパートレード</strong></td><td class="td-green">0</td><td class="td-yellow">1</td><td>Bybit ライブ</td><td>ダミー</td></tr>
+        <tr><td><strong>本番取引</strong></td><td class="td-green">0</td><td class="td-green">0</td><td>Bybit ライブ</td><td><span style="color:var(--red)">Bitget 実注文</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== PERFORMANCE ===================== -->
+<section id="performance">
+  <h2>📉 パフォーマンス履歴</h2>
+
+  <h3>四半期別バックテスト結果（ベースライン: ParamSweep v5）</h3>
+
+  <!-- Bar chart: PnL by quarter -->
+  <div class="bar-chart">
+    <div class="bar-item">
+      <div class="bar-label"><span class="name">Q1 2024</span><span class="val td-green">+$603.93</span></div>
+      <div class="bar-track"><div class="bar-fill pos" style="width:40%"></div></div>
+    </div>
+    <div class="bar-item">
+      <div class="bar-label"><span class="name">Q2 2024</span><span class="val td-red">−$103.85</span></div>
+      <div class="bar-track"><div class="bar-fill neg" style="width:7%"></div></div>
+    </div>
+    <div class="bar-item">
+      <div class="bar-label"><span class="name">Q3 2024</span><span class="val td-red">−$49.91</span></div>
+      <div class="bar-track"><div class="bar-fill neg" style="width:3%"></div></div>
+    </div>
+    <div class="bar-item">
+      <div class="bar-label"><span class="name">Q4 2024</span><span class="val td-green">+$1,477.40</span></div>
+      <div class="bar-track"><div class="bar-fill pos" style="width:97%"></div></div>
+    </div>
+    <div class="bar-item">
+      <div class="bar-label"><span class="name">Q1 2025</span><span class="val td-red">−$59.77</span></div>
+      <div class="bar-track"><div class="bar-fill neg" style="width:4%"></div></div>
+    </div>
+    <div class="bar-item">
+      <div class="bar-label"><span class="name">Q2 2025</span><span class="val td-green">+$210.36</span></div>
+      <div class="bar-track"><div class="bar-fill pos" style="width:14%"></div></div>
+    </div>
+    <div class="bar-item">
+      <div class="bar-label"><span class="name">Q3 2025</span><span class="val td-green">+$185.23</span></div>
+      <div class="bar-track"><div class="bar-fill pos" style="width:12%"></div></div>
+    </div>
+    <div class="bar-item">
+      <div class="bar-label"><span class="name">Q4 2025</span><span class="val td-green">+$160.80</span></div>
+      <div class="bar-track"><div class="bar-fill pos" style="width:11%"></div></div>
+    </div>
+    <div class="bar-item">
+      <div class="bar-label"><span class="name">Q1 2026</span><span class="val td-red">−$29.72</span></div>
+      <div class="bar-track"><div class="bar-fill neg" style="width:2%"></div></div>
+    </div>
+  </div>
+
+  <h3>詳細メトリクス表</h3>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>期間</th>
+          <th>損益 (USD)</th>
+          <th>勝率</th>
+          <th>PF</th>
+          <th>最大DD</th>
+          <th>DD率</th>
+          <th>シャープ</th>
+          <th>取引数</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Q1 2024</td>
+          <td class="td-green">+603.93</td>
+          <td>75%</td>
+          <td class="td-green">6.01</td>
+          <td>$116.03</td>
+          <td>24.2%</td>
+          <td class="td-green">1.04</td>
+          <td>4</td>
+        </tr>
+        <tr>
+          <td>Q2 2024</td>
+          <td class="td-red">−103.85</td>
+          <td>25%</td>
+          <td class="td-red">0.01</td>
+          <td>$104.46</td>
+          <td class="td-yellow">34.8%</td>
+          <td class="td-red">−1.68</td>
+          <td>4</td>
+        </tr>
+        <tr>
+          <td>Q3 2024</td>
+          <td class="td-red">−49.91</td>
+          <td>75%</td>
+          <td class="td-red">0.65</td>
+          <td>$142.09</td>
+          <td class="td-yellow">36.2%</td>
+          <td class="td-red">−0.36</td>
+          <td>4</td>
+        </tr>
+        <tr>
+          <td><strong>Q4 2024</strong></td>
+          <td class="td-green"><strong>+1,477.40</strong></td>
+          <td class="td-green">100%</td>
+          <td class="td-green">15.78</td>
+          <td>$74.77</td>
+          <td class="td-green">9.3%</td>
+          <td class="td-green">1.63</td>
+          <td><strong>7</strong></td>
+        </tr>
+        <tr>
+          <td>Q1 2025</td>
+          <td class="td-red">−59.77</td>
+          <td>50%</td>
+          <td>0.0</td>
+          <td>$59.77</td>
+          <td>19.9%</td>
+          <td class="td-red">−1.39</td>
+          <td>2</td>
+        </tr>
+        <tr>
+          <td>Q2 2025</td>
+          <td class="td-green">+210.36</td>
+          <td class="td-green">100%</td>
+          <td class="td-green">1.84</td>
+          <td>$206.09</td>
+          <td class="td-yellow">28.8%</td>
+          <td class="td-green">0.58</td>
+          <td>6</td>
+        </tr>
+        <tr>
+          <td>Q3 2025</td>
+          <td class="td-green">+185.23</td>
+          <td class="td-green">100%</td>
+          <td>—</td>
+          <td>$0.00</td>
+          <td class="td-green">0.0%</td>
+          <td class="td-green">1.04</td>
+          <td>2</td>
+        </tr>
+        <tr>
+          <td>Q4 2025</td>
+          <td class="td-green">+160.80</td>
+          <td class="td-green">100%</td>
+          <td>—</td>
+          <td>—</td>
+          <td class="td-green">0.0%</td>
+          <td class="td-green">1.40</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>Q1 2026</td>
+          <td class="td-red">−29.72</td>
+          <td>75%</td>
+          <td class="td-red">0.65</td>
+          <td>—</td>
+          <td class="td-yellow">23.8%</td>
+          <td class="td-red">−0.38</td>
+          <td>—</td>
+        </tr>
+        <tr style="background:rgba(63,185,80,0.08)">
+          <td><strong>合計（9四半期）</strong></td>
+          <td class="td-green"><strong>+2,394.47</strong></td>
+          <td>—</td>
+          <td>—</td>
+          <td>—</td>
+          <td>—</td>
+          <td>—</td>
+          <td>—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>ベースライン改善履歴</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>日付</th><th>ベースライン (USD)</th><th>改善内容</th></tr></thead>
+      <tbody>
+        <tr><td>2025-12-21</td><td>$904.35</td><td>初期ベースライン</td></tr>
+        <tr><td>2026-02-01</td><td class="td-green">$1,282.62</td><td>Two-Tier Entry System 実装（+$378 USD）</td></tr>
+        <tr><td>2026-03-02</td><td class="td-green">$1,985.14</td><td>DDキルスイッチ・ホットテスト実装後（+$702 USD）</td></tr>
+        <tr><td>2026-03-04</td><td class="td-green">$2,402.94</td><td>ParamSweep: PSAR=300, TSMOM=150 採用（+$418 USD）</td></tr>
+        <tr><td>2026-04-04</td><td class="td-yellow"><strong>$2,394.47</strong></td><td>Q1 2026 追加（−$29.72 反映、9四半期累計）</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== CONFIG ===================== -->
+<section id="config">
+  <h2>⚙️ 主要設定パラメータ</h2>
+
+  <div class="code-block">
+<span class="comment"># [RiskManagement]</span>
+<span class="key">risk_percentage</span>    = <span class="val">0.30</span>     <span class="comment"># 1トレードのリスク率</span>
+<span class="key">leverage</span>           = <span class="val">10</span>       <span class="comment"># レバレッジ倍率</span>
+<span class="key">entry_times</span>        = <span class="val">2</span>        <span class="comment"># 最大エントリー回数（ピラミッディング）</span>
+<span class="key">entry_range</span>        = <span class="val">4</span>        <span class="comment"># 追加エントリー幅（ATR倍率）</span>
+<span class="key">psar_lookback_term</span> = <span class="val">300</span>      <span class="comment"># PSARルックバック期間 ★最適化済み</span>
+
+<span class="comment"># [Market]</span>
+<span class="key">market</span>             = <span class="val">BTC/USDT</span>
+<span class="key">time_frame</span>         = <span class="val">240</span>      <span class="comment"># 4時間足</span>
+
+<span class="comment"># [Strategy]</span>
+<span class="key">donchian_buy_term</span>  = <span class="val">30</span>       <span class="comment"># ドンチャン買い期間 ★最適化済み</span>
+<span class="key">donchian_sell_term</span> = <span class="val">30</span>
+<span class="key">pvo_threshold</span>      = <span class="val">10</span>       <span class="comment"># PVO最小値（出来高フィルター）</span>
+<span class="key">adx_bull_threshold</span> = <span class="val">24</span>       <span class="comment"># ADXエントリー閾値</span>
+<span class="key">tsmom_filter_enabled</span> = <span class="val">1</span>     <span class="comment"># TSMOMフィルター ON ★</span>
+<span class="key">tsmom_filter_lookback</span> = <span class="val">150</span>  <span class="comment"># TSMOMルックバック ★最適化済み</span>
+  </div>
+
+  <h3>有効 / 無効な機能フラグ</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>機能</th><th>状態</th><th>説明</th></tr></thead>
+      <tbody>
+        <tr><td>Strategy A（ADX）</td><td class="td-green">✅ 有効</td><td>メイン戦略フィルター</td></tr>
+        <tr><td>TSMOM Filter</td><td class="td-green">✅ 有効</td><td>長期モメンタム方向確認</td></tr>
+        <tr><td>Strategy B（BB/RSI/SMA）</td><td class="td-red">⛔ 無効</td><td>複合テクニカル戦略（検証中）</td></tr>
+        <tr><td>Strategy C（MACD複合）</td><td class="td-red">⛔ 無効</td><td>検証中</td></tr>
+        <tr><td>RiskOverlay（DDキルスイッチ）</td><td class="td-red">⛔ 無効</td><td>実装済み・デフォルト無効</td></tr>
+        <tr><td>CostModel（コスト織り込み）</td><td class="td-red">⛔ 無効</td><td>実装済み・デフォルト無効</td></tr>
+        <tr><td>Dynamic Position Sizing</td><td class="td-red">⛔ 無効</td><td>資産比率でリスク調整</td></tr>
+        <tr><td>Chandelier Exit</td><td class="td-red">⛔ 無効</td><td>ATRベース高機能トレイリング</td></tr>
+        <tr><td>Profit Step Lock</td><td class="td-red">⛔ 無効</td><td>含み益段階ロック</td></tr>
+        <tr><td>Volume Climax Exit</td><td class="td-red">⛔ 無効</td><td>出来高急増でのEXIT</td></tr>
+        <tr><td>Mean Reversion Strategy</td><td class="td-red">⛔ 無効</td><td>逆張り戦略（検証中）</td></tr>
+        <tr><td>Weekend Filter</td><td class="td-yellow">⚙️ 設定可</td><td>週末エントリー回避</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== EXIT ===================== -->
+<section id="exit">
+  <h2>🚪 エグジット戦略（ExitStrategyV2）</h2>
+  <p>複合シグナルベースの多段階エグジット（Stage 1–4）を実装済みです。
+  現在は <strong>PSAR トレイリング</strong> が主力エグジットで、その他は設定で有効化可能です。</p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>方法</th><th>状態</th><th>詳細</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>PSAR トレイリングストップ</strong></td>
+          <td class="td-green">✅ メイン</td>
+          <td>ルックバック 300、AF=0.02〜0.20 でトレンド追従</td>
+        </tr>
+        <tr>
+          <td>Stage 1–4 複合スコア</td>
+          <td class="td-yellow">⚙️ 実装済み</td>
+          <td>ADX強弱 + PVO反転 + 時間経過の複合判定</td>
+        </tr>
+        <tr>
+          <td>Chandelier Exit</td>
+          <td class="td-red">⛔ 無効</td>
+          <td>N期間高値/安値 − ATR×3.0 のトレイリング。PSARより柔軟</td>
+        </tr>
+        <tr>
+          <td>Profit Step Lock (PSL)</td>
+          <td class="td-red">⛔ 無効</td>
+          <td>MFE 2/4/8% 達成後に含み益フロアを設定</td>
+        </tr>
+        <tr>
+          <td>Volume Climax Exit</td>
+          <td class="td-red">⛔ 無効</td>
+          <td>出来高 × 3倍急増 + 含み益 0.5% 超でEXIT</td>
+        </tr>
+        <tr>
+          <td>Composite Score Exit</td>
+          <td class="td-red">⛔ 無効</td>
+          <td>ADX低下 + PVO低下 + 出来高低下の複合スコア</td>
+        </tr>
+        <tr>
+          <td>Time-Based Exit</td>
+          <td class="td-red">⛔ 無効</td>
+          <td>最大保有時間（デフォルト 72 時間）超過でEXIT</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== ROADMAP ===================== -->
+<section id="roadmap">
+  <h2>🗺️ 開発ロードマップ</h2>
+
+  <div class="timeline">
+    <div class="tl-item done">
+      <div class="tl-date">2025-12-21</div>
+      <div class="tl-title">初期ベースライン確立 — $904.35 USD</div>
+      <div class="tl-desc">Donchian + PVO + ADX 戦略の基盤完成</div>
+    </div>
+    <div class="tl-item done">
+      <div class="tl-date">2026-02-01</div>
+      <div class="tl-title">Task 39b: Two-Tier Entry System 実装</div>
+      <div class="tl-desc">+$378 USD 改善 → ベースライン $1,282.62</div>
+    </div>
+    <div class="tl-item done">
+      <div class="tl-date">2026-03-01</div>
+      <div class="tl-title">Task 40c: DDキルスイッチ（RiskOverlay）実装</div>
+      <div class="tl-desc">3種停止（DD/DAILY/CONSEC），デフォルト無効</div>
+    </div>
+    <div class="tl-item done">
+      <div class="tl-date">2026-03-01</div>
+      <div class="tl-title">Task 42: キャッシュベース高速バックテスト実装</div>
+      <div class="tl-desc">SQLiteキャッシュから4H足データを高速読み込み</div>
+    </div>
+    <div class="tl-item done">
+      <div class="tl-date">2026-03-04</div>
+      <div class="tl-title">ParamSweep 最適化 — ベースライン $2,402.94</div>
+      <div class="tl-desc">PSAR=300 + TSMOM=150 採用で+$418 USD 改善</div>
+    </div>
+    <div class="tl-item done">
+      <div class="tl-date">2026-03-06</div>
+      <div class="tl-title">Task 40g: APIレートリミット耐障害性改善</div>
+      <div class="tl-desc">fetch_ohlcv 最適化でRPI本番運用安定化</div>
+    </div>
+    <div class="tl-item done">
+      <div class="tl-date">2026-03-13</div>
+      <div class="tl-title">Task 43: RPi Live BOT 5日間稼働確認完了</div>
+      <div class="tl-desc">毎分ループ正常，残高 +2.96 USDT 増加</div>
+    </div>
+    <div class="tl-item active">
+      <div class="tl-date">2026-03〜（進行中）</div>
+      <div class="tl-title">Task 44: 取引所移行（Bybit → 代替）</div>
+      <div class="tl-desc">Bybit 日本向け Close-Only 対応。OKX / Gate.io 候補</div>
+    </div>
+    <div class="tl-item pending">
+      <div class="tl-date">TODO</div>
+      <div class="tl-title">Task 40h: レジーム別戦略切替（Trend/Range）</div>
+      <div class="tl-desc">MarketRegimeDetector を活用したレジーム適応戦略</div>
+    </div>
+    <div class="tl-item pending">
+      <div class="tl-date">TODO</div>
+      <div class="tl-title">Task 47: 残高取得モード修正</div>
+      <div class="tl-desc">デフォルトで API から実残高取得に変更</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== IMPROVEMENT ===================== -->
+<section id="improvement">
+  <h2>💡 戦略改善アイデア（TODO リスト）</h2>
+  <p>以下はバックログに登録されている戦略改善候補です。優先度★ が高い順に整理しています。</p>
+
+  <div class="improvement-list">
+
+    <div class="imp-item">
+      <div class="priority">⭐⭐⭐⭐⭐</div>
+      <div class="content">
+        <h4>Task 44: 取引所移行（Bybit → OKX / Gate.io）<span class="tag">インフラ</span></h4>
+        <p>Bybit の日本向け Close-Only 期限（2026-03-23）対応。OHLCVデータ2年分の取得可能性確認済み。</p>
+      </div>
+    </div>
+
+    <div class="imp-item">
+      <div class="priority">⭐⭐⭐⭐</div>
+      <div class="content">
+        <h4>Task 40b: コストモデル BOT 統合<span class="tag">精度向上</span></h4>
+        <p>手数料・スリッページ・執行遅延をバックテストに正確に織り込む。現在の CostModel は実装済みだが無効化中。</p>
+      </div>
+    </div>
+
+    <div class="imp-item">
+      <div class="priority">⭐⭐⭐⭐</div>
+      <div class="content">
+        <h4>Task 40h: 市場レジーム別戦略切替<span class="tag">戦略強化</span></h4>
+        <p>MarketRegimeDetector（TREND / RANGE / TRANSITION）を活用し、レジームごとに戦略を切り替え。
+        レンジ相場はスキップ or 逆張り戦略（MeanReversion）に切替。</p>
+      </div>
+    </div>
+
+    <div class="imp-item">
+      <div class="priority">⭐⭐⭐</div>
+      <div class="content">
+        <h4>Task 23a: Fear &amp; Greed Index 統合<span class="tag">フィルター</span></h4>
+        <p>過度な楽観/恐怖でのエントリー抑制。+5〜8% 改善期待（2〜3時間の実装）。</p>
+      </div>
+    </div>
+
+    <div class="imp-item">
+      <div class="priority">⭐⭐⭐</div>
+      <div class="content">
+        <h4>Chandelier Exit 有効化検討<span class="tag">エグジット</span></h4>
+        <p>PSARより ATR ベースで柔軟なトレイリングストップ。期間22・ATR倍率3.0。
+        実装済みのため検証コストが低い。</p>
+      </div>
+    </div>
+
+    <div class="imp-item">
+      <div class="priority">⭐⭐⭐</div>
+      <div class="content">
+        <h4>Profit Step Lock (PSL) 有効化検討<span class="tag">エグジット</span></h4>
+        <p>MFE 2/4/8% 達成後に含み益フロアを設定して利益確保。実装済み・未検証。</p>
+      </div>
+    </div>
+
+    <div class="imp-item">
+      <div class="priority">⭐⭐⭐</div>
+      <div class="content">
+        <h4>Task 40f: 価格データ健全性チェック<span class="tag">データ品質</span></h4>
+        <p>OHLCVの欠損・重複・タイムゾーンずれ・スパイク検出。取引所切替後の性能変化が「見かけ」でないことを保証。</p>
+      </div>
+    </div>
+
+    <div class="imp-item">
+      <div class="priority">⭐⭐</div>
+      <div class="content">
+        <h4>Task 40i: ETH 銘柄分散<span class="tag">分散化</span></h4>
+        <p>BTCとETHで同一ルール検証。ETH は PVO フィルターが実質無効（常に閾値超）という構造問題あり。一時保留。</p>
+      </div>
+    </div>
+
+    <div class="imp-item">
+      <div class="priority">⭐⭐</div>
+      <div class="content">
+        <h4>Task 47: 残高取得・指定モード修正<span class="tag">仕様改善</span></h4>
+        <p>デフォルトで API から実残高を取得し、config.ini の account_balance は任意指定時のみ使用。</p>
+      </div>
+    </div>
+
+    <div class="imp-item">
+      <div class="priority">⭐⭐</div>
+      <div class="content">
+        <h4>RSI 二重確認実装（Task 23b）<span class="tag">フィルター</span></h4>
+        <p>過買い状態でのロング回避。+2〜3% 改善期待（1〜2時間実装）。</p>
+      </div>
+    </div>
+
+  </div>
+
+  <hr class="divider">
+
+  <h3>⚠️ 過去に検証して不採用となった戦略</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>戦略</th><th>結果</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Trailing Profit Target（Task 39a）</td>
+          <td class="td-red">−$1,077 USD（ベースライン比）</td>
+          <td>利益を早期確定しすぎ、大きなトレンドを逃す</td>
+        </tr>
+        <tr>
+          <td>Multi-Timeframe Integration（Task 39c）</td>
+          <td class="td-red">トレード数 0</td>
+          <td>フィルターが厳しすぎてエントリー条件を満たせない</td>
+        </tr>
+        <tr>
+          <td>ETH/USDT 検証（Task 40i-eth-pdca1）</td>
+          <td class="td-red">BTC比 −$1,982 USD</td>
+          <td>ETH は PVO フィルターが無効、トレード数不足</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+</div><!-- /container -->
+
+<footer>
+  satosystem gen2 — 最終更新: 2026-04-04 | Branch: gen2 | Python 3 + ccxt + Raspberry Pi
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'dark',
+  themeVariables: {
+    darkMode: true,
+    background: '#161b22',
+    primaryColor: '#21262d',
+    primaryBorderColor: '#58a6ff',
+    primaryTextColor: '#e6edf3',
+    lineColor: '#8b949e',
+    clusterBkg: '#0d1117',
+    clusterBorder: '#30363d',
+    edgeLabelBackground: '#21262d',
+    titleColor: '#e6edf3',
+    fontSize: '14px'
+  },
+  flowchart: {
+    htmlLabels: true,
+    curve: 'basis'
+  }
+});
+</script>
+
+</body>
+</html>
