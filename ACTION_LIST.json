@@ -1,8 +1,8 @@
 {
   "meta": {
     "version": "1.0",
-    "last_updated": "2026-03-13",
-    "description": "satosystem gen2 - Task management - Task44(Bybit→代替取引所)・Task46(RPi USB安定化)進行中。期限: 2026-03-23。",
+    "last_updated": "2026-04-04",
+    "description": "satosystem gen2 - Task management - ベースライン: 2394.47 USD (9四半期 2024Q1-2026Q1)",
     "replaces": "docs/ACTION_LIST.md",
     "workflow_rules": {
       "baseline_before_action": "アクションリスト実行前に必ずレグレッションテストを実行し、PROGRESS.json baseline_regressionに保存すること",
@@ -149,6 +149,23 @@
     ],
     "progress_memo": "2026-03-06: OHLCVキャッシュDB更新ツール（tools/update_ohlcv_db.py）実装完了。Bybit公開API経由でデータ蓄積可。docs/analysis/をアーカイブ化（更新コスト>メリットのため運用終了）。Bybit Close-Only期限: 2026-03-23。",
     "done": [
+    ],
+    "todo": [
+      {
+        "id": "47",
+        "category": "仕様改善",
+        "title": "残高取得・指定モードの修正",
+        "description": "ホットテスト・バックテスト・本番いずれも初期値はアカウントの実残高を取得する。オプションとして、任意の残高を指定できるモードをconfig.iniに追加し、指定時のみconfig.iniの値を使用する。config.iniのaccount_balanceはこの任意指定モード時のみ有効とする。",
+        "priority": 4,
+        "steps": [
+          "1. デフォルトでAPIから実残高を取得するよう修正（Bybit/Bitget両対応）",
+          "2. config.iniに 'use_custom_balance' オプションを追加（0=API取得, 1=任意指定）",
+          "3. use_custom_balance=1のときのみaccount_balance値を使用",
+          "4. テスト・本番・ホットテストすべてで一貫して適用",
+          "5. ドキュメント・設定例を更新"
+        ],
+        "note": "現状はconfig.iniのaccount_balanceが常に表示されるが、今後はAPI取得が標準となる。"
+      },
       {
         "id": "40i-eth-pdca1",
         "title": "ETH/USDT PDCA #1 パラメータスイープ検証",
@@ -175,7 +192,7 @@
       {
         "id": "45",
         "title": "シグナル・フィルター最適組み合わせ探索（パラメータスイープ）",
-        "description": "全エントリー/イグジットシグナル・フィルターの特性を整理し、相乗効果が期待できる5種類の組み合わせを決定。各組み合わせでパラメータスイープを実施し、ベースライン(2402.94 USD)超えを目指す。",
+        "description": "全エントリー/イグジットシグナル・フィルターの特性を整理し、相乗効果が期待できる5種類の組み合わせを決定。各組み合わせでパラメータスイープを実施し、ベースライン(2394.47 USD「2024Q1-2026Q1　9四半期」)超えを目指す。",
         "priority": "★★★★★",
         "status": "TODO",
         "subtasks": [

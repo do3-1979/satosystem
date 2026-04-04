@@ -3,11 +3,11 @@
     "name": "satosystem gen2",
     "description": "Bitcoin auto-trading system - Donchian Breakout + PVO + ADX filter",
     "branch": "gen2",
-    "last_updated": "2026-03-06",
+    "last_updated": "2026-04-04",
     "baseline_performance": {
-      "cumulative_pnl_usd": 2402.94,
-      "period": "2024-2025 (8 quarters, ParamSweep TSMOM150+PSAR300採用後)",
-      "baseline_file": "baseline_backup/BASELINE_2402.94USD_ParamSweep_20260304.json",
+      "cumulative_pnl_usd": 2394.47,
+      "period": "2024 Q1 - 2026 Q1 (9 quarters, ParamSweep TSMOM150+PSAR300採用後)",
+      "baseline_file": "baseline_backup/BASELINE_2394.47USD_Q1_2026_20260404.json",
       "config": {
         "psar_lookback_term": 300,
         "tsmom_filter_enabled": 1,
@@ -18,10 +18,10 @@
         "leverage": 10
       },
       "previous_baseline": {
-        "cumulative_pnl_usd": 1985.14,
-        "improvement_usd": 417.8,
-        "improvement_percent": 21.0,
-        "note": "ParamSweep (psar_lookback_term=300, tsmom_filter_lookback=150) 採用後の改善 (2026-03-04)"
+        "cumulative_pnl_usd": 2402.94,
+        "period": "2024-2025 (8 quarters)",
+        "baseline_file": "baseline_backup/BASELINE_2402.94USD_ParamSweep_20260304.json",
+        "note": "旧ベースライン: 8四半期 (2024Q1-2025Q4)。2026Q1追加により9四半期 2394.47 USD に更新 (2026-04-04)"
       }
     },
     "baseline_regression_300usd": {
@@ -243,11 +243,11 @@
     }
   },
   "test_suite": {
-    "total_tests": 129,
+    "total_tests": 183,
     "pass_rate": "100%",
     "test_files": 26,
-    "last_regression_test": "2026-03-04",
-    "regression_status": "129/129 PASS (100%)"
+    "last_regression_test": "2026-04-04",
+    "regression_status": "183/183 PASS (100%)"
   },
   "configuration": {
     "current_parameters": {
@@ -267,7 +267,7 @@
       "enable_mean_reversion_strategy": false,
       "enable_range_breakout_enhanced": false
     },
-    "baseline": "2402.94 USD (2026-03-04, ParamSweep tsmom_lookback=150)"
+    "baseline": "2394.47 USD (2026-04-04, 9四半期 2024Q1-2026Q1, ParamSweep tsmom_lookback=150)"
   },
   "next_actions": {
     "immediate": [

@@ -29,10 +29,10 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
 def get_quarters():
-    """2024/1Q ～ 2025/4Q までの四半期リストを返す"""
+    """2024/1Q ～ 2026/1Q までの四半期リストを返す"""
     quarters = []
     start = datetime(2024, 1, 1)   # 2024/Q1 から開始
-    end = datetime(2025, 12, 31)   # 2025/Q4 まで（フルカバレッジ）
+    end = datetime(2026, 3, 31)    # 2026/Q1 まで（フルカバレッジ）
     
     # 現在日時が終了日より前の場合は、現在日時を終了日とする
     now = datetime.now()
@@ -427,9 +427,10 @@ def print_summary(results):
     # 年間評価を計算・表示
     results_2024 = [r for r in results if r['year'] == 2024 and r['metrics']]
     results_2025 = [r for r in results if r['year'] == 2025 and r['metrics']]
+    results_2026 = [r for r in results if r['year'] == 2026 and r['metrics']]
     
     annual_evals = {}
-    for year, qresults in [(2024, results_2024), (2025, results_2025)]:
+    for year, qresults in [(2024, results_2024), (2025, results_2025), (2026, results_2026)]:
         if qresults:
             ann = compute_annual_metrics(qresults)
             annual_evals[year] = ann
