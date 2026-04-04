@@ -2,7 +2,7 @@
   "meta": {
     "version": "1.0",
     "last_updated": "2026-04-04",
-    "description": "satosystem gen2 - Task management - ベースライン: 2394.47 USD (9四半期 2024Q1-2026Q1)",
+    "description": "satosystem gen2 - Task management (Task 48 Gold System追加・HOLD中) - ベースライン: 2394.47 USD (9四半期 2024Q1-2026Q1)",
     "replaces": "docs/ACTION_LIST.md",
     "workflow_rules": {
       "baseline_before_action": "アクションリスト実行前に必ずレグレッションテストを実行し、PROGRESS.json baseline_regressionに保存すること",
@@ -151,6 +151,194 @@
     "done": [
     ],
     "todo": [
+      {
+        "id": "48",
+        "category": "新システム・マルチアセット",
+        "title": "Gold (XAUT/USDT) 自動取引システム実装プロジェクト",
+        "priority": "★★★★☆",
+        "status": "HOLD - データ取得・バックテスト待ち",
+        "created_date": "2026-04-04",
+        "description": "BTC取引ボット以外の自動利益獲得システムとしてXAUT/USDT（テザーゴールド）無期限先物を対象とした Donchian Breakout + PVO + ADX + TSMOM 戦略の実装。既存BTCボットと並列稼働。最終目標: 年間利回り+50%（Gold分）",
+        "research_findings": {
+          "research_date": "2026-04-04",
+          "item_A_bitget_xaut": {
+            "status": "✅ 解決済み",
+            "result": "Bitget XAUTUSDT 無期限先物 存在確認",
+            "details": {
+              "symbol": "XAUTUSDT",
+              "symbolStatus": "normal",
+              "listed_date": "2025-04-03",
+              "makerFeeRate": "0.0002 (0.02%)",
+              "takerFeeRate": "0.0006 (0.06%)",
+              "minTradeNum": "0.01 XAUT (≈46USD at current price)",
+              "minTradeUSDT": "5 USDT",
+              "maxLeverage": "75x",
+              "fundingInterval": "4H",
+              "japan_access": "✅ 既存BTCボットがBitgetを使用中（日本からアクセス可）",
+              "liquidation": "✅ Bitget取引所の強制ロスカット機能あり（借金リスクなし）"
+            }
+          },
+          "item_ohlcv_data": {
+            "status": "✅ 解決済み",
+            "result": "Bybit XAUTUSDT データ 366日分（約2196本の4H足）取得可能",
+            "details": {
+              "bybit_xaut_launch": "2025-04-03 11:05:59 UTC",
+              "available_4h_candles": "約2196本（366日）",
+              "note": "Bybit公開APIは認証不要のためJapan Close-Only制限後も取得可能と推測されるが要確認（Task 44依存）"
+            }
+          },
+          "item_B_parallel_rpi": {
+            "status": "⚠️ 未解決 - 確認が必要",
+            "concern": "RPi上で2プロセス並列稼働時のCPU/MEM負荷。Bot1(BTC)とBot2(XAUT)がBybit APIを同時呼び出しするとRATE LIMIT衝突リスクがある。server_retry_waitの値を両設定でずらすことで軽減可能",
+            "action_needed": "RPi htop確認後、CPU>80%またはMEM>80%なら並列稼働は見送り"
+          },
+          "item_C_gold_params": {
+            "status": "✅ 解決済み",
+            "result": "推奨値で開始してから最適化（ユーザー決定: 2026-04-04）",
+            "applied_params": {
+              "donchian_buy_term": "30 → 55",
+              "donchian_sell_term": "30 → 55",
+              "leverage": "10 → 5",
+              "adx_bull_threshold": "24 → 21",
+              "adx_bear_threshold": "18 → 16",
+              "adx_filter_threshold": "31 → 26",
+              "pvo_threshold": "10 → 7",
+              "tsmom_filter_lookback": "150 → 200",
+              "max_holding_hours": "72 → 96"
+            }
+          },
+          "item_D_exit_strategy": {
+            "status": "✅ 解決済み",
+            "result": "ATRトレーリング（Chandelier Exit）を起点とし採用（ユーザー決定: 2026-04-04）",
+            "config": {
+              "enable_chandelier_exit": 1,
+              "chandelier_period": 22,
+              "chandelier_mult": 3.0,
+              "chandelier_replaces_psar": 1
+            },
+            "optimization_alternatives": ["PSAR維持（lookback延長）", "ドンチャン逆ブレイク"]
+          },
+          "item_E_lot_limit": {
+            "status": "✅ 解決済み",
+            "result": "config_xaut.iniのlot_limit_lowerを0.001→0.01に修正済み（2026-04-04）"
+          },
+          "item_F_long_short": {
+            "status": "✅ 解決済み",
+            "result": "XAUT/USDT無期限先物はロング・ショート両方可能。既存BotのBUY/SELLロジックはそのまま使用可"
+          }
+        },
+        "week1_completed": {
+          "done": [
+            "config.py: load_config() classmethod 追加（動的INI切替）",
+            "bot.py: --config 引数パース追加",
+            "bybit_exchange.py: XAUT/USDT, PAXG/USDT マッピング + 汎用フォールバック",
+            "src/config_xaut.ini: 新規作成（Gold専用設定 market=XAUT/USDT）",
+            "tools/update_ohlcv_db.py: --symbol オプション追加（XAUT等のデータ取得対応）",
+            "src/start_gold_bot.sh: 新規作成（Gold Bot専用起動スクリプト）"
+          ],
+          "regression_test": "183/183 PASS（既存BTC機能への影響なし確認済み）",
+          "commit_status": "HOLD - 課題解決待ち（命令.md参照）"
+        },
+        "hold_reasons": [
+          "B: RPi並列稼働テストが未実施（バックテスト完了後に実施）"
+        ],
+        "prerequisite_decision_needed": [
+          "4. Bybit Japan制限後もOHLCVデータ取得可能か確認（Task 44と連動）"
+        ],
+        "subtasks": [
+          {
+            "id": "48-A",
+            "title": "取引所・データ調査（リサーチ）",
+            "status": "✅ 完了（2026-04-04）",
+            "findings": "Bitget XAUTUSDT先物存在確認。日本アクセス可。データ366日分あり。詳細はresearch_findingsを参照"
+          },
+          {
+            "id": "48-B",
+            "title": "bitget_exchange.py XAUT/USDT マッピング追加",
+            "status": "🔒 HOLD",
+            "description": "bitget_exchange.py 101〜104行目にXAUT/USDTマッピング追加（BTC/ETHと同様の形式）",
+            "files": ["src/bitget_exchange.py"],
+            "estimated_effort": "30分"
+          },
+          {
+            "id": "48-C",
+            "title": "config_xaut.ini パラメータ修正（lot_limit_lower・leverage・金向けパラメータ）",
+            "status": "✅ 完了（2026-04-04）",
+            "required_changes": [
+              "lot_limit_lower: 0.001 → 0.01（Bitget最小注文対応）",
+              "leverage: 10 → 3〜5（ユーザー承認後）",
+              "donchian_buy_term / donchian_sell_term: 30 → バックテスト後に最適値",
+              "adx_bull_threshold / adx_filter_threshold: ユーザー承認後",
+              "tsmom_filter_lookback: 150 → バックテスト後に最適値"
+            ],
+            "files": ["src/config_xaut.ini"]
+          },
+          {
+            "id": "48-D",
+            "title": "XAUT OHLCVデータ取得（Bybit公開API）",
+            "status": "🔒 HOLD",
+            "command": "./commands/prj-update-ohlcv-db --symbol XAUT/USDT --full",
+            "expected": "約2196本の4H足データ（2025-04-03〜現在）",
+            "prerequisite": "48-B完了後 / Bybit Japan制限後もAPI取得可能確認"
+          },
+          {
+            "id": "48-E",
+            "title": "BTCデフォルトパラメータでのXAUTバックテスト（ベースライン測定）",
+            "status": "🔒 HOLD",
+            "description": "まず現状BTCパラメータそのままでXAUTを動かし、どの程度機能するかベースライン取得。その後パラメータ最適化で改善",
+            "prerequisite": "48-D完了後"
+          },
+          {
+            "id": "48-F",
+            "title": "金向けパラメータ最適化（パラメータスイープ）",
+            "status": "🔒 HOLD",
+            "description": "donchian_term × leverage × adx_threshold の3軸スイープ。BTCと同様のrun_param_sweep.py活用",
+            "sweep_candidates": {
+              "donchian_buy_term": [20, 30, 40, 55, 70, 80],
+              "leverage": [3, 5, 7, 10],
+              "adx_filter_threshold": [20, 25, 28, 31]
+            },
+            "prerequisite": "48-E完了後（ベースライン確認後）"
+          },
+          {
+            "id": "48-G",
+            "title": "出口戦略評価（ATRトレーリング vs ドンチャン逆ブレイク vs PSAR）",
+            "status": "✅ 初期方針決定（ATRトレーリングで開始）",
+            "description": "金の長尺トレンド特性に合わせた出口戦略を選択・実装する。BTCではPSARが最適だったが金では異なる可能性",
+            "prerequisite": "48-F完了後、ユーザーの出口戦略方針確定後"
+          },
+          {
+            "id": "48-H",
+            "title": "RPi並列稼働テスト（BTC+XAUT同時起動）",
+            "status": "🔒 HOLD",
+            "description": "RPiでBTC Bot + XAUT Bot の2プロセス同時稼働。CPU/MEM使用率・APIレートリミット競合をモニタリング。htopで確認",
+            "success_criteria": ["CPU使用率 < 80%", "MEM使用率 < 80%", "Rate Limitエラーなし（or自動回復する）"],
+            "prerequisite": "48-F完了後"
+          },
+          {
+            "id": "48-I",
+            "title": "ペーパートレード（2週間監視）",
+            "status": "🔒 HOLD",
+            "description": "hot_test_dummy_mode=1で2週間ライブ市場動作確認。シグナル発生・エントリー条件の検証",
+            "prerequisite": "48-H完了後"
+          },
+          {
+            "id": "48-J",
+            "title": "本番稼働開始（XAUT Gold Bot）",
+            "status": "🔒 HOLD",
+            "description": "back_test=0, hot_test_dummy_mode=0で本番稼働。BTC Botと独立したPID管理・ログ管理",
+            "prerequisite": "48-I完了後（ペーパートレード問題なし確認後）"
+          }
+        ],
+        "week_plan": {
+          "week1": "✅ 完了: インフラ整備（config/bot.py/bybit改修）",
+          "week2": "🔒 HOLD: 48-B（bitget対応）+ 48-C（パラメータ修正）+ 48-D（データ取得）",
+          "week3": "🔒 HOLD: 48-E（ベースラインバックテスト）+ 48-F前半（スイープ）",
+          "week4": "🔒 HOLD: 48-F後半（最適化）+ 48-G（出口戦略評価）",
+          "week5": "🔒 HOLD: 48-H（RPi並列テスト）+ 48-I（ペーパートレード）",
+          "week6": "🔒 HOLD: 48-J（本番稼働）"
+        }
+      },
       {
         "id": "47",
         "category": "仕様改善",
@@ -1324,8 +1512,8 @@
     ]
   },
   "summary": {
-    "total_tasks": 64,
-    "todo": 13,
+    "total_tasks": 75,
+    "todo": 71,
     "progress": 1,
     "done": 56,
     "cumulative_impact_usd": 2402.94,
