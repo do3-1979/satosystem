@@ -851,13 +851,13 @@ class ExitStrategyV2:
             # 保有時間制限を超過しているかチェック
             if holding_duration_hours > self.max_holding_hours:
                 # 含み損益を計算
-                if entry_price != 0:
-                    unrealized_pnl = current_price - entry_price
-                    pnl_pct = (unrealized_pnl / entry_price) * 100
-                else:
-                    # entry_price不明の場合は P&L=0 として強制決済
-                    unrealized_pnl = 0
-                    pnl_pct = 0
+                unrealized_pnl = current_price - entry_price
+                
+                # 0除算を防止
+                if entry_price == 0:
+                    return {'should_exit': False}
+                
+                pnl_pct = (unrealized_pnl / entry_price) * 100
                 
                 if unrealized_pnl > 0:
                     # 利益確定

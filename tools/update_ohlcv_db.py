@@ -51,10 +51,15 @@ SYMBOL = DEFAULT_SYMBOL
 
 # シンボル変換マップ: ショート名 → ccxt形式
 SYMBOL_MAP = {
+    'BTC':       'BTC/USDT:USDT',
     'BTC/USDT':  'BTC/USDT:USDT',
+    'ETH':       'ETH/USDT:USDT',
     'ETH/USDT':  'ETH/USDT:USDT',
+    'XAUT':      'XAUT/USDT:USDT',
     'XAUT/USDT': 'XAUT/USDT:USDT',
+    'PAXG':      'PAXG/USDT:USDT',
     'PAXG/USDT': 'PAXG/USDT:USDT',
+    'SOL':       'SOL/USDT:USDT',
     'SOL/USDT':  'SOL/USDT:USDT',
 }
 
@@ -77,18 +82,19 @@ def get_connection() -> sqlite3.Connection:
             start_epoch   INTEGER NOT NULL,
             end_epoch     INTEGER NOT NULL,
             time_frame    INTEGER NOT NULL,
-            close_time    REAL    UNIQUE NOT NULL,
+            close_time    REAL    NOT NULL,
             close_time_dt TEXT    NOT NULL,
             open_price    REAL    NOT NULL,
             high_price    REAL    NOT NULL,
             low_price     REAL    NOT NULL,
             close_price   REAL    NOT NULL,
             volume        REAL    NOT NULL,
-            created_at    TEXT    DEFAULT CURRENT_TIMESTAMP
+            created_at    TEXT    DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(symbol, time_frame, close_time)
         )
     """)
     conn.execute("CREATE INDEX IF NOT EXISTS idx_params ON candles (symbol, start_epoch, end_epoch, time_frame)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_time   ON candles (close_time)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_time   ON candles (symbol, close_time)")
     conn.commit()
     return conn
 

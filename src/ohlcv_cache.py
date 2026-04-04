@@ -21,18 +21,21 @@ from logger import Logger
 class OHLCVCache:
     """OHLCVデータをSQLiteで管理するクラス"""
 
-    def __init__(self, cache_path: str = "ohlcv_data/ohlcv_cache.db"):
+    # プロジェクトルートからの相対パスを絶対パスに解決
+    _DEFAULT_DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "ohlcv_data", "ohlcv_cache.db")
+
+    def __init__(self, cache_path: str = None):
         """
         OHLCVCacheの初期化
 
         Args:
-            cache_path: SQLiteデータベースのパス
+            cache_path: SQLiteデータベースのパス（省略時はプロジェクトルートの ohlcv_data/ohlcv_cache.db）
         """
-        self.cache_path = cache_path
+        self.cache_path = cache_path or self._DEFAULT_DB_PATH
         self.logger = Logger()
         
         # キャッシュディレクトリが存在しない場合は作成
-        cache_dir = os.path.dirname(cache_path)
+        cache_dir = os.path.dirname(self.cache_path)
         if cache_dir and not os.path.exists(cache_dir):
             os.makedirs(cache_dir, exist_ok=True)
             self.logger.log(f"キャッシュディレクトリを作成: {cache_dir}")
@@ -76,14 +79,15 @@ class OHLCVCache:
                 start_epoch INTEGER NOT NULL,
                 end_epoch INTEGER NOT NULL,
                 time_frame INTEGER NOT NULL,
-                close_time REAL UNIQUE NOT NULL,
+                close_time REAL NOT NULL,
                 close_time_dt TEXT NOT NULL,
                 open_price REAL NOT NULL,
                 high_price REAL NOT NULL,
                 low_price REAL NOT NULL,
                 close_price REAL NOT NULL,
                 volume REAL NOT NULL,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(symbol, time_frame, close_time)
             )
         """)
         
