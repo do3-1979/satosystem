@@ -14,6 +14,7 @@ import os
 import sys
 import json
 import subprocess
+import argparse
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import shutil
@@ -21,42 +22,62 @@ import shutil
 # ワークスペースルート設定
 WORKSPACE_ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC_DIR = os.path.join(WORKSPACE_ROOT, "src")
+
+# デフォルト値（main()でargs により上書き）
 CONFIG_FILE = os.path.join(SRC_DIR, "config.ini")
 OUTPUT_DIR = os.path.join(WORKSPACE_ROOT, "docs/quarterly_backtest_results")
 
-# 結果ディレクトリ作成
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+def get_market_from_config(config_file):
+    """config.ini から market シンボルを取得して正規化名を返す"""
+    try:
+        with open(config_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith('market =') or line.startswith('market='):
+                    val = line.split('=', 1)[1].strip()
+                    # XAUT/USDT → XAUT, BTC/USDT → BTC
+                    return val.split('/')[0].strip()
+    except Exception:
+        pass
+    return "BTC"
 
 
-def get_quarters():
-    """2024/1Q ～ 2026/1Q までの四半期リストを返す"""
+def get_quarters(symbol="BTC"):
+    """シンボルに応じた四半期リストを返す"""
     quarters = []
-    start = datetime(2024, 1, 1)   # 2024/Q1 から開始
+    # BTC: 2024/Q1 から開始、XAUT: データ開始が 2025/04 なので 2025/Q2 から
+    if symbol == "XAUT":
+        start = datetime(2025, 4, 14)  # XAUT データ開始2025-04-03から初期ルックバック(40*4H=6.7日)を確保するため
+    else:
+        start = datetime(2024, 1, 1)   # 2024/Q1 から開始
     end = datetime(2026, 3, 31)    # 2026/Q1 まで（フルカバレッジ）
-    
+
     # 現在日時が終了日より前の場合は、現在日時を終了日とする
     now = datetime.now()
     if now < end:
         end = now
-    
+
     current = start
     while current <= end:
         q = (current.month - 1) // 3 + 1
         year = current.year
         quarters.append((year, q))
         current += relativedelta(months=3)
-    
+
     return quarters
 
 
-def verify_backtest_mode():
+def verify_backtest_mode(config_file=None):
     """
     config.ini の back_test = 1 であることを確認する
-    
+
     Returns:
         bool: back_test = 1 の場合 True、それ以外 False
     """
-    if not os.path.exists(CONFIG_FILE):
+    if config_file is None:
+        config_file = CONFIG_FILE
+    if not os.path.exists(config_file):
         print(f"❌ エラー: config.ini が見つかりません")
         print(f"   場所: {CONFIG_FILE}")
         return False
@@ -64,9 +85,9 @@ def verify_backtest_mode():
     back_test_mode = None
     risk_percentage = None
     leverage = None
-    
+
     try:
-        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+        with open(config_file, 'r', encoding='utf-8') as f:
             for line in f:
                 line = line.strip()
                 if line.startswith('back_test ='):
@@ -95,13 +116,13 @@ def verify_backtest_mode():
         return False
     
     if back_test_mode is None:
-        print(f"❌ エラー: config.ini に 'back_test' パラメータが見つかりません")
-        print(f"   確認場所: {CONFIG_FILE}")
+        print(f"❌ エラー: {os.path.basename(config_file)} に 'back_test' パラメータが見つかりません")
+        print(f"   確認場所: {config_file}")
         print(f"   必須設定: back_test = 1")
         return False
-    
+
     if back_test_mode == 1:
-        print(f"✅ config.ini 設定確認:")
+        print(f"✅ {os.path.basename(config_file)} 設定確認:")
         print(f"   - back_test = 1 (バックテストモード)")
         if risk_percentage is not None:
             print(f"   - risk_percentage = {risk_percentage} ({risk_percentage*100:.0f}%)")
@@ -109,21 +130,18 @@ def verify_backtest_mode():
             print(f"   - leverage = {leverage}倍")
         return True
     else:
-        print(f"❌ エラー: config.ini の back_test が 1 に設定されていません")
+        print(f"❌ エラー: {os.path.basename(config_file)} の back_test が 1 に設定されていません")
         print(f"   現在の値: back_test = {back_test_mode}")
         print(f"   必須設定: back_test = 1")
-        print(f"")
-        print(f"修正方法:")
-        print(f"  1. {CONFIG_FILE} を開く")
-        print(f"  2. '[Backtest]' セクション内の 'back_test' を 1 に変更")
-        print(f"  3. ファイルを保存")
-        print(f"  4. 再度このスクリプトを実行")
         return False
 
 
-def get_quarter_dates(year, q):
+def get_quarter_dates(year, q, symbol="BTC"):
     """四半期の開始日と終了日を返す"""
     q_start = datetime(year, (q-1)*3 + 1, 1)
+    # XAUT データ開始: 2025-04-03。初期ルックバック(40*4H=160H=6.7日)確保のため Q2 2025 は April 14 から
+    if symbol == "XAUT" and year == 2025 and q == 2:
+        q_start = datetime(2025, 4, 14)
     q_end = (q_start + relativedelta(months=3)) - timedelta(seconds=1)
     
     if q_end > datetime.now():
@@ -132,21 +150,23 @@ def get_quarter_dates(year, q):
     return q_start, q_end
 
 
-def update_config(year, q):
-    """config.ini の期間を指定の四半期に更新"""
-    q_start, q_end = get_quarter_dates(year, q)
+def update_config(year, q, config_file=None, symbol="BTC"):
+    """指定した設定ファイルの期間を指定の四半期に更新"""
+    if config_file is None:
+        config_file = CONFIG_FILE
+    q_start, q_end = get_quarter_dates(year, q, symbol=symbol)
     start_str = q_start.strftime("%Y/%m/%d %H:%M")
     end_str = q_end.strftime("%Y/%m/%d %H:%M")
-    
-    # config.ini を読む
-    with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+
+    # config ファイルを読む
+    with open(config_file, 'r', encoding='utf-8') as f:
         content = f.read()
-    
+
     # Period セクションを更新
     lines = content.split('\n')
     new_lines = []
     in_period = False
-    
+
     for line in lines:
         if line.strip().startswith('[Period]'):
             in_period = True
@@ -160,28 +180,39 @@ def update_config(year, q):
             new_lines.append(f"end_time = {end_str}")
         else:
             new_lines.append(line)
-    
-    # config.ini に書き込む
-    with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+
+    # config ファイルに書き込む
+    with open(config_file, 'w', encoding='utf-8') as f:
         f.write('\n'.join(new_lines))
-    
+
     return start_str, end_str
 
 
-def run_backtest(year, q, start_str, end_str):
+def run_backtest(year, q, start_str, end_str, config_name=None, symbol="BTC"):
     """バックテストを実行し、結果を返す"""
     print(f"\n🚀 バックテスト実行: Q{q} {year} ({start_str} ～ {end_str})")
-    
+
     os.chdir(SRC_DIR)
-    
+
+    # 実行前に古い backtest_summary_*.json を削除（前回結果の混入防止）
+    import glob as _glob
+    for old_f in _glob.glob('logs/**/backtest_summary_*.json', recursive=True):
+        try:
+            os.remove(old_f)
+        except Exception:
+            pass
+
     # 環境変数でログディレクトリを指定（Q別ロギング用）
     env = os.environ.copy()
     env['QUARTERLY_LOG_PREFIX'] = f"Q{q}_{year}"
-    
+
     try:
         # bot.py を直接実行（bot_run.sh は削除済み）
+        cmd = ['python', 'bot.py']
+        if config_name and config_name != 'config.ini':
+            cmd += ['--config', config_name]
         result = subprocess.run(
-            ['python', 'bot.py'],
+            cmd,
             capture_output=True,
             text=True,
             timeout=600,
@@ -208,9 +239,9 @@ def run_backtest(year, q, start_str, end_str):
         
         # ログファイルから結果を抽出
         import glob
-        
-        # backtest_summary_*.json を優先的に探す
-        summary_logs = glob.glob('logs/backtest_summary_*.json')
+
+        # backtest_summary_*.json を優先的に探す（サブディレクトリも含む）
+        summary_logs = glob.glob('logs/**/backtest_summary_*.json', recursive=True)
         if summary_logs:
             latest_log = max(summary_logs, key=os.path.getmtime)
         else:
@@ -240,10 +271,10 @@ def run_backtest(year, q, start_str, end_str):
             print(f"   ⚠️  ログファイル形式が不正です")
             return None
         
-        # Trade Log ファイルを Q別ディレクトリにコピー
-        trade_log_files = glob.glob('logs/trade_log_*.json')
+        # Trade Log ファイルを Q別・シンボル別ディレクトリにコピー
+        trade_log_files = glob.glob('logs/**/trade_log_*.json', recursive=True)
         if trade_log_files:
-            quarterly_logs_dir = os.path.join(WORKSPACE_ROOT, "logs/quarterly")
+            quarterly_logs_dir = os.path.join(WORKSPACE_ROOT, "logs/quarterly", symbol)
             os.makedirs(quarterly_logs_dir, exist_ok=True)
             
             copied_count = 0
@@ -304,13 +335,16 @@ def run_backtest(year, q, start_str, end_str):
         os.chdir(WORKSPACE_ROOT)
 
 
-def save_results(results):
+def save_results(results, output_dir=None):
     """結果をJSON形式で保存"""
-    output_file = os.path.join(OUTPUT_DIR, f"quarterly_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
-    
+    if output_dir is None:
+        output_dir = OUTPUT_DIR
+    os.makedirs(output_dir, exist_ok=True)
+    output_file = os.path.join(output_dir, f"quarterly_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
+
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
-    
+
     return output_file
 
 
@@ -444,50 +478,69 @@ def print_summary(results):
     return annual_evals
 
 
+def parse_args():
+    """コマンドライン引数を解析する"""
+    parser = argparse.ArgumentParser(description='四半期別バックテスト実行')
+    parser.add_argument('--config', default='config.ini',
+                        help='使用する設定ファイル名 (src/ 相対, デフォルト: config.ini)')
+    parser.add_argument('year', nargs='?', type=int, help='特定の年 (省略可)')
+    parser.add_argument('quarter', nargs='?', type=int, help='特定の四半期 1-4 (省略可)')
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
+
+    # 設定ファイルパスを確定
+    config_name = args.config  # ファイル名のみ (例: config.ini, config_xaut.ini)
+    config_file = os.path.join(SRC_DIR, config_name)
+
+    # シンボル名を設定ファイルから取得
+    symbol = get_market_from_config(config_file)
+
+    # シンボル別の出力ディレクトリ
+    output_dir = os.path.join(WORKSPACE_ROOT, "docs/quarterly_backtest_results", symbol)
+    os.makedirs(output_dir, exist_ok=True)
+
     print("=" * 100)
-    print("🎯 四半期別バックテスト実行")
+    print(f"🎯 四半期別バックテスト実行  [{symbol}]")
     print("=" * 100)
-    
-    # config.ini の back_test = 1 を確認
+
+    # config の back_test = 1 を確認
     print("\n🔍 バックテスト設定確認")
-    if not verify_backtest_mode():
+    if not verify_backtest_mode(config_file):
         print("\n❌ バックテスト実行中止\n")
         sys.exit(1)
-    
-    # 引数チェック
+
+    # 特定四半期指定チェック
     target_quarters = None
-    if len(sys.argv) > 2:
-        try:
-            year = int(sys.argv[1])
-            q = int(sys.argv[2])
-            if 2024 <= year <= datetime.now().year and 1 <= q <= 4:
-                target_quarters = [(year, q)]
-        except ValueError:
-            pass
-    
-    quarters = target_quarters if target_quarters else get_quarters()
+    if args.year and args.quarter:
+        if 2024 <= args.year <= datetime.now().year and 1 <= args.quarter <= 4:
+            target_quarters = [(args.year, args.quarter)]
+
+    quarters = target_quarters if target_quarters else get_quarters(symbol)
     results = []
-    
+
     print(f"\n対象四半期: {len(quarters)}\n")
-    
+
     # ログディレクトリを表示
-    quarterly_logs_dir = os.path.join(WORKSPACE_ROOT, "logs/quarterly")
+    quarterly_logs_dir = os.path.join(WORKSPACE_ROOT, "logs/quarterly", symbol)
     print(f"📁 ログ出力先: {quarterly_logs_dir}\n")
-    
+    os.makedirs(quarterly_logs_dir, exist_ok=True)
+
     for year, q in quarters:
-        q_start, q_end = get_quarter_dates(year, q)
+        q_start, q_end = get_quarter_dates(year, q, symbol=symbol)
         start_str = q_start.strftime("%Y/%m/%d %H:%M")
         end_str = q_end.strftime("%Y/%m/%d %H:%M")
-        
-        # config.ini を更新
+
+        # config ファイルを更新
         print(f"\n📝 設定更新: Q{q} {year}")
-        update_config(year, q)
-        print(f"   ✅ config.ini を更新しました")
-        
+        update_config(year, q, config_file, symbol=symbol)
+        print(f"   ✅ {config_name} を更新しました")
+
         # バックテスト実行
-        metrics = run_backtest(year, q, start_str, end_str)
-        
+        metrics = run_backtest(year, q, start_str, end_str, config_name, symbol=symbol)
+
         results.append({
             'year': year,
             'quarter': q,
@@ -496,26 +549,28 @@ def main():
             'metrics': metrics,
             'timestamp': datetime.now().isoformat()
         })
-    
+
     # 結果を表示
     annual_evals = print_summary(results)
-    
+
     # 結果をファイルに保存（年間評価も含む）
     save_data = {
+        "symbol": symbol,
+        "config": config_name,
         "quarterly": results,
         "annual": {str(k): v for k, v in annual_evals.items()},
         "generated_at": datetime.now().isoformat(),
     }
-    output_file = save_results(save_data)
+    output_file = save_results(save_data, output_dir)
     print(f"✅ 結果を保存しました: {output_file}")
-    
+
     # ログファイルの確認（要約情報のみ）
     print(f"\n📊 Q別ログファイル要約:")
     if os.path.exists(quarterly_logs_dir):
         log_files = os.listdir(quarterly_logs_dir)
         if log_files:
             total_size_mb = sum(
-                os.path.getsize(os.path.join(quarterly_logs_dir, f)) 
+                os.path.getsize(os.path.join(quarterly_logs_dir, f))
                 for f in log_files
             ) / (1024 * 1024)
             print(f"  ✓ ファイル数: {len(log_files)} 件")
@@ -523,7 +578,7 @@ def main():
             print(f"  ✓ 保存先: {quarterly_logs_dir}")
         else:
             print(f"  (ログファイルなし)")
-    
+
     return results
 
 

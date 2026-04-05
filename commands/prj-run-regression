@@ -38,16 +38,27 @@ START_TIME=$(date +%s)
 ERRORS=0
 
 # ======================================
-# フルモード: Test 1 - 四半期別バックテスト
+# フルモード: Test 1 - 四半期別バックテスト（BTC）
 # ======================================
 if [ $FULL_MODE -eq 1 ]; then
     echo -e "${YELLOW}========================================${NC}"
-    echo -e "${YELLOW}📊 Test 1: 四半期別バックテスト実行${NC}"
+    echo -e "${YELLOW}📊 Test 1a: 四半期別バックテスト実行 [BTC]${NC}"
     echo -e "${YELLOW}========================================${NC}"
     if python3 run_quarterly_backtest.py; then
-        echo -e "${GREEN}✅ run_quarterly_backtest.py - 正常終了${NC}"
+        echo -e "${GREEN}✅ run_quarterly_backtest.py [BTC] - 正常終了${NC}"
     else
-        echo -e "${RED}❌ run_quarterly_backtest.py - 失敗${NC}"
+        echo -e "${RED}❌ run_quarterly_backtest.py [BTC] - 失敗${NC}"
+        ERRORS=$((ERRORS + 1))
+    fi
+    echo ""
+
+    echo -e "${YELLOW}========================================${NC}"
+    echo -e "${YELLOW}📊 Test 1b: 四半期別バックテスト実行 [XAUT]${NC}"
+    echo -e "${YELLOW}========================================${NC}"
+    if python3 run_quarterly_backtest.py --config config_xaut.ini; then
+        echo -e "${GREEN}✅ run_quarterly_backtest.py [XAUT] - 正常終了${NC}"
+    else
+        echo -e "${RED}❌ run_quarterly_backtest.py [XAUT] - 失敗${NC}"
         ERRORS=$((ERRORS + 1))
     fi
     echo ""

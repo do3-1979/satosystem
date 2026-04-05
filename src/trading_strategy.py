@@ -571,7 +571,7 @@ class TradingStrategy:
                 'entry_price': current_price.get('close_price', 0),
                 'entry_adx': self.risk_manager.get_adx(),
                 'entry_pvo': current_price.get('pvo_val', 0) or current_price.get('pvo', 0),
-                'entry_time': current_price.get('timestamp', 0),  # タイムスタンプ（数値）を記録
+                'entry_time': current_price.get('timestamp') or current_price.get('close_time', 0),  # タイムスタンプ（数値）を記録
                 'strategy_result': strategy_result,  # Strategy結果も記録
             }
             # self.logger.log(f"[DEBUG ENTRY RECORD] entry_record保存: entry_time={self.entry_record['entry_time']}, entry_price={self.entry_record['entry_price']}")
@@ -699,8 +699,8 @@ class TradingStrategy:
         # 現在のOHLCVと指標を取得
         current_ohlcv = self.price_data_management.get_latest_ohlcv()
         
-        # timestampがない場合はclose_timeをtimestampとして設定（Time-Based Exit用）
-        if 'timestamp' not in current_ohlcv and 'close_time' in current_ohlcv:
+        # timestampがない場合やNoneの場合はclose_timeをtimestampとして設定（Time-Based Exit用）
+        if not current_ohlcv.get('timestamp') and 'close_time' in current_ohlcv:
             current_ohlcv['timestamp'] = current_ohlcv['close_time']
         
         #-------------------------------------------------------
@@ -709,9 +709,9 @@ class TradingStrategy:
         # ストップロスより優先して、保有時間制限をチェック
         try:
             position_info = {
-                # NOTE: entry_price=0 はベースライン互換のため意図的（0の場合TBEは P&L判定をスキップしてshould_exit=False）
+                # NOTE: entry_price は TBE 用に実際のエントリー価格を使用（TBE無効の場合はこのブロック未到達）
                 # Chandelier/PSL用の entry_price は各ブロック内で get_position_price() を使用
-                'entry_price': 0,
+                'entry_price': self.portfolio.get_position_price() or 0,
                 'quantity': self.portfolio.get_position_quantity(),
                 'side': position_side,
             }

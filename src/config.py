@@ -37,6 +37,13 @@ class Config:
     _override_end_time = None
 
     @classmethod
+    def load_config(cls, config_path: str):
+        """指定パスの設定ファイルを再読み込みする（マルチアセット対応）"""
+        cls.config_path = config_path
+        cls.config = configparser.ConfigParser(interpolation=None)
+        cls.config.read(config_path, encoding="utf-8_sig")
+
+    @classmethod
     def get_api_key(cls):
         """
         APIキーを取得します (後方互換性のため、Bitgetキーを返す).
@@ -346,7 +353,7 @@ class Config:
         Returns:
             datetime: 開始時刻 (epoch)
         """
-        start_time_str = cls.config['Period']['start_time']
+        start_time_str = cls._override_start_time if cls._override_start_time is not None else cls.config['Period']['start_time']
         start_time = datetime.strptime(start_time_str, "%Y/%m/%d %H:%M")
         #start_time = pytz.timezone('epoch').localize(start_time)
         start_unix = int(start_time.timestamp())
@@ -361,7 +368,7 @@ class Config:
             datetime: 終了時刻 (epoch)
         """
         end_unix = 9999999999
-        end_time_str = cls.config['Period']['end_time']
+        end_time_str = cls._override_end_time if cls._override_end_time is not None else cls.config['Period']['end_time']
 
         if (end_time_str == "None") or (end_time_str == ""):
             pass
