@@ -1,1556 +1,248 @@
 {
   "meta": {
-    "version": "1.0",
-    "last_updated": "2026-04-04",
-    "description": "satosystem gen2 - Task management (Task 48 Gold System追加・HOLD中) - ベースライン: 2394.47 USD (9四半期 2024Q1-2026Q1)",
+    "version": "2.0",
+    "last_updated": "2026-04-05",
+    "description": "satosystem gen2 - Task management (BTC+XAUTデュアルアセット運用体制)",
     "replaces": "docs/ACTION_LIST.md",
+    "baselines": {
+      "btc": {
+        "cumulative_pnl_usd": 2394.47,
+        "period": "2024Q1-2026Q1 (9四半期)",
+        "file": "baseline_backup/BASELINE_2394.47USD_Q1_2026_20260404.json"
+      },
+      "xaut": {
+        "cumulative_pnl_usd": 63.39,
+        "period": "2025Q2-2026Q1 (4四半期)",
+        "file": "baseline_backup/BASELINE_XAUT_63.39USD_20260405.json"
+      }
+    },
+    "test_suite": "190/190 PASS (BTC 162 + XAUT 28)",
     "workflow_rules": {
       "baseline_before_action": "アクションリスト実行前に必ずレグレッションテストを実行し、PROGRESS.json baseline_regressionに保存すること",
       "comparison_source": "アクションリスト実行時の比較元としてPROGRESS.json baseline_regressionを活用すること"
     }
   },
+  "summary": {
+    "todo": 7,
+    "progress": 2,
+    "done": 20
+  },
   "tasks": {
     "progress": [
+      {
+        "id": "48",
+        "category": "新システム・マルチアセット",
+        "title": "Gold (XAUT/USDT) 自動取引システム実装",
+        "priority": 5,
+        "status": "in_progress",
+        "started_date": "2026-04-04",
+        "description": "XAUT/USDT無期限先物のDonchian Breakout戦略実装。BTC BOTと並列稼働。",
+        "completed_subtasks": [
+          "48-A: 取引所・データ調査 ✅",
+          "48-B: bybit/bitget XAUT マッピング ✅",
+          "48-C: config_xaut.ini 最適化 ✅ (donchian=40, pvo=0, adx=26, lev=7, chandelier_exit=1)",
+          "48-D: XAUT OHLCVデータ取得（366日分4H足）✅",
+          "48-E: ベースラインバックテスト ✅ (63.39 USD)",
+          "48-F: パラメータスイープ ✅ (最適値決定)",
+          "48-G: 出口戦略 ✅ (Chandelier Exit採用, time_based_exit=96h)",
+          "PID分離（start_bot.sh/stop_bot.sh --config対応）✅",
+          "monitor_web デュアル表示対応 ✅",
+          "monitor_bot --asset対応 ✅",
+          "レグレッションテスト 190/190 PASS ✅"
+        ],
+        "remaining_subtasks": [
+          "48-H: RPi並列稼働テスト（BTC+XAUT同時起動・CPU/MEM確認）",
+          "48-I: ペーパートレード（2週間監視）",
+          "48-J: 本番稼働開始"
+        ],
+        "baseline": {
+          "xaut_cumulative_pnl_usd": 63.39,
+          "period": "2025Q2-2026Q1 (4四半期)",
+          "file": "baseline_backup/BASELINE_XAUT_63.39USD_20260405.json"
+        }
+      },
       {
         "id": "46",
         "category": "インフラ・安定化",
         "title": "RPi USB安定稼働 Ubuntu Server設定最適化",
-        "description": "Transcend JetFlash USB(sda 58.9G)からのブート環境で長期安定稼働するためのLinux設定最適化。journaldのvolatile化(USB→RAM)、vm.dirty書き込み頻度削減、noatime設定、unattended-upgrades自動再起動無効化。スクリプト: ~/rpi_stability_setup.sh",
         "priority": 3,
-        "started_date": "2026-03-13",
         "status": "in_progress",
-        "steps": [
-          "設定スクリプト作成・RPiに転送済み (rpi_stability_setup.sh)",
-          "ユーザーがRPiで sudo bash ~/rpi_stability_setup.sh を実行",
-          "設定確認・完了報告"
-        ],
-        "optimizations": {
-          "sysctl": "vm.dirty_writeback_centisecs:500→1500 / vm.dirty_expire_centisecs:3000→6000 / dirty_ratio:20→40",
-          "journald": "Storage=volatile (214MB USBジャーナルをRAMへ)",
-          "fstab": "defaults,noatime,nodiratime (アクセス時刻書き込み削減)",
-          "unattended_upgrades": "Automatic-Reboot=false (意図しない再起動防止)"
-        },
-        "note": "BOT稼働中(uptime 111日)のため再起動不要手順で実施。noatimeはremount即時適用。"
-      },
-      {
-        "id": "44",
-        "category": "インフラ・移行",
-        "title": "取引所移行（Bybit → 代替取引所）",
-        "description": "Bybit日本向けClose-Only期限（2026-03-23 12:00 JST）前に代替取引所への移行完了。Bitgetは4H足240日制限（バックテスト不可・ライブは可）。OKX/Gate.ioを候補として調査・実装。",
-        "priority": 5,
-        "due_date": "2026-03-22",
-        "started_date": "2026-03-07",
-        "subtasks": [
-          {
-            "id": "44a",
-            "title": "代替取引所OHLCV取得テスト（2年分4H足）",
-            "due": "2026-03-09",
-            "status": "todo"
-          },
-          {
-            "id": "44b",
-            "title": "新取引所exchange.py実装（okx/gateio）",
-            "due": "2026-03-13",
-            "status": "todo"
-          },
-          {
-            "id": "44c",
-            "title": "バックテスト同等性確認・レグレッションテスト",
-            "due": "2026-03-16",
-            "status": "todo"
-          },
-          {
-            "id": "44d",
-            "title": "RPiデプロイ・本番切り替えテスト",
-            "due": "2026-03-19",
-            "status": "todo"
-          }
-        ],
-        "exchange_notes": {
-          "bitget": "ライブ取引○・バックテスト用4H足は240日制限で不足（OKX/Gate.ioと組み合わせ要）",
-          "okx": "4H過去2年以上取得可・ccxt.okx・日本アクセス要確認",
-          "gateio": "4H過去2年以上取得可・ccxt.gateio・日本からアクセス可"
-        },
-        "critical_deadline": "2026-03-23 12:00 JST（Bybit Close-Only開始）"
+        "started_date": "2026-03-13",
+        "description": "Transcend JetFlash USBブート環境の長期安定稼働設定。journald volatile化、vm.dirty最適化、noatime設定。スクリプト: ~/rpi_stability_setup.sh",
+        "remaining": "ユーザーがRPiで sudo bash ~/rpi_stability_setup.sh を実行"
       }
     ],
     "todo": [
-      {
-        "id": "40f",
-        "category": "データ品質",
-        "title": "価格データの健全性チェック（欠損/異常値/時間ずれ/取引所差）",
-        "description": "OHLCVの欠損・重複・タイムゾーンずれ・スパイクを検出し、必要なら補正/除外。取引所切替やデータソース変更で性能が「見かけ」変化しないようにする",
-        "priority": 3,
-        "related_doc": "docs/PRICE_DATA_FLOW_DESIGN.md",
-        "estimated_impact_usd": null
-      },
-      {
-        "id": "23a",
-        "category": "段階1（即座）",
-        "title": "Fear & Greed Index 統合",
-        "description": "過度な楽観/恐怖でのエントリー抑制（+5-8%期待、2-3h）",
-        "priority": 3,
-        "related_doc": "IMPLEMENTATION_ROADMAP",
-        "estimated_impact_usd": null,
-        "estimated_hours": [
-          2,
-          3
-        ]
-      },
-      {
-        "id": "23b",
-        "category": "段階1（即座）",
-        "title": "RSI 二重確認実装",
-        "description": "過買い状態でのロング回避（+2-3%期待、1-2h）",
-        "priority": 3,
-        "related_doc": "IMPLEMENTATION_ROADMAP",
-        "estimated_impact_usd": null,
-        "estimated_hours": [
-          1,
-          2
-        ]
-      },
-      {
-        "id": "40i",
-        "category": "ポートフォリオ",
-        "title": "銘柄分散・相関管理（BTC単一→複数候補）",
-        "description": "BTC単一の機会損失とレジーム偏りを避けるため、ETH等の複数銘柄で同一ルール/別パラメータの検証と、同時保有上限・相関によるリスク制限を追加。Task 31でETHテスト失敗したため慎重に",
-        "priority": 2,
-        "related_doc": "docs/PROFIT_ENHANCEMENT_STRATEGY_2026.md, Task 31 (ETH不採用)",
-        "estimated_impact_usd": null
-      },
-      {
-        "id": "38d",
-        "category": "2025年補助フィルター",
-        "title": "Volume Profile Analysis 実装",
-        "description": "出来高集中価格帯判定、VCP/Mean Reversion併用",
-        "priority": 2,
-        "related_doc": "主要戦略完了後検討",
-        "estimated_impact_usd": null
-      },
-      {
-        "id": "38e",
-        "category": "2025年補助フィルター",
-        "title": "Market Microstructure 実装",
-        "description": "Bid-Ask Spread分析、流動性低下時エントリー抑制",
-        "priority": 1,
-        "related_doc": "優先度低・Phase 4検討",
-        "estimated_impact_usd": null
-      },
-      {
-        "id": "6",
-        "category": "ログ制御・出力",
-        "title": "ログファイル自動整理・定期クリーンアップ機能の実装",
-        "description": "手動実施完了(2026-02-08)、自動化は低優先度",
-        "priority": 1,
-        "related_doc": "QUARTERLY_BACKTEST分析参照",
-        "estimated_impact_usd": null
-      }
-    ],
-    "progress_memo": "2026-03-06: OHLCVキャッシュDB更新ツール（tools/update_ohlcv_db.py）実装完了。Bybit公開API経由でデータ蓄積可。docs/analysis/をアーカイブ化（更新コスト>メリットのため運用終了）。Bybit Close-Only期限: 2026-03-23。",
-    "done": [
-    ],
-    "todo": [
-      {
-        "id": "48",
-        "category": "新システム・マルチアセット",
-        "title": "Gold (XAUT/USDT) 自動取引システム実装プロジェクト",
-        "priority": "★★★★☆",
-        "status": "HOLD - データ取得・バックテスト待ち",
-        "created_date": "2026-04-04",
-        "description": "BTC取引ボット以外の自動利益獲得システムとしてXAUT/USDT（テザーゴールド）無期限先物を対象とした Donchian Breakout + PVO + ADX + TSMOM 戦略の実装。既存BTCボットと並列稼働。最終目標: 年間利回り+50%（Gold分）",
-        "research_findings": {
-          "research_date": "2026-04-04",
-          "item_A_bitget_xaut": {
-            "status": "✅ 解決済み",
-            "result": "Bitget XAUTUSDT 無期限先物 存在確認",
-            "details": {
-              "symbol": "XAUTUSDT",
-              "symbolStatus": "normal",
-              "listed_date": "2025-04-03",
-              "makerFeeRate": "0.0002 (0.02%)",
-              "takerFeeRate": "0.0006 (0.06%)",
-              "minTradeNum": "0.01 XAUT (≈46USD at current price)",
-              "minTradeUSDT": "5 USDT",
-              "maxLeverage": "75x",
-              "fundingInterval": "4H",
-              "japan_access": "✅ 既存BTCボットがBitgetを使用中（日本からアクセス可）",
-              "liquidation": "✅ Bitget取引所の強制ロスカット機能あり（借金リスクなし）"
-            }
-          },
-          "item_ohlcv_data": {
-            "status": "✅ 解決済み",
-            "result": "Bybit XAUTUSDT データ 366日分（約2196本の4H足）取得可能",
-            "details": {
-              "bybit_xaut_launch": "2025-04-03 11:05:59 UTC",
-              "available_4h_candles": "約2196本（366日）",
-              "note": "Bybit公開APIは認証不要のためJapan Close-Only制限後も取得可能と推測されるが要確認（Task 44依存）"
-            }
-          },
-          "item_B_parallel_rpi": {
-            "status": "⚠️ 未解決 - 確認が必要",
-            "concern": "RPi上で2プロセス並列稼働時のCPU/MEM負荷。Bot1(BTC)とBot2(XAUT)がBybit APIを同時呼び出しするとRATE LIMIT衝突リスクがある。server_retry_waitの値を両設定でずらすことで軽減可能",
-            "action_needed": "RPi htop確認後、CPU>80%またはMEM>80%なら並列稼働は見送り"
-          },
-          "item_C_gold_params": {
-            "status": "✅ 解決済み",
-            "result": "推奨値で開始してから最適化（ユーザー決定: 2026-04-04）",
-            "applied_params": {
-              "donchian_buy_term": "30 → 55",
-              "donchian_sell_term": "30 → 55",
-              "leverage": "10 → 5",
-              "adx_bull_threshold": "24 → 21",
-              "adx_bear_threshold": "18 → 16",
-              "adx_filter_threshold": "31 → 26",
-              "pvo_threshold": "10 → 7",
-              "tsmom_filter_lookback": "150 → 200",
-              "max_holding_hours": "72 → 96"
-            }
-          },
-          "item_D_exit_strategy": {
-            "status": "✅ 解決済み",
-            "result": "ATRトレーリング（Chandelier Exit）を起点とし採用（ユーザー決定: 2026-04-04）",
-            "config": {
-              "enable_chandelier_exit": 1,
-              "chandelier_period": 22,
-              "chandelier_mult": 3.0,
-              "chandelier_replaces_psar": 1
-            },
-            "optimization_alternatives": ["PSAR維持（lookback延長）", "ドンチャン逆ブレイク"]
-          },
-          "item_E_lot_limit": {
-            "status": "✅ 解決済み",
-            "result": "config_xaut.iniのlot_limit_lowerを0.001→0.01に修正済み（2026-04-04）"
-          },
-          "item_F_long_short": {
-            "status": "✅ 解決済み",
-            "result": "XAUT/USDT無期限先物はロング・ショート両方可能。既存BotのBUY/SELLロジックはそのまま使用可"
-          }
-        },
-        "week1_completed": {
-          "done": [
-            "config.py: load_config() classmethod 追加（動的INI切替）",
-            "bot.py: --config 引数パース追加",
-            "bybit_exchange.py: XAUT/USDT, PAXG/USDT マッピング + 汎用フォールバック",
-            "src/config_xaut.ini: 新規作成（Gold専用設定 market=XAUT/USDT）",
-            "tools/update_ohlcv_db.py: --symbol オプション追加（XAUT等のデータ取得対応）",
-            "src/start_gold_bot.sh: 新規作成（Gold Bot専用起動スクリプト）"
-          ],
-          "regression_test": "183/183 PASS（既存BTC機能への影響なし確認済み）",
-          "commit_status": "HOLD - 課題解決待ち（命令.md参照）"
-        },
-        "hold_reasons": [
-          "B: RPi並列稼働テストが未実施（バックテスト完了後に実施）"
-        ],
-        "prerequisite_decision_needed": [
-          "4. Bybit Japan制限後もOHLCVデータ取得可能か確認（Task 44と連動）"
-        ],
-        "subtasks": [
-          {
-            "id": "48-A",
-            "title": "取引所・データ調査（リサーチ）",
-            "status": "✅ 完了（2026-04-04）",
-            "findings": "Bitget XAUTUSDT先物存在確認。日本アクセス可。データ366日分あり。詳細はresearch_findingsを参照"
-          },
-          {
-            "id": "48-B",
-            "title": "bitget_exchange.py XAUT/USDT マッピング追加",
-            "status": "🔒 HOLD",
-            "description": "bitget_exchange.py 101〜104行目にXAUT/USDTマッピング追加（BTC/ETHと同様の形式）",
-            "files": ["src/bitget_exchange.py"],
-            "estimated_effort": "30分"
-          },
-          {
-            "id": "48-C",
-            "title": "config_xaut.ini パラメータ修正（lot_limit_lower・leverage・金向けパラメータ）",
-            "status": "✅ 完了（2026-04-04）",
-            "required_changes": [
-              "lot_limit_lower: 0.001 → 0.01（Bitget最小注文対応）",
-              "leverage: 10 → 3〜5（ユーザー承認後）",
-              "donchian_buy_term / donchian_sell_term: 30 → バックテスト後に最適値",
-              "adx_bull_threshold / adx_filter_threshold: ユーザー承認後",
-              "tsmom_filter_lookback: 150 → バックテスト後に最適値"
-            ],
-            "files": ["src/config_xaut.ini"]
-          },
-          {
-            "id": "48-D",
-            "title": "XAUT OHLCVデータ取得（Bybit公開API）",
-            "status": "🔒 HOLD",
-            "command": "./commands/prj-update-ohlcv-db --symbol XAUT/USDT --full",
-            "expected": "約2196本の4H足データ（2025-04-03〜現在）",
-            "prerequisite": "48-B完了後 / Bybit Japan制限後もAPI取得可能確認"
-          },
-          {
-            "id": "48-E",
-            "title": "BTCデフォルトパラメータでのXAUTバックテスト（ベースライン測定）",
-            "status": "🔒 HOLD",
-            "description": "まず現状BTCパラメータそのままでXAUTを動かし、どの程度機能するかベースライン取得。その後パラメータ最適化で改善",
-            "prerequisite": "48-D完了後"
-          },
-          {
-            "id": "48-F",
-            "title": "金向けパラメータ最適化（パラメータスイープ）",
-            "status": "🔒 HOLD",
-            "description": "donchian_term × leverage × adx_threshold の3軸スイープ。BTCと同様のrun_param_sweep.py活用",
-            "sweep_candidates": {
-              "donchian_buy_term": [20, 30, 40, 55, 70, 80],
-              "leverage": [3, 5, 7, 10],
-              "adx_filter_threshold": [20, 25, 28, 31]
-            },
-            "prerequisite": "48-E完了後（ベースライン確認後）"
-          },
-          {
-            "id": "48-G",
-            "title": "出口戦略評価（ATRトレーリング vs ドンチャン逆ブレイク vs PSAR）",
-            "status": "✅ 初期方針決定（ATRトレーリングで開始）",
-            "description": "金の長尺トレンド特性に合わせた出口戦略を選択・実装する。BTCではPSARが最適だったが金では異なる可能性",
-            "prerequisite": "48-F完了後、ユーザーの出口戦略方針確定後"
-          },
-          {
-            "id": "48-H",
-            "title": "RPi並列稼働テスト（BTC+XAUT同時起動）",
-            "status": "🔒 HOLD",
-            "description": "RPiでBTC Bot + XAUT Bot の2プロセス同時稼働。CPU/MEM使用率・APIレートリミット競合をモニタリング。htopで確認",
-            "success_criteria": ["CPU使用率 < 80%", "MEM使用率 < 80%", "Rate Limitエラーなし（or自動回復する）"],
-            "prerequisite": "48-F完了後"
-          },
-          {
-            "id": "48-I",
-            "title": "ペーパートレード（2週間監視）",
-            "status": "🔒 HOLD",
-            "description": "hot_test_dummy_mode=1で2週間ライブ市場動作確認。シグナル発生・エントリー条件の検証",
-            "prerequisite": "48-H完了後"
-          },
-          {
-            "id": "48-J",
-            "title": "本番稼働開始（XAUT Gold Bot）",
-            "status": "🔒 HOLD",
-            "description": "back_test=0, hot_test_dummy_mode=0で本番稼働。BTC Botと独立したPID管理・ログ管理",
-            "prerequisite": "48-I完了後（ペーパートレード問題なし確認後）"
-          }
-        ],
-        "week_plan": {
-          "week1": "✅ 完了: インフラ整備（config/bot.py/bybit改修）",
-          "week2": "🔒 HOLD: 48-B（bitget対応）+ 48-C（パラメータ修正）+ 48-D（データ取得）",
-          "week3": "🔒 HOLD: 48-E（ベースラインバックテスト）+ 48-F前半（スイープ）",
-          "week4": "🔒 HOLD: 48-F後半（最適化）+ 48-G（出口戦略評価）",
-          "week5": "🔒 HOLD: 48-H（RPi並列テスト）+ 48-I（ペーパートレード）",
-          "week6": "🔒 HOLD: 48-J（本番稼働）"
-        }
-      },
       {
         "id": "47",
         "category": "仕様改善",
         "title": "残高取得・指定モードの修正",
-        "description": "ホットテスト・バックテスト・本番いずれも初期値はアカウントの実残高を取得する。オプションとして、任意の残高を指定できるモードをconfig.iniに追加し、指定時のみconfig.iniの値を使用する。config.iniのaccount_balanceはこの任意指定モード時のみ有効とする。",
         "priority": 4,
-        "steps": [
-          "1. デフォルトでAPIから実残高を取得するよう修正（Bybit/Bitget両対応）",
-          "2. config.iniに 'use_custom_balance' オプションを追加（0=API取得, 1=任意指定）",
-          "3. use_custom_balance=1のときのみaccount_balance値を使用",
-          "4. テスト・本番・ホットテストすべてで一貫して適用",
-          "5. ドキュメント・設定例を更新"
-        ],
-        "note": "現状はconfig.iniのaccount_balanceが常に表示されるが、今後はAPI取得が標準となる。"
+        "description": "デフォルトでAPIから実残高を取得、use_custom_balance=1のときのみconfig値使用"
       },
       {
-        "id": "40i-eth-pdca1",
-        "title": "ETH/USDT PDCA #1 パラメータスイープ検証",
-        "category": "ETH検証・銘柄分散",
-        "completed_date": "2026-03-13",
-        "result": "donchian_buy_term(20〜40) × pvo_threshold(5〜20) の20ケース × 6四半期スイープ実施。結論: BTC優位(2402.94 USD vs ETH換算421 USD、差-1981 USD)。ETH採用不可。発見: PVO閾値はETHで完全無効(出来高がつねに閾値超)、トレード数が6Q合計7回と極端に少ない。構造的問題のためパラメータ調整では解決困難。ETH採用は一時保留。",
-        "files": [
-          "run_eth_sweep.py",
-          "sweep_results/eth_sweep_results/"
-        ],
-        "key_findings": {
-          "eth_8q_estimated_pnl": 421.37,
-          "btc_8q_pnl": 2402.94,
-          "gap_usd": -1981.57,
-          "best_params": {
-            "donchian_buy_term": 30,
-            "pvo_threshold": 10
-          },
-          "root_cause": "PVO閾値が実質無効(ETH出来高が大きい), トレード数少なすぎ(6Q合計7回)",
-          "oos_positive": true,
-          "recommendation": "ETH採用保留。Task44(Bybit移行)を優先。"
-        }
+        "id": "40f",
+        "category": "データ品質",
+        "title": "価格データの健全性チェック（欠損/異常値/時間ずれ）",
+        "priority": 3,
+        "description": "OHLCVの欠損・重複・スパイクを検出・補正"
+      },
+      {
+        "id": "23a",
+        "category": "補助フィルター",
+        "title": "Fear & Greed Index 統合",
+        "priority": 3,
+        "description": "過度な楽観/恐怖でのエントリー抑制"
+      },
+      {
+        "id": "23b",
+        "category": "補助フィルター",
+        "title": "RSI 二重確認実装",
+        "priority": 3,
+        "description": "過買い状態でのロング回避"
+      },
+      {
+        "id": "40i",
+        "category": "ポートフォリオ",
+        "title": "銘柄分散・相関管理（ETH等複数候補）",
+        "priority": 2,
+        "description": "ETH等の複数銘柄検証。Task 31/40i-eth-pdca1でETH不採用のため慎重に"
+      },
+      {
+        "id": "38d",
+        "category": "補助フィルター",
+        "title": "Volume Profile Analysis 実装",
+        "priority": 2,
+        "description": "出来高集中価格帯判定"
+      },
+      {
+        "id": "6",
+        "category": "ログ制御",
+        "title": "ログファイル自動整理・定期クリーンアップ",
+        "priority": 1,
+        "description": "手動実施完了(2026-02-08)、自動化は低優先度"
+      }
+    ],
+    "done": [
+      {
+        "id": "44",
+        "title": "取引所移行（Bybit Close-Only対応）",
+        "completed_date": "2026-04-04",
+        "result": "Bybit=データ取得(公開API)、Bitget=注文執行のデュアル構成で解決。Bybit Japan Close-Only(2026-03-23)後も公開APIでOHLCV取得可能を確認"
       },
       {
         "id": "45",
-        "title": "シグナル・フィルター最適組み合わせ探索（パラメータスイープ）",
-        "description": "全エントリー/イグジットシグナル・フィルターの特性を整理し、相乗効果が期待できる5種類の組み合わせを決定。各組み合わせでパラメータスイープを実施し、ベースライン(2394.47 USD「2024Q1-2026Q1　9四半期」)超えを目指す。",
-        "priority": "★★★★★",
-        "status": "TODO",
-        "subtasks": [
-          "45a: SIGNAL_FILTER_MATRIX.json作成 ✅",
-          "45b: 5コンボ組み合わせ決定 ✅",
-          "45c: パラメータスイープ実行 ✅（36ケース）",
-          "45d: ベースライン比較 ✅ → C04+101.52USD（誤差範囲のため不採用）"
-        ],
-        "due": "2026-03-15",
-        "created": "2026-03-07",
-        "sweep_result": {
-          "winner": "C04",
-          "gain": "+101.52 USD (+4.2%)",
-          "params": "sma_direction_filter_enabled=1, sma_direction_filter_period=300"
-        },
-        "completed": "2026-03-07",
-        "result": "36ケーススイープ実施。C04 SMA(300)+TSMOM(150)がPnL+101.52USDだが誤差範囲。config変更なし・現状維持。"
+        "title": "シグナル・フィルター最適組み合わせ探索",
+        "completed_date": "2026-03-07",
+        "result": "36ケーススイープ。C04 SMA(300)+TSMOM(150)が+101.52USD(+4.2%)だが誤差範囲で不採用。現状維持"
+      },
+      {
+        "id": "40i-eth-pdca1",
+        "title": "ETH/USDT パラメータスイープ検証",
+        "completed_date": "2026-03-13",
+        "result": "BTC優位(2402.94 vs ETH 421 USD)。PVO閾値がETHで無効。ETH採用保留"
+      },
+      {
+        "id": "43",
+        "title": "RPi Live BOT 5日間稼働監視",
+        "completed_date": "2026-03-13",
+        "result": "5日間安定稼働。RATE LIMIT 16回全自動回復。残高65.67→68.63 USDT(+2.96)"
       },
       {
         "id": "ohlcv-db-tool",
         "title": "OHLCVキャッシュDB更新ツール実装",
-        "category": "運用ツール",
         "completed_date": "2026-03-06",
-        "result": "Bybit公開API（APIキー不要）経由で4H足BTC/USDT:USDTデータを取得しohlcv_cache.dbを更新するツールを実装。--append（追記）/--year 2024〜2026（年次取得）/--full（全件re-fetch）/--statsオプション対応。Bybit Close-Only期限（2026-03-23）までにデータを蓄積済みにする目的。",
-        "files": [
-          "tools/update_ohlcv_db.py",
-          "commands/prj-update-ohlcv-db"
-        ],
-        "usage": "commands/prj-update-ohlcv-db [--stats|--append|--year N|--full]"
-      },
-      {
-        "id": "archive-analysis",
-        "title": "docs/analysis JSON分析ファイルのアーカイブ化",
-        "category": "保守",
-        "completed_date": "2026-03-06",
-        "result": "docs/analysis/（26ファイル）と commands/prj-update-analysis を _archive/docs_analysis/ および _archive/ に移動。23モジュール規模では更新コスト > 活用メリットのため運用終了。AI直接ソース分析に統一。"
+        "result": "tools/update_ohlcv_db.py実装。Bybit公開API経由で4H足データ取得・蓄積"
       },
       {
         "id": "web-monitor",
         "title": "Web Monitor ダッシュボード実装",
-        "category": "運用ツール",
         "completed_date": "2026-03-06",
-        "result": "ホストPC上で動作するブラウザ向けBOT監視ダッシュボードを実装。SSH経由でRPiのログを取得しリアルタイム表示。ラズパイへの負荷ゼロ（tail -n 500 + 30秒キャッシュ）。Chart.jsによるBTC価格・損益・出来高・ボラティリティグラフ、プロセス状態・残高・エラー表示を含む洗練されたダークテーマUI。",
-        "files": [
-          "tools/web_monitor/server.py",
-          "commands/monitor_web"
-        ],
-        "usage": "cd satosystem && ./commands/monitor_web  →  http://localhost:8080"
+        "result": "ブラウザ向けBOT監視ダッシュボード。BTC+XAUTデュアル表示対応(2026-04-05更新)"
       },
       {
-        "id": "43",
-        "title": "RPi Live BOT 5日間稼働監視フェーズ（完了）",
-        "category": "インフラ・移行",
-        "completed_date": "2026-03-13",
-        "result": "2026-03-08〜2026-03-13（5日間）稼働確認。毎分メインループ正常、RATE LIMIT 16回すべて自動回復、メインループエラー1件（単発・Bitget API）のみ。残高65.67→68.63 USDT（+2.96 USDT増加）。エントリーなし（PVO<0・ADX<25・Donchian未ブレイク）は正常動作。"
+        "id": "archive-analysis",
+        "title": "docs/analysis JSONアーカイブ化",
+        "completed_date": "2026-03-06",
+        "result": "26ファイルを_archive/に移動。AI直接ソース分析に統一"
       },
       {
         "id": "40d",
-        "title": "現行戦略の見直し（エントリー精度PDCA・戦略監査）",
-        "category": "戦略監査",
+        "title": "戦略監査（エントリー精度PDCA）",
         "completed_date": "2026-03-04",
-        "baseline_before": "1985.14 USD",
-        "baseline_after": "2157.10 USD (+172.0 USD, +8.7%)",
-        "result": "5回PDCA実施。PDCA #3採用: psar_lookback_term=100→300 + tsmom_filter(lookback=200)で+172 USD改善。根本発見: OHLCVウィンドウが100本しかなく既存方向フィルター(RSI/MACD/SMA/ADX傾き)がlookbackデータ不足で全て素通り。psar_lookback拡大でPSAR精度向上+TSMOM-200(33日)で下降局面BUYを一部阻止。",
-        "pdca_results": [
-          {
-            "pdca": 1,
-            "name": "RSI方向フィルター(period=14)",
-            "result_usd": 1985.14,
-            "delta_usd": 0.0,
-            "verdict": "不採用",
-            "reason": "Donchianと冗長・変化なし"
-          },
-          {
-            "pdca": 2,
-            "name": "Donchian 55期間",
-            "result_usd": 1460.65,
-            "delta_usd": -524.49,
-            "verdict": "不採用",
-            "reason": "Q4 2024エントリー遅延で-524 USD"
-          },
-          {
-            "pdca": 3,
-            "name": "TSMOM-200 + psar_lookback=300",
-            "result_usd": 2157.1,
-            "delta_usd": 172.0,
-            "verdict": "採用",
-            "reason": "+172 USD。PSAR精度向上+33日モメンタム整合で複数四半期改善"
-          },
-          {
-            "pdca": 4,
-            "name": "ADX傾きフィルター",
-            "result_usd": 1645.52,
-            "delta_usd": -511.0,
-            "verdict": "不採用",
-            "reason": "トレンド開始時ADXまだ上昇中でなく最良エントリーを阻止"
-          },
-          {
-            "pdca": 5,
-            "name": "MACD方向フィルター",
-            "result_usd": 0.0,
-            "delta_usd": -2157.1,
-            "verdict": "不採用",
-            "reason": "全トレード阻止(0 USD)"
-          }
-        ],
-        "config_changes": [
-          "psar_lookback_term: 100 → 300",
-          "tsmom_filter_enabled: 0 → 1",
-          "tsmom_filter_lookback: 100 → 200"
-        ]
+        "result": "5回PDCA。PDCA#3採用: psar_lookback=300+tsmom(200)で+172USD(1985→2157)。ベースライン後にtsmom_lookback=150に最適化"
       },
       {
-        "id": "44",
-        "title": "イグジット戦略PDCA改善プロジェクト (Exit Strategy Optimization)",
-        "priority": 5,
-        "category": "戦略改善",
-        "description": "現状のPSARトレイリングストップ中心のイグジットを多角的に改善。10案検討 → TOP5選定 → 5回PDCA → レビュー",
-        "baseline_before": "1985.14 USD (2026-03-02)",
-        "baseline_after": "1985.14 USD (全5案不採用・ベースライン維持)",
-        "completed_date": "2026-03-03",
-        "result": "全5案不採用。根本的洞察: PSARトレイリングストップは既に最適化済みで、追加EXIT条件はDonchian Breakoutシステムのマクロトレンド利益（Q4 2024の+1831 USD等）を早期終了させるため逆効果。アクション: イグジット改善は断念し、エントリー精度向上（Task 40d）に集中。",
-        "side_effects": [
-          "run_quarterly_backtest.py: getCtime→getMtime修正（2143個の古いsummaryファイルで誤ファイル参照バグ修正）",
-          "TBE backward compatibility確認（entry_price=0でTBEが意図的に無効化されていたことを文書化）"
-        ],
-        "sub_tasks": [
-          "44a",
-          "44b",
-          "44c",
-          "44d",
-          "44e"
-        ]
+        "id": "sweep_metrics",
+        "title": "パラメータスイープ tsmom_lookback最適化",
+        "completed_date": "2026-03-04",
+        "result": "tsmom_lookback=150採用。8Q: 2402.94USD。9Q(2026Q1追加): 2394.47USD"
       },
       {
-        "id": "44a",
-        "title": "PDCA #1: Chandelier Exit 実装・検証",
-        "category": "戦略改善",
-        "parent_task": "44",
-        "pdca_id": 1,
+        "id": "44-exit",
+        "title": "イグジット戦略PDCA改善(5案)",
         "completed_date": "2026-03-03",
-        "result_usd": 175.43,
-        "baseline_usd": 1985.14,
-        "delta_usd": -1809.71,
-        "verdict": "不採用",
-        "reason": "ATR×3.0がPSAR常に優先→augmentモード発動なし。replace modeでは強トレンドでもChandelierが発動せずポジション未決済問題が発生。mult=3.0は大きすぎてPSARより常にルーズ",
-        "files_modified": [
-          "src/exit_strategy_v2.py",
-          "src/trading_strategy.py",
-          "src/config.py",
-          "src/config.ini"
-        ]
-      },
-      {
-        "id": "44b",
-        "title": "PDCA #2: Profit Step Lock 実装・検証",
-        "category": "戦略改善",
-        "parent_task": "44",
-        "pdca_id": 2,
-        "completed_date": "2026-03-03",
-        "result_usd": 1942.22,
-        "baseline_usd": 1985.14,
-        "delta_usd": -42.92,
-        "verdict": "不採用",
-        "reason": "PSLのTier1（MFE≥2%→1%以下でEXIT）がBTCの通常の2-3%揺れで早期発動→その後回復し損失拡大。Q3 2024で確認: MFE=3.4%→0.5%でEXITしたが相場継続",
-        "files_modified": [
-          "src/exit_strategy_v2.py",
-          "src/trading_strategy.py",
-          "src/config.py",
-          "src/config.ini"
-        ]
-      },
-      {
-        "id": "44c",
-        "title": "PDCA #3: ATR Trailing Stop 実装・検証",
-        "category": "戦略改善",
-        "parent_task": "44",
-        "pdca_id": 3,
-        "completed_date": "2026-03-03",
-        "result_usd": 1985.14,
-        "baseline_usd": 1985.14,
-        "delta_usd": 0.0,
-        "verdict": "不採用（未発動）",
-        "reason": "augmentモード（mult=1.5）: PSAR常に優先で発動不可。replaceモード（mult=1.5）: 強トレンドでChandelierが発動せずポジション未決済→0 USD。ATR trailing stopはこのシステムのPSAR補完として機能しない",
-        "files_modified": [
-          "src/config.ini (既存実装のパラメータ変更のみ)"
-        ]
-      },
-      {
-        "id": "44d",
-        "title": "PDCA #4: Volume Climax Exit 実装・検証",
-        "category": "戦略改善",
-        "parent_task": "44",
-        "pdca_id": 4,
-        "completed_date": "2026-03-03",
-        "result_usd": 1524.96,
-        "baseline_usd": 1985.14,
-        "delta_usd": -460.18,
-        "verdict": "不採用",
-        "reason": "Volume Climaxが強トレンドの途中でEXIT→その後トレンド継続で損失。Q1 2024: +357→-50 USD。強トレンドはしばしば出来高急増を伴うため、このシステムと根本的に相性不良",
-        "files_modified": [
-          "src/exit_strategy_v2.py",
-          "src/trading_strategy.py",
-          "src/config.py",
-          "src/config.ini"
-        ]
-      },
-      {
-        "id": "44e",
-        "title": "PDCA #5: Composite Score Exit 実装・検証",
-        "category": "戦略改善",
-        "parent_task": "44",
-        "pdca_id": 5,
-        "completed_date": "2026-03-03",
-        "result_usd": 189.45,
-        "baseline_usd": 1985.14,
-        "delta_usd": -1795.69,
-        "verdict": "不採用",
-        "reason": "ADX/PVO一時低下でもトレンドが継続するケースが多く、Q4 2024の主要利益（+1831→+294 USD）の大部分を損失。Donchian Breakoutシステムのトレンド継続性を阻害する",
-        "files_modified": [
-          "src/exit_strategy_v2.py",
-          "src/trading_strategy.py",
-          "src/config.py",
-          "src/config.ini"
-        ]
+        "result": "全5案不採用。PSARトレイリングストップが既に最適。追加EXIT条件はマクロトレンド利益を阻害"
       },
       {
         "id": "40e",
-        "category": "調査・研究",
-        "title": "トレンドフォロー以外の優位性候補の調査・小規模検証",
-        "description": "暗号資産で比較的語られる優位性（レンジ/平均回帰の条件付き適用、ボラティリティ・ブレイクアウト、Funding/Carryの偏り、時間帯/流動性、簡易マーケットメイク等）を候補化し、最小実装でバックテスト/ペーパー検証。過学習対策の一環（Task 40a参照）",
-        "priority": 5,
-        "deadline": "2026-02-28",
-        "related_doc": "docs/PROFIT_ENHANCEMENT_STRATEGY_2026.md, Task 40a",
-        "estimated_impact_usd": null,
+        "title": "トレンドフォロー以外の優位性検証(14 trials)",
         "completed_date": "2026-03-02",
-        "result": "Volatility Filter (ATR>2500) 採用: 1403.49→1985.14 USD (+581.65 USD, +41.4%改善). 論文ベースフィルター群を実装（全デフォルト無効）。get_volatility()バグ修正。",
-        "trials": [
-          {
-            "trial": 1,
-            "strategy": "Mean Reversion Filter",
-            "description": "price>SMA50でBUY禁止、<SMA50でSELL禁止（逆張りブロック）",
-            "result_usd": 55.44,
-            "verdict": "不採用",
-            "reason": "ベースライン1403.49 USDを大幅下回り。トレンドフォロー戦略と根本的に相性不良"
-          },
-          {
-            "trial": 2,
-            "strategy": "Market Regime Detection (ADX+ATR)",
-            "description": "ADX>25かつATRが中ボラ域以外をブロック",
-            "result_usd": 1403.49,
-            "verdict": "不採用",
-            "reason": "効果なし（±0）。既存ADXフィルターと冗長"
-          },
-          {
-            "trial": 3,
-            "strategy": "Weekend Filter",
-            "description": "土日のエントリー禁止",
-            "result_usd": 624.85,
-            "verdict": "不採用・コード保持",
-            "reason": "大幅悪化（-778 USD）。BTCは土日にも良質なブレイクアウトが多い。weekend_filter_enabled=0でコードのみ保持",
-            "paper": "Lo & MacKinlay (1988) JFE - weekend effect (株式市場)"
-          },
-          {
-            "trial": 4,
-            "strategy": "Volatility Filter (ATR閾値)",
-            "description": "ATR>2500で極端高ボラ時のエントリーブロック",
-            "result_usd": 1985.14,
-            "verdict": "採用",
-            "reason": "+581.65 USD (+41.4%改善)。過大ボラ時の偽ブレイクを除外。volatility_filter_threshold=2500が最適値",
-            "paper": "Donchian (1960) / Schwager (1992) 'Market Wizards'"
-          },
-          {
-            "trial": 5,
-            "strategy": "Volatility + ADX複合強化",
-            "description": "ATR<2500 かつ ADX>35 の AND条件",
-            "result_usd": 1981.36,
-            "verdict": "不採用",
-            "reason": "Trial 4 (1985.14)より僅かに劣る。ADX閾値引上げでトレード機会が減少"
-          },
-          {
-            "trial": "6a",
-            "strategy": "SMA Direction Filter (SMA200)",
-            "description": "price>SMA200でBUYのみ許可（Faber trend filter）",
-            "result_usd": 1985.14,
-            "verdict": "不採用・コード保持",
-            "reason": "±0（冗長）。Donchian高値ブレイク時には price>SMA が自明のため情報追加なし",
-            "paper": "Brock, Lakonishok, LeBaron (1992) JF ~3000引用 / Faber (2007) JOIM"
-          },
-          {
-            "trial": "6b",
-            "strategy": "SMA Direction Filter (SMA500)",
-            "description": "より長期SMAで同様のフィルター",
-            "result_usd": 1985.14,
-            "verdict": "不採用・コード保持",
-            "reason": "±0（冗長）。期間変更でも結果変わらず",
-            "paper": "Brock et al. (1992) JF"
-          },
-          {
-            "trial": 7,
-            "strategy": "RSI Direction Filter (RSI14)",
-            "description": "RSI>50でBUY許可、<50でSELL許可",
-            "result_usd": 1985.14,
-            "verdict": "不採用・コード保持",
-            "reason": "±0（冗長）。Donchian新高値時はRSI>50が自明",
-            "paper": "Liu & Tsyvinski (2021) RFS ~300引用 / Wilder (1978)"
-          },
-          {
-            "trial": 8,
-            "strategy": "MACD Direction Filter",
-            "description": "MACD>Signal でBUY許可",
-            "result_usd": 0,
-            "verdict": "不採用（実装バグ）",
-            "reason": "全エントリーブロック。calc_macdのsignal計算がMACD単点配列のEMAでsignal=macd常時→MACD>Signalが常にFalse",
-            "paper": "Appel (1985) / Murphy (1999)"
-          },
-          {
-            "trial": 9,
-            "strategy": "TSMOM Filter (720期間)",
-            "description": "720本前比リターン>0でBUY許可（Moskowitz 2012）",
-            "result_usd": 1985.14,
-            "verdict": "不採用・コード保持",
-            "reason": "±0（冗長）。2h足×720=60日前比リターンもDonchianブレイクと高相関",
-            "paper": "Moskowitz, Ooi, Pedersen (2012) JFE ~4000引用"
-          },
-          {
-            "trial": 10,
-            "strategy": "ADX Slope Filter",
-            "description": "current_adx > 10本前のadx（ADX上昇中のみエントリー）",
-            "result_usd": 1985.14,
-            "verdict": "不採用・コード保持",
-            "reason": "±0。ADX>31（既存フィルター）が成立する状態ではADXはほぼ常に上昇中。フィルターとして機能せず",
-            "paper": "Elder (1993) 'Trading for a Living' / Kaufman (2013) 'Trading Systems and Methods'"
-          },
-          {
-            "trial": 11,
-            "strategy": "Volume絶対値フィルター (閾値15000)",
-            "description": "直近出来高<15000でエントリーブロック",
-            "result_usd": 1985.14,
-            "verdict": "不採用",
-            "reason": "±0。BTCの実出来高中央値~16000のため閾値15000では全取引がパス。有効な足切りにならず"
-          },
-          {
-            "trial": "11b/c",
-            "strategy": "Breakout Threshold (0.05%/0.3%)",
-            "description": "Donchian高値/安値から指定%以上の距離がある場合のみエントリー",
-            "result_usd": 0,
-            "verdict": "不採用",
-            "reason": "全クォーターでエントリー0件。Donchianシグナルはブレイク境界でほぼ発生するため0.05%でも全ブロック",
-            "paper": "Brock, Lakonishok, LeBaron (1992) JF"
-          },
-          {
-            "trial": 12,
-            "strategy": "Relative Volume 2.0x",
-            "description": "RangeBreakoutEnhanced内のRVOL閾値を1.5x→2.0xに引上げ",
-            "result_usd": 1378.39,
-            "verdict": "不採用",
-            "reason": "-606 USD悪化。良質なトレードも除外しすぎ。1.5xが最適"
-          },
-          {
-            "trial": 13,
-            "strategy": "Volatility閾値 2000 (より厳格)",
-            "description": "ATR>2000でブロック（2500→2000に引下げ）",
-            "result_usd": 1964.35,
-            "verdict": "不採用",
-            "reason": "-21 USD悪化。2500が最適値として再確認"
-          },
-          {
-            "trial": 14,
-            "strategy": "Volatility閾値 3000 (より緩和)",
-            "description": "ATR>3000でブロック（2500→3000に引上げ）",
-            "result_usd": 1420.68,
-            "verdict": "不採用",
-            "reason": "-565 USD大幅悪化。2500が最適値として再確認"
-          }
-        ],
-        "key_insight": "方向性フィルター群（SMA/RSI/MACD/TSMOM/ADX Slope）はDonchian Breakout自体が既に方向性とモメンタムを内包しているため全て冗長。有効なフィルターはブレイクアウトの『質』を直接測る指標（ATR絶対値・RVOL倍率）のみ。",
-        "final_config": "enable_volatility_filter=1, volatility_filter_threshold=2500, enable_adx_filter=1, adx_filter_threshold=31, relative_volume_threshold=1.5(RBE内)"
+        "result": "Volatility Filter(ATR>2500)採用: +581.65USD(+41.4%)。方向性フィルター群はDonchianと冗長で全て不採用"
       },
       {
         "id": "40b",
-        "category": "品質保証",
-        "title": "手数料/スリッページ/約定遅延のコストモデル導入",
-        "description": "バックテスト評価に実コスト（手数料・スリッページ・約定遅延・指値未約定）を織り込み、期待値がコストに耐えるかを検証。指標改善の「見かけ」を排除。本番運用前必須",
-        "priority": 5,
-        "deadline": "2026-02-28",
-        "related_doc": "docs/PRICE_DATA_FLOW_DESIGN.md",
-        "estimated_impact_usd": null,
-        "completed_at": "2026-03-02",
-        "status": "done",
-        "completion_note": "cost_model.py実装済み、portfolio.pyのadd/clear_position_quantityに統合済み（is_backtest引数経由）。bot.pyから呼び出し確認済み。"
+        "title": "コストモデル導入",
+        "completed_date": "2026-03-02",
+        "result": "cost_model.py実装、portfolio.pyに統合済み"
       },
       {
         "id": "40g",
-        "category": "運用・信頼性",
-        "title": "本番運用の耐障害性（API障害/再試行/部分約定/ログ監視）",
-        "description": "Raspberry Pi常時稼働に向けて、API失敗時のリトライ/バックオフ、部分約定、二重発注防止、ヘルスチェック、重要ログのアラート（メール/Discord等）を整備。本番運用前必須",
-        "priority": 5,
-        "deadline": "2026-02-28",
-        "related_doc": "docs/TRADE_LOG_USAGE_GUIDE.md",
-        "estimated_impact_usd": null,
-        "completed_at": "2026-03-02",
-        "status": "done"
+        "title": "API耐障害性（リトライ/バックオフ）",
+        "completed_date": "2026-03-02",
+        "result": "実装完了。本番稼働で安定動作確認済み"
       },
       {
         "id": "40c",
-        "category": "運用・リスク管理",
-        "title": "リスク・オーバーレイ（DD制限/日次損失上限/取引停止）",
-        "description": "初期資本100USD前提で、最大DD/日次損失/連敗/ボラ急増時に取引を止める「キルスイッチ」を導入。資産曲線の破綻リスクを最小化。本番運用前必須（DD>50%等のキルスイッチ）",
-        "priority": 5,
-        "deadline": "2026-02-28",
-        "related_doc": "DEVELOPMENT_RULES.json",
-        "estimated_impact_usd": null,
-        "completed_at": "2026-03-01",
-        "status": "done",
-        "result": "RiskOverlayキルスイッチ実装完了。DD/日次損失/連続損失の3種停止。122/122 PASS。enabled=0でデフォルト無効。commit: 6df6783"
+        "title": "リスクオーバーレイ（DDキルスイッチ）",
+        "completed_date": "2026-03-01",
+        "result": "DD/日次損失/連続損失の3種停止実装。enabled=0でデフォルト無効"
       },
       {
         "id": "42",
-        "category": "品質保証・テスト基盤",
-        "title": "バックテスト・ホットテスト統一化（キャッシュベースホットテスト実装）",
-        "description": "バックテストとホットテスト（ダミー取引）のロジックを完全統一化。ホットテストでもキャッシュからデータ取得し、バックテストと同等の速度で実行可能にする。これにより、本番トレードの結果がバックテストと乖離するリスクを最小化。config.ini に use_cached_data_for_hot_test フラグを追加し、PriceDataManagement と Bot ループを改修。本番運用前必須（2026-02-28 Raspberry Pi稼働確認、2026-03-05 本番運用開始）",
-        "priority": 5,
-        "deadline": "2026-02-28",
-        "related_doc": "docs/analysis/BACKTEST_HOT_TEST_UNIFICATION_ANALYSIS.json",
-        "estimated_impact_usd": null,
-        "implementation_phases": [
-          "Phase 1: config.ini に use_cached_data_for_hot_test フラグ追加（30分）",
-          "Phase 2: PriceDataManagement 統合（2-3時間）",
-          "Phase 3: Bot ループ最適化（1時間）",
-          "Phase 4: テストと検証（2時間）"
-        ],
-        "benefits": [
-          "バックテストとホットテストのロジック完全統一",
-          "ホットテストの高速化（60秒待機 → 0秒）",
-          "本番環境との差異最小化",
-          "デバッグ容易性の向上"
-        ],
-        "completed_at": "2026-03-01",
-        "status": "done",
-        "result": "キャッシュベースホットテスト実装完了。パリティ検証（Q4 2025）で損益・トレード数完全一致。116/116 PASS。commit: ebd4a16"
-      },
-      {
-        "id": "39e",
-        "category": "2026年利益拡大戦略",
-        "title": "Dynamic Stop Loss Width 実装完了",
-        "description": "ADXベースの動的ストップ幅を実装。ボラティリティ環境に応じて3段階でストップ幅を自動調整（低ボラ: 1.5x、中ボラ: 2.0x、高ボラ: 2.5x）。get_dynamic_stop_range()メソッド追加、テスト6/6 PASS、レグレッション124/124 PASS。Q4 2025単独では結果悪化（+26→-92 USD）のため、全8四半期での総合評価が必要",
-        "completed_date": "2026-02-08",
-        "priority": 4,
-        "impact_usd": "TBD (全四半期評価待ち)",
-        "result": "実装完了・総合評価待ち",
-        "commits": [
-          "3681c44: feat: Task 39e - Dynamic Stop Loss Width実装（ADXベース）"
-        ],
-        "notes": {
-          "implementation": {
-            "method": "get_dynamic_stop_range()",
-            "thresholds": {
-              "low_volatility": "ADX < 25: 1.5x ストップ（狭い）",
-              "medium_volatility": "ADX 25-40: 2.0x ストップ（デフォルト）",
-              "high_volatility": "ADX > 40: 2.5x ストップ（広い、ノイズ回避）"
-            },
-            "updated_method": "__update_stop_price() でstop_offset初期化時に動的値使用"
-          },
-          "test_results": {
-            "unit_tests": "1/1 PASS (test_dynamic_stop_range)",
-            "regression_tests": "6/6 PASS (risk_management)",
-            "full_regression": "124/124 PASS"
-          },
-          "backtest_results_q4_2025": {
-            "before": "+26 USD (Task 39d後)",
-            "after": "-92 USD (Task 39e後)",
-            "change": "-118 USD (悪化)",
-            "trades": "4件（全てSTOP_LOSS）",
-            "adx_values": "34.32-64.83 (中～高ボラ環境)"
-          },
-          "next_steps": [
-            "全8四半期バックテストで総合評価",
-            "悪化が継続する場合は戦略見直しまたは不採用",
-            "ストップ幅の閾値再調整を検討"
-          ]
-        }
-      },
-      {
-        "id": "39d",
-        "category": "2026年利益拡大戦略",
-        "title": "Time-Based Exit 実装完了",
-        "description": "72時間保有で強制決済機能を実装。単体テスト4/4 PASS、entry_time記録修正（44/44正常）、5つの重大バグ修正（Trailing Profit Target無効化、timestamp記録修正、OHLCVにtimestampキー追加、fetch_latest_ohlcv修正、Priority 0実装）。TIME_LIMIT決済0件（PSAR優先発動）だが、長期ポジション保護の安全網として機能",
-        "completed_date": "2026-02-08",
-        "priority": 4,
-        "impact_usd": 0,
-        "result": "実装完了・安全網として機能（現状発動なし）",
-        "commits": [
-          "59ac2d8: feat: Task 39d - Time-Based Exit実装 + timestamp記録バグ修正",
-          "2b61b3d: docs: Task 39d完了記録をPROGRESS.jsonに追加"
-        ],
-        "notes": {
-          "implementation": {
-            "max_holding_hours": 72,
-            "priority": 0,
-            "exit_reasons": [
-              "TIME_LIMIT_PROFIT",
-              "TIME_LIMIT_LOSS"
-            ]
-          },
-          "bugs_fixed": [
-            "Bug #1: Trailing Profit Target無効化（Task 39a破棄済み）",
-            "Bug #2: entry_time記録修正（real_time_dt→timestamp）",
-            "Bug #3: OHLCVデータにtimestampキー追加（fetch_ohlcv）",
-            "Bug #4: CRITICAL fetch_latest_ohlcv()にtimestampキー追加",
-            "Bug #5: Time-Based ExitをPriority 0に昇格"
-          ],
-          "test_results": {
-            "unit_tests": "4/4 PASS",
-            "entry_time_recording": "44/44 trades with valid timestamp",
-            "time_limit_exits": "0 (PSAR stops fire before 72h limit)",
-            "trades_over_72h": "5 (all exited via STOP_LOSS)",
-            "regression_tests": "125/125 PASS"
-          },
-          "backtest_results": {
-            "quarters": "8/8 completed",
-            "cumulative_pnl": "+1568.82 USD",
-            "change_from_baseline": "±0 USD (no impact)"
-          },
-          "strategy_characteristic": "PSAR trailing stop fires before 72h limit due to responsive dynamic adjustment. Feature serves as safety net for rare edge cases or future strategy modifications."
-        }
+        "title": "キャッシュベースホットテスト",
+        "completed_date": "2026-03-01",
+        "result": "パリティ検証で損益・トレード数完全一致。use_cached_data_for_hot_test=1"
       },
       {
         "id": "41a",
-        "category": "リスク管理",
         "title": "最大ドローダウン率計算バグ修正",
-        "description": "DD率計算ロジックを修正。以前は初期資本を考慮せず累積損益ピークのみをベースとしていたため、6/8四半期でDD>100%と誤判定。資産ピーク（初期資本+累積損益）ベースに修正した結果、全8四半期でDD ≤ 50%を達成。DD低減策は不要と判明",
         "completed_date": "2026-02-08",
-        "priority": 5,
-        "impact_usd": 0,
-        "result": "計算修正完了・DD低減策不要",
-        "commits": [
-          "522a2f7: fix: ドローダウン率計算を修正（初期資本を考慮）+ Task 41a追加",
-          "7496bde: fix: metrics.pyのインデントエラー修正 + config.ini期間設定復元"
-        ],
-        "notes": {
-          "previous_incorrect_baseline": {
-            "dd_over_100_quarters": "6/8 (75%)",
-            "max_dd_ratio": "246.8%"
-          },
-          "corrected_baseline": {
-            "dd_over_50_quarters": "0/8 (0%)",
-            "max_dd_ratio": "48.0%"
-          },
-          "key_change": "peak = max(pnl_history) → peak_balance = initial_balance + cumulative_pnl"
-        }
+        "result": "初期資本考慮に修正。DD>100%誤判定を解消、全8QでDD≤50%"
       },
       {
-        "id": "40j",
-        "category": "品質保証",
-        "title": "ホットテスト（ダミー）とバックテストのシグナル計算一致検証",
-        "description": "ホット/バックテストのシグナル不一致を再現し、遅延（約定が1本以上後ろにズレる）時の損益感度を実データで測定。現時点は仕様差として許容し、ロジック修正は実施しない方針で完了",
-        "completed_date": "2026-02-03",
-        "priority": 5,
-        "impact_usd": null,
-        "result": "完了（仕様差として許容・修正なし）",
-        "notes": {
-          "artifacts": [
-            "test/test_hot_backtest_parity_regression.py",
-            "test/test_signal_delay_pnl_impact.py",
-            "docs/analysis/TASK_40j_HOT_BACKTEST_PARITY.md"
-          ],
-          "key_finding": "確定足系列のシグナルに対し約定が遅れるだけでP&Lが大きく変動し得るため、差異は認識した上で39d等の優先タスクを先行"
-        }
-      },
-      {
-        "id": "40a",
-        "category": "品質保証",
-        "title": "Walk-Forward + OOS分析 実装完了・戦略過学習検出",
-        "description": "Walk-Forward分析フレームワーク（6ヶ月IS、3ヶ月OOS、3ヶ月ステップ）実装完了。2024-2025期間で5ウィンドウ検証実施。現行戦略の深刻な過学習を検出：5ウィンドウ中3個でPnL劣化率<-100%（W1: -115.1%, W3: -115.5%, W4: -100.1%）、W2の+6908%改善は異常値（偶然）、W5はIS自体が赤字。フレームワーク自体は正常動作するが、現戦略の本番適用には重大なリスクあり。実装は破棄し、戦略根本見直しを推奨",
+        "id": "39e",
+        "title": "Dynamic Stop Loss Width",
         "completed_date": "2026-02-08",
-        "priority": 5,
-        "impact_usd": null,
-        "result": "フレームワーク実装完了・戦略欠陥検出・コード破棄",
-        "reason_rejected": "Walk-Forward分析により現行戦略の過学習を検出。IS期間で最適化されたパラメータがOOS期間で機能せず、3/5ウィンドウでPnL完全消失（劣化率<-100%）。フレームワーク自体の動作は正常だが、分析結果により戦略の根本的な見直しが必要と判明。全変更破棄",
-        "notes": {
-          "analysis_period": "2024-01-01 to 2025-12-31",
-          "configuration": {
-            "in_sample_months": 6,
-            "out_of_sample_months": 3,
-            "step_months": 3,
-            "total_windows": 5
-          },
-          "window_results": [
-            {
-              "window": 1,
-              "is_period": "2024-01-01 to 2024-06-30",
-              "oos_period": "2024-07-01 to 2024-09-30",
-              "is_pnl_usd": 156.8,
-              "oos_pnl_usd": -23.68,
-              "degradation_pct": -115.1,
-              "diagnosis": "severe overfitting"
-            },
-            {
-              "window": 2,
-              "is_period": "2024-04-01 to 2024-09-30",
-              "oos_period": "2024-10-01 to 2024-12-31",
-              "is_pnl_usd": 21.99,
-              "oos_pnl_usd": 1540.84,
-              "degradation_pct": 6908.1,
-              "diagnosis": "anomalous - likely market luck, not skill"
-            },
-            {
-              "window": 3,
-              "is_period": "2024-07-01 to 2024-12-31",
-              "oos_period": "2025-01-01 to 2025-03-31",
-              "is_pnl_usd": 929.03,
-              "oos_pnl_usd": -143.91,
-              "degradation_pct": -115.5,
-              "diagnosis": "severe overfitting"
-            },
-            {
-              "window": 4,
-              "is_period": "2024-10-01 to 2025-03-31",
-              "oos_period": "2025-04-01 to 2025-06-30",
-              "is_pnl_usd": 566.26,
-              "oos_pnl_usd": -0.76,
-              "degradation_pct": -100.1,
-              "diagnosis": "complete profit loss"
-            },
-            {
-              "window": 5,
-              "is_period": "2025-01-01 to 2025-06-30",
-              "oos_period": "2025-07-01 to 2025-09-30",
-              "is_pnl_usd": -226.58,
-              "oos_pnl_usd": 29.03,
-              "degradation_pct": 112.8,
-              "diagnosis": "IS negative - strategy ineffective in training"
-            }
-          ],
-          "summary": {
-            "total_is_pnl_usd": 1447.49,
-            "total_oos_pnl_usd": 1401.51,
-            "windows_with_severe_degradation": "3/5 (60%)",
-            "conclusion": "現行戦略は過学習により本番環境で期待利益を実現できない可能性が極めて高い。戦略の根本的な見直しが必要"
-          },
-          "artifacts_created_then_deleted": [
-            "tools/walk_forward_analysis.py (522 lines)",
-            "tools/oos_validator.py (250 lines)",
-            "run_walk_forward.py (140 lines)",
-            "docs/WALK_FORWARD_GUIDE.md",
-            "docs/walk_forward_results/*.json",
-            "src/bot.py modifications (QUARTERLY_LOG_PREFIX support)",
-            "src/config.ini modifications (OOS test period)"
-          ]
-        }
+        "result": "ADXベース3段階ストップ幅。安全網として実装"
       },
       {
-        "id": "39c",
-        "category": "2026年利益拡大戦略",
-        "title": "Multi-Timeframe Integration 検証完了・不採用判定",
-        "description": "1h/4h/1d三重トレンド確認実装・検証。MTF有効時に全トレード却下（0件）、ベースライン+1282.62 USD vs MTF 0 USD。フィルタが厳しすぎて正常なエントリーも完全に除外。全変更破棄",
-        "completed_date": "2026-02-01",
-        "priority": 5,
-        "impact_usd": -1282.62,
-        "result": "不採用・破棄",
-        "reason_rejected": "エントリー機会の完全喪失。フェイクブレイク削減の目的は達成可能だが、トレード数0では戦略として機能せず"
+        "id": "39d",
+        "title": "Time-Based Exit",
+        "completed_date": "2026-02-08",
+        "result": "72時間強制決済。PSAR優先で通常未発動。安全網として機能"
       },
       {
         "id": "39b",
-        "category": "2026年利益拡大戦略",
-        "title": "Two-Tier Entry System 実装完了",
-        "description": "高確度/中確度の二段階エントリー実装。+378.27 USD改善（+41.8%）、トレード機会+36件。ベースライン904.35 USDから1282.62 USDに向上",
+        "title": "Two-Tier Entry System",
         "completed_date": "2026-02-01",
-        "priority": 5,
-        "impact_usd": 378.27,
-        "result": "完了・有効化"
+        "result": "+378.27USD改善(904→1282USD)"
       },
       {
-        "id": "39a",
-        "category": "2026年利益拡大戦略",
-        "title": "Trailing Profit Target 検証完了・不採用判定",
-        "description": "ExitStrategyV2に2%/5%/8%の3段階トレーリングストップ実装。優先度調整・MOMENTUM_EXHAUSTED無効化等の修正実施。バックテスト結果：Trailing有効時-173 USD（ベースライン+904比-1,077 USD, -119%悪化）、Trailing無効時+153 USD（-751 USD, -83%悪化）。ExitStrategyV2完全削除後も+153 USDで変化なし。性能悪化の原因はExitStrategyV2自体ではなく別要因。ベースライン再現優先のため不採用・全変更破棄",
-        "completed_date": "2026-01-11",
-        "priority": 5,
-        "impact_usd": -1077,
-        "result": "不採用・破棄"
-      },
-      {
-        "id": "38c",
-        "category": "2025年対応新戦略",
-        "title": "Range Breakout Enhanced 戦略評価完了・不採用判定",
-        "description": "Donchian強化版として相対出来高フィルター実装（threshold=1.5x）。全8Q評価の結果、2024年が82%に低下（必須条件90%未満）、2025年が-90 USDに悪化（目標：黒字化失敗）、累積で-406 USD減少（20.6%損失）。実装は参考用として保持するが enable_range_breakout_enhanced=0 で無効化推奨",
-        "completed_date": "2026-01-07",
-        "priority": 5,
-        "impact_usd": -406,
-        "result": "不採用・無効化"
-      },
-      {
-        "id": "38b",
-        "category": "2025年対応新戦略",
-        "title": "Mean Reversion (平均回帰) 戦略評価完了・不採用判定",
-        "description": "BB 2σ逸脱+RSI<30で実装・評価の結果、2025 Q1でPF=0.07, 勝率7.14%, -198 USD。採用基準（PF>0.8, 勝率>40%）を大幅に下回り不採用。ADXフィルター無効化でトレンド相場でも逆張りエントリー、RSI<30だけでは売られすぎ判定不十分、BB下限タッチの反転シグナルとしての弱さが原因。実装は保持するが enable_mean_reversion_strategy=0 で無効化",
-        "completed_date": "2026-01-07",
-        "priority": 5,
-        "impact_usd": -198,
-        "result": "不採用・無効化"
-      },
-      {
-        "id": "38a",
-        "category": "2025年対応新戦略",
-        "title": "VCP (Volatility Contraction Pattern) 戦略評価完了・不採用判定",
-        "description": "実装・評価の結果、2025年で逆効果（勝率22.7%, -11,537 USD）、全期間でも-8,209 USD。VCP適用により勝率が半減（45.1%→22.7%）。高ボラティリティ市場で機能せず。enable_vcp_strategy=0で無効化。実装は保持するが使用推奨せず",
-        "completed_date": "2026-01-05",
-        "priority": 5,
-        "impact_usd": -8209,
-        "result": "不採用・無効化"
-      },
-      {
-        "id": "37",
-        "category": "パラメータ最適化検証",
-        "title": "Phase2損失トレード分析の信頼性検証",
-        "description": "phase2_loss_analysis.pyが最新8ファイルのみ読込み問題を発見。ベースライン vs 最適化版の四半期別・通年比較を実施。2024年はベースライン優位（利益因子4.40, 勝率92%）、2025年は両設定とも機能不全（勝率3%以下）を確認。市場環境依存性が極めて高いことが判明",
-        "completed_date": "2026-01-05",
-        "priority": 5,
-        "impact_usd": null,
-        "result": "分析完了"
-      },
-      {
-        "id": "35",
-        "category": "ホットテスト修復",
-        "title": "ホットテスト（ペーパートレード）ループ前エラー修復",
-        "description": "commit 01c7ea7で導入されたシグナル計算タイミング制限が原因。修正前コードベースにホットテスト開始時刻動的計算ロジックを統合（afcc15f+動的start/end_epoch）。バックテスト/ホットテスト両方動作確認完了",
-        "completed_date": "2026-01-04",
-        "priority": 5,
-        "impact_usd": null,
-        "result": "修復完了"
-      },
-      {
-        "id": "36",
-        "category": "APIキー管理改善",
-        "title": "APIキー管理方式の刷新",
-        "description": "config.py起動時に.api_key(JSON)から読み込み。config.iniプレースホルダ廃止。replace_api_key.sh/bot_run.sh削除で運用簡素化。バックテスト/ホットテスト動作確認完了",
-        "completed_date": "2026-01-04",
-        "priority": 5,
-        "impact_usd": null,
-        "result": "刷新完了"
-      },
-      {
-        "id": "33",
-        "category": "フィルタ最適化",
-        "title": "ADXフィルタ スイープテスト完了",
-        "description": "threshold=31で最適、累積損益1936.98 USD（+31.9%改善）、2025Q赤字88.85%削減",
-        "completed_date": "2026-01-02",
-        "priority": 5,
-        "impact_usd": 1032.63,
-        "result": "最適化完了"
-      },
-      {
-        "id": "34",
-        "category": "フィルタ検証却下",
-        "title": "季節性フィルタ・マーケットレジーム検出は実装上機能していない",
-        "description": "スイープテストで効果ゼロ、無効化確定",
-        "completed_date": "2026-01-02",
-        "priority": 5,
-        "impact_usd": 0,
-        "result": "無効化確定"
-      },
-      {
-        "id": "30",
-        "category": "品質保証",
-        "title": "2024/Q1除外テスト完了",
-        "description": "run_quarterly_backtest.py修正、スクリプト整理（analyze*削除）、全検証OK",
-        "completed_date": "2025-12-29",
-        "priority": 5,
-        "impact_usd": null,
-        "result": "完了"
-      },
-      {
-        "id": "25",
-        "category": "パラメータ最適化",
-        "title": "最適パラメータ確定",
-        "description": "vol=28, don=32, entry=3, stop=2 で +374.95 USD (Q1除外) 達成",
-        "completed_date": "2025-12-29",
-        "priority": 5,
-        "impact_usd": 374.95,
-        "result": "確定"
-      },
-      {
-        "id": "23c",
-        "category": "パラメータ最適化分析",
-        "title": "Leverage×Risk×EntryTimes スイープテスト 実施完了",
-        "description": "57テスト実施、最適パラメータ特定",
-        "completed_date": "2025-12-10",
-        "priority": 5,
-        "impact_usd": null,
-        "result": "完了"
-      },
-      {
-        "id": "23d",
-        "category": "ドキュメント統合",
-        "title": "docs/ の DEVELOPMENT_RULES/ARCHITECTURE/PRICE_DATA_FLOW を analysis/ に反映",
-        "description": "ドキュメント統合作業完了",
-        "completed_date": "2025-12-10",
-        "priority": 5,
-        "impact_usd": null,
-        "result": "完了"
-      },
-      {
-        "id": "20a",
-        "category": "Phase 1.5実装",
-        "title": "3段階ADXフィルタ戦略実装",
-        "description": "BOX/WEAK/STRONG環境対応 → +$641改善達成",
-        "completed_date": "2025-12-11",
-        "priority": 5,
-        "impact_usd": 641,
-        "result": "実装完了"
-      },
-      {
-        "id": "22a",
-        "category": "戦略実装",
-        "title": "Strategy A: 市場レジーム検出（ADX）",
-        "description": "Phase 1.5 で統合・最適化完了 (+$641改善)",
-        "completed_date": "2025-12-11",
-        "priority": 5,
-        "impact_usd": 641,
-        "result": "統合完了"
-      },
-      {
-        "id": "26",
-        "category": "エントリー戦略",
-        "title": "PVO/ADXフィルター効果検証",
-        "description": "3シナリオ比較実施、最適フィルター特定（PVO Only推奨）",
-        "completed_date": "2025-12-21",
-        "priority": 5,
-        "impact_usd": null,
-        "result": "検証完了"
-      },
-      {
-        "id": "20",
-        "category": "戦略最適化",
-        "title": "マーケット環境変化対応",
-        "description": "ADX で トレンド強度を検出し、パラメータを動的調整（Phase 1.5で実装）",
-        "completed_date": "2025-12-11",
-        "priority": 5,
-        "impact_usd": null,
-        "result": "実装完了"
-      },
-      {
-        "id": "3",
-        "category": "ログ制御・出力",
-        "title": "drawdown計算の統一・修正",
-        "description": "drawdown計算ロジック統一",
-        "completed_date": "2025-12-08",
-        "priority": 4,
-        "impact_usd": null,
-        "result": "完了"
-      },
-      {
-        "id": "4",
-        "category": "ログ制御・出力",
-        "title": "PnL時系列エクスポート機能の実装",
-        "description": "PnL時系列データエクスポート機能実装",
-        "completed_date": "2025-12-09",
-        "priority": 4,
-        "impact_usd": null,
-        "result": "完了"
-      },
-      {
-        "id": "5",
-        "category": "ログ制御・出力",
-        "title": "full-loggingオプションのBot反映",
-        "description": "full-loggingオプション実装",
-        "completed_date": "2025-12-09",
-        "priority": 3,
-        "impact_usd": null,
-        "result": "完了"
-      },
-      {
-        "id": "10",
-        "category": "doc/test整備",
-        "title": "ドキュメント統合・体系化",
-        "description": "ドキュメント構造整理",
-        "completed_date": "2025-11-30",
-        "priority": 3,
-        "impact_usd": null,
-        "result": "完了"
-      },
-      {
-        "id": "11",
-        "category": "doc/test整備",
-        "title": "テストランナー統合・verify_all.py追加",
-        "description": "テストランナー実装",
-        "completed_date": "2025-12-10",
-        "priority": 3,
-        "impact_usd": null,
-        "result": "完了"
-      },
-      {
-        "id": "12",
-        "category": "doc/test整備",
-        "title": "ドキュメント構造テスト追加",
-        "description": "ドキュメント構造バリデーション",
-        "completed_date": "2025-12-10",
-        "priority": 3,
-        "impact_usd": null,
-        "result": "完了"
-      },
-      {
-        "id": "13",
-        "category": "doc/test整備",
-        "title": "analysis/project_structure.json・ARCHITECTURE_OVERVIEW.mdにクラス・メソッド一覧を反映",
-        "description": "プロジェクト構造分析更新",
-        "completed_date": "2025-12-21",
-        "priority": 3,
-        "impact_usd": null,
-        "result": "完了"
-      },
-      {
-        "id": "13b",
-        "category": "config/キャッシュ管理",
-        "title": "config.iniのプレースホルダ化・コメント整形",
-        "description": "config.ini整理",
-        "completed_date": "2025-12-08",
-        "priority": 3,
-        "impact_usd": null,
-        "result": "完了"
-      },
-      {
-        "id": "15",
-        "category": "config/キャッシュ管理",
-        "title": "path_utils.pyによるパス管理の一元化",
-        "description": "パス管理統一",
-        "completed_date": "2025-12-09",
-        "priority": 3,
-        "impact_usd": null,
-        "result": "完了"
-      },
-      {
-        "id": "16",
-        "category": "スクリプト統合・運用",
-        "title": "backtest.pyへの機能統合",
-        "description": "バックテストスクリプト統合",
-        "completed_date": "2025-12-08",
-        "priority": 3,
-        "impact_usd": null,
-        "result": "完了"
-      },
-      {
-        "id": "17",
-        "category": "スクリプト統合・運用",
-        "title": "bot_run.sh, replace_api_key.shの整理",
-        "description": "運用スクリプト整理",
-        "completed_date": "2025-12-21",
-        "priority": 3,
-        "impact_usd": null,
-        "result": "完了"
-      },
-      {
-        "id": "18",
-        "category": "戦略最適化",
-        "title": "2025年成績悪化の根本原因分析・四半期別分析",
-        "description": "Stage 1-4 改善戦略策定",
-        "completed_date": "2025-12-09",
-        "priority": 5,
-        "impact_usd": null,
-        "result": "完了"
-      },
-      {
-        "id": "19",
-        "category": "個別トレード改善",
-        "title": "出口戦略の複合指標化（PSAR + PVO + ADX）",
-        "description": "MFE失われた利益を75%削減",
-        "completed_date": "2025-12-10",
-        "priority": 5,
-        "impact_usd": null,
-        "result": "完了"
-      },
-      {
-        "id": "19a",
-        "category": "個別トレード改善",
-        "title": "ExitStrategyV2 統合",
-        "description": "Q4 2025 で -2.63 → +368.20 USD に改善、勝率 100%達成",
-        "completed_date": "2025-12-10",
-        "priority": 5,
-        "impact_usd": 370.83,
-        "result": "統合完了"
-      },
-      {
-        "id": "27",
-        "category": "季節性フィルター検証却下",
-        "title": "季節性パターン（Q2/Q3損失）による取引スキップ",
-        "description": "年度変動で信頼性不足のため却下",
-        "completed_date": "2025-12-21",
-        "priority": 3,
-        "impact_usd": null,
-        "result": "却下"
-      },
-      {
-        "id": "21",
-        "category": "ローソク足パターン却下",
-        "title": "ローソク足形状シグナル分析",
-        "description": "14パターン実装、Donchian検証 → 単独では-853.61 USD損失のため却下",
-        "completed_date": "2025-12-30",
-        "priority": 4,
-        "impact_usd": -853.61,
-        "result": "却下"
-      },
-      {
-        "id": "31",
-        "category": "ETHパラメータ不採用",
-        "title": "ETHパラメータスイープテスト",
-        "description": "605テスト実施、1%(6個)のみ正利益。ノイズ多く、市場環境依存度高いため採用見送り",
-        "completed_date": "2025-12-31",
-        "priority": 4,
-        "impact_usd": null,
-        "result": "不採用"
-      },
-      {
-        "id": "32",
-        "category": "ドキュメント整理",
-        "title": "docs/analysis 再分析・整理完了",
-        "description": "src/分析ファイルを src/ サブフォルダに整理、全17Pythonファイル分析・JSON置き換え完了",
-        "completed_date": "2026-01-01",
-        "priority": 5,
-        "impact_usd": null,
-        "result": "完了"
-      },
-      {
-        "id": "33b",
-        "category": "ドキュメント整理",
-        "title": "docs/ 一時レポート削除",
-        "description": "PLAN/REPORT/CHECKLIST系13ファイル削除、恒久ドキュメント7ファイルに整理",
-        "completed_date": "2026-01-31",
-        "priority": 3,
-        "impact_usd": null,
-        "result": "完了"
-      },
-      {
-        "id": "1",
-        "category": "テスト体制整備",
-        "title": "コミット前のレグレッションテスト作成",
-        "description": "全54テスト PASS、pytest + regression_test_suite.py",
-        "completed_date": "2025-12-10",
-        "priority": 5,
-        "impact_usd": null,
-        "result": "完了"
-      },
-      {
-        "id": "39f",
-        "category": "2026年利益拡大戦略",
-        "title": "Weekend/Holiday Avoidance 実装",
-        "description": "低流動性時間回避（+$100-200/年期待）",
-        "priority": 4,
-        "related_doc": "PROFIT_ENHANCEMENT_STRATEGY_2026",
-        "estimated_impact_usd": [
-          100,
-          200
-        ],
-        "status": "done",
-        "completed_at": "2026-03-02",
-        "completion_note": "Task 40eで weekend_filter_enabled を Config/TradingStrategy に実装済み。config.ini EntryFilters セクションで有効化可能。"
-      },
-      {
-        "id": "web-monitor-v2",
-        "category": "モニタリング",
-        "title": "monitor_web ローソク足チャート実装 / monitor_bot JSON化 / config.iniコメント復活",
-        "description": "monitor_webの左パネルをChart.js折れ線からlightweight-charts v4ローソク足に置き換え。DCH/DCL/PSAR/ENTRYマーカーオーバーレイ。/api/candlesエンドポイントでログファイルから最大1ヶ月分(180本)取得。monitor_botをJSON化で刷新。config.iniコメント95箇所復活。",
-        "status": "done",
-        "completed_at": "2026-03-06",
-        "commit": "335d848",
-        "completion_note": "logger.py: MAX_CANDLE_HISTORY=180、open/timeフィールド追加。server.py: /api/candles追加(5分キャッシュ)、lightweight-charts実装。レグレッション159/159 PASS。"
-      },
-      {
-        "id": "40h",
-        "category": "戦略拡張",
-        "title": "レジーム別の戦略切替（Trend/Rangeで別ロジック）",
-        "description": "単一のトレンドフォロー固定ではなく、市場体制（トレンド/レンジ/遷移）に応じてエントリー条件・Exit・許可時間帯を切替。過学習対策＋利益拡大。Task 39c (MTF)の失敗を踏まえ「厳しすぎて0件」にならない設計で実装",
-        "priority": 4,
-        "related_doc": "docs/ADX_FILTER_ANALYSIS.md, Task 39c (失敗例)",
-        "estimated_impact_usd": null,
-        "status": "done",
-        "completed_at": "2026-03-07",
-        "completion_note": "ユーザー指示によりDONEに変更"
-      },
-      {
-        "id": "22b-eval",
-        "category": "Phase 0改善戦略",
-        "title": "Strategy B 有効化・バックテスト評価",
-        "description": "Strategy B（Bollinger+RSI+SMA）実装完了済みだが未評価。全8四半期バックテストで効果測定",
-        "priority": 4,
-        "related_doc": "Task 22b (実装済み)",
-        "estimated_impact_usd": null,
-        "status": "done",
-        "completed_at": "2026-03-07",
-        "completion_note": "ユーザー指示によりDONEに変更"
-      },
-      {
-        "id": "22c-eval",
-        "category": "Phase 0改善戦略",
-        "title": "Strategy C 有効化・バックテスト評価",
-        "description": "Strategy C（複合戦略A+B）実装完了済みだが未評価。全8四半期バックテストで効果測定",
-        "priority": 4,
-        "related_doc": "Task 22c (実装済み)",
-        "estimated_impact_usd": null,
-        "status": "done",
-        "completed_at": "2026-03-07",
-        "completion_note": "ユーザー指示によりDONEに変更"
-      },
-      {
-        "id": "45",
-        "category": "バグ修正",
-        "title": "ADX計算ルックバック不足バグ修正",
-        "description": "Task 40g（APIレートリミット最適化）でルックバック短縮の副作用として、4H足でADX計算に必要な本数（adx_period×2=28本）が確保されず全期間ADX=0となりエントリが封鎖されていた。fix: lookback = max(volatility_term, adx_term*2) + 10 に修正",
-        "priority": 5,
-        "related_doc": "src/price_data_management.py L431-436",
-        "estimated_impact_usd": null,
-        "status": "done",
-        "completed_at": "2026-03-09",
-        "completion_note": "レグレッション164/164 PASS、全8四半期テスト PASS、ベースライン2402.94 USD維持。RPiにデプロイ済み（BOT再起動後にstrategy_A: BUY を確認）"
-      },
-      {
-        "id": "46",
-        "category": "バグ修正",
-        "title": "monitor_web ローソク足チャートJST表示修正",
-        "description": "LightweightChartsのデフォルトUTC表示をJST（UTC+9）に修正。tickMarkFormatter / timeFormatter に JST変換ヘルパーを追加。チャートタイトルにJSTバッジを追加",
-        "priority": 3,
-        "related_doc": "tools/web_monitor/server.py",
-        "estimated_impact_usd": null,
-        "status": "done",
-        "completed_at": "2026-03-08",
-        "completion_note": "monitor_web起動確認済み。JST時刻が正しく表示されることを確認"
-      }
-    ]
-  },
-  "summary": {
-    "total_tasks": 75,
-    "todo": 71,
-    "progress": 1,
-    "done": 56,
-    "cumulative_impact_usd": 2402.94,
-    "baseline_performance": "2402.94 USD (8 quarters, ParamSweep TSMOM150+PSAR300採用後, 2026-03-04)",
-    "baseline_history": [
-      {
-        "cumulative_pnl_usd": 2402.94,
-        "date": "2026-03-04",
-        "task": "param_sweep",
-        "note": "ParamSweep: psar_lookback=300, tsmom_lookback=150採用 (+417.80 USD, +21.0%)",
-        "backup_file": "baseline_backup/BASELINE_2402.94USD_ParamSweep_20260304.json"
-      },
-      {
-        "cumulative_pnl_usd": 1985.14,
-        "date": "2026-03-02",
-        "task": "40e",
-        "note": "Volatility Filter (ATR>2500) 採用: +581.65 USD (+41.4%)",
-        "backup_file": "baseline_backup/BASELINE_1985.14USD_20260302.json"
-      },
-      {
-        "cumulative_pnl_usd": 1403.49,
-        "date": "2026-02-08",
-        "task": "39e",
-        "note": "Dynamic Stop Loss実装: +120.87 USD (+9.4%)"
-      },
-      {
-        "cumulative_pnl_usd": 1282.62,
-        "date": "2026-02-01",
-        "task": "39b",
-        "note": "Two-Tier Entry System実装: +378.27 USD"
-      },
-      {
-        "cumulative_pnl_usd": 904.35,
-        "date": "2025-12-21",
-        "task": "初期",
-        "note": "初期ベースライン",
-        "backup_file": "baseline_backup/BASELINE_904.35USD_20251221.json"
+        "id": "40a",
+        "title": "Walk-Forward + OOS分析",
+        "completed_date": "2026-02-08",
+        "result": "フレームワーク実装。3/5ウィンドウで劣化率<-100%検出。戦略過学習リスクを認識"
       }
     ]
   }

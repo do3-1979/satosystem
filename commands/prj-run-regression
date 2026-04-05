@@ -85,13 +85,24 @@ echo ""
 # ======================================
 if [ $FULL_MODE -eq 1 ]; then
     echo -e "${YELLOW}========================================${NC}"
-    echo -e "${YELLOW}📈 Test 3: バックテスト＋可視化実行${NC}"
+    echo -e "${YELLOW}📈 Test 3a: バックテスト＋可視化実行 [BTC]${NC}"
     echo -e "${YELLOW}========================================${NC}"
     if bash backtest_and_visualize.sh; then
         GRAPH_COUNT=$(find report -name "*.html" 2>/dev/null | wc -l)
-        echo -e "${GREEN}✅ backtest_and_visualize.sh - 完了 (グラフ: ${GRAPH_COUNT}件)${NC}"
+        echo -e "${GREEN}✅ backtest_and_visualize.sh [BTC] - 完了 (グラフ: ${GRAPH_COUNT}件)${NC}"
     else
-        echo -e "${RED}❌ backtest_and_visualize.sh - 失敗${NC}"
+        echo -e "${RED}❌ backtest_and_visualize.sh [BTC] - 失敗${NC}"
+        ERRORS=$((ERRORS + 1))
+    fi
+    echo ""
+
+    echo -e "${YELLOW}========================================${NC}"
+    echo -e "${YELLOW}📈 Test 3b: バックテスト＋可視化実行 [XAUT]${NC}"
+    echo -e "${YELLOW}========================================${NC}"
+    if bash backtest_and_visualize_xaut.sh; then
+        echo -e "${GREEN}✅ backtest_and_visualize_xaut.sh [XAUT] - 完了${NC}"
+    else
+        echo -e "${RED}❌ backtest_and_visualize_xaut.sh [XAUT] - 失敗${NC}"
         ERRORS=$((ERRORS + 1))
     fi
     echo ""

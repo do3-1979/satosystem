@@ -374,13 +374,14 @@
 <!-- ===================== HERO ===================== -->
 <div class="hero">
   <h1>satosystem gen2</h1>
-  <div class="subtitle">Bitcoin 自動取引システム — Donchian Breakout + PVO + ADX</div>
+  <div class="subtitle">BTC + XAUT デュアルアセット自動取引システム — Donchian Breakout + PVO + ADX</div>
   <div class="badges">
     <span class="badge blue">gen2 ブランチ</span>
     <span class="badge green">Raspberry Pi 稼働中</span>
     <span class="badge purple">Python 3 / ccxt</span>
-    <span class="badge yellow">初期資本 100 USD</span>
-    <span class="badge green">ベースライン +2,394 USD</span>
+    <span class="badge yellow">BTC 100 USD + XAUT 50 USD</span>
+    <span class="badge green">BTC +2,394 USD</span>
+    <span class="badge" style="border-color:#e3b341;color:#e3b341">XAUT +63 USD</span>
   </div>
 </div>
 
@@ -403,34 +404,40 @@
   <h2>📊 プロジェクト概要</h2>
   <div class="card-grid">
     <div class="card highlight">
-      <div class="icon">💰</div>
-      <div class="label">累積損益（バックテスト）</div>
+      <div class="icon">₿</div>
+      <div class="label">BTC 累積損益（バックテスト）</div>
       <div class="value" style="color: var(--green)">+$2,394.47</div>
       <div class="desc">2024 Q1〜2026 Q1（9四半期）</div>
+    </div>
+    <div class="card" style="border-color:#e3b341">
+      <div class="icon">🥇</div>
+      <div class="label">XAUT 累積損益（バックテスト）</div>
+      <div class="value" style="color: var(--yellow)">+$63.39</div>
+      <div class="desc">2025 Q2〜2026 Q1（4四半期）</div>
     </div>
     <div class="card">
       <div class="icon">📈</div>
       <div class="label">初期資本</div>
-      <div class="value">$100 USD</div>
+      <div class="value">BTC $100 / XAUT $50</div>
       <div class="desc">年間利回り目標 50%</div>
     </div>
     <div class="card green-card">
       <div class="icon">⚙️</div>
-      <div class="label">レバレッジ / リスク</div>
-      <div class="value">10× / 0.30%</div>
-      <div class="desc">1トレードあたりのリスク率</div>
+      <div class="label">レバレッジ</div>
+      <div class="value">BTC 10× / XAUT 7×</div>
+      <div class="desc">リスク率 0.30% / トレード</div>
     </div>
     <div class="card purple-card">
       <div class="icon">🕐</div>
       <div class="label">時間足 / 市場</div>
-      <div class="value">4H / BTC/USDT</div>
-      <div class="desc">ドンチャンチャネル 30期間</div>
+      <div class="value">4H / BTC+XAUT</div>
+      <div class="desc">ドンチャン BTC=30 / XAUT=40</div>
     </div>
     <div class="card yellow-card">
       <div class="icon">🖥️</div>
       <div class="label">実行環境</div>
       <div class="value">Raspberry Pi</div>
-      <div class="desc">継続稼働 100日超</div>
+      <div class="desc">BTC+XAUT 並列稼働（PID分離）</div>
     </div>
     <div class="card">
       <div class="icon">🌐</div>
@@ -438,16 +445,23 @@
       <div class="value">Bybit → Bitget</div>
       <div class="desc">データ取得 / 注文執行を分離</div>
     </div>
+    <div class="card">
+      <div class="icon">🧪</div>
+      <div class="label">テストスイート</div>
+      <div class="value">190 / 190 PASS</div>
+      <div class="desc">BTC 162 + XAUT 28 テスト</div>
+    </div>
   </div>
   <p>
-    <strong>satosystem gen2</strong> は、Raspberry Pi 上で 24 時間 365 日自動稼働する BTC/USDT 先物取引 BOT です。
-    ドンチャンチャネルのブレイクアウトを主軸に、PVO（出来高オシレーター）と ADX（トレンド強度）でフィルタリングし、
+    <strong>satosystem gen2</strong> は、Raspberry Pi 上で 24 時間 365 日自動稼働する暗号通貨先物取引 BOT です。
+    <strong>BTC/USDT</strong> と <strong>XAUT/USDT</strong>（トークン化金）の 2 銘柄を並列運用し、
+    ドンチャンチャネルのブレイクアウトを主軸に、PVO・ADX・TSMOM 等でフィルタリングした
     高確率のトレンドフォローエントリーを目指します。
   </p>
   <p>
-    初期資本 <strong>100 USD・レバレッジ 10倍</strong> という小資本から、8四半期バックテストで
-    <strong>+2,402 USD</strong> の累積損益を記録しています。
-    年間利回り目標は <strong>50%</strong> で、継続的なパラメータ最適化と戦略拡張を実施中です。
+    BTC は初期資本 <strong>100 USD・レバレッジ 10 倍</strong> で 9 四半期バックテスト累計 <strong>+$2,394 USD</strong>、
+    XAUT は初期資本 <strong>50 USD・レバレッジ 7 倍</strong> で 4 四半期バックテスト累計 <strong>+$63 USD</strong> を記録しています。
+    各銘柄は独立した config・PID・ログで完全分離され、個別に起動・停止できます。
   </p>
 </section>
 
@@ -817,25 +831,65 @@ flowchart TB
 <section id="config">
   <h2>⚙️ 主要設定パラメータ</h2>
 
+  <h3>BTC/USDT（config.ini）</h3>
   <div class="code-block">
 <span class="comment"># [RiskManagement]</span>
 <span class="key">risk_percentage</span>    = <span class="val">0.30</span>     <span class="comment"># 1トレードのリスク率</span>
 <span class="key">leverage</span>           = <span class="val">10</span>       <span class="comment"># レバレッジ倍率</span>
 <span class="key">entry_times</span>        = <span class="val">2</span>        <span class="comment"># 最大エントリー回数（ピラミッディング）</span>
-<span class="key">entry_range</span>        = <span class="val">4</span>        <span class="comment"># 追加エントリー幅（ATR倍率）</span>
-<span class="key">psar_lookback_term</span> = <span class="val">300</span>      <span class="comment"># PSARルックバック期間 ★最適化済み</span>
+<span class="key">psar_lookback_term</span> = <span class="val">300</span>      <span class="comment"># PSARルックバック期間 ★</span>
 
 <span class="comment"># [Market]</span>
 <span class="key">market</span>             = <span class="val">BTC/USDT</span>
 <span class="key">time_frame</span>         = <span class="val">240</span>      <span class="comment"># 4時間足</span>
 
 <span class="comment"># [Strategy]</span>
-<span class="key">donchian_buy_term</span>  = <span class="val">30</span>       <span class="comment"># ドンチャン買い期間 ★最適化済み</span>
-<span class="key">donchian_sell_term</span> = <span class="val">30</span>
-<span class="key">pvo_threshold</span>      = <span class="val">10</span>       <span class="comment"># PVO最小値（出来高フィルター）</span>
-<span class="key">adx_bull_threshold</span> = <span class="val">24</span>       <span class="comment"># ADXエントリー閾値</span>
-<span class="key">tsmom_filter_enabled</span> = <span class="val">1</span>     <span class="comment"># TSMOMフィルター ON ★</span>
-<span class="key">tsmom_filter_lookback</span> = <span class="val">150</span>  <span class="comment"># TSMOMルックバック ★最適化済み</span>
+<span class="key">donchian_buy_term</span>  = <span class="val">30</span>       <span class="comment"># ドンチャン期間 ★</span>
+<span class="key">pvo_threshold</span>      = <span class="val">10</span>       <span class="comment"># 出来高フィルター</span>
+<span class="key">adx_bull_threshold</span> = <span class="val">24</span>
+<span class="key">tsmom_filter_enabled</span> = <span class="val">1</span>
+<span class="key">tsmom_filter_lookback</span> = <span class="val">150</span>  <span class="comment"># ★</span>
+  </div>
+
+  <h3>XAUT/USDT（config_xaut.ini）</h3>
+  <div class="code-block">
+<span class="comment"># [RiskManagement]</span>
+<span class="key">risk_percentage</span>    = <span class="val">0.30</span>
+<span class="key">leverage</span>           = <span class="val">7</span>        <span class="comment"># 金は低レバレッジ</span>
+<span class="key">entry_times</span>        = <span class="val">2</span>
+<span class="key">account_balance</span>    = <span class="val">50</span>       <span class="comment"># 初期資本（XAUT用）</span>
+
+<span class="comment"># [Market]</span>
+<span class="key">market</span>             = <span class="val">XAUT/USDT</span>
+<span class="key">time_frame</span>         = <span class="val">240</span>
+
+<span class="comment"># [Strategy] — BTC とは異なるパラメータ</span>
+<span class="key">donchian_buy_term</span>  = <span class="val">40</span>       <span class="comment"># BTC=30 より長め（金はトレンド緩やか）</span>
+<span class="key">pvo_threshold</span>      = <span class="val">0</span>        <span class="comment"># 金は出来高フィルター不要</span>
+<span class="key">adx_bull_threshold</span> = <span class="val">26</span>       <span class="comment"># BTC=31 より緩め</span>
+<span class="key">tsmom_filter_enabled</span> = <span class="val">0</span>     <span class="comment"># TSMOMは無効</span>
+<span class="key">enable_psar_stop</span>   = <span class="val">0</span>        <span class="comment"># PSARは無効</span>
+<span class="key">chandelier_exit</span>    = <span class="val">1</span>        <span class="comment"># Chandelier Exit ★ XAUT専用</span>
+<span class="key">time_based_exit</span>    = <span class="val">1</span>        <span class="comment"># 96時間で強制決済 ★ XAUT専用</span>
+<span class="key">max_holding_hours</span>  = <span class="val">96</span>
+  </div>
+
+  <h3>BTC vs XAUT パラメータ比較</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>パラメータ</th><th>BTC</th><th>XAUT</th><th>理由</th></tr></thead>
+      <tbody>
+        <tr><td>ドンチャン期間</td><td class="td-blue">30</td><td class="td-yellow">40</td><td>金はトレンド継続が緩やか</td></tr>
+        <tr><td>PVO閾値</td><td class="td-blue">10</td><td class="td-yellow">0</td><td>金市場は出来高パターンが異なる</td></tr>
+        <tr><td>ADX閾値</td><td class="td-blue">31</td><td class="td-yellow">26</td><td>金はADXが低めでもトレンド有効</td></tr>
+        <tr><td>レバレッジ</td><td class="td-blue">10×</td><td class="td-yellow">7×</td><td>金は保守的な設定</td></tr>
+        <tr><td>PSAR</td><td class="td-green">✅ 有効(300)</td><td class="td-red">⛔ 無効</td><td>XAUTはChandelier Exitを使用</td></tr>
+        <tr><td>TSMOM</td><td class="td-green">✅ 有効(150)</td><td class="td-red">⛔ 無効</td><td>金は長期モメンタム非対応</td></tr>
+        <tr><td>Chandelier Exit</td><td class="td-red">⛔ 無効</td><td class="td-green">✅ 有効</td><td>ATRベースのトレイリング</td></tr>
+        <tr><td>Time-Based Exit</td><td class="td-red">⛔ 無効</td><td class="td-green">✅ 有効(96h)</td><td>長期保有リスク回避</td></tr>
+        <tr><td>初期資本</td><td class="td-blue">$100</td><td class="td-yellow">$50</td><td>XAUT は小資本で運用開始</td></tr>
+      </tbody>
+    </table>
   </div>
 
   <h3>有効 / 無効な機能フラグ</h3>
@@ -850,9 +904,10 @@ flowchart TB
         <tr><td>RiskOverlay（DDキルスイッチ）</td><td class="td-red">⛔ 無効</td><td>実装済み・デフォルト無効</td></tr>
         <tr><td>CostModel（コスト織り込み）</td><td class="td-red">⛔ 無効</td><td>実装済み・デフォルト無効</td></tr>
         <tr><td>Dynamic Position Sizing</td><td class="td-red">⛔ 無効</td><td>資産比率でリスク調整</td></tr>
-        <tr><td>Chandelier Exit</td><td class="td-red">⛔ 無効</td><td>ATRベース高機能トレイリング</td></tr>
+        <tr><td>Chandelier Exit</td><td class="td-green">✅ XAUT有効</td><td>ATRベース高機能トレイリング（XAUT専用）</td></tr>
         <tr><td>Profit Step Lock</td><td class="td-red">⛔ 無効</td><td>含み益段階ロック</td></tr>
         <tr><td>Volume Climax Exit</td><td class="td-red">⛔ 無効</td><td>出来高急増でのEXIT</td></tr>
+        <tr><td>Time-Based Exit</td><td class="td-green">✅ XAUT有効</td><td>96時間強制決済（XAUT専用）</td></tr>
         <tr><td>Mean Reversion Strategy</td><td class="td-red">⛔ 無効</td><td>逆張り戦略（検証中）</td></tr>
         <tr><td>Weekend Filter</td><td class="td-yellow">⚙️ 設定可</td><td>週末エントリー回避</td></tr>
       </tbody>
@@ -864,46 +919,47 @@ flowchart TB
 <section id="exit">
   <h2>🚪 エグジット戦略（ExitStrategyV2）</h2>
   <p>複合シグナルベースの多段階エグジット（Stage 1–4）を実装済みです。
-  現在は <strong>PSAR トレイリング</strong> が主力エグジットで、その他は設定で有効化可能です。</p>
+  <strong>BTC</strong> は PSAR トレイリングが主力、<strong>XAUT</strong> は Chandelier Exit + Time-Based Exit を採用しています。</p>
 
   <div class="table-wrap">
     <table>
-      <thead><tr><th>方法</th><th>状態</th><th>詳細</th></tr></thead>
+      <thead><tr><th>方法</th><th>BTC</th><th>XAUT</th><th>詳細</th></tr></thead>
       <tbody>
         <tr>
           <td><strong>PSAR トレイリングストップ</strong></td>
           <td class="td-green">✅ メイン</td>
+          <td class="td-red">⛔ 無効</td>
           <td>ルックバック 300、AF=0.02〜0.20 でトレンド追従</td>
+        </tr>
+        <tr>
+          <td><strong>Chandelier Exit</strong></td>
+          <td class="td-red">⛔ 無効</td>
+          <td class="td-green">✅ メイン</td>
+          <td>N期間高値/安値 − ATR×3.0 のトレイリング。金向き</td>
+        </tr>
+        <tr>
+          <td><strong>Time-Based Exit</strong></td>
+          <td class="td-red">⛔ 無効</td>
+          <td class="td-green">✅ 有効 96h</td>
+          <td>最大保有時間超過でEXIT（XAUTは96時間）</td>
         </tr>
         <tr>
           <td>Stage 1–4 複合スコア</td>
           <td class="td-yellow">⚙️ 実装済み</td>
+          <td class="td-yellow">⚙️ 実装済み</td>
           <td>ADX強弱 + PVO反転 + 時間経過の複合判定</td>
         </tr>
         <tr>
-          <td>Chandelier Exit</td>
-          <td class="td-red">⛔ 無効</td>
-          <td>N期間高値/安値 − ATR×3.0 のトレイリング。PSARより柔軟</td>
-        </tr>
-        <tr>
           <td>Profit Step Lock (PSL)</td>
+          <td class="td-red">⛔ 無効</td>
           <td class="td-red">⛔ 無効</td>
           <td>MFE 2/4/8% 達成後に含み益フロアを設定</td>
         </tr>
         <tr>
           <td>Volume Climax Exit</td>
           <td class="td-red">⛔ 無効</td>
+          <td class="td-red">⛔ 無効</td>
           <td>出来高 × 3倍急増 + 含み益 0.5% 超でEXIT</td>
-        </tr>
-        <tr>
-          <td>Composite Score Exit</td>
-          <td class="td-red">⛔ 無効</td>
-          <td>ADX低下 + PVO低下 + 出来高低下の複合スコア</td>
-        </tr>
-        <tr>
-          <td>Time-Based Exit</td>
-          <td class="td-red">⛔ 無効</td>
-          <td>最大保有時間（デフォルト 72 時間）超過でEXIT</td>
         </tr>
       </tbody>
     </table>
@@ -950,20 +1006,25 @@ flowchart TB
       <div class="tl-title">Task 43: RPi Live BOT 5日間稼働確認完了</div>
       <div class="tl-desc">毎分ループ正常，残高 +2.96 USDT 増加</div>
     </div>
-    <div class="tl-item active">
-      <div class="tl-date">2026-03〜（進行中）</div>
-      <div class="tl-title">Task 44: 取引所移行（Bybit → 代替）</div>
-      <div class="tl-desc">Bybit 日本向け Close-Only 対応。OKX / Gate.io 候補</div>
+    <div class="tl-item done">
+      <div class="tl-date">2026-04-04</div>
+      <div class="tl-title">Task 44: 取引所移行 — Bybit(データ) + Bitget(注文) に解決</div>
+      <div class="tl-desc">Bybit Japan Close-Only 後も公開APIでOHLCV取得可能を確認。デュアル構成で安定稼働</div>
     </div>
-    <div class="tl-item pending">
-      <div class="tl-date">TODO</div>
-      <div class="tl-title">Task 40h: レジーム別戦略切替（Trend/Range）</div>
-      <div class="tl-desc">MarketRegimeDetector を活用したレジーム適応戦略</div>
+    <div class="tl-item active">
+      <div class="tl-date">2026-04〜（進行中）</div>
+      <div class="tl-title">Task 48: XAUT/USDT 自動取引システム実装</div>
+      <div class="tl-desc">config最適化完了、ベースライン+$63、PID分離・モニタリング対応済み。RPiデプロイ・本番稼働待ち</div>
     </div>
     <div class="tl-item pending">
       <div class="tl-date">TODO</div>
       <div class="tl-title">Task 47: 残高取得モード修正</div>
       <div class="tl-desc">デフォルトで API から実残高取得に変更</div>
+    </div>
+    <div class="tl-item pending">
+      <div class="tl-date">TODO</div>
+      <div class="tl-title">Task 40f: 価格データ健全性チェック</div>
+      <div class="tl-desc">OHLCV の欠損・重複・スパイク検出 / 補正機能</div>
     </div>
   </div>
 </section>
@@ -978,16 +1039,16 @@ flowchart TB
     <div class="imp-item">
       <div class="priority">⭐⭐⭐⭐⭐</div>
       <div class="content">
-        <h4>Task 44: 取引所移行（Bybit → OKX / Gate.io）<span class="tag">インフラ</span></h4>
-        <p>Bybit の日本向け Close-Only 期限（2026-03-23）対応。OHLCVデータ2年分の取得可能性確認済み。</p>
+        <h4>Task 48: XAUT RPiデプロイ・本番稼働<span class="tag">デュアルアセット</span></h4>
+        <p>XAUT自動取引の実装完了（config最適化・PID分離・モニタリング）。残りはRPi並列テスト→ペーパートレード→本番。</p>
       </div>
     </div>
 
     <div class="imp-item">
       <div class="priority">⭐⭐⭐⭐</div>
       <div class="content">
-        <h4>Task 40b: コストモデル BOT 統合<span class="tag">精度向上</span></h4>
-        <p>手数料・スリッページ・執行遅延をバックテストに正確に織り込む。現在の CostModel は実装済みだが無効化中。</p>
+        <h4>Task 47: 残高取得・指定モード修正<span class="tag">仕様改善</span></h4>
+        <p>デフォルトで API から実残高を取得し、config.ini の account_balance は任意指定時のみ使用。</p>
       </div>
     </div>
 
@@ -1089,7 +1150,7 @@ flowchart TB
 </div><!-- /container -->
 
 <footer>
-  satosystem gen2 — 最終更新: 2026-04-04 | Branch: gen2 | Python 3 + ccxt + Raspberry Pi
+  satosystem gen2 — 最終更新: 2026-04-05 | Branch: gen2 | BTC + XAUT Dual-Asset | Python 3 + ccxt + Raspberry Pi
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>

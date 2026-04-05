@@ -1,7 +1,7 @@
 {
-  "version": "2.2",
-  "last_updated": "2026-02-01",
-  "description": "satosystem gen2プロジェクトの開発ルール・ワークフロー定義",
+  "version": "3.0",
+  "last_updated": "2026-04-05",
+  "description": "satosystem gen2プロジェクト開発ルール（BTC+XAUTデュアルアセット運用体制）",
   
   "ai_role_and_background": {
     "role": {
@@ -38,20 +38,27 @@
       "severity": "CRITICAL",
       "rule": "ラズパイ上でのBOT起動・停止は必ず start_bot.sh / stop_bot.sh スクリプトを使用する。python3 bot.py を直接実行してはならない",
       "scripts": {
-        "start": "cd ~/work/satosystem/src && ./start_bot.sh",
-        "stop": "cd ~/work/satosystem/src && ./stop_bot.sh",
-        "ssh_start": "ssh raspberry_pi 'cd ~/work/satosystem/src && ./start_bot.sh'",
-        "ssh_stop": "ssh raspberry_pi 'cd ~/work/satosystem/src && ./stop_bot.sh'"
+        "start_btc": "cd ~/work/satosystem/src && ./start_bot.sh",
+        "start_xaut": "cd ~/work/satosystem/src && ./start_bot.sh --config config_xaut.ini",
+        "stop_btc": "cd ~/work/satosystem/src && ./stop_bot.sh",
+        "stop_xaut": "cd ~/work/satosystem/src && ./stop_bot.sh --config config_xaut.ini",
+        "ssh_start_btc": "ssh raspberry_pi 'cd ~/work/satosystem/src && ./start_bot.sh'",
+        "ssh_start_xaut": "ssh raspberry_pi 'cd ~/work/satosystem/src && ./start_bot.sh --config config_xaut.ini'",
+        "ssh_stop_btc": "ssh raspberry_pi 'cd ~/work/satosystem/src && ./stop_bot.sh'",
+        "ssh_stop_xaut": "ssh raspberry_pi 'cd ~/work/satosystem/src && ./stop_bot.sh --config config_xaut.ini'"
       },
       "reasons": [
         "start_bot.sh はPIDファイル管理・多重起動防止・nohupバックグラウンド起動を行う",
         "stop_bot.sh はPIDファイルを参照して安全にプロセスを終了する",
         "直接実行するとPIDファイルが作成されず、多重起動や強制終了の原因になる",
-        "LIVEモード確認プロンプトが正しく処理される"
+        "LIVEモード確認プロンプトが正しく処理される",
+        "BTC/XAUTはPIDファイルがシンボル別(bot.pid/bot_xaut.pid)で分離されており、並列稼働が可能",
+        "XAUT起動時は必ず --config config_xaut.ini を指定する"
       ],
       "prohibited_actions": [
         "ssh raspberry_pi 'python3 bot.py' などの直接実行",
-        "kill コマンドによる強制終了（stop_bot.sh を使うこと）"
+        "kill コマンドによる強制終了（stop_bot.sh を使うこと）",
+        "BTC用stop_bot.shでXAUTプロセスを停止すること（シンボル別に操作する）"
       ]
     },
     "commit_and_push_authorization": {
@@ -286,11 +293,12 @@
         "documentation": "まとめるべき内容はARCHITECTURE_OVERVIEW.mdに記載"
       },
       "current_metrics": {
-        "date": "2025-12-29",
+        "date": "2026-04-05",
         "regression_tests": {
-          "total": 54,
-          "passed": 53,
-          "success_rate": "97.8%",
+          "total": 190,
+          "passed": 190,
+          "success_rate": "100%",
+          "breakdown": "BTC 162 + XAUT 28",
           "status": "✅ PASS"
         },
         "quarterly_tests": {
@@ -450,8 +458,10 @@
       "auth": "公開鍵認証（パスワード不要）",
       "ip": "192.168.1.19",
       "work_dir": "/home/satoshi/work/satosystem",
-      "bot_start": "echo 'yes' | ./src/start_bot.sh  # または -t 0 でTTY不要",
-      "bot_stop": "./src/stop_bot.sh",
+      "bot_start_btc": "echo 'yes' | ./src/start_bot.sh",
+      "bot_start_xaut": "echo 'yes' | ./src/start_bot.sh --config config_xaut.ini",
+      "bot_stop_btc": "./src/stop_bot.sh",
+      "bot_stop_xaut": "./src/stop_bot.sh --config config_xaut.ini",
       "log_dir": "/home/satoshi/work/satosystem/src/logs/",
       "note": "start_bot.sh はstdinがTTYでない場合（nohup/ssh等）はLIVE確認プロンプトを自動スキップ"
     }

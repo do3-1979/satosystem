@@ -1,311 +1,144 @@
 {
   "project": {
     "name": "satosystem gen2",
-    "description": "Bitcoin auto-trading system - Donchian Breakout + PVO + ADX filter",
+    "description": "Crypto auto-trading system - BTC/USDT + XAUT/USDT dual-asset Donchian Breakout",
     "branch": "gen2",
-    "last_updated": "2026-04-04",
+    "last_updated": "2026-04-05",
+    "assets": ["BTC/USDT", "XAUT/USDT"],
     "baseline_performance": {
-      "cumulative_pnl_usd": 2394.47,
-      "period": "2024 Q1 - 2026 Q1 (9 quarters, ParamSweep TSMOM150+PSAR300採用後)",
-      "baseline_file": "baseline_backup/BASELINE_2394.47USD_Q1_2026_20260404.json",
-      "config": {
-        "psar_lookback_term": 300,
-        "tsmom_filter_enabled": 1,
-        "tsmom_filter_lookback": 150,
-        "donchian_buy_term": 30,
-        "donchian_sell_term": 30,
-        "risk_percentage": 0.3,
-        "leverage": 10
-      },
-      "previous_baseline": {
-        "cumulative_pnl_usd": 2402.94,
-        "period": "2024-2025 (8 quarters)",
-        "baseline_file": "baseline_backup/BASELINE_2402.94USD_ParamSweep_20260304.json",
-        "note": "旧ベースライン: 8四半期 (2024Q1-2025Q4)。2026Q1追加により9四半期 2394.47 USD に更新 (2026-04-04)"
-      }
-    },
-    "baseline_regression_300usd": {
-      "timestamp": "2026-02-08T12:56:51",
-      "purpose": "DD率計算修正後の正確なベースライン（初期資本300 USDを考慮した資産ベースDD率） - 参考データ",
-      "note": "標準の初期資本は100 USD。このデータは300 USD初期資本での結果であり、baseline_performanceとは異なる",
-      "cumulative_pnl_usd": 1568.82,
-      "initial_balance_usd": 300.0,
-      "period": "2024 Q1 - 2025 Q4 (8 quarters)",
-      "quarterly_results": [
-        {
-          "period": "Q1 2024",
-          "pnl": 92.010147,
-          "max_drawdown": 83.97239,
-          "drawdown_ratio": 28.0,
-          "profit_factor": 2.095719,
-          "win_rate": 25.0
-        },
-        {
-          "period": "Q2 2024",
-          "pnl": 49.579448,
-          "max_drawdown": 43.71519,
-          "drawdown_ratio": 13.1,
-          "profit_factor": 2.13352,
-          "win_rate": 50.0
-        },
-        {
-          "period": "Q3 2024",
-          "pnl": -23.679424,
-          "max_drawdown": 115.871326,
-          "drawdown_ratio": 29.6,
-          "profit_factor": 0.79564,
-          "win_rate": 75.0
-        },
-        {
-          "period": "Q4 2024",
-          "pnl": 1540.83766,
-          "max_drawdown": 246.783404,
-          "drawdown_ratio": 13.6,
-          "profit_factor": 5.101851,
-          "win_rate": 87.5
-        },
-        {
-          "period": "Q1 2025",
-          "pnl": -143.914194,
-          "max_drawdown": 143.914194,
-          "drawdown_ratio": 48.0,
-          "profit_factor": 0.0,
-          "win_rate": 20.0
-        },
-        {
-          "period": "Q2 2025",
-          "pnl": -0.756881,
-          "max_drawdown": 111.871987,
-          "drawdown_ratio": 27.2,
-          "profit_factor": 0.99599,
-          "win_rate": 75.0
-        },
-        {
-          "period": "Q3 2025",
-          "pnl": 29.025524,
-          "max_drawdown": 148.531042,
-          "drawdown_ratio": 31.1,
-          "profit_factor": 1.195417,
-          "win_rate": 100.0
-        },
-        {
-          "period": "Q4 2025",
-          "pnl": 25.713258,
-          "max_drawdown": 113.844744,
-          "drawdown_ratio": 25.9,
-          "profit_factor": 1.225862,
-          "win_rate": 100.0
+      "btc": {
+        "cumulative_pnl_usd": 2394.47,
+        "period": "2024Q1-2026Q1 (9四半期)",
+        "baseline_file": "baseline_backup/BASELINE_2394.47USD_Q1_2026_20260404.json",
+        "config": {
+          "donchian_term": 30,
+          "pvo_threshold": 10,
+          "adx_threshold": 31,
+          "leverage": 10,
+          "psar_lookback_term": 300,
+          "tsmom_filter_lookback": 150,
+          "risk_percentage": 0.3,
+          "initial_balance": 100
         }
-      ],
-      "drawdown_statistics": {
-        "quarters_with_dd_over_50_percent": 0,
-        "total_quarters": 8,
-        "dd_over_50_ratio": 0.0,
-        "max_drawdown_overall": 246.783404,
-        "max_dd_ratio": 48.0,
-        "note": "全四半期でDD率 ≤ 50%達成。以前の計算エラー（初期資本未考慮）により6/8四半期でDD>100%と誤判定されていた"
-      }
+      },
+      "xaut": {
+        "cumulative_pnl_usd": 63.39,
+        "period": "2025Q2-2026Q1 (4四半期)",
+        "baseline_file": "baseline_backup/BASELINE_XAUT_63.39USD_20260405.json",
+        "config": {
+          "donchian_term": 40,
+          "pvo_threshold": 0,
+          "adx_threshold": 26,
+          "leverage": 7,
+          "chandelier_exit": 1,
+          "time_based_exit_hours": 96,
+          "tsmom_filter_enabled": 0,
+          "risk_percentage": 0.3,
+          "initial_balance": 50
+        }
+      },
+      "previous_baselines": [
+        {
+          "btc_cumulative_pnl_usd": 2402.94,
+          "period": "2024Q1-2025Q4 (8四半期)",
+          "file": "baseline_backup/BASELINE_2402.94USD_ParamSweep_20260304.json",
+          "note": "旧ベースライン: 8四半期。2026Q1追加で9四半期→2394.47 USDに微減"
+        }
+      ]
     }
   },
   "latest_commit": {
-    "hash": "b05f96c",
-    "date": "2026-03-06",
-    "message": "fix: Task 40g - APIレートリミット根本対策（fetch_ohlcv呼び出し最適化）",
-    "changes": {
-      "files_changed": 1,
-      "lines_added": 103,
-      "lines_deleted": 96,
-      "description": "本番運用必須タスク5件を優先度5に昇格、過学習対策を明記、TODO 16→15、PROGRESS 4→1"
-    }
+    "hash": "88fde01",
+    "date": "2026-04-05",
+    "message": "fix: split bot PID lock by symbol and add config-aware start/stop scripts",
+    "description": "BTC/XAUT並列稼働のためのPID分離・start_bot.sh/stop_bot.sh --config対応"
   },
   "current_status": {
-    "phase": "Phase 3 - 本番稼働・取引所移行フェーズ",
+    "phase": "Phase 4 - デュアルアセット運用体制構築",
     "active_tasks": {
       "in_progress": [
         {
-          "task_id": "44",
-          "title": "取引所移行（Bybit → 代替取引所）",
-          "status": "調査中",
-          "priority": "★★★★★",
-          "started_date": "2026-03-07",
-          "note": "Bybit日本向けClose-Only期限: 2026-03-23 12:00 JST。Bitgetは4H足240日制限あり（バックテスト不可、ライブは可）。OKX/Gate.ioも候補",
-          "due_date": "2026-03-22",
-          "subtasks": [
-            {
-              "id": "44a",
-              "title": "代替取引所OHLCV取得テスト（2年分4H足）",
-              "due": "2026-03-09"
-            },
-            {
-              "id": "44b",
-              "title": "新取引所exchange.py実装",
-              "due": "2026-03-13"
-            },
-            {
-              "id": "44c",
-              "title": "バックテスト同等性確認・レグレッションテスト",
-              "due": "2026-03-16"
-            },
-            {
-              "id": "44d",
-              "title": "RPiデプロイ・本番切り替えテスト",
-              "due": "2026-03-19"
-            }
-          ]
+          "task_id": "48",
+          "title": "XAUT/USDT自動取引システム",
+          "status": "実装ほぼ完了、RPiデプロイ待ち",
+          "priority": 5,
+          "remaining": ["48-H: RPi並列稼働テスト", "48-I: ペーパートレード", "48-J: 本番稼働"]
         }
       ],
       "next_priority": [
-        {
-          "task_id": "40h",
-          "title": "レジーム別戦略切替（Trend/Range）",
-          "priority": "★★★★☆"
-        },
-        {
-          "task_id": "40f",
-          "title": "価格データ健全性チェック（新取引所移行後）",
-          "priority": "★★★★☆"
-        },
-        {
-          "task_id": "22b-eval",
-          "title": "Strategy B有効化・バックテスト評価",
-          "priority": "★★★☆☆"
-        }
+        {"task_id": "47", "title": "残高取得モード修正", "priority": 4},
+        {"task_id": "40f", "title": "価格データ健全性チェック", "priority": 3}
       ]
     },
     "recently_completed": [
       {
-        "task_id": "43",
-        "title": "RPi本番稼働 - ライブ運用監視",
-        "date": "2026-03-13",
-        "description": "RPi Live BOT 3日間稼働監視フェーズ: 実装完了"
+        "task_id": "44",
+        "title": "取引所移行（Bybit Close-Only対応）",
+        "date": "2026-04-04",
+        "result": "Bybit=データ + Bitget=注文のデュアル構成で解決"
       },
       {
-        "id": "sweep_metrics",
-        "description": "パラメータスイープ: tsmom_lookback=150採用 (+245 USD), 評価指標5種追加",
-        "completed_at": "2026-03-04"
-      },
-      {
-        "task_id": "40d",
-        "title": "現行戦略の見直し（エントリー精度PDCA）",
-        "date": "2026-03-04",
-        "description": "PDCA #3採用: psar_lookback_term=100→300 + tsmom_filter(lookback=200)で+172 USD改善 (1985→2157 USD, +8.7%)"
-      },
-      {
-        "task_id": "40e",
-        "title": "トレンドフォロー以外の優位性候補の調査・小規模検証",
-        "date": "2026-03-02",
-        "description": "Volatility Filter (ATR>2500) 採用: +581 USD改善 (1403→1985 USD)"
-      },
-      {
-        "task_id": "40b",
-        "title": "手数料/スリッページ/約定遅延のコストモデル導入",
-        "date": "2026-03-02",
-        "description": "コストモデル統合確認済み - cost_model.py実装済み、portfolio.pyに統合、bot.pyから呼び出し確認済み（実装は過去セッションにて完了済み）"
+        "task_id": "48-A~G",
+        "title": "XAUT実装（設計〜出口戦略）",
+        "date": "2026-04-05",
+        "result": "config_xaut.ini最適化完了、ベースライン63.39USD、PID分離・モニタリング対応"
       }
     ]
   },
-  "documentation": {
-    "core_documents": [
-      "ACTION_LIST.json",
-      "docs/ARCHITECTURE_OVERVIEW.md",
-      "DEVELOPMENT_RULES.json",
-      "docs/PROFIT_ENHANCEMENT_STRATEGY_2026.md",
-      "docs/PRICE_DATA_FLOW_DESIGN.md",
-      "docs/TRADE_LOG_USAGE_GUIDE.md",
-      "docs/ADX_FILTER_ANALYSIS.md"
-    ],
-    "deprecated_documents": [
-      "docs/ACTION_LIST.md (replaced by ACTION_LIST.json on 2026-02-01)"
-    ],
-    "analysis_files": {
-      "source_code_analysis": "docs/analysis/src/ (23 JSON files)",
-      "backtest_results": "docs/quarterly_backtest_results/",
-      "regression_tests": "docs/regression_test_results/"
-    },
-    "recent_cleanup": {
-      "date": "2026-02-01",
-      "action": "ACTION_LIST.mdをACTION_LIST.jsonに移行、完全JSON化完了",
-      "previous_cleanup": {
-        "date": "2026-01-31",
-        "action": "削除した一時レポート13ファイル、ACTION_LIST.md簡素化（478→99行）",
-        "deleted_files": [
-          "ADAPTIVE_OPTIMIZATION_REPORT.md",
-          "LOSS_TRADE_ANALYSIS_PLAN.md",
-          "MEAN_REVERSION_IMPLEMENTATION_PLAN.md",
-          "PARAMETER_OPTIMIZATION_ANALYSIS_20260105.md",
-          "PRE_INTEGRATION_CHECKLIST.md",
-          "RANGE_BREAKOUT_ENHANCED_PLAN.md",
-          "FILTER_SCENARIO_ANALYSIS_REPORT.md",
-          "mean_reversion_phase0_evaluation*.md (3 files)",
-          "PHASE0_*.md (3 files)"
-        ]
-      }
-    }
-  },
   "test_suite": {
-    "total_tests": 183,
+    "total_tests": 190,
     "pass_rate": "100%",
-    "test_files": 26,
-    "last_regression_test": "2026-04-04",
-    "regression_status": "183/183 PASS (100%)"
+    "test_files": 28,
+    "breakdown": {"btc": 162, "xaut": 28},
+    "last_regression_test": "2026-04-05",
+    "regression_status": "190/190 PASS (100%)"
   },
   "configuration": {
-    "current_parameters": {
+    "btc": {
+      "config_file": "src/config.ini",
       "time_frame": "240min",
       "adx_threshold": 31,
       "pvo_threshold": 10,
       "donchian_period": 30,
       "entry_times": 2,
-      "volatility_term": 14
+      "leverage": 10,
+      "psar_lookback": 300,
+      "tsmom_lookback": 150
     },
-    "enabled_filters": {
-      "enable_pvo_filter": true,
-      "enable_adx_filter": true,
-      "enable_seasonality_based_positioning": false,
-      "enable_market_regime_detection": false,
-      "enable_vcp_strategy": false,
-      "enable_mean_reversion_strategy": false,
-      "enable_range_breakout_enhanced": false
-    },
-    "baseline": "2394.47 USD (2026-04-04, 9四半期 2024Q1-2026Q1, ParamSweep tsmom_lookback=150)"
-  },
-  "next_actions": {
-    "immediate": [
-      "Task 43: RPi 1週間耐久テスト継続稼働・2026-03-08にログ回収",
-      "Task 40d: 現行戦略 エントリー/EXIT 整合性監査"
-    ],
-    "planned": [
-      "Task 40h: レジーム別戦略切替（Trend/Range）実装",
-      "Task 22b-eval: Strategy B 有効化・バックテスト評価",
-      "Task 22c-eval: Strategy C 有効化・バックテスト評価",
-      "Task 23a-b: Fear & Greed Index / RSI 二重確認実装"
-    ],
-    "backlog": [
-      "Task 40f: 価格データ健全性チェック",
-      "Task 40i: 銘柄分散・相関管理",
-      "Task 38d: Volume Profile Analysis 実装",
-      "Task 38e: Market Microstructure 実装",
-      "Task 6: ログファイル自動整理機能実装"
-    ]
-  },
-  "performance_goals_2026": {
-    "target": "年間累積損益 +$1,500-2,500",
-    "strategy_contributions": {
-      "39b_two_tier_entry": "+$378.27 (完了・有効化)",
-      "39c_multi_timeframe": "不採用（全トレード却下で機能せず）",
-      "39d_time_based_exit": "完了",
-      "39e_dynamic_stop_loss": "完了",
-      "39f_weekend_avoidance": "完了 (Task 40eで実装済み)",
-      "40e_volatility_filter": "+$581.65 (完了・有効化 +41.4%)",
-      "current_baseline": "+$1,985.14 (40e実装後, 2026-03-02)"
+    "xaut": {
+      "config_file": "src/config_xaut.ini",
+      "time_frame": "240min",
+      "adx_threshold": 26,
+      "pvo_threshold": 0,
+      "donchian_period": 40,
+      "entry_times": 2,
+      "leverage": 7,
+      "chandelier_exit": 1,
+      "time_based_exit_hours": 96
     }
   },
+  "infrastructure": {
+    "raspberry_pi": {
+      "ssh": "ssh raspberry_pi",
+      "ip": "192.168.1.19",
+      "bot_start_btc": "cd ~/work/satosystem/src && ./start_bot.sh",
+      "bot_start_xaut": "cd ~/work/satosystem/src && ./start_bot.sh --config config_xaut.ini",
+      "bot_stop_btc": "cd ~/work/satosystem/src && ./stop_bot.sh",
+      "bot_stop_xaut": "cd ~/work/satosystem/src && ./stop_bot.sh --config config_xaut.ini"
+    }
+  },
+  "documentation": {
+    "core_documents": [
+      "ACTION_LIST.json",
+      "PROGRESS.json",
+      "DEVELOPMENT_RULES.json",
+      "docs/ARCHITECTURE_OVERVIEW.md",
+      "docs/PROJECT_OVERVIEW.html"
+    ]
+  },
   "notes": {
-    "workflow": "DEVELOPMENT_RULES.jsonに基づいた開発フロー遵守",
-    "testing": "変更前に必ずレグレッションテスト実施",
-    "documentation": "各タスク完了時にACTION_LIST.json更新（2026-02-01以降）",
-    "commit_policy": "機能追加は個別コミット、バグ修正は即時コミット",
-    "backup": "ベースライン性能をbaseline_backup/に定期保存",
-    "task_management": "ACTION_LIST.jsonとPROGRESS.jsonを完全同期"
+    "dual_asset": "BTC+XAUT並列稼働。PIDファイルはシンボル別(bot.pid / bot_xaut.pid)で分離",
+    "rate_limit": "Bybit/Bitgetへの同時API呼び出しを1秒ずらして制限回避",
+    "commit_policy": "全コミット・プッシュはユーザー許可後のみ実行"
   }
 }
