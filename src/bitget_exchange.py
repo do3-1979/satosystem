@@ -884,16 +884,17 @@ class BitgetExchange(Exchange):
         if symbol is None:
             # マーケット変換
             market_type = Config.get_market()
-            if market_type == 'BTC/USD':
-                symbol = "BTC/USDT"  # BitgetはUSD建てがない
-            elif market_type == 'BTC/USDT':
+            if market_type in ('BTC/USD', 'BTC/USDT'):
                 symbol = "BTC/USDT"
-            elif market_type == 'ETH/USD':
-                symbol = "ETH/USDT"  # BitgetはUSD建てがない
-            elif market_type == 'ETH/USDT':
+            elif market_type in ('ETH/USD', 'ETH/USDT'):
                 symbol = "ETH/USDT"
+            elif market_type == 'XAUT/USDT':
+                symbol = "XAUT/USDT"
+            elif market_type == 'PAXG/USDT':
+                symbol = "PAXG/USDT"
             else:
-                symbol = "BTC/USDT"  # デフォルト
+                # 汎用: "BASE/QUOTE" → "BASE/QUOTE" のまま使用
+                symbol = market_type.split(':')[0] if ':' in market_type else market_type
         
         # タイムアウト設定
         if 'timeout' not in params:
