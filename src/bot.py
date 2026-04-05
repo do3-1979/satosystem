@@ -99,16 +99,19 @@ class Bot:
         )
         
         # 多重起動防止: PIDロックファイル（バックテスト以外のみ）
+        # シンボル別ロック: BTC/XAUT が独立して起動可能
         pid_lock_file = None
         if back_test_mode == 0:
-            pid_path = '/tmp/satosystem_bot.pid'
+            market = Config.get_market()  # e.g., "BTC/USDT"
+            symbol = market.split('/')[0]  # e.g., "BTC"
+            pid_path = f'/tmp/satosystem_bot_{symbol}.pid'
             try:
                 pid_lock_file = open(pid_path, 'w')
                 fcntl.flock(pid_lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 pid_lock_file.write(str(os.getpid()))
                 pid_lock_file.flush()
             except IOError:
-                print(f"ERROR: BOTが既に起動しています（{pid_path}）。多重起動を防止します。")
+                print(f"ERROR: {symbol} BOTが既に起動しています（{pid_path}）。多重起動を防止します。")
                 sys.exit(1)
 
         if back_test_mode == 1:
