@@ -140,11 +140,14 @@ class Visualizer:
         display_end_time = end_time
         
         log_files = []
-        for root, _, files in os.walk(log_directory):
-            for file in files:
+        # log_directory 直下のみスキャン（サブディレクトリは除外）
+        # os.walk を使うと logs/xaut/ など別シンボルのファイルまで拾ってしまうため
+        for file in os.listdir(log_directory):
+            full_path = os.path.join(log_directory, file)
+            if os.path.isfile(full_path):
                 # zipファイル + JSONファイルを対象とする
                 if file.endswith(".zip") or (file.endswith(".json") and file[0].isdigit()):
-                    log_files.append(os.path.join(root, file))
+                    log_files.append(full_path)
         
         if not log_files:
             print(f"No log files in {log_directory}")
@@ -166,8 +169,16 @@ class Visualizer:
             
             if json_files:
                 json_files.sort()
-                files_to_process = [json_files[-1]]  # 最新のJSONを使用
-                print(f"[INFO] Using latest JSON log: {os.path.basename(files_to_process[0])}")
+                # 最新から順に有効なJSONファイルを探す（空/壊れたファイルをスキップ）
+                files_to_process = []
+                for f in reversed(json_files):
+                    if os.path.getsize(f) > 100:
+                        files_to_process = [f]
+                        print(f"[INFO] Using latest JSON log: {os.path.basename(f)}")
+                        break
+                if not files_to_process:
+                    print(f"[INFO] 有効なJSONファイルが見つかりません ({log_directory})")
+                    return None, None, display_start_time, display_end_time
             elif zip_files:
                 # ZIPファイルから期間検出
                 files_to_process = self.detect_period_log_files(log_directory, calc_start_time, display_end_time)

@@ -107,10 +107,15 @@ if [ $VIZ_ONLY -eq 0 ]; then
     fi
 
     # bot.py を config_xaut.ini で実行（SRC_DIR から実行）
+    # タイムアウト: 600秒 (10分)。SQLiteキャッシュ使用で通常2〜3分で完了
     cd "$SRC_DIR"
-    python3 bot.py --config config_xaut.ini
+    timeout 600 python3 bot.py --config config_xaut.ini
     EXIT_CODE=$?
     cd "$WORKSPACE_ROOT"
+    if [ $EXIT_CODE -eq 124 ]; then
+        echo "❌ XAUTバックテストがタイムアウトしました（600秒超過）"
+        exit 1
+    fi
 
     if [ $EXIT_CODE -ne 0 ]; then
         echo "❌ XAUTバックテストに失敗しました (exit code: $EXIT_CODE)"
@@ -125,8 +130,8 @@ if [ $VIZ_ONLY -eq 0 ]; then
 fi
 
 # Step 2: グラフ生成（XAUT）
-#   注: visualizer.py は現在 config.ini 固定のため、XAUT用には
-#   ログディレクトリを一時切り替えてグラフを生成する
+#   visualizer.py は Config() が config.ini を固定読み込みするため、
+#   Config.load_config("config_xaut.ini") を先に呼んでからインポートする
 if [ $BACKTEST_ONLY -eq 0 ]; then
     if [ $QUIET -eq 0 ]; then
         echo "📈 Step 2: XAUT グラフ生成中..."
@@ -134,24 +139,42 @@ if [ $BACKTEST_ONLY -eq 0 ]; then
     fi
 
     cd "$SRC_DIR"
-    # XAUT ログから最新のバックテスト結果を確認
-    XAUT_LOG_COUNT=$(find logs/xaut -name "*.json" -not -name "latest_status.json" -not -name "trade_log_*.json" 2>/dev/null | wc -l)
-    if [ "$XAUT_LOG_COUNT" -gt 0 ]; then
-        if [ $QUIET -eq 0 ]; then
-            echo "📂 XAUT ログファイル: ${XAUT_LOG_COUNT}件"
-            echo "⚠️  visualizer.py は現在 BTC 専用のため、XAUT のグラフ生成はスキップします"
-            echo "    バックテスト結果は logs/xaut/ に保存されています"
-        fi
-    else
-        if [ $QUIET -eq 0 ]; then
-            echo "⚠️  XAUT ログファイルが見つかりません (logs/xaut/)"
-        fi
-    fi
+    timeout 180 python3 - << 'PYEOF'
+import sys, os
+sys.path.insert(0, '.')
+
+# Config.load_config を先に呼び出し、config_xaut.ini を読み込ませる
+from config import Config
+Config.load_config("config_xaut.ini")
+
+# Visualizer を import（Config のクラス変数が xaut 設定に切り替わった後）
+from visualizer import Visualizer
+
+output_html = "../report_xaut/backtest_visualization.html"
+output_dir = os.path.dirname(output_html)
+os.makedirs(output_dir, exist_ok=True)
+
+v = Visualizer()
+v.visualize_backtest(
+    log_directory="logs/xaut",
+    output_html=output_html,
+    normalize_indicators=True,
+)
+PYEOF
+    VIZ_EXIT=$?
     cd "$WORKSPACE_ROOT"
+
+    if [ $VIZ_EXIT -eq 124 ]; then
+        echo "❌ グラフ生成がタイムアウトしました（180秒超過）"
+        exit 1
+    elif [ $VIZ_EXIT -ne 0 ]; then
+        echo "❌ グラフ生成に失敗しました (exit code: $VIZ_EXIT)"
+        exit $VIZ_EXIT
+    fi
 
     if [ $QUIET -eq 0 ]; then
         echo ""
-        echo "✅ グラフ確認完了"
+        echo "✅ グラフ生成完了"
         echo ""
     fi
 fi
