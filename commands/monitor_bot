@@ -10,18 +10,32 @@
 
 cd "$(git rev-parse --show-toplevel 2>/dev/null || echo "$HOME/work/satosystem")" || exit 1
 
-LOCAL_LOGS_DIR="src/logs"
-STATUS_FILE="$LOCAL_LOGS_DIR/latest_status.json"
+LOCAL_LOGS_BTC="src/logs"
+LOCAL_LOGS_XAUT="src/logs/xaut"
 INTERVAL=30
 SSH_HOST=""
+ASSET="BTC"  # デフォルト: BTC
 
 # 引数解析
 PREV=""
 for i in "$@"; do
   case "$i" in --host=*) SSH_HOST="${i#*=}" ;; esac
   if [ "$PREV" = "--host" ]; then SSH_HOST="$i"; fi
+  case "$i" in --asset=*) ASSET="${i#*=}" ;; esac
+  if [ "$PREV" = "--asset" ]; then ASSET="$i"; fi
+  case "$i" in --xaut) ASSET="XAUT" ;; esac
   PREV="$i"
 done
+
+# ログディレクトリ設定
+if [ "$ASSET" = "XAUT" ]; then
+    LOCAL_LOGS_DIR="$LOCAL_LOGS_XAUT"
+    CONFIG_NAME="config_xaut.ini"
+else
+    LOCAL_LOGS_DIR="$LOCAL_LOGS_BTC"
+    CONFIG_NAME="config.ini"
+fi
+STATUS_FILE="$LOCAL_LOGS_DIR/latest_status.json"
 
 # カラーコード
 RED='\033[0;31m'
@@ -37,7 +51,7 @@ RESET='\033[0m'
 # latest_status.json を取得（SSH or ローカル）
 fetch_status_json() {
     if [ -n "$SSH_HOST" ]; then
-        ssh "$SSH_HOST" "cat ~/work/satosystem/src/logs/latest_status.json" 2>/dev/null
+        ssh "$SSH_HOST" "cat ~/work/satosystem/$LOCAL_LOGS_DIR/latest_status.json" 2>/dev/null
     else
         cat "$STATUS_FILE" 2>/dev/null
     fi
@@ -47,7 +61,7 @@ fetch_status_json() {
 get_proc_info() {
     if [ -n "$SSH_HOST" ]; then
         ssh "$SSH_HOST" "
-            PID=\$(pgrep -f 'python3 -u bot.py' | head -1)
+            PID=\$(pgrep -f \"python3 -u bot.py.*$CONFIG_NAME\" | head -1)
             if [ -n \"\$PID\" ]; then
                 CPU=\$(ps -p \$PID -o %cpu --no-headers 2>/dev/null | tr -d ' ')
                 MEM=\$(ps -p \$PID -o %mem --no-headers 2>/dev/null | tr -d ' ')
@@ -58,7 +72,7 @@ get_proc_info() {
             fi" 2>/dev/null
     else
         local pid
-        pid=$(pgrep -f "python3 -u bot.py" | head -1)
+        pid=$(pgrep -f "python3 -u bot.py.*$CONFIG_NAME" | head -1)
         if [ -n "$pid" ]; then
             local cpu mem started
             cpu=$(ps -p "$pid" -o %cpu --no-headers 2>/dev/null | tr -d ' ')
@@ -95,8 +109,12 @@ show_dashboard() {
     [ -n "$SSH_HOST" ] && target_label=" [${SSH_HOST}]"
 
     # ヘッダー（固定68文字幅）
+    local asset_display="$ASSET"
+    [ "$ASSET" = "BTC" ] && asset_display="Bitcoin (BTC)"
+    [ "$ASSET" = "XAUT" ] && asset_display="Gold (XAUT)"
+    
     echo -e "${BOLD}${CYAN}╔════════════════════════════════════════════════════════════════════╗${RESET}"
-    printf "${BOLD}${CYAN}║${RESET}  ${WHITE}satosystem BOT モニター${target_label}${RESET}  ${GRAY}${now}${RESET}
+    printf "${BOLD}${CYAN}║${RESET}  ${WHITE}satosystem BOT モニター — ${asset_display}${target_label}${RESET}  ${GRAY}${now}${RESET}
 "
     echo -e "${BOLD}${CYAN}╚════════════════════════════════════════════════════════════════════╝${RESET}"
     echo ""
