@@ -1,0 +1,1168 @@
+{
+  "meta": {
+    "description": "全シグナル・フィルターの役割・特性・設定値一覧",
+    "baseline_pnl": 2402.94,
+    "baseline_description": "2024Q1-2025Q4 累積損益（Two-Tier Entry + tsmom=150 + PSAR=300）",
+    "created": "2026-03-07",
+    "author": "Task 45 - 最適組み合わせ探索"
+  },
+  "entry_signals": [
+    {
+      "id": "S01",
+      "name": "Donchian Channel Breakout",
+      "category": "entry_signal",
+      "config_key": "donchian_buy_term / donchian_sell_term",
+      "current_value": 30,
+      "description": "N期間の最高値/最安値ブレイクアウトでエントリーシグナル発生",
+      "principle": "トレンドフォロー。価格が直近高値/安値を更新した時点でブレイクアウトと判断",
+      "role": "メインエントリートリガー（常時有効）",
+      "strengths": [
+        "シンプルで再現性が高い",
+        "トレンド相場で強力",
+        "ラグが少ない（リアルタイム対応）"
+      ],
+      "weaknesses": [
+        "ボックス相場で偽シグナル多発",
+        "N値が大きすぎると機会損失、小さすぎるとノイズ増"
+      ],
+      "sweep_candidates": [
+        20,
+        25,
+        30,
+        35,
+        40,
+        50
+      ],
+      "synergy_with": [
+        "S02",
+        "F03",
+        "F04",
+        "F07"
+      ]
+    },
+    {
+      "id": "S02",
+      "name": "PVO (Percentage Volume Oscillator)",
+      "category": "entry_signal",
+      "config_key": "pvo_s_term / pvo_l_term / pvo_threshold",
+      "current_value": {
+        "s_term": 5,
+        "l_term": 70,
+        "threshold": 10
+      },
+      "description": "短期/長期出来高移動平均の差分でブレイクの信頼性を確認",
+      "principle": "出来高増加 = 参加者が増える = 本物のブレイク。偽ブレイクを出来高で排除",
+      "role": "エントリーシグナルの信頼性確認（metatrigger）",
+      "strengths": [
+        "偽ブレイク排除効果が高い",
+        "出来高急増を早期捕捉",
+        "ドンチャンとの相性が抜群"
+      ],
+      "weaknesses": [
+        "出来高が低い時間帯（週末・夜間）で機会損失",
+        "threshold設定が難しい"
+      ],
+      "sweep_candidates": {
+        "threshold": [
+          5,
+          10,
+          20,
+          30,
+          50
+        ]
+      },
+      "synergy_with": [
+        "S01",
+        "F03",
+        "F08"
+      ]
+    },
+    {
+      "id": "S03",
+      "name": "ADX方向シグナル (bull/bear threshold)",
+      "category": "entry_signal",
+      "config_key": "adx_bull_threshold / adx_bear_threshold",
+      "current_value": {
+        "bull": 24,
+        "bear": 18
+      },
+      "description": "ADXのDI+/DI-の交差でBUY/SELL方向を決定",
+      "principle": "DI+>DI- = 上昇トレンド, DI-<DI+ = 下降トレンド",
+      "role": "エントリー方向の確認（Strategy A）",
+      "strengths": [
+        "トレンドの方向性を数値化",
+        "ラグは中程度"
+      ],
+      "weaknesses": [
+        "ヨコ相場では偽シグナル",
+        "ADX値自体がトレンド強度であり方向性ではない点に注意"
+      ],
+      "sweep_candidates": {
+        "bull": [
+          20,
+          24,
+          28
+        ],
+        "bear": [
+          15,
+          18,
+          22
+        ]
+      },
+      "synergy_with": [
+        "F03",
+        "F06",
+        "F10"
+      ]
+    },
+    {
+      "id": "S04",
+      "name": "Range Breakout Enhanced (相対出来高確認)",
+      "category": "entry_signal",
+      "config_key": "enable_range_breakout_enhanced / relative_volume_threshold / breakout_threshold_percent",
+      "current_value": {
+        "enabled": 1,
+        "rel_vol": 1.5,
+        "breakout_pct": 0.0
+      },
+      "description": "ドンチャンブレイク後に相対出来高と価格ブレイク強度で偽ブレイクを排除",
+      "principle": "ブレイクが本物かを出来高とブレイク幅で2重確認",
+      "role": "ドンチャンシグナルの品質向上",
+      "strengths": [
+        "偽ブレイク大幅削減",
+        "出来高と価格の2指標確認で信頼性UP"
+      ],
+      "weaknesses": [
+        "フィルターが強すぎるとエントリー機会を逃す",
+        "breakout_threshold_percent=0.0ではほぼ無効"
+      ],
+      "sweep_candidates": {
+        "relative_volume_threshold": [
+          1.2,
+          1.5,
+          2.0,
+          2.5
+        ],
+        "breakout_threshold_percent": [
+          0.0,
+          0.3,
+          0.5,
+          1.0
+        ]
+      },
+      "synergy_with": [
+        "S01",
+        "S02",
+        "F03"
+      ]
+    },
+    {
+      "id": "S05",
+      "name": "TSMOM (Time-Series Momentum)",
+      "category": "entry_filter",
+      "config_key": "tsmom_filter_enabled / tsmom_filter_lookback",
+      "current_value": {
+        "enabled": 1,
+        "lookback": 150
+      },
+      "description": "N期間前比リターンが正=上昇モメンタム確認でBUY許可",
+      "principle": "Moskowitz, Ooi, Pedersen (2012) JFE: 時系列モメンタムは翌期間の予測力を持つ",
+      "role": "方向性フィルター（モメンタム確認）",
+      "strengths": [
+        "学術的根拠が強い（4000+被引用）",
+        "長期トレンド確認に効果的",
+        "lookback=150で中長期トレンドを捕捉"
+      ],
+      "weaknesses": [
+        "lookbackが長すぎると遅行（転換点を見逃す）",
+        "lookbackが短すぎるとノイズに敏感"
+      ],
+      "sweep_candidates": {
+        "lookback": [
+          50,
+          100,
+          150,
+          200,
+          300
+        ]
+      },
+      "synergy_with": [
+        "S01",
+        "F03",
+        "F10"
+      ]
+    }
+  ],
+  "entry_filters": [
+    {
+      "id": "F01",
+      "name": "PVOフィルター",
+      "category": "entry_filter",
+      "config_key": "enable_pvo_filter / pvo_threshold",
+      "current_value": {
+        "enabled": 1,
+        "threshold": 10
+      },
+      "description": "PVO値がthreshold以下のとき出来高不足としてエントリー却下",
+      "role": "出来高確認フィルター",
+      "strengths": [
+        "確認済みシグナルの品質向上"
+      ],
+      "weaknesses": [
+        "threshold高すぎると機会損失"
+      ],
+      "sweep_candidates": {
+        "threshold": [
+          5,
+          10,
+          20,
+          30
+        ]
+      },
+      "synergy_with": [
+        "S02",
+        "S04",
+        "F03"
+      ]
+    },
+    {
+      "id": "F02",
+      "name": "ADXフィルター",
+      "category": "entry_filter",
+      "config_key": "enable_adx_filter / adx_filter_threshold",
+      "current_value": {
+        "enabled": 1,
+        "threshold": 31
+      },
+      "description": "ADX値がthreshold未満のとき「トレンドなし」としてエントリー却下",
+      "role": "トレンド強度フィルター（最重要）",
+      "strengths": [
+        "ボックス相場でのエントリー抑制",
+        "偽ブレイクシグナルを減少",
+        "現在のベースラインで最も貢献度が高い"
+      ],
+      "weaknesses": [
+        "値が高すぎると強トレンドの初期を見逃す",
+        "急激なトレンド転換で遅れる"
+      ],
+      "sweep_candidates": {
+        "threshold": [
+          24,
+          27,
+          31,
+          35,
+          40
+        ]
+      },
+      "synergy_with": [
+        "S01",
+        "S03",
+        "F06",
+        "F10"
+      ]
+    },
+    {
+      "id": "F03",
+      "name": "ボラティリティフィルター",
+      "category": "entry_filter",
+      "config_key": "enable_volatility_filter / volatility_filter_threshold",
+      "current_value": {
+        "enabled": 1,
+        "threshold": 2500
+      },
+      "description": "ボラティリティ(ATR)がthreshold超えのとき異常相場として却下",
+      "role": "リスク抑制フィルター（急騰/急落時の排除）",
+      "strengths": [
+        "フラッシュクラッシュ時のエントリー抑制",
+        "異常相場での損失防止"
+      ],
+      "weaknesses": [
+        "threshold設定が難しい（低すぎると大チャンスを逃す）"
+      ],
+      "sweep_candidates": {
+        "threshold": [
+          1500,
+          2000,
+          2500,
+          3000,
+          3500
+        ]
+      },
+      "synergy_with": [
+        "S01",
+        "F02"
+      ]
+    },
+    {
+      "id": "F04",
+      "name": "出来高フィルター",
+      "category": "entry_filter",
+      "config_key": "enable_volume_filter / volume_filter_threshold",
+      "current_value": {
+        "enabled": 0,
+        "threshold": 15000
+      },
+      "description": "絶対出来高がthreshold未満のとき流動性不足として却下",
+      "role": "流動性フィルター（現在無効）",
+      "strengths": [
+        "流動性が低い時間帯のエントリー抑制"
+      ],
+      "weaknesses": [
+        "絶対値のため市場環境変化で機能しなくなる"
+      ],
+      "sweep_candidates": {
+        "threshold": [
+          10000,
+          15000,
+          20000
+        ]
+      },
+      "synergy_with": [
+        "S04",
+        "F01"
+      ]
+    },
+    {
+      "id": "F05",
+      "name": "週末フィルター",
+      "category": "entry_filter",
+      "config_key": "weekend_filter_enabled",
+      "current_value": {
+        "enabled": 0
+      },
+      "description": "土日はエントリー回避",
+      "role": "週末ボラ/流動性低下対応（現在無効）",
+      "strengths": [
+        "週末の薄商いブレイク（偽）を回避"
+      ],
+      "weaknesses": [
+        "BTCは24/7市場なので制約になる可能性"
+      ],
+      "sweep_candidates": {
+        "enabled": [
+          0,
+          1
+        ]
+      },
+      "synergy_with": []
+    },
+    {
+      "id": "F06",
+      "name": "ADXスロープフィルター",
+      "category": "entry_filter",
+      "config_key": "adx_slope_filter_enabled / adx_slope_filter_lookback",
+      "current_value": {
+        "enabled": 0,
+        "lookback": 10
+      },
+      "description": "ADXがlookback期間前より上昇中=トレンド強化中=高品質エントリー",
+      "principle": "Elder (1993): ADX上昇中のトレンド=エントリー最良タイミング",
+      "role": "トレンド品質フィルター（現在無効）",
+      "strengths": [
+        "トレンド初期の強化期だけエントリー",
+        "ADXフィルターとの相乗効果が期待できる"
+      ],
+      "weaknesses": [
+        "lookbackが短すぎるとノイズ",
+        "強すぎるとトレード数激減のリスク"
+      ],
+      "sweep_candidates": {
+        "lookback": [
+          5,
+          10,
+          15,
+          20
+        ]
+      },
+      "synergy_with": [
+        "F02",
+        "S03"
+      ]
+    },
+    {
+      "id": "F07",
+      "name": "SMA方向性フィルター",
+      "category": "entry_filter",
+      "config_key": "sma_direction_filter_enabled / sma_direction_filter_period",
+      "current_value": {
+        "enabled": 0,
+        "period": 500
+      },
+      "description": "現在価格>SMA(N)ならBUY 許可, <SMA(N)ならSELL許可（中長期トレンド確認）",
+      "principle": "Brock, Lakonishok, LeBaron (1992) JF: SMAタイミング戦略は正のリターン",
+      "role": "長期トレンド方向確認フィルター（現在無効）",
+      "strengths": [
+        "長期トレンドに逆らうエントリーを抑制",
+        "学術的根拠あり（3000+被引用）",
+        "シンプル"
+      ],
+      "weaknesses": [
+        "period=500は長すぎ（見直し必要）",
+        "BTCの急激なリバーサルで一時的に機能しない"
+      ],
+      "sweep_candidates": {
+        "period": [
+          100,
+          200,
+          300,
+          500
+        ]
+      },
+      "synergy_with": [
+        "S05",
+        "F02"
+      ]
+    },
+    {
+      "id": "F08",
+      "name": "RSI方向性フィルター",
+      "category": "entry_filter",
+      "config_key": "rsi_direction_filter_enabled / rsi_direction_filter_period",
+      "current_value": {
+        "enabled": 0,
+        "period": 14
+      },
+      "description": "RSI>50ならBUY許可, RSI<50ならSELL許可",
+      "principle": "Liu & Tsyvinski (2021) RFS: RSI>50が翌月リターンにポジティブ相関",
+      "role": "モメンタム方向フィルター（現在無効）",
+      "strengths": [
+        "短期〜中期モメンタムの方向性確認",
+        "TSMOMの補完として機能"
+      ],
+      "weaknesses": [
+        "TSMOMと役割が重複",
+        "period=14はBTC 4時間足では短い可能性"
+      ],
+      "sweep_candidates": {
+        "period": [
+          10,
+          14,
+          21
+        ]
+      },
+      "synergy_with": [
+        "S05",
+        "F07"
+      ]
+    },
+    {
+      "id": "F09",
+      "name": "MACD方向性フィルター",
+      "category": "entry_filter",
+      "config_key": "macd_direction_filter_enabled",
+      "current_value": {
+        "enabled": 0
+      },
+      "description": "MACD>Signal=BUY許可, MACD<Signal=SELL許可",
+      "principle": "MACD線がシグナル線上=上昇モメンタム確認",
+      "role": "短中期トレンド方向フィルター（現在無効）",
+      "strengths": [
+        "MACD交差は普及した方向性指標"
+      ],
+      "weaknesses": [
+        "SMA/RSI方向フィルターと役割重複のリスク"
+      ],
+      "sweep_candidates": {},
+      "synergy_with": [
+        "F07",
+        "F08"
+      ]
+    },
+    {
+      "id": "F10",
+      "name": "Funding Rateフィルター",
+      "category": "entry_filter",
+      "config_key": "funding_rate_filter_enabled / funding_rate_buy_threshold / funding_rate_sell_threshold",
+      "current_value": {
+        "enabled": 1,
+        "buy_threshold": 0.0005,
+        "sell_threshold": -0.0005
+      },
+      "description": "FR>+0.05%でLong過熱→BUY抑制, FR<-0.05%でShort過熱→SELL抑制",
+      "principle": "FRはLong/Shortポジション偏りを反映。過熱時は反転リスクが高い",
+      "role": "過熱抑制フィルター（最新実装）",
+      "strengths": [
+        "クリプト固有の市場過熱指標",
+        "バブル崩壊直前のエントリー抑制に有効"
+      ],
+      "weaknesses": [
+        "現在の閾値0.05%はやや保守的（発動頻度1.6%）",
+        "強いトレンド局面では過熱継続のため逆効果の可能性"
+      ],
+      "sweep_candidates": {
+        "buy_threshold": [
+          0.0002,
+          0.0003,
+          0.0005,
+          0.001
+        ],
+        "sell_threshold": [
+          -0.0002,
+          -0.0003,
+          -0.0005,
+          -0.001
+        ]
+      },
+      "synergy_with": [
+        "S01",
+        "F02"
+      ]
+    },
+    {
+      "id": "F11",
+      "name": "マーケットレジームフィルター",
+      "category": "entry_filter",
+      "config_key": "enable_market_regime_detection / ranging_position_size_multiplier",
+      "current_value": {
+        "enabled": 0,
+        "size_multiplier": 0.7
+      },
+      "description": "ボックス相場検出時にポジションサイズ削減または追加条件を課す",
+      "role": "相場環境適応フィルター（現在無効）",
+      "strengths": [
+        "ボックス相場での損失抑制"
+      ],
+      "weaknesses": [
+        "Task 39c検証でトレード数0になるケースあり（フィルタ過敏）"
+      ],
+      "sweep_candidates": {
+        "size_multiplier": [
+          0.5,
+          0.7,
+          0.9
+        ],
+        "swing_lookback_period": [
+          10,
+          15,
+          20,
+          30
+        ]
+      },
+      "synergy_with": [
+        "F02",
+        "F03"
+      ]
+    }
+  ],
+  "exit_strategies": [
+    {
+      "id": "E01",
+      "name": "PSAR (Parabolic SAR) トレーリングストップ",
+      "category": "exit_strategy",
+      "config_key": "stop_af / stop_af_add / stop_af_max / psar_lookback_term",
+      "current_value": {
+        "af": 0.02,
+        "af_add": 0.02,
+        "af_max": 0.2,
+        "lookback": 300
+      },
+      "description": "PSARを基準としたトレーリングストップロス",
+      "role": "プライマリーストップロス（常時有効）",
+      "strengths": [
+        "トレンドに追従するストップ",
+        "大幅な利益確定が可能",
+        "lookback=300で安定性が高い"
+      ],
+      "weaknesses": [
+        "ボックス相場で早期損切り",
+        "止まらないトレンドでストップが追いつかない場合あり"
+      ],
+      "sweep_candidates": {
+        "af": [
+          0.01,
+          0.02,
+          0.03
+        ],
+        "af_max": [
+          0.1,
+          0.2,
+          0.3
+        ],
+        "lookback": [
+          100,
+          200,
+          300,
+          400
+        ]
+      },
+      "synergy_with": [
+        "E02",
+        "E04"
+      ]
+    },
+    {
+      "id": "E02",
+      "name": "Trailing Profit Target (多段階利益ロック)",
+      "category": "exit_strategy",
+      "config_key": "enable_trailing_profit / profit_tier1-3_threshold / profit_tier1-3_stop_multiplier",
+      "current_value": {
+        "enabled": 1,
+        "tier1": {
+          "threshold": 0.02,
+          "stop_mult": 1.5
+        },
+        "tier2": {
+          "threshold": 0.05,
+          "stop_mult": 1.0
+        },
+        "tier3": {
+          "threshold": 0.1,
+          "stop_mult": 0.8
+        }
+      },
+      "description": "2%/5%/10%利益到達時にストップを段階的に引き上げ",
+      "role": "利益確定の最適化",
+      "strengths": [
+        "大勝ちトレードの利益を守る",
+        "段階的なリスク削減"
+      ],
+      "weaknesses": [
+        "ストップを引き上げすぎると早期撤退で利益削减",
+        "Task 39a評価: ベースライン比-1,077 USD悪化（単独では不採用）"
+      ],
+      "note": "Task 39a: 単独評価では不採用だったが、他フィルターとの組み合わせで効果が変わる可能性",
+      "sweep_candidates": {
+        "tier1_threshold": [
+          0.01,
+          0.02,
+          0.03
+        ],
+        "tier2_threshold": [
+          0.04,
+          0.05,
+          0.08
+        ],
+        "tier1_stop_mult": [
+          1.0,
+          1.5,
+          2.0
+        ]
+      },
+      "synergy_with": [
+        "E01",
+        "E03"
+      ]
+    },
+    {
+      "id": "E03",
+      "name": "Time-Based Exit (時間制限強制決済)",
+      "category": "exit_strategy",
+      "config_key": "enable_time_based_exit / max_holding_hours",
+      "current_value": {
+        "enabled": 1,
+        "max_holding_hours": 72
+      },
+      "description": "72時間(3日)超えたポジションを強制決済",
+      "role": "塩漬け防止",
+      "strengths": [
+        "無期限保有のリスク排除",
+        "資本解放によるターンオーバー向上"
+      ],
+      "weaknesses": [
+        "中長期トレンドで途中下車になる可能性",
+        "max_holding_hoursの設定がパフォーマンスに影響大"
+      ],
+      "sweep_candidates": {
+        "max_holding_hours": [
+          48,
+          72,
+          120,
+          168,
+          240
+        ]
+      },
+      "synergy_with": [
+        "E01",
+        "E02"
+      ]
+    },
+    {
+      "id": "E04",
+      "name": "Chandelier Exit (ATRトレーリングストップ)",
+      "category": "exit_strategy",
+      "config_key": "enable_chandelier_exit / chandelier_period / chandelier_mult",
+      "current_value": {
+        "enabled": 0,
+        "period": 22,
+        "mult": 3.0
+      },
+      "description": "ATR×倍率をN期間高値/安値から引いた値をストップに使用",
+      "role": "PSARの代替トレーリングストップ（現在無効）",
+      "strengths": [
+        "ATRベースでボラティリティ適応型",
+        "PSARより滑らかなストップライン"
+      ],
+      "weaknesses": [
+        "PSARと同時有効化時の動作に注意",
+        "市場が急落するとストップが遠すぎる"
+      ],
+      "sweep_candidates": {
+        "period": [
+          14,
+          22,
+          30
+        ],
+        "mult": [
+          2.0,
+          2.5,
+          3.0,
+          3.5
+        ]
+      },
+      "synergy_with": [
+        "E01",
+        "E05"
+      ]
+    },
+    {
+      "id": "E05",
+      "name": "Profit Step Lock (段階的利益ロック)",
+      "category": "exit_strategy",
+      "config_key": "enable_profit_step_lock",
+      "current_value": {
+        "enabled": 0
+      },
+      "description": "利益が一定水準を超えたら損益をゼロ以下に下げない動的SL調整",
+      "role": "利益保護（現在無効）",
+      "strengths": [
+        "利益の底を作る"
+      ],
+      "weaknesses": [
+        "多段階利益ロックと役割重複"
+      ],
+      "sweep_candidates": {},
+      "synergy_with": [
+        "E02"
+      ]
+    },
+    {
+      "id": "E06",
+      "name": "Volume Climax Exit (出来高急増決済)",
+      "category": "exit_strategy",
+      "config_key": "enable_volume_climax_exit / volume_climax_threshold / volume_climax_min_profit_pct",
+      "current_value": {
+        "enabled": 0,
+        "threshold": 3.0,
+        "min_profit_pct": 0.005
+      },
+      "description": "出来高が移動平均の3倍超かつ含み益0.5%以上で利益確定",
+      "role": "クライマックス相場での利益確定（現在無効）",
+      "strengths": [
+        "出来高急増 = クライマックス天井可能性",
+        "自動的に天井付近での利確が期待できる"
+      ],
+      "weaknesses": [
+        "threshold=3.0は稀（過去データで発動頻度確認要）",
+        "真のブレイクアウト時に早期撤退のリスク"
+      ],
+      "sweep_candidates": {
+        "threshold": [
+          2.0,
+          2.5,
+          3.0,
+          4.0
+        ],
+        "min_profit_pct": [
+          0.003,
+          0.005,
+          0.01
+        ]
+      },
+      "synergy_with": [
+        "E03",
+        "S02"
+      ]
+    },
+    {
+      "id": "E07",
+      "name": "Composite Score Exit (複合スコア決済)",
+      "category": "exit_strategy",
+      "config_key": "enable_composite_score_exit / composite_exit_adx_drop / composite_exit_pvo_threshold",
+      "current_value": {
+        "enabled": 0,
+        "adx_drop": 5.0,
+        "pvo_threshold": 0.0,
+        "min_score": 2
+      },
+      "description": "ADX低下+PVO低下+Volume低下の複合スコアでトレンド失速を検出",
+      "role": "トレンド失速の早期検出決済（現在無効）",
+      "strengths": [
+        "複数指標の複合判断で誤検出少",
+        "トレンド失速を早期に捕捉",
+        "ADX・PVO・Volumeの3指標が同時悪化時のみ発動"
+      ],
+      "weaknesses": [
+        "min_score=2でも組合せ次第で難しい調整",
+        "含み益条件があるため損切りには使えない"
+      ],
+      "sweep_candidates": {
+        "adx_drop": [
+          3.0,
+          5.0,
+          8.0
+        ],
+        "min_score": [
+          2,
+          3
+        ],
+        "min_profit_pct": [
+          0.003,
+          0.005,
+          0.01
+        ]
+      },
+      "synergy_with": [
+        "E03",
+        "E06"
+      ]
+    }
+  ],
+  "risk_management": [
+    {
+      "id": "R01",
+      "name": "Two-Tier Entry System",
+      "category": "risk_management",
+      "config_key": "entry_times / entry_range",
+      "current_value": {
+        "entry_times": 2,
+        "entry_range": 4
+      },
+      "description": "エントリーを2回に分けて行い、entry_range分追加エントリー",
+      "role": "分散エントリーによるコスト平均化",
+      "strengths": [
+        "第1エントリー後に反落した場合の平均コスト低下",
+        "ベースライン+378 USD向上に貢献（Task 39b）"
+      ],
+      "weaknesses": [
+        "2回目エントリーが逆方向に動いた場合損失2倍",
+        "entry_rangeが大きすぎると2回目のトリガーが遠すぎる"
+      ],
+      "sweep_candidates": {
+        "entry_times": [
+          1,
+          2
+        ],
+        "entry_range": [
+          2,
+          3,
+          4,
+          5
+        ]
+      },
+      "synergy_with": [
+        "E01"
+      ]
+    },
+    {
+      "id": "R02",
+      "name": "動的ポジションサイズ",
+      "category": "risk_management",
+      "config_key": "enable_dynamic_position_sizing",
+      "current_value": {
+        "enabled": 0
+      },
+      "description": "資産残高に応じてリスク率を調整（DD時に自動縮小）",
+      "role": "DD時の損失加速抑制（現在無効）",
+      "strengths": [
+        "DD時に自動でリスク削減"
+      ],
+      "weaknesses": [
+        "回復期にもポジション小さいまま維持のリスク"
+      ],
+      "sweep_candidates": {},
+      "synergy_with": [
+        "R03"
+      ]
+    },
+    {
+      "id": "R03",
+      "name": "RiskOverlay (キルスイッチ)",
+      "category": "risk_management",
+      "config_key": "enabled / max_drawdown_pct / daily_loss_limit_pct / consecutive_losses_limit",
+      "current_value": {
+        "enabled": 0,
+        "max_dd_pct": 50,
+        "daily_loss_pct": 20,
+        "consec_limit": 5
+      },
+      "description": "最大DD/日次損失/連続損失のトリガーで取引停止",
+      "role": "緊急停止機能（Task 40c実装済み、現在無効）",
+      "strengths": [
+        "破産防止の安全弁"
+      ],
+      "weaknesses": [
+        "バックテストには影響なし（backtest時は動作しない設計）"
+      ],
+      "sweep_candidates": {},
+      "synergy_with": []
+    }
+  ],
+  "combinations_analysis": {
+    "note": "以下5種類は相乗効果が最も期待できる組み合わせ。Task 45bで詳細決定予定",
+    "top5": [
+      {
+        "combo_id": "C01",
+        "name": "トレンド品質強化コンボ",
+        "description": "ADX二重確認（閾値+スロープ）+ TSMOM調整 で高品質エントリーのみ厳選",
+        "components": [
+          "F02 (ADXフィルター)",
+          "F06 (ADXスロープ)",
+          "S05 (TSMOM)"
+        ],
+        "rationale": "ADKが強く、かつ上昇中の局面 × 中長期モメンタムが一致する時だけエントリー",
+        "key_params": {
+          "adx_threshold": [
+            27,
+            31,
+            35
+          ],
+          "adx_slope_lookback": [
+            5,
+            10,
+            15
+          ],
+          "tsmom_lookback": [
+            100,
+            150,
+            200
+          ]
+        },
+        "expected_effect": "トレード数は減少するが 1件あたりの期待値向上、勝率UP"
+      },
+      {
+        "combo_id": "C02",
+        "name": "ブレイクアウト精度向上コンボ",
+        "description": "ドンチャン期間最適化 + 相対出来高強化 + ボラティリティ上限調整",
+        "components": [
+          "S01 (Donchian)",
+          "S04 (RBE相対出来高)",
+          "F03 (Volatilityフィルター)"
+        ],
+        "rationale": "ブレイクの強度（価格）と信頼性（出来高）と異常値除外（ボラ）を3軸で品質管理",
+        "key_params": {
+          "donchian_term": [
+            20,
+            25,
+            30
+          ],
+          "relative_volume_threshold": [
+            1.5,
+            2.0,
+            2.5
+          ],
+          "volatility_threshold": [
+            2000,
+            2500,
+            3000
+          ]
+        },
+        "expected_effect": "偽ブレイクアウト削減、PF向上、MDD改善"
+      },
+      {
+        "combo_id": "C03",
+        "name": "イグジット精緻化コンボ",
+        "description": "PSAR調整 + 複合スコアExit + Time-Based Exit で「持ちすぎ」と「早期撤退」のバランス最適化",
+        "components": [
+          "E01 (PSAR)",
+          "E07 (CompositeScore)",
+          "E03 (TimeBased)"
+        ],
+        "rationale": "PSARで追跡、トレンド失速を複合スコアで早期検出、最大72h制限で塩漬け防止",
+        "key_params": {
+          "psar_af": [
+            0.02,
+            0.03
+          ],
+          "psar_lookback": [
+            200,
+            300
+          ],
+          "time_limit_hours": [
+            48,
+            72,
+            120
+          ],
+          "composite_adx_drop": [
+            3.0,
+            5.0,
+            8.0
+          ]
+        },
+        "expected_effect": "利益の最大化と塩漬け損失の削減の両立"
+      },
+      {
+        "combo_id": "C04",
+        "name": "長期トレンド整合コンボ",
+        "description": "SMAフィルター（期間見直し）+ TSMOMの組み合わせで、長期・中期トレンドの整合性確認",
+        "components": [
+          "F07 (SMA方向性)",
+          "S05 (TSMOM)",
+          "S01 (Donchian)"
+        ],
+        "rationale": "SMA(N)方向 × TSMOM(N)方向が一致する時だけエントリー（長期・中期の「向き」が揃う）",
+        "key_params": {
+          "sma_period": [
+            100,
+            200,
+            300
+          ],
+          "tsmom_lookback": [
+            100,
+            150,
+            200
+          ],
+          "donchian_term": [
+            25,
+            30
+          ]
+        },
+        "expected_effect": "トレンド相場での勝率UP、リバーサル時の損失減少"
+      },
+      {
+        "combo_id": "C05",
+        "name": "出来高クライマックス利確コンボ",
+        "description": "Volume Climax Exit + Composite Score Exit を組み合わせてトレンド終了を多角的に検出",
+        "components": [
+          "E06 (VolumeClimaxExit)",
+          "E07 (CompositeScoreExit)",
+          "E03 (TimeBased)"
+        ],
+        "rationale": "出来高急増（クライマックス）OR 複合スコア悪化（失速）どちらかで利確→撤退判断を強化",
+        "key_params": {
+          "volume_climax_threshold": [
+            2.0,
+            2.5,
+            3.0
+          ],
+          "composite_min_score": [
+            2,
+            3
+          ],
+          "time_limit_hours": [
+            72,
+            120
+          ]
+        },
+        "expected_effect": "天井付近での利確改善、特にQ4 2024のような大勝ちトレードの利益最大化"
+      }
+    ]
+  },
+  "sweep_results": {
+    "C01": {
+      "best_label": "C01_adx_thr=35_tsmom_lb=100",
+      "best_params": {
+        "adx_slope_filter_enabled": "1",
+        "adx_slope_filter_lookback": "10",
+        "tsmom_filter_enabled": "1",
+        "enable_adx_filter": "1",
+        "adx_filter_threshold": "35",
+        "tsmom_filter_lookback": "100"
+      },
+      "best_pnl": 1669.911,
+      "best_sortino": 2.422,
+      "best_maxdd": 34.862,
+      "best_winrate": 85.71,
+      "best_trades": 21,
+      "best_composite": 1.4128,
+      "baseline_pnl": 2402.94,
+      "vs_baseline": -733.029,
+      "beat_baseline": false,
+      "total_cases_tested": 6
+    },
+    "C02": {
+      "best_label": "C02_don=25_rvol=2.0",
+      "best_params": {
+        "enable_range_breakout_enhanced": "1",
+        "enable_volatility_filter": "1",
+        "volatility_filter_threshold": "2500",
+        "enable_adx_filter": "1",
+        "donchian_buy_term": "25",
+        "relative_volume_threshold": "2.0",
+        "donchian_sell_term": "25"
+      },
+      "best_pnl": 1810.276,
+      "best_sortino": 2.103,
+      "best_maxdd": 24.247,
+      "best_winrate": 90.91,
+      "best_trades": 22,
+      "best_composite": 1.3268,
+      "baseline_pnl": 2402.94,
+      "vs_baseline": -592.664,
+      "beat_baseline": false,
+      "total_cases_tested": 9
+    },
+    "C03": {
+      "best_label": "C03_psar=300_hold=48",
+      "best_params": {
+        "enable_composite_score_exit": "1",
+        "enable_time_based_exit": "1",
+        "enable_trailing_profit": "1",
+        "composite_exit_adx_drop": "5.0",
+        "psar_lookback_term": "300",
+        "max_holding_hours": "48"
+      },
+      "best_pnl": 518.359,
+      "best_sortino": 1.448,
+      "best_maxdd": 36.246,
+      "best_winrate": 88.09,
+      "best_trades": 42,
+      "best_composite": 0.8367,
+      "baseline_pnl": 2402.94,
+      "vs_baseline": -1884.581,
+      "beat_baseline": false,
+      "total_cases_tested": 6
+    },
+    "C04": {
+      "best_label": "C04_sma_direction_prd=300_tsmom_lb=150",
+      "best_params": {
+        "sma_direction_filter_enabled": "1",
+        "tsmom_filter_enabled": "1",
+        "enable_adx_filter": "1",
+        "sma_direction_filter_period": "300",
+        "tsmom_filter_lookback": "150"
+      },
+      "best_pnl": 2504.459,
+      "best_sortino": 0.706,
+      "best_maxdd": 36.246,
+      "best_winrate": 80.0,
+      "best_trades": 30,
+      "best_composite": 1.0013,
+      "baseline_pnl": 2402.94,
+      "vs_baseline": 101.519,
+      "beat_baseline": true,
+      "total_cases_tested": 9
+    },
+    "C05": {
+      "best_label": "C05_vclimx=2.0_hold=72",
+      "best_params": {
+        "enable_volume_climax_exit": "1",
+        "enable_composite_score_exit": "1",
+        "enable_time_based_exit": "1",
+        "composite_exit_min_score": "2",
+        "volume_climax_threshold": "2.0",
+        "max_holding_hours": "72"
+      },
+      "best_pnl": 518.359,
+      "best_sortino": 1.448,
+      "best_maxdd": 36.246,
+      "best_winrate": 88.09,
+      "best_trades": 42,
+      "best_composite": 0.8367,
+      "baseline_pnl": 2402.94,
+      "vs_baseline": -1884.581,
+      "beat_baseline": false,
+      "total_cases_tested": 6
+    }
+  },
+  "sweep_recommendation": {
+    "winner": "C04",
+    "config_change": {
+      "sma_direction_filter_enabled": "0 → 1",
+      "sma_direction_filter_period": "500 → 300",
+      "tsmom_filter_lookback": "150 (変更なし)"
+    },
+    "gain": "+101.52 USD (+4.2%)",
+    "adoption_status": "PENDING_USER_APPROVAL",
+    "rationale": "SMA(300)フィルターが1件の損失トレードを排除し累積損益を改善。Sortinoが僅かに低下するが許容範囲内。"
+  }
+}
