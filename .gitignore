@@ -62,3 +62,15 @@ baseline_backup/
 
 # Ignore quarterly logs (backtest generated files)
 logs/quarterly/
+
+# IDE settings
+.vscode/
+
+# RPi collected logs (local reference only)
+logs_from_rpi/
+
+# XAUT report output
+report_xaut/
+
+# Sweep results (regenerable)
+sweep_results/
