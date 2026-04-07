@@ -79,6 +79,11 @@ class TradingStrategy:
         # 新指標の状態変化を追跡（ログ重複排除用）
         self.last_strategy_signal = None  # 前回のstrategy signal
         
+        # 確認バー（Donchian Breakout Confirmation）
+        self.donchian_confirmation_enabled = Config.get_config_bool('EntryFilters', 'donchian_confirmation_enabled', 0)
+        self.donchian_confirmation_bars = Config.get_config_int('EntryFilters', 'donchian_confirmation_bars', 1)
+        self.pending_breakout = None  # {'side': 'BUY'/'SELL', 'bars_waited': 0}
+        
         self.initialize_trade_decision()
  
     def initialize_trade_decision(self):
@@ -248,6 +253,33 @@ class TradingStrategy:
                     desired_side = signals["donchian"]["side"]
                     allow_entry = True
                     
+                    # === 確認バーフィルター ===
+                    if self.donchian_confirmation_enabled:
+                        if self.pending_breakout is None:
+                            # 初回ブレイク検出 → 待機開始
+                            self.pending_breakout = {'side': desired_side, 'bars_waited': 0}
+                            self.logger.log(f"[確認バー] {desired_side} ブレイク検出 → {self.donchian_confirmation_bars}本待機")
+                            allow_entry = False
+                        elif self.pending_breakout['side'] != desired_side:
+                            # 方向転換 → リセットして新方向で待機開始
+                            self.pending_breakout = {'side': desired_side, 'bars_waited': 0}
+                            self.logger.log(f"[確認バー] 方向転換 → {desired_side} で待機リセット")
+                            allow_entry = False
+                        elif self.pending_breakout['bars_waited'] < self.donchian_confirmation_bars:
+                            # 待機中
+                            self.pending_breakout['bars_waited'] += 1
+                            if self.pending_breakout['bars_waited'] >= self.donchian_confirmation_bars:
+                                # 確認完了
+                                self.logger.log(f"[確認バー] ✓ {desired_side} 確認完了 → エントリー")
+                                self.pending_breakout = None
+                            else:
+                                self.logger.log(f"[確認バー] 待機中 ({self.pending_breakout['bars_waited']}/{self.donchian_confirmation_bars})")
+                                allow_entry = False
+                        else:
+                            # 確認済み（bars_waited >= confirmation_bars）
+                            self.logger.log(f"[確認バー] ✓ {desired_side} 確認完了 → エントリー")
+                            self.pending_breakout = None
+                    
                     # === Range Breakout Enhanced (Task 38c) ===
                     enable_rbe = Config.get_enable_range_breakout_enhanced()
                     if enable_rbe:
@@ -278,6 +310,11 @@ class TradingStrategy:
                         conditions_list.append(f"Donchian: {desired_side} (Enhanced ✓)")
                     else:
                         conditions_list.append(f"Donchian: {desired_side}")
+                else:
+                    # ブレイクアウトなし → pending確認バーをリセット
+                    if self.donchian_confirmation_enabled and self.pending_breakout is not None:
+                        self.logger.log(f"[確認バー] シグナル消滅 → 待機リセット")
+                        self.pending_breakout = None
             
             # ========================================
             # 新指標チェック（Donchian使用時のみ）
