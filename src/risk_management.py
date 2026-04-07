@@ -827,7 +827,7 @@ class RiskManagement:
                     current_risk_percentage = self.dynamic_tier_below_risk
                     tier_name = "Tier <50%"
                 
-                self.logger.log_info(
+                self.logger.log(
                     f"動的ポジションサイズ: 資産比率={balance_ratio:.2%}, "
                     f"{tier_name}, リスク={current_risk_percentage:.2%}"
                 )
