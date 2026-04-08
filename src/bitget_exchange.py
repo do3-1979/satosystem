@@ -458,19 +458,17 @@ class BitgetExchange(Exchange):
         最小注文数量チェック。quantity が取引所の最小ロットを下回る場合は
         InsufficientFunds-like なエラーを事前に検知して無駄なAPI呼び出しを防ぐ。
 
-        BTC/USDTの最小注文数量は Bitget で 0.0001 BTC。
-        証拠金不足（balance < quantity * price * (1/leverage) 等）はここでは判定しない。
-
         Args:
-            quantity (float): 注文数量（BTC枚数）
+            quantity (float): 注文数量
 
         Returns:
             bool: True = 注文可能, False = 最小数量未満
         """
-        MIN_ORDER_SIZE = 0.0001  # Bitget BTC/USDT 最小注文数量
-        if quantity < MIN_ORDER_SIZE:
+        min_order_size = Config.get_lot_limit_lower()
+        unit = Config.get_market_unit_pair()
+        if quantity < min_order_size:
             self.logger.log_error(
-                f"❌ 最小注文数量未達: {quantity} BTC < {MIN_ORDER_SIZE} BTC "
+                f"❌ 最小注文数量未達: {quantity} {unit} < {min_order_size} {unit} "
                 f"（証拠金不足または残高目減りにより発注不可）"
             )
             return False

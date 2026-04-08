@@ -360,15 +360,16 @@ class BybitExchange(Exchange):
         発注前にエラーを検知して無駄なAPI呼び出しを防ぐ。
 
         Args:
-            quantity (float): 注文数量（BTC枚数）
+            quantity (float): 注文数量
 
         Returns:
             bool: True = 注文可能, False = 最小数量未満
         """
-        MIN_ORDER_SIZE = 0.001  # Bybit BTC/USDT 最小注文数量
-        if quantity < MIN_ORDER_SIZE:
+        min_order_size = Config.get_lot_limit_lower()
+        unit = Config.get_market_unit_pair()
+        if quantity < min_order_size:
             self.logger.log_error(
-                f"❌ 最小注文数量未達: {quantity} BTC < {MIN_ORDER_SIZE} BTC "
+                f"❌ 最小注文数量未達: {quantity} {unit} < {min_order_size} {unit} "
                 f"（証拠金不足または残高目減りにより発注不可）"
             )
             return False
@@ -768,11 +769,8 @@ class BybitExchange(Exchange):
         """
         指定されたペアの最新の価格情報を取得します.
 
-        Args:
-            symbol (str): 取得するペアのシンボル (例: 'BTC/USD')
-
         Returns:
-            dict: 最新の価格情報
+            float: 最新の価格
         """
         # バックテスト時のみダミー価格を返す
         # ホットテスト（ペーパートレード含む）は常に実API価格を使用
@@ -780,20 +778,8 @@ class BybitExchange(Exchange):
             import random
             return 100000 + random.uniform(-1000, 1000)
         
-        # マーケット変換
-        market_type = Config.get_market()
-        if market_type == 'BTC/USD':
-            symbol = "BTC/USD:BTC"
-        elif market_type == 'BTC/USDT':
-            symbol = "BTC/USDT:USDT"
-        elif market_type == 'ETH/USD':
-            symbol = "ETH/USD:ETH"
-        elif market_type == 'ETH/USDT':
-            symbol = "ETH/USDT:USDT"
-        else:
-            symbol = "BTC/USDT:USDT"  # デフォルト
-        
-        ticker = self._fetch_ticker_from_api(symbol)
+        # __init__ で構築済みの self.market を使用（XAUT/USDT:USDT 等全シンボル対応）
+        ticker = self._fetch_ticker_from_api(self.market)
         price = ticker["last"]
         return price
 

@@ -149,10 +149,13 @@ class Bot:
         memory_check_interval = 3600  # 1時間ごと
         last_memory_check = time.time() if back_test_mode == 0 else 0
 
-        # EXIT注文連続失敗カウンタ（無限ループ防止）
+        # 注文連続失敗カウンタ（無限ループ防止）
         exit_consecutive_failures = 0
+        entry_consecutive_failures = 0
         EXIT_FAILURE_WAIT_SEC = 60   # 連続失敗時の待機秒数
         EXIT_FAILURE_MAX = 5         # この回数を超えたらwaitを挿入
+        ENTRY_FAILURE_WAIT_SEC = 60  # ENTRY/ADD連続失敗時の待機秒数
+        ENTRY_FAILURE_MAX = 3        # この回数を超えたらwaitを挿入
 
         while True:
             try:
@@ -314,23 +317,38 @@ class Bot:
                         order_response = self.execute_order(order.to_dict(), trade_decision["decision"])
                         if order_response is False:
                             self.logger.log_error("注文失敗（order_response=False）: ポートフォリオ更新をスキップ")
-                            if trade_decision["decision"] == "EXIT" and back_test_mode == 0 and not use_cached_hot_test:
+                            if back_test_mode == 0 and not use_cached_hot_test:
+                                if trade_decision["decision"] == "EXIT":
+                                    exit_consecutive_failures += 1
+                                    if exit_consecutive_failures >= EXIT_FAILURE_MAX:
+                                        self.logger.log_error(f"❌ EXIT連続失敗 {exit_consecutive_failures}回: {EXIT_FAILURE_WAIT_SEC}秒待機してリトライ")
+                                        time.sleep(EXIT_FAILURE_WAIT_SEC)
+                                        exit_consecutive_failures = 0
+                                elif trade_decision["decision"] in ("ENTRY", "ADD"):
+                                    entry_consecutive_failures += 1
+                                    if entry_consecutive_failures >= ENTRY_FAILURE_MAX:
+                                        self.logger.log_error(f"❌ ENTRY/ADD連続失敗 {entry_consecutive_failures}回: {ENTRY_FAILURE_WAIT_SEC}秒待機してリトライ")
+                                        time.sleep(ENTRY_FAILURE_WAIT_SEC)
+                                        entry_consecutive_failures = 0
+                            continue  # 注文失敗時はポートフォリオ更新をスキップ
+                        exit_consecutive_failures = 0
+                        entry_consecutive_failures = 0
+                        self.events.emit(EventType.ORDER_EXECUTED, order.to_dict())
+                    except Exception as e:
+                        self.logger.log_error(f"注文実行エラー: {e}")
+                        if back_test_mode == 0 and not use_cached_hot_test:
+                            if trade_decision["decision"] == "EXIT":
                                 exit_consecutive_failures += 1
                                 if exit_consecutive_failures >= EXIT_FAILURE_MAX:
                                     self.logger.log_error(f"❌ EXIT連続失敗 {exit_consecutive_failures}回: {EXIT_FAILURE_WAIT_SEC}秒待機してリトライ")
                                     time.sleep(EXIT_FAILURE_WAIT_SEC)
                                     exit_consecutive_failures = 0
-                            continue  # 注文失敗時はポートフォリオ更新をスキップ
-                        exit_consecutive_failures = 0
-                        self.events.emit(EventType.ORDER_EXECUTED, order.to_dict())
-                    except Exception as e:
-                        self.logger.log_error(f"注文実行エラー: {e}")
-                        if trade_decision["decision"] == "EXIT" and back_test_mode == 0 and not use_cached_hot_test:
-                            exit_consecutive_failures += 1
-                            if exit_consecutive_failures >= EXIT_FAILURE_MAX:
-                                self.logger.log_error(f"❌ EXIT連続失敗 {exit_consecutive_failures}回: {EXIT_FAILURE_WAIT_SEC}秒待機してリトライ")
-                                time.sleep(EXIT_FAILURE_WAIT_SEC)
-                                exit_consecutive_failures = 0
+                            elif trade_decision["decision"] in ("ENTRY", "ADD"):
+                                entry_consecutive_failures += 1
+                                if entry_consecutive_failures >= ENTRY_FAILURE_MAX:
+                                    self.logger.log_error(f"❌ ENTRY/ADD連続失敗 {entry_consecutive_failures}回: {ENTRY_FAILURE_WAIT_SEC}秒待機してリトライ")
+                                    time.sleep(ENTRY_FAILURE_WAIT_SEC)
+                                    entry_consecutive_failures = 0
                         continue  # 注文失敗時はポートフォリオ更新をスキップ
 
                     # Task 40g: ENTRY/ADD取引実行通知（ライブモードのみ、EXITはpnl確定後に通知）
