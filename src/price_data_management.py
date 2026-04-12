@@ -856,7 +856,10 @@ class PriceDataManagement:
             volume_data.append(i['Volume'])
         short_ema = self.__calc_ema(pvo_s_term, volume_data)
         long_ema = self.__calc_ema(pvo_l_term, volume_data)
-        pvo_value = ((short_ema - long_ema) * 100 / long_ema)
+        if long_ema == 0:
+            pvo_value = 0.0
+        else:
+            pvo_value = ((short_ema - long_ema) * 100 / long_ema)
 
         return pvo_value
 
