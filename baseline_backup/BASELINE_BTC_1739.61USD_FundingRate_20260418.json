@@ -1,0 +1,212 @@
+{
+  "baseline_info": {
+    "name": "BTC_1739.61USD_FundingRate_20260418",
+    "version": "v2026.04.18-funding-rate-holding-cost",
+    "created_at": "2026-04-18T12:54:10.319132",
+    "description": "CostModel有効+ファンディングレート保有コスト反映",
+    "symbol": "BTC/USDT",
+    "config": "config.ini",
+    "cumulative_pnl_usd": 1739.61,
+    "total_trades": 35
+  },
+  "quarterly_results": [
+    {
+      "year": 2024,
+      "quarter": 1,
+      "start_date": "2024/01/01 00:00",
+      "end_date": "2024/03/31 23:59",
+      "metrics": {
+        "total_pnl": 485.030424,
+        "profit_factor": 3.758178,
+        "max_drawdown": 156.630961,
+        "max_drawdown_rate": 34.540901,
+        "sharpe": 0.913181,
+        "sortino": 1.15448,
+        "recovery_factor": 3.096645,
+        "win_rate": 25.0,
+        "payoff_ratio": 16.680083,
+        "expectancy": 30.164908,
+        "max_consec_losses": 2,
+        "trades": 4,
+        "samples": 546
+      },
+      "timestamp": "2026-04-18T12:50:32.405687"
+    },
+    {
+      "year": 2024,
+      "quarter": 2,
+      "start_date": "2024/04/01 00:00",
+      "end_date": "2024/06/30 23:59",
+      "metrics": {
+        "total_pnl": -106.008002,
+        "profit_factor": 0.0,
+        "max_drawdown": 106.008002,
+        "max_drawdown_rate": 35.336001,
+        "sharpe": -1.908872,
+        "sortino": -0.431232,
+        "recovery_factor": -1.0,
+        "win_rate": 0.0,
+        "payoff_ratio": 0.0,
+        "expectancy": -58.341661,
+        "max_consec_losses": 4,
+        "trades": 4,
+        "samples": 546
+      },
+      "timestamp": "2026-04-18T12:50:41.498940"
+    },
+    {
+      "year": 2024,
+      "quarter": 3,
+      "start_date": "2024/07/01 00:00",
+      "end_date": "2024/09/30 23:59",
+      "metrics": {
+        "total_pnl": -76.51278,
+        "profit_factor": 0.533152,
+        "max_drawdown": 159.125567,
+        "max_drawdown_rate": 41.589192,
+        "sharpe": -0.548502,
+        "sortino": -0.137212,
+        "recovery_factor": -0.480833,
+        "win_rate": 25.0,
+        "payoff_ratio": 2.288251,
+        "expectancy": -5.992233,
+        "max_consec_losses": 2,
+        "trades": 4,
+        "samples": 552
+      },
+      "timestamp": "2026-04-18T12:50:51.005198"
+    },
+    {
+      "year": 2024,
+      "quarter": 4,
+      "start_date": "2024/10/01 00:00",
+      "end_date": "2024/12/31 23:59",
+      "metrics": {
+        "total_pnl": 1158.845864,
+        "profit_factor": 7.305252,
+        "max_drawdown": 106.101958,
+        "max_drawdown_rate": 14.696645,
+        "sharpe": 1.503771,
+        "sortino": 3.700809,
+        "recovery_factor": 10.922003,
+        "win_rate": 85.714286,
+        "payoff_ratio": 68.360691,
+        "expectancy": 263.955417,
+        "max_consec_losses": 1,
+        "trades": 7,
+        "samples": 552
+      },
+      "timestamp": "2026-04-18T12:50:59.790111"
+    },
+    {
+      "year": 2025,
+      "quarter": 1,
+      "start_date": "2025/01/01 00:00",
+      "end_date": "2025/03/31 23:59",
+      "metrics": {
+        "total_pnl": -72.12954,
+        "profit_factor": 0.0,
+        "max_drawdown": 72.12954,
+        "max_drawdown_rate": 24.04318,
+        "sharpe": -1.516916,
+        "sortino": -0.172501,
+        "recovery_factor": -1.0,
+        "win_rate": 0.0,
+        "payoff_ratio": 0.0,
+        "expectancy": -25.119877,
+        "max_consec_losses": 2,
+        "trades": 2,
+        "samples": 540
+      },
+      "timestamp": "2026-04-18T12:51:08.834244"
+    },
+    {
+      "year": 2025,
+      "quarter": 2,
+      "start_date": "2025/04/01 00:00",
+      "end_date": "2025/06/30 23:59",
+      "metrics": {
+        "total_pnl": 130.157861,
+        "profit_factor": 1.431852,
+        "max_drawdown": 232.830097,
+        "max_drawdown_rate": 35.1183,
+        "sharpe": 0.374941,
+        "sortino": 0.212704,
+        "recovery_factor": 0.559025,
+        "win_rate": 83.333333,
+        "payoff_ratio": 61.204108,
+        "expectancy": 196.185884,
+        "max_consec_losses": 1,
+        "trades": 6,
+        "samples": 546
+      },
+      "timestamp": "2026-04-18T12:51:17.611981"
+    },
+    {
+      "year": 2025,
+      "quarter": 3,
+      "start_date": "2025/07/01 00:00",
+      "end_date": "2025/09/30 23:59",
+      "metrics": {
+        "total_pnl": 158.286624,
+        "profit_factor": 12.321418,
+        "max_drawdown": 7.476094,
+        "max_drawdown_rate": 2.168357,
+        "sharpe": 0.918224,
+        "sortino": 4.56466,
+        "recovery_factor": 21.172371,
+        "win_rate": 50.0,
+        "payoff_ratio": 23.196258,
+        "expectancy": 75.720623,
+        "max_consec_losses": 1,
+        "trades": 2,
+        "samples": 552
+      },
+      "timestamp": "2026-04-18T12:51:26.805647"
+    },
+    {
+      "year": 2025,
+      "quarter": 4,
+      "start_date": "2025/10/01 00:00",
+      "end_date": "2025/12/31 23:59",
+      "metrics": {
+        "total_pnl": 116.735529,
+        "profit_factor": 12.046456,
+        "max_drawdown": 6.518474,
+        "max_drawdown_rate": 1.788623,
+        "sharpe": 1.29166,
+        "sortino": 3.99098,
+        "recovery_factor": 17.908413,
+        "win_rate": 50.0,
+        "payoff_ratio": 14.331069,
+        "expectancy": 26.99019,
+        "max_consec_losses": 1,
+        "trades": 2,
+        "samples": 552
+      },
+      "timestamp": "2026-04-18T12:51:34.722974"
+    },
+    {
+      "year": 2026,
+      "quarter": 1,
+      "start_date": "2026/01/01 00:00",
+      "end_date": "2026/03/31 23:59",
+      "metrics": {
+        "total_pnl": -54.797874,
+        "profit_factor": 0.449365,
+        "max_drawdown": 90.821043,
+        "max_drawdown_rate": 27.028209,
+        "sharpe": -0.716704,
+        "sortino": -0.14577,
+        "recovery_factor": -0.603361,
+        "win_rate": 25.0,
+        "payoff_ratio": 2.891894,
+        "expectancy": -0.308745,
+        "max_consec_losses": 2,
+        "trades": 4,
+        "samples": 540
+      },
+      "timestamp": "2026-04-18T12:51:43.210462"
+    }
+  ]
+}
