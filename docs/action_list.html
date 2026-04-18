@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>satosystem gen2 — Action List</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #1c2128;
+      --border: #30363d;
+      --text: #c9d1d9;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --green: #3fb950;
+      --yellow: #d29922;
+      --red: #f85149;
+      --purple: #bc8cff;
+      --orange: #f0883e;
+      --teal: #39d353;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.6; }
+
+    /* Header */
+    .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 32px; display: flex; align-items: center; gap: 16px; }
+    .header h1 { font-size: 20px; font-weight: 600; color: #fff; }
+    .header .badge { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600; }
+    .badge-green { background: rgba(63,185,80,.2); color: var(--green); border: 1px solid rgba(63,185,80,.4); }
+    .badge-blue  { background: rgba(88,166,255,.15); color: var(--accent); border: 1px solid rgba(88,166,255,.3); }
+    .badge-gray  { background: rgba(139,148,158,.15); color: var(--muted); border: 1px solid rgba(139,148,158,.3); }
+    .updated { margin-left: auto; color: var(--muted); font-size: 12px; }
+
+    /* Layout */
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px 32px; }
+
+    /* Metric cards */
+    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 28px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
+    .card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+    .card .value { font-size: 22px; font-weight: 700; color: #fff; }
+    .card .sub   { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .card.green .value { color: var(--green); }
+    .card.blue  .value { color: var(--accent); }
+    .card.orange .value { color: var(--orange); }
+
+    /* Summary bar */
+    .summary-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; margin-bottom: 28px; display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+    .sum-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    .sum-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .dot-progress { background: var(--yellow); }
+    .dot-todo     { background: var(--accent); }
+    .dot-done     { background: var(--green); }
+    .sum-label { color: var(--muted); }
+    .sum-val   { font-weight: 700; color: #fff; }
+    .progress-track { flex: 1; min-width: 200px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .progress-fill  { height: 100%; background: var(--green); border-radius: 3px; }
+
+    /* Section */
+    .section { margin-bottom: 32px; }
+    .section-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* Task cards */
+    .task { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; margin-bottom: 8px; position: relative; transition: border-color .15s; }
+    .task:hover { border-color: #444c56; }
+    .task.progress-card { border-left: 3px solid var(--yellow); }
+    .task.todo-card     { border-left: 3px solid var(--accent); }
+    .task.done-card     { border-left: 3px solid var(--green); opacity: .75; }
+    .task.done-card:hover { opacity: 1; }
+
+    .task-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
+    .task-id { font-size: 11px; font-family: monospace; color: var(--muted); background: var(--surface2); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border); white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+    .task-title { font-size: 14px; font-weight: 600; color: #e6edf3; flex: 1; }
+    .task-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+    .tag { font-size: 11px; padding: 1px 8px; border-radius: 10px; }
+    .tag-cat  { background: rgba(139,148,158,.15); color: var(--muted); }
+    .tag-date { background: rgba(63,185,80,.1);  color: var(--green); }
+    .tag-pri  { background: rgba(240,136,62,.15); color: var(--orange); }
+    .task-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .task-result { font-size: 12px; color: #8b949e; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; margin-top: 8px; line-height: 1.6; }
+    .task-result b { color: var(--text); }
+
+    /* Subtask list */
+    .subtasks { margin-top: 10px; }
+    .subtask-group { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+    .subtask-list { list-style: none; }
+    .subtask-list li { font-size: 12px; color: var(--muted); padding: 2px 0 2px 16px; position: relative; }
+    .subtask-list li::before { content: '·'; position: absolute; left: 4px; color: var(--border); }
+    .subtask-list li.done-sub { color: var(--green); }
+    .subtask-list li.todo-sub { color: var(--yellow); }
+
+    /* Priority stars */
+    .stars { color: var(--orange); font-size: 11px; }
+
+    /* Baseline info */
+    .baseline-row { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+    .baseline-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 12px; color: var(--muted); }
+    .baseline-chip span { color: var(--green); font-weight: 700; }
+
+    /* Rules */
+    .rules { background: rgba(88,166,255,.07); border: 1px solid rgba(88,166,255,.25); border-radius: 10px; padding: 14px 18px; margin-bottom: 28px; }
+    .rules .rule-title { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 8px; }
+    .rules ul { padding-left: 16px; }
+    .rules li { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+
+    @media (max-width: 640px) {
+      .container { padding: 16px; }
+      .header    { padding: 16px; }
+      .metrics   { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+  </svg>
+  <h1>satosystem gen2</h1>
+  <span class="badge badge-green">✓ 212/212 PASS</span>
+  <span class="badge badge-blue">BTC + XAUT</span>
+  <span class="updated">Updated: 2026-04-18</span>
+</div>
+
+<div class="container">
+
+  <!-- Metric cards -->
+  <div class="metrics">
+    <div class="card green">
+      <div class="label">BTC Baseline PnL</div>
+      <div class="value">+$1,739.61</div>
+      <div class="sub">2024Q1 – 2026Q1 (9四半期)</div>
+    </div>
+    <div class="card green">
+      <div class="label">XAUT Baseline PnL</div>
+      <div class="value">+$65.07</div>
+      <div class="sub">2025Q2 – 2026Q1 (4四半期)</div>
+    </div>
+    <div class="card blue">
+      <div class="label">Regression Tests</div>
+      <div class="value">212 / 212</div>
+      <div class="sub">100% PASS</div>
+    </div>
+    <div class="card orange">
+      <div class="label">Tasks</div>
+      <div class="value">27 Done</div>
+      <div class="sub">0 進行中 · 6 TODO</div>
+    </div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="summary-bar">
+    <div class="sum-item"><span class="sum-dot dot-done"></span><span class="sum-label">完了</span>&nbsp;<span class="sum-val">27</span></div>
+    <div class="sum-item"><span class="sum-dot dot-progress"></span><span class="sum-label">進行中</span>&nbsp;<span class="sum-val">0</span></div>
+    <div class="sum-item"><span class="sum-dot dot-todo"></span><span class="sum-label">TODO</span>&nbsp;<span class="sum-val">6</span></div>
+    <div class="progress-track"><div class="progress-fill" style="width:81.8%"></div></div>
+    <span style="font-size:12px;color:var(--muted)">82% 完了</span>
+  </div>
+
+  <!-- Workflow rules -->
+  <div class="rules">
+    <div class="rule-title">⚙ ワークフロールール</div>
+    <ul>
+      <li>アクション実行前に必ずレグレッションテストを実行し、PROGRESS.json の baseline_regression に保存すること</li>
+      <li>比較元として PROGRESS.json baseline_regression を活用すること</li>
+      <li><b>Baseline:</b> CostModel有効 + ファンディングレート保有コスト反映後の値を使用</li>
+    </ul>
+  </div>
+
+  <!-- IN PROGRESS (none) -->
+
+  <!-- TODO -->
+  <div class="section">
+    <div class="section-title">📋 TODO (6)</div>
+
+    <div class="task todo-card">
+      <div class="task-header"><span class="task-id">#47</span><span class="task-title">残高取得・指定モードの修正</span></div>
+      <div class="task-meta"><span class="tag tag-cat">仕様改善</span><span class="tag tag-pri">★★★★ 高</span></div>
+      <div class="task-desc">デフォルトでAPIから実残高を取得、use_custom_balance=1のときのみconfig値使用</div>
+    </div>
+
+    <div class="task todo-card">
+      <div class="task-header"><span class="task-id">#40f</span><span class="task-title">価格データの健全性チェック（欠損/異常値/時間ずれ）</span></div>
+      <div class="task-meta"><span class="tag tag-cat">データ品質</span><span class="tag tag-pri">★★★ 中</span></div>
+      <div class="task-desc">OHLCVの欠損・重複・スパイクを検出・補正</div>
+    </div>
+
+    <div class="task todo-card">
+      <div class="task-header"><span class="task-id">#23a</span><span class="task-title">Fear &amp; Greed Index 統合</span></div>
+      <div class="task-meta"><span class="tag tag-cat">補助フィルター</span><span class="tag tag-pri">★★★ 中</span></div>
+      <div class="task-desc">過度な楽観/恐怖でのエントリー抑制</div>
+    </div>
+
+    <div class="task todo-card">
+      <div class="task-header"><span class="task-id">#40i</span><span class="task-title">銘柄分散・相関管理（ETH等複数候補）</span></div>
+      <div class="task-meta"><span class="tag tag-cat">ポートフォリオ</span><span class="tag tag-pri">★★ 低</span></div>
+      <div class="task-desc">ETH等の複数銘柄検証。Task 31/40i-eth-pdca1でETH不採用のため慎重に</div>
+    </div>
+
+    <div class="task todo-card">
+      <div class="task-header"><span class="task-id">#38d</span><span class="task-title">Volume Profile Analysis 実装</span></div>
+      <div class="task-meta"><span class="tag tag-cat">補助フィルター</span><span class="tag tag-pri">★★ 低</span></div>
+      <div class="task-desc">出来高集中価格帯判定</div>
+    </div>
+
+    <div class="task todo-card">
+      <div class="task-header"><span class="task-id">#6</span><span class="task-title">ログファイル自動整理・定期クリーンアップ</span></div>
+      <div class="task-meta"><span class="tag tag-cat">ログ制御</span><span class="tag tag-pri">★ 最低</span></div>
+      <div class="task-desc">手動実施完了(2026-02-08)、自動化は低優先度</div>
+    </div>
+  </div>
+
+  <!-- DONE -->
+  <div class="section">
+    <div class="section-title">✅ 完了 (27)</div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#48</span><span class="task-title">Gold (XAUT/USDT) 自動取引システム実装</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-04-18</span></div>
+      <div class="task-result">BTC BOTと並列稼働。config_xaut.ini最適化(donchian=40, pvo=0, adx=26, lev=7, chandelier_exit=1)。OHLCV取得・ベースライン<b>65.07 USD</b>確定。PID分離・monitor_web/bot デュアル表示対応。<b>212/212 PASS</b>。RPi本番並列稼働中</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#46</span><span class="task-title">RPi USB安定稼働 Ubuntu Server設定最適化</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-04-18</span></div>
+      <div class="task-result">rpi_stability_setup.sh適用済み確認。<b>Storage=volatile</b> / vm.dirty_ratio=40 / dirty_background_ratio=15 / dirty_writeback_centisecs=1500 / <b>noatime+nodiratime</b>（両パーティション）— 全設定適用済み</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#23b</span><span class="task-title">RSI 二重確認実装</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-04-18</span><span class="tag tag-cat">補助フィルター</span></div>
+      <div class="task-result"><code>rsi_direction_filter</code>(RSI&gt;50=BUYのみ/RSI&lt;50=SELLのみ)おsmallび<code>evaluate_strategy_b_bb_rsi_sma</code>(RSI 70/30過買過売)を実装済み。デフォルト無効(<code>enabled=0</code>)。Task 45スイープで不採用。<b>実装完了</b></div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#50d</span><span class="task-title">E2Eバックテスト検証テスト追加</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-04-18</span></div>
+      <div class="task-result">test_e2e_backtest_regression.py (5件): 完走 / 必須キー / メトリクス範囲 / <b>決定論的再現性</b> / サンプル数妥当性を検証。regression_test_suite に登録 → <b>212/212 PASS</b></div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#50c</span><span class="task-title">エントリー/エグジット条件の動作テスト追加</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-04-18</span></div>
+      <div class="task-result">test_entry_exit_behavior_regression.py (17件): Donchian+PVO+ADX / FRフィルター / コストモデル計算 / make_trade_decision 統合をモックで検証</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#50b</span><span class="task-title">ファンディングレート保有コストの PnL 反映</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-04-18</span></div>
+      <div class="task-result">cost_model.py: calculate_funding_cost 実装。portfolio.py: apply_funding_cost 実装。bot.py: バー毎 FR 算出統合。BTC -6.7% / XAUT -7.0% のコスト影響を正確に反映。ベースライン更新: <b>BTC 1,739.61 USD / XAUT 65.07 USD</b></div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#50a</span><span class="task-title">バックテスト精度検証 + CostModel 有効化</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-04-18</span></div>
+      <div class="task-result">Phase 0-4 検証により CostModel(enabled=0) が無効のまま本番稼働していたバグを発見・修正。BTC 2,373.22 → 1,864.29 USD (-21.5%)。実際の手数料・スリッページを反映した正確なバックテストに修正</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#49a</span><span class="task-title">ADX Filter Threshold スイープ検証</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-04-18</span></div>
+      <div class="task-result">BTC: ADX 20-35 全値で完全同一結果 (2,373.22 USD, 35 trades)。変更不要。XAUT: ADX=16 が最適 (+44.2%) だが 4 四半期のみで過学習リスク高 → <b>採用保留</b></div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#49b</span><span class="task-title">Market Regime Detection 再検証</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-04-18</span></div>
+      <div class="task-result">BTC: Regime ON → +20.68 USD (+0.87%)、悪化する四半期なし。XAUT: ほぼ変化なし。BTC 単体での採用は<b>検討余地あり</b></div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#44</span><span class="task-title">取引所移行（Bybit Close-Only 対応）</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-04-04</span></div>
+      <div class="task-result">Bybit=データ取得(公開API)、Bitget=注文執行のデュアル構成で解決。Bybit Japan Close-Only (2026-03-23) 後も OHLCV 取得可能を確認</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#45</span><span class="task-title">シグナル・フィルター最適組み合わせ探索</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-03-07</span></div>
+      <div class="task-result">36 ケーススイープ。C04 SMA(300)+TSMOM(150) が +101.52 USD (+4.2%) だが誤差範囲で不採用。現状維持</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#40i-eth</span><span class="task-title">ETH/USDT パラメータスイープ検証</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-03-13</span></div>
+      <div class="task-result">BTC 優位 (2,402.94 vs ETH 421 USD)。PVO 閾値が ETH で無効。ETH 採用保留</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#43</span><span class="task-title">RPi Live BOT 5日間稼働監視</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-03-13</span></div>
+      <div class="task-result">5日間安定稼働。RATE LIMIT 16回全自動回復。残高 65.67 → 68.63 USDT (+2.96)</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">ohlcv-db</span><span class="task-title">OHLCV キャッシュ DB 更新ツール実装</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-03-06</span></div>
+      <div class="task-result">tools/update_ohlcv_db.py 実装。Bybit 公開 API 経由で 4H 足データ取得・蓄積</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">web-mon</span><span class="task-title">Web Monitor ダッシュボード実装</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-03-06</span></div>
+      <div class="task-result">ブラウザ向け BOT 監視ダッシュボード。BTC+XAUT デュアル表示対応 (2026-04-05 更新)</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#40d</span><span class="task-title">戦略監査（エントリー精度 PDCA）</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-03-04</span></div>
+      <div class="task-result">5 回 PDCA。PDCA#3 採用: psar_lookback=300+tsmom(200) で +172 USD (1,985 → 2,157)。tsmom_lookback=150 に最適化後 2,402.94 USD</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#44-exit</span><span class="task-title">イグジット戦略 PDCA 改善 (5案)</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-03-03</span></div>
+      <div class="task-result">全 5 案不採用。PSAR トレイリングストップが既に最適。追加 EXIT 条件はマクロトレンド利益を阻害</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#40e</span><span class="task-title">トレンドフォロー以外の優位性検証 (14 trials)</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-03-02</span></div>
+      <div class="task-result">Volatility Filter (ATR>2500) 採用: +581.65 USD (+41.4%)。方向性フィルター群は Donchian と冗長で全て不採用</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#40b</span><span class="task-title">コストモデル導入</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-03-02</span></div>
+      <div class="task-result">cost_model.py 実装、portfolio.py に統合済み</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#40g</span><span class="task-title">API 耐障害性（リトライ/バックオフ）</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-03-02</span></div>
+      <div class="task-result">実装完了。本番稼働で安定動作確認済み</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#40c</span><span class="task-title">リスクオーバーレイ（DD キルスイッチ）</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-03-01</span></div>
+      <div class="task-result">DD / 日次損失 / 連続損失の 3 種停止実装。enabled=0 でデフォルト無効</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#42</span><span class="task-title">キャッシュベースホットテスト</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-03-01</span></div>
+      <div class="task-result">パリティ検証で損益・トレード数完全一致。use_cached_data_for_hot_test=1</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#41a</span><span class="task-title">最大ドローダウン率計算バグ修正</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-02-08</span></div>
+      <div class="task-result">初期資本考慮に修正。DD>100% 誤判定を解消、全 8Q で DD≤50%</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#40a</span><span class="task-title">Walk-Forward + OOS 分析</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-02-08</span></div>
+      <div class="task-result">フレームワーク実装。3/5 ウィンドウで劣化率 &lt;-100% 検出。戦略過学習リスクを認識</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#39e</span><span class="task-title">Dynamic Stop Loss Width</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-02-08</span></div>
+      <div class="task-result">ADX ベース 3 段階ストップ幅。安全網として実装</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#39d</span><span class="task-title">Time-Based Exit</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-02-08</span></div>
+      <div class="task-result">72 時間強制決済。PSAR 優先で通常未発動。安全網として機能</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">#39b</span><span class="task-title">Two-Tier Entry System</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-02-01</span></div>
+      <div class="task-result"><b>+378.27 USD 改善</b> (904 → 1,282 USD)</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">sweep</span><span class="task-title">パラメータスイープ tsmom_lookback 最適化</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-03-04</span></div>
+      <div class="task-result">tsmom_lookback=150 採用。8Q: 2,402.94 USD。9Q (2026Q1 追加): 2,394.47 USD</div>
+    </div>
+
+    <div class="task done-card">
+      <div class="task-header"><span class="task-id">archive</span><span class="task-title">docs/analysis JSON アーカイブ化</span></div>
+      <div class="task-meta"><span class="tag tag-date">2026-03-06</span></div>
+      <div class="task-result">26 ファイルを _archive/ に移動。AI 直接ソース分析に統一</div>
+    </div>
+
+  </div><!-- /done -->
+
+</div><!-- /container -->
+</body>
+</html>

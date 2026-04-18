@@ -25,55 +25,12 @@
     }
   },
   "summary": {
-    "todo": 7,
-    "progress": 2,
-    "done": 26
+    "todo": 6,
+    "progress": 0,
+    "done": 27
   },
   "tasks": {
-    "progress": [
-      {
-        "id": "48",
-        "category": "新システム・マルチアセット",
-        "title": "Gold (XAUT/USDT) 自動取引システム実装",
-        "priority": 5,
-        "status": "in_progress",
-        "started_date": "2026-04-04",
-        "description": "XAUT/USDT無期限先物のDonchian Breakout戦略実装。BTC BOTと並列稼働。",
-        "completed_subtasks": [
-          "48-A: 取引所・データ調査 ✅",
-          "48-B: bybit/bitget XAUT マッピング ✅",
-          "48-C: config_xaut.ini 最適化 ✅ (donchian=40, pvo=0, adx=26, lev=7, chandelier_exit=1)",
-          "48-D: XAUT OHLCVデータ取得（366日分4H足）✅",
-          "48-E: ベースラインバックテスト ✅ (63.39 USD)",
-          "48-F: パラメータスイープ ✅ (最適値決定)",
-          "48-G: 出口戦略 ✅ (Chandelier Exit採用, time_based_exit=96h)",
-          "PID分離（start_bot.sh/stop_bot.sh --config対応）✅",
-          "monitor_web デュアル表示対応 ✅",
-          "monitor_bot --asset対応 ✅",
-          "レグレッションテスト 190/190 PASS ✅"
-        ],
-        "remaining_subtasks": [
-          "48-H: RPi並列稼働テスト（BTC+XAUT同時起動・CPU/MEM確認）",
-          "48-I: ペーパートレード（2週間監視）",
-          "48-J: 本番稼働開始"
-        ],
-        "baseline": {
-          "xaut_cumulative_pnl_usd": 63.39,
-          "period": "2025Q2-2026Q1 (4四半期)",
-          "file": "baseline_backup/BASELINE_XAUT_63.39USD_20260405.json"
-        }
-      },
-      {
-        "id": "46",
-        "category": "インフラ・安定化",
-        "title": "RPi USB安定稼働 Ubuntu Server設定最適化",
-        "priority": 3,
-        "status": "in_progress",
-        "started_date": "2026-03-13",
-        "description": "Transcend JetFlash USBブート環境の長期安定稼働設定。journald volatile化、vm.dirty最適化、noatime設定。スクリプト: ~/rpi_stability_setup.sh",
-        "remaining": "ユーザーがRPiで sudo bash ~/rpi_stability_setup.sh を実行"
-      }
-    ],
+    "progress": [],
     "todo": [
       {
         "id": "47",
@@ -95,13 +52,6 @@
         "title": "Fear & Greed Index 統合",
         "priority": 3,
         "description": "過度な楽観/恐怖でのエントリー抑制"
-      },
-      {
-        "id": "23b",
-        "category": "補助フィルター",
-        "title": "RSI 二重確認実装",
-        "priority": 3,
-        "description": "過買い状態でのロング回避"
       },
       {
         "id": "40i",
@@ -126,6 +76,23 @@
       }
     ],
     "done": [
+      {        "id": "48",
+        "title": "Gold (XAUT/USDT) 自動取引システム実装",
+        "completed_date": "2026-04-18",
+        "result": "BTC BOTと並列稼働。config_xaut.ini最適化(donchian=40, pvo=0, adx=26, lev=7, chandelier_exit=1)。XAUT OHLCVデータ取得・ベースライン65.07USD確定。PID分離・monitor_web/monitor_botデュアル表示対応。レグレッションテスト212/212 PASS。RPi本番並列稼働中"
+      },
+      {
+        "id": "46",
+        "title": "RPi USB安定稼働 Ubuntu Server設定最適化",
+        "completed_date": "2026-04-18",
+        "result": "rpi_stability_setup.sh適用確認済み。Storage=volatile / vm.dirty_ratio=40 / dirty_background_ratio=15 / dirty_writeback_centisecs=1500 / noatime+nodiratime(両パーティション) — 全設定適用済み"
+      },
+      {
+        "id": "23b",
+        "title": "RSI 二重確認実装",
+        "completed_date": "2026-04-18",
+        "result": "trading_strategy.py にrsi_direction_filter実装済み(RSI>50=BUYのみ/RSI<50=SELLのみ)。risk_management.py にevaluate_strategy_b_bb_rsi_sma実装済み(RSI過買過売70/30)。config.iniでデフォルト無効(enabled=0)。Task 45スイープにて採用不採用。コード実装完了"
+      },
       {
         "id": "50d",
         "title": "E2Eバックテスト検証テスト追加",
