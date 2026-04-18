@@ -1,22 +1,24 @@
 {
   "meta": {
     "version": "2.0",
-    "last_updated": "2026-04-05",
+    "last_updated": "2026-04-18",
     "description": "satosystem gen2 - Task management (BTC+XAUTデュアルアセット運用体制)",
     "replaces": "docs/ACTION_LIST.md",
     "baselines": {
       "btc": {
-        "cumulative_pnl_usd": 2394.47,
+        "cumulative_pnl_usd": 1739.61,
         "period": "2024Q1-2026Q1 (9四半期)",
-        "file": "baseline_backup/BASELINE_2394.47USD_Q1_2026_20260404.json"
+        "note": "CostModel有効+ファンディングレート保有コスト反映後",
+        "file": "baseline_backup/BASELINE_BTC_1739.61USD_FundingRate_20260418.json"
       },
       "xaut": {
-        "cumulative_pnl_usd": 63.39,
+        "cumulative_pnl_usd": 65.07,
         "period": "2025Q2-2026Q1 (4四半期)",
-        "file": "baseline_backup/BASELINE_XAUT_63.39USD_20260405.json"
+        "note": "CostModel有効+ファンディングレート保有コスト反映後",
+        "file": "baseline_backup/BASELINE_XAUT_65.07USD_FundingRate_20260418.json"
       }
     },
-    "test_suite": "190/190 PASS (BTC 162 + XAUT 28)",
+    "test_suite": "212/212 PASS",
     "workflow_rules": {
       "baseline_before_action": "アクションリスト実行前に必ずレグレッションテストを実行し、PROGRESS.json baseline_regressionに保存すること",
       "comparison_source": "アクションリスト実行時の比較元としてPROGRESS.json baseline_regressionを活用すること"
@@ -25,7 +27,7 @@
   "summary": {
     "todo": 7,
     "progress": 2,
-    "done": 20
+    "done": 26
   },
   "tasks": {
     "progress": [
@@ -124,6 +126,42 @@
       }
     ],
     "done": [
+      {
+        "id": "50d",
+        "title": "E2Eバックテスト検証テスト追加",
+        "completed_date": "2026-04-18",
+        "result": "test_e2e_backtest_regression.py(5件): 完走/必須キー/メトリクス範囲/決定論的再現性/サンプル数妥当性を検証。regression_test_suiteに登録(212/212 PASS)"
+      },
+      {
+        "id": "50c",
+        "title": "エントリー/エグジット条件の動作テスト追加",
+        "completed_date": "2026-04-18",
+        "result": "test_entry_exit_behavior_regression.py(17件): Donchian+PVO+ADX/FRフィルター/コストモデル計算/make_trade_decision統合をモックで検証。regression_test_suiteに登録"
+      },
+      {
+        "id": "50b",
+        "title": "ファンディングレート保有コストのPnL反映",
+        "completed_date": "2026-04-18",
+        "result": "cost_model.py:calculate_funding_cost実装。portfolio.py:apply_funding_cost実装。bot.py:バー毎FR算出統合。BTC-6.7%/XAUT-7.0%のコスト影響を正確に反映。ベースライン更新: BTC 1739.61USD/XAUT 65.07USD"
+      },
+      {
+        "id": "50a",
+        "title": "バックテスト精度検証 + CostModel有効化",
+        "completed_date": "2026-04-18",
+        "result": "Phase 0-4検証によりCostModel(enabled=0)が無効設定のまま本番稼働していたバグを発見・修正。enabled=1に変更。BTC 2373.22→1864.29USD(-21.5%)、実際の手数料・スリッページを反映した正確なバックテストに修正"
+      },
+      {
+        "id": "49a",
+        "title": "ADX Filter Threshold スイープ検証",
+        "completed_date": "2026-04-18",
+        "result": "BTC: ADX 20-35全値で完全同一結果(2373.22USD, 35trades)。ADXフィルタはDonchian Breakoutに対して非拘束（ブレイクアウト時点でADX>35）。変更不要。XAUT: ADX=16が最適(158.79USD vs 現行ADX=26の110.15USD, +44.2%)。ただし4四半期のみでQ4 2025に偏重(+67.22)しており過学習リスク高。採用保留、データ蓄積後に再評価推奨。結果: sweep_results/adx_sweep_20260418_113234.json"
+      },
+      {
+        "id": "49b",
+        "title": "Market Regime Detection 再検証",
+        "completed_date": "2026-04-18",
+        "result": "BTC: Regime ON→2393.90USD(OFF時2373.22, +20.68USD, +0.87%)。Q2 2024損失-103.85→-85.08に改善。効果は軽微だが悪化する四半期なし。XAUT: Regime ON→110.01USD(OFF時110.15, -0.14USD, 変化なし)。組合せテスト(XAUT ADX=16+Regime ON)→161.51USD(+51.36)だがQ4 2025依存度高。BTC単体での採用は検討余地あり(+0.87%、ダウンサイドなし)。"
+      },
       {
         "id": "44",
         "title": "取引所移行（Bybit Close-Only対応）",
