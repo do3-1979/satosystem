@@ -567,6 +567,7 @@ def run_individual_test_modules():
             "test_risk_overlay_regression",
             "test_cost_model_regression",
             "test_xaut_regression",
+            "test_entry_exit_behavior_regression",
         ]
         
         all_results = []
