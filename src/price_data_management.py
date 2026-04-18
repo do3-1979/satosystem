@@ -678,6 +678,25 @@ class PriceDataManagement:
             # リアルタイム: 取引所から直接取得
             return self.exchange.fetch_current_funding_rate()
 
+    def get_funding_rates_in_bar(self, bar_close_epoch):
+        """
+        現在のバーの時間範囲内に発生したファンディングレート決済を返す.
+
+        4H足で8Hファンディングの場合、2バーに1回程度の頻度で決済が発生。
+
+        Args:
+            bar_close_epoch (int): バーの終了時刻（epoch秒）
+
+        Returns:
+            list[tuple[int, float]]: [(epoch, rate), ...] バー内の決済リスト
+        """
+        if not self.funding_rate_dict:
+            return []
+        time_frame_sec = Config.get_time_frame() * 60
+        bar_open_epoch = bar_close_epoch - time_frame_sec
+        return [(k, v) for k, v in self.funding_rate_dict.items()
+                if bar_open_epoch < k <= bar_close_epoch]
+
     def del_ohlcv_data_by_time_frame(self, target_time_frame):
         """
         指定されたtime_frameの先頭行を削除する

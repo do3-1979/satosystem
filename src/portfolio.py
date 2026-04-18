@@ -32,6 +32,7 @@ class Portfolio:
         self.cost_model = CostModel()
         self.total_fees_paid = 0.0  # 累積手数料
         self.total_slippage_cost = 0.0  # 累積スリッページコスト
+        self.total_funding_cost = 0.0  # 累積ファンディングコスト
         
         # 現在の market_type に基づいてポジションを初期化
         self.positions = {self.market_type: {'quantity': 0, 'side': 'NONE', 'position_price': 0}}
@@ -191,6 +192,21 @@ class Portfolio:
             loss = diff * (-1)
 
         return profit, loss
+
+    def apply_funding_cost(self, funding_cost):
+        """
+        ファンディングレートコストを累積損益に反映
+
+        Args:
+            funding_cost (float): 正=コスト（loss加算）、負=収入（profit加算）
+        """
+        if funding_cost > 0:
+            self.loss += funding_cost
+        else:
+            self.profit += abs(funding_cost)
+        self.total_funding_cost += funding_cost
+        # funds を更新（balance_tether 計算に反映させるため）
+        self.funds = self.profit - self.loss
 
     def clear_position_quantity(self, price, is_backtest=False):
         """

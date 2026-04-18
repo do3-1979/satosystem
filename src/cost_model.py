@@ -40,6 +40,7 @@ class CostModel:
         
         # 本番モード/ダミーモード/バックテストモードでの使い分け
         self.is_enabled = Config.get_cost_model_enabled()
+        self.funding_rate_holding_enabled = Config.get_funding_rate_holding_enabled()
     
     def calculate_entry_cost(self, side: str, quantity: float, signal_price: float, 
                             execution_price: float = None, is_market_order: bool = True) -> Tuple[float, float, Dict]:
@@ -123,6 +124,38 @@ class CostModel:
             return price / (1.0 + slippage_factor)
         else:
             return price
+
+    def calculate_funding_cost(self, side: str, quantity: float, price: float, funding_rate: float) -> float:
+        """
+        ポジション保有中のファンディングレートコストを計算
+        
+        Bybitのファンディングレート:
+        - BUY(ロング) + 正のFR → ロングがショートに支払う（コスト）
+        - BUY(ロング) + 負のFR → ショートがロングに支払う（収入）
+        - SELL(ショート) + 正のFR → ロングがショートに支払う（収入）
+        - SELL(ショート) + 負のFR → ショートがロングに支払う（コスト）
+        
+        Args:
+            side: 'BUY' または 'SELL'
+            quantity: ポジション数量
+            price: 現在価格
+            funding_rate: ファンディングレート（例: 0.0001 = 0.01%）
+        
+        Returns:
+            float: ファンディングコスト（正=コスト、負=収入）
+        """
+        if not self.is_enabled or not self.funding_rate_holding_enabled:
+            return 0.0
+        
+        position_value = quantity * price
+        
+        if side.upper() == 'BUY':
+            # ロング: 正のFR → 支払い（コスト）、負のFR → 受取（収入）
+            return position_value * funding_rate
+        elif side.upper() == 'SELL':
+            # ショート: 正のFR → 受取（収入）、負のFR → 支払い（コスト）
+            return -(position_value * funding_rate)
+        return 0.0
     
     def get_execution_delay(self) -> int:
         """

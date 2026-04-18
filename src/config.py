@@ -1509,6 +1509,19 @@ class Config:
         except (KeyError, ValueError):
             return 1
 
+    @classmethod
+    def get_funding_rate_holding_enabled(cls):
+        """
+        ポジション保有中のファンディングレートコスト計上の有効/無効を取得
+
+        Returns:
+            bool: 有効ならTrue（デフォルト: False）
+        """
+        try:
+            return int(cls.config['CostModel']['funding_rate_holding_enabled']) == 1
+        except (KeyError, ValueError):
+            return False
+
     # ========================================
     # Task 40g: Resilience設定
     # ========================================

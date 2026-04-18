@@ -234,6 +234,20 @@ class Bot:
                 # 最新価格を取得
                 price = self.price_data_management.get_ticker()
 
+                # ファンディングレート保有コスト計上（バックテスト / キャッシュベースホットテスト時のみ）
+                if (back_test_mode == 1 or use_cached_hot_test) and self.portfolio.get_position_side() not in (None, 'NONE'):
+                    current_close = self.price_data_management.get_latest_close_time()
+                    funding_rates_in_bar = self.price_data_management.get_funding_rates_in_bar(current_close)
+                    if funding_rates_in_bar:
+                        pos = self.portfolio.get_position_quantity()
+                        for _fr_epoch, _fr_rate in funding_rates_in_bar:
+                            funding_cost = self.portfolio.cost_model.calculate_funding_cost(
+                                side=pos['side'], quantity=pos['quantity'],
+                                price=price, funding_rate=_fr_rate
+                            )
+                            if funding_cost != 0.0:
+                                self.portfolio.apply_funding_cost(funding_cost)
+
                 # 取引所から口座残高を取得
                 if back_test_mode == 1 or use_cached_hot_test:
                     # バックテスト / キャッシュベースホットテスト: 初期資産 + 累積損益（APIコール不要）
