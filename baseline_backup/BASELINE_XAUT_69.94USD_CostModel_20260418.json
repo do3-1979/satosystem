@@ -1,0 +1,104 @@
+{
+  "baseline_info": {
+    "name": "XAUT_CostModel_20260418",
+    "version": "v2026.04.18-costmodel-enabled",
+    "created_at": "2026-04-18T12:42:57.623893",
+    "description": "CostModel有効化後のXAUTベースライン。Taker=0.06%, Slippage=0.05%。4四半期 2025Q2-2026Q1",
+    "symbol": "XAUT/USDT",
+    "config": "config_xaut.ini",
+    "cumulative_pnl_usd": 69.94,
+    "total_trades": 29,
+    "previous_baseline_usd": 110.15,
+    "note": "CostModel有効化による現実的損益反映。手数料+スリッページで-40.21 USD"
+  },
+  "quarterly_results": [
+    {
+      "year": 2025,
+      "quarter": 2,
+      "start_date": "2025/04/14 00:00",
+      "end_date": "2025/07/13 23:59",
+      "metrics": {
+        "total_pnl": 15.338217,
+        "profit_factor": 2.305901,
+        "max_drawdown": 9.629113,
+        "max_drawdown_rate": 18.23729,
+        "sharpe": 1.045699,
+        "sortino": 0.312392,
+        "recovery_factor": 1.5929,
+        "win_rate": 42.857143,
+        "payoff_ratio": 1.22669,
+        "expectancy": -0.165928,
+        "max_consec_losses": 3,
+        "trades": 7,
+        "samples": 546
+      },
+      "timestamp": "2026-04-18T12:42:14.534704"
+    },
+    {
+      "year": 2025,
+      "quarter": 3,
+      "start_date": "2025/07/01 00:00",
+      "end_date": "2025/09/30 23:59",
+      "metrics": {
+        "total_pnl": 11.195524,
+        "profit_factor": 2.249034,
+        "max_drawdown": 5.925003,
+        "max_drawdown_rate": 11.850005,
+        "sharpe": 1.080018,
+        "sortino": 0.446445,
+        "recovery_factor": 1.889539,
+        "win_rate": 37.5,
+        "payoff_ratio": 2.37211,
+        "expectancy": 0.774221,
+        "max_consec_losses": 5,
+        "trades": 8,
+        "samples": 552
+      },
+      "timestamp": "2026-04-18T12:42:22.894714"
+    },
+    {
+      "year": 2025,
+      "quarter": 4,
+      "start_date": "2025/10/01 00:00",
+      "end_date": "2025/12/31 23:59",
+      "metrics": {
+        "total_pnl": 39.649526,
+        "profit_factor": 2.923161,
+        "max_drawdown": 17.464407,
+        "max_drawdown_rate": 22.411716,
+        "sharpe": 1.216193,
+        "sortino": 0.30749,
+        "recovery_factor": 2.270305,
+        "win_rate": 87.5,
+        "payoff_ratio": 53.534853,
+        "expectancy": 17.991339,
+        "max_consec_losses": 1,
+        "trades": 8,
+        "samples": 552
+      },
+      "timestamp": "2026-04-18T12:42:29.911117"
+    },
+    {
+      "year": 2026,
+      "quarter": 1,
+      "start_date": "2026/01/01 00:00",
+      "end_date": "2026/03/31 23:59",
+      "metrics": {
+        "total_pnl": 3.756652,
+        "profit_factor": 1.139065,
+        "max_drawdown": 24.902657,
+        "max_drawdown_rate": 37.73801,
+        "sharpe": 0.123018,
+        "sortino": 0.020124,
+        "recovery_factor": 0.150853,
+        "win_rate": 33.333333,
+        "payoff_ratio": 3.040653,
+        "expectancy": 0.901708,
+        "max_consec_losses": 2,
+        "trades": 6,
+        "samples": 540
+      },
+      "timestamp": "2026-04-18T12:42:37.060511"
+    }
+  ]
+}
