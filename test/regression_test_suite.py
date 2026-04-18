@@ -568,6 +568,7 @@ def run_individual_test_modules():
             "test_cost_model_regression",
             "test_xaut_regression",
             "test_entry_exit_behavior_regression",
+            "test_e2e_backtest_regression",
         ]
         
         all_results = []
@@ -581,12 +582,14 @@ def run_individual_test_modules():
         for module_name in test_modules:
             print(f"\n📋 実行中: {module_name}.py")
             try:
+                # E2Eバックテストは複数回bot.pyを実行するため長いタイムアウトが必要
+                module_timeout = 600 if "e2e" in module_name else 60
                 result = subprocess.run(
                     [sys.executable, os.path.join(os.path.dirname(__file__), f"{module_name}.py")],
                     cwd=SRC_DIR,
                     capture_output=True,
                     text=True,
-                    timeout=60
+                    timeout=module_timeout
                 )
                 
                 # JSON 結果ファイルを読み込む
