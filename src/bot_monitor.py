@@ -295,8 +295,7 @@ def judge_bot_health(result: BotAnalysisResult) -> tuple[str, str]:
 
     if result.main_loop_error_recent_count >= 2:
         return "❌", f"メインループエラー {result.main_loop_error_recent_count}件(直近24h)"
-    if result.main_loop_error_count >= 2:
-        return "⚠️", f"過去エラー {result.main_loop_error_count}件(累計)"
+    # 直近24h=0件なら累計エラーがあっても正常扱い
 
     if heartbeat_age > 120:
         secs = int(heartbeat_age)
@@ -392,7 +391,8 @@ class ReportBuilder:
 
     def _section_bot_status(self, result: BotAnalysisResult) -> str:
         icon, status_text = judge_bot_health(result)
-        pid_str = f"稼働中 (PID: {result.pid})" if result.is_alive else "停止"
+        proc_icon = "✅" if result.is_alive else "❌"
+        pid_str = f"{proc_icon} 稼働中 (PID: {result.pid})" if result.is_alive else f"{proc_icon} 停止"
         heartbeat_age = min(result.last_log_age_seconds, result.status_age_seconds)
         age_str = self._fmt_seconds_ago(heartbeat_age)
         age_judge = "(正常)" if heartbeat_age <= 120 else "(⚠️遅延)" if heartbeat_age <= 300 else "(❌停止)"
