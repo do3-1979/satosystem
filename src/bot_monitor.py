@@ -421,7 +421,8 @@ class ReportBuilder:
         pvo    = st.get("pvo_val", "N/A")
         pnl    = st.get("pnl", 0)
         total  = st.get("total_pnl", 0)
-        bal    = st.get("unionAvailable", "N/A")
+        _bal_raw = st.get("balance") or st.get("unionAvailable")
+        bal    = _bal_raw if _bal_raw is not None else None
         pos    = st.get("position_side", "NONE")
         dec    = st.get("decision", "NONE")
 
@@ -439,7 +440,7 @@ class ReportBuilder:
             f"■ {result.symbol}",
             f"  現在価格     : {self._fmt_price(close)} USD",
             f"  ポジション   : {pos}",
-            f"  残高         : {self._fmt_price(bal)} USD",
+            f"  残高         : {self._fmt_price(bal) if bal is not None else '更新待ち（次回BOT再起動後）'} USD",
             f"  累計損益     : {total_str} USD",
             f"  みなし損益   : {pnl_str} USD",
             f"  DC上限(dc_h) : {self._fmt_price(dc_h)} USD  ({dc_h_dist} 距離)",

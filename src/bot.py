@@ -538,6 +538,7 @@ class Bot:
 
                 # portfolio
                 trade_data['positions'] = self.portfolio.get_position_quantity()
+                trade_data['balance_tether'] = balance_tether
                 # 取引データを表示
                 # if back_test_mode == 0:
                 self.show_trade_data(trade_data)
