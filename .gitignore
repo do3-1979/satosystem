@@ -77,3 +77,7 @@ sweep_results/
 
 # Gmail credentials (contains app password - never commit)
 src/.gmail
+
+# Temporary chat input files
+自律実行用プロンプト*.md
+命令書.md
