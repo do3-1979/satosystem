@@ -332,7 +332,13 @@ def judge_entry_zero(result: BotAnalysisResult) -> tuple[str, str]:
     if result.adx_filter_ng >= total_breakout:
         return "✅", f"ADX不足({result.adx_filter_ng}件)がBreakout({total_breakout}件)を全ブロック"
 
-    # Breakout発生しているがフィルタ通過ゼロ
+    # 出来高不足 + ADX不足の合計でBreakout全件をカバー → 適正
+    combined_ng = result.volume_filter_ng + result.adx_filter_ng
+    if combined_ng >= total_breakout:
+        main_cause = "ADX不足" if result.adx_filter_ng >= result.volume_filter_ng else "出来高不足"
+        return "✅", f"{main_cause}が主因({result.adx_filter_ng}件)、出来高不足({result.volume_filter_ng}件) — 合計{combined_ng}件でBreakout{total_breakout}件を全ブロック"
+
+    # Breakout発生しているがフィルタ通過ゼロ（合計でも説明できない）
     if total_breakout > 5 and result.entry_allowed == 0:
         return "⚠️", f"Breakout{total_breakout}件発生だがエントリー許可ゼロ — フィルタ過剰の可能性"
 

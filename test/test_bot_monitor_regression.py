@@ -351,6 +351,20 @@ class TestReportBuilder(unittest.TestCase):
         self.assertEqual(icon, "✅")
         self.assertIn("出来高不足", reason)
 
+    def test_build_report_entry_zero_combined_filters(self):
+        """正常: 出来高不足+ADX不足の合計でBreakoutを全カバー → ✅妥当"""
+        # BTC実際ケース: Breakout192件, 出来高51件, ADX141件 → 51+141=192
+        r = _make_normal_result("BTC")
+        r.breakout_buy = 192
+        r.breakout_sell = 0
+        r.volume_filter_ng = 51
+        r.adx_filter_ng = 141
+        r.entry_allowed = 0
+        r.entry_executed = 0
+
+        icon, reason = judge_entry_zero(r)
+        self.assertEqual(icon, "✅")
+
     def test_build_report_entry_zero_suspect(self):
         """要確認: エントリー許可が出ているのに発注ゼロ"""
         r = _make_normal_result("BTC")
