@@ -1,0 +1,45 @@
+#!/bin/bash
+# monitor_email — BOT監視メール送信コマンド
+#
+# 使用方法:
+#   ./commands/monitor_email              # デーモン起動（毎日JST 22:00送信）
+#   ./commands/monitor_email --send-now   # 今すぐ1回分析・送信して終了
+#   ./commands/monitor_email --dry-run    # 送信せずレポートをターミナルに表示
+#   ./commands/monitor_email --test-email # テストメールを送信して終了
+#   ./commands/monitor_email --stop       # 監視プロセスを停止
+#   ./commands/monitor_email --status     # 監視プロセスの状態を確認
+
+set -e
+
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SRC_DIR="$REPO_DIR/src"
+
+case "${1:-}" in
+    --stop)
+        echo "⏹️  BOTモニターを停止します..."
+        bash "$SRC_DIR/stop_monitor.sh"
+        ;;
+    --status)
+        PID_FILE="$SRC_DIR/logs/bot_monitor.pid"
+        if [ -f "$PID_FILE" ]; then
+            pid=$(cat "$PID_FILE")
+            if kill -0 "$pid" 2>/dev/null; then
+                echo "✅ BOTモニター 稼働中 (PID: $pid)"
+                echo "ℹ️  ログ: $SRC_DIR/logs/bot_monitor.log"
+            else
+                echo "⚠️  PIDファイルは存在しますが、プロセスが見つかりません (PID: $pid)"
+            fi
+        else
+            echo "❌ BOTモニターは起動していません"
+        fi
+        ;;
+    "")
+        # デーモン起動
+        bash "$SRC_DIR/start_monitor.sh"
+        ;;
+    *)
+        # --send-now / --dry-run / --test-email などをそのまま渡す
+        cd "$SRC_DIR"
+        python3 bot_monitor.py "$@"
+        ;;
+esac

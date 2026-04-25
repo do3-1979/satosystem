@@ -74,3 +74,6 @@ report_xaut/
 
 # Sweep results (regenerable)
 sweep_results/
+
+# Gmail credentials (contains app password - never commit)
+src/.gmail

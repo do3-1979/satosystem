@@ -1,0 +1,7 @@
+{
+  "gmail_address": "your@gmail.com",
+  "gmail_app_password": "xxxx xxxx xxxx xxxx",
+  "notify_to": "your@gmail.com",
+  "send_hour_jst": 22,
+  "subject_prefix": "[satosystem]"
+}
