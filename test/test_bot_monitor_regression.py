@@ -204,6 +204,7 @@ class TestBotAnalysis(unittest.TestCase):
         result.error_count = error_count
         result.rate_limit_count = rate_limit
         result.main_loop_error_count = main_loop_err
+        result.main_loop_error_recent_count = main_loop_err  # モックでは同値を使用
         result.entry_executed = entry_exec
         return result
 
@@ -266,9 +267,10 @@ class TestBotAnalysis(unittest.TestCase):
             result = self.analyzer.analyze("XAUT", XAUT_LOGS_DIR, XAUT_STATUS_JSON, XAUT_PID_FILE)
 
             self.assertEqual(result.error_count, 600)
-            self.assertEqual(result.main_loop_error_count, 0)  # ⚠️ 条件を確認
+            self.assertEqual(result.main_loop_error_count, 0)  # 直近24h外はカウントされない
             icon, text = judge_bot_health(result)
             self.assertEqual(icon, "⚠️")
+            self.assertIn("ERROR多発", text)
 
 
 # ==============================================================

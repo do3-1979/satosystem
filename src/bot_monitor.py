@@ -97,6 +97,7 @@ class BotAnalysisResult:
     error_count: int = 0
     rate_limit_count: int = 0
     main_loop_error_count: int = 0
+    main_loop_error_recent_count: int = 0  # 直近24時間
     strategy_a_buy: int = 0
     strategy_a_sell: int = 0
     strategy_a_none: int = 0
@@ -193,6 +194,32 @@ class LogAnalyzer:
             logger.warning(f"ログパターンカウントエラー: {e}")
             return 0
 
+    def count_log_pattern_recent(self, log_path: str, pattern: str, hours: int = 24) -> int:
+        """直近 hours 時間以内でパターンにマッチする行数を返す。"""
+        if not log_path or not os.path.exists(log_path):
+            return 0
+        cutoff = datetime.now() - timedelta(hours=hours)
+        regex = re.compile(pattern)
+        ts_regex = re.compile(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")
+        count = 0
+        try:
+            with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+                for line in f:
+                    m = ts_regex.match(line)
+                    if m:
+                        try:
+                            ts = datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
+                            if ts < cutoff:
+                                continue
+                        except ValueError:
+                            pass
+                    if regex.search(line):
+                        count += 1
+            return count
+        except Exception as e:
+            logger.warning(f"ログパターンカウントエラー(recent): {e}")
+            return 0
+
     def get_log_age_seconds(self, log_path: str) -> float:
         """ログファイルの最終更新からの経過秒数を返す。"""
         if not log_path or not os.path.exists(log_path):
@@ -220,7 +247,8 @@ class LogAnalyzer:
             # パターンカウント
             result.error_count            = self.count_log_pattern(log_path, r"ERROR")
             result.rate_limit_count       = self.count_log_pattern(log_path, r"RATE LIMIT")
-            result.main_loop_error_count  = self.count_log_pattern(log_path, r"メインループエラー")
+            result.main_loop_error_count        = self.count_log_pattern(log_path, r"メインループエラー")
+            result.main_loop_error_recent_count = self.count_log_pattern_recent(log_path, r"メインループエラー", hours=24)
             result.strategy_a_buy         = self.count_log_pattern(log_path, r"strategy_A: BUY")
             result.strategy_a_sell        = self.count_log_pattern(log_path, r"strategy_A: SELL")
             result.strategy_a_none        = self.count_log_pattern(log_path, r"全Strategy: NONE")
@@ -265,8 +293,10 @@ def judge_bot_health(result: BotAnalysisResult) -> tuple[str, str]:
         mins = int(heartbeat_age / 60)
         return "❌", f"ログ停止 ({mins}分更新なし)"
 
+    if result.main_loop_error_recent_count >= 2:
+        return "❌", f"メインループエラー {result.main_loop_error_recent_count}件(直近24h)"
     if result.main_loop_error_count >= 2:
-        return "❌", f"メインループエラー {result.main_loop_error_count}件"
+        return "⚠️", f"過去エラー {result.main_loop_error_count}件(累計)"
 
     if heartbeat_age > 120:
         secs = int(heartbeat_age)
@@ -375,7 +405,7 @@ class ReportBuilder:
             f"  ログファイル : {log_str}",
             f"  エラー件数   : {result.error_count}件",
             f"  RATE LIMIT   : {result.rate_limit_count}回",
-            f"  メインループエラー: {result.main_loop_error_count}件",
+            f"  メインループエラー: {result.main_loop_error_count}件 (直近24h: {result.main_loop_error_recent_count}件)",
         ]
         return "\n".join(lines)
 
