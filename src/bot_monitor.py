@@ -363,14 +363,15 @@ class ReportBuilder:
     def _section_bot_status(self, result: BotAnalysisResult) -> str:
         icon, status_text = judge_bot_health(result)
         pid_str = f"稼働中 (PID: {result.pid})" if result.is_alive else "停止"
-        age_str = self._fmt_seconds_ago(result.last_log_age_seconds)
-        age_judge = "(正常)" if result.last_log_age_seconds <= 120 else "(⚠️遅延)" if result.last_log_age_seconds <= 300 else "(❌停止)"
+        heartbeat_age = min(result.last_log_age_seconds, result.status_age_seconds)
+        age_str = self._fmt_seconds_ago(heartbeat_age)
+        age_judge = "(正常)" if heartbeat_age <= 120 else "(⚠️遅延)" if heartbeat_age <= 300 else "(❌停止)"
         log_str = result.log_file if result.log_file else "ログなし"
 
         lines = [
             f"■ {result.symbol} BOT: {icon} {status_text}",
             f"  プロセス     : {pid_str}",
-            f"  最新ログ更新 : {age_str} {age_judge}",
+            f"  最終更新     : {age_str} {age_judge}",
             f"  ログファイル : {log_str}",
             f"  エラー件数   : {result.error_count}件",
             f"  RATE LIMIT   : {result.rate_limit_count}回",
