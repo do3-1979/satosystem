@@ -10,6 +10,7 @@ import sys
 import tempfile
 import time
 import unittest
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
@@ -20,6 +21,7 @@ from bot_monitor import (
     BotAnalysisResult,
     BotMonitor,
     GmailSender,
+    JST,
     LogAnalyzer,
     ReportBuilder,
     judge_bot_health,
@@ -65,31 +67,48 @@ class TestLogAnalyzer(unittest.TestCase):
     # --- parse_status_json ---
 
     def test_parse_status_json_normal(self):
-        """正常: JSONを正しくパース"""
+        """正常: ネスト構造（latestキー配下）を正しくパース"""
+        now_str = datetime.now(JST).strftime("%Y/%m/%d %H:%M:%S")
+        data = {"updated_at": now_str,
+                "latest": {"close": 93000.0, "adx": 25.5, "decision": "NONE"}}
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(data, f)
+            fname = f.name
+        try:
+            status, age = self.analyzer.parse_status_json(Path(fname))
+            self.assertEqual(status["close"], 93000.0)
+            self.assertEqual(status["adx"], 25.5)
+            self.assertLess(age, 5.0)  # 作成直後なので数秒未満
+        finally:
+            os.unlink(fname)
+
+    def test_parse_status_json_flat(self):
+        """正常: フラット構造（latestキーなし）も動作"""
         data = {"close": 93000.0, "adx": 25.5, "decision": "NONE"}
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(data, f)
             fname = f.name
         try:
-            result = self.analyzer.parse_status_json(Path(fname))
-            self.assertEqual(result["close"], 93000.0)
-            self.assertEqual(result["adx"], 25.5)
+            status, age = self.analyzer.parse_status_json(Path(fname))
+            self.assertEqual(status["close"], 93000.0)
         finally:
             os.unlink(fname)
 
     def test_parse_status_json_not_found(self):
-        """異常: ファイルが存在しない → 空 dict"""
-        result = self.analyzer.parse_status_json(Path("/nonexistent/status.json"))
-        self.assertEqual(result, {})
+        """異常: ファイルが存在しない → 空 dict, inf"""
+        status, age = self.analyzer.parse_status_json(Path("/nonexistent/status.json"))
+        self.assertEqual(status, {})
+        self.assertEqual(age, float("inf"))
 
     def test_parse_status_json_corrupted(self):
-        """異常: JSONが壊れている → 空 dict"""
+        """異常: JSONが壊れている → 空 dict, inf"""
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             f.write("{invalid json!!!")
             fname = f.name
         try:
-            result = self.analyzer.parse_status_json(Path(fname))
-            self.assertEqual(result, {})
+            status, age = self.analyzer.parse_status_json(Path(fname))
+            self.assertEqual(status, {})
+            self.assertEqual(age, float("inf"))
         finally:
             os.unlink(fname)
 
@@ -191,7 +210,7 @@ class TestBotAnalysis(unittest.TestCase):
     def test_analyze_btc_all_normal(self):
         """正常: BTC分析モック（全て正常）"""
         with patch.object(self.analyzer, "check_bot_alive", return_value=(True, 12345)), \
-             patch.object(self.analyzer, "parse_status_json", return_value={"close": 93000.0}), \
+             patch.object(self.analyzer, "parse_status_json", return_value=({"close": 93000.0}, 30.0)), \
              patch.object(self.analyzer, "find_latest_log", return_value="/tmp/bot_BTC_20260425.log"), \
              patch.object(self.analyzer, "get_log_age_seconds", return_value=30.0), \
              patch.object(self.analyzer, "count_log_pattern", return_value=2):
@@ -206,7 +225,7 @@ class TestBotAnalysis(unittest.TestCase):
     def test_analyze_xaut_all_normal(self):
         """正常: XAUT分析モック（全て正常）"""
         with patch.object(self.analyzer, "check_bot_alive", return_value=(True, 12346)), \
-             patch.object(self.analyzer, "parse_status_json", return_value={"close": 3245.0}), \
+             patch.object(self.analyzer, "parse_status_json", return_value=({"close": 3245.0}, 40.0)), \
              patch.object(self.analyzer, "find_latest_log", return_value="/tmp/bot_XAUT_20260425.log"), \
              patch.object(self.analyzer, "get_log_age_seconds", return_value=45.0), \
              patch.object(self.analyzer, "count_log_pattern", return_value=0):
@@ -220,7 +239,7 @@ class TestBotAnalysis(unittest.TestCase):
     def test_analyze_btc_bot_stopped(self):
         """異常: BTCが停止中"""
         with patch.object(self.analyzer, "check_bot_alive", return_value=(False, None)), \
-             patch.object(self.analyzer, "parse_status_json", return_value={}), \
+             patch.object(self.analyzer, "parse_status_json", return_value=({}, float("inf"))), \
              patch.object(self.analyzer, "find_latest_log", return_value=None):
 
             from bot_monitor import BTC_LOGS_DIR, BTC_STATUS_JSON, BTC_PID_FILE
@@ -238,7 +257,7 @@ class TestBotAnalysis(unittest.TestCase):
             return 0
 
         with patch.object(self.analyzer, "check_bot_alive", return_value=(True, 12346)), \
-             patch.object(self.analyzer, "parse_status_json", return_value={}), \
+             patch.object(self.analyzer, "parse_status_json", return_value=({}, float("inf"))), \
              patch.object(self.analyzer, "find_latest_log", return_value="/tmp/bot_XAUT.log"), \
              patch.object(self.analyzer, "get_log_age_seconds", return_value=30.0), \
              patch.object(self.analyzer, "count_log_pattern", side_effect=_count_side_effect):
@@ -349,7 +368,8 @@ class TestJudgeBotHealth(unittest.TestCase):
 
     def test_judge_normal(self):
         """✅ 正常"""
-        r = BotAnalysisResult(symbol="BTC", is_alive=True, last_log_age_seconds=30.0)
+        r = BotAnalysisResult(symbol="BTC", is_alive=True,
+                               last_log_age_seconds=30.0, status_age_seconds=30.0)
         icon, _ = judge_bot_health(r)
         self.assertEqual(icon, "✅")
 
@@ -361,15 +381,25 @@ class TestJudgeBotHealth(unittest.TestCase):
         self.assertIn("停止", text)
 
     def test_judge_log_stale_300s(self):
-        """❌ ログ5分以上停止"""
-        r = BotAnalysisResult(symbol="BTC", is_alive=True, last_log_age_seconds=301.0)
+        """❌ ログ・ステータス両方5分以上停止"""
+        r = BotAnalysisResult(symbol="BTC", is_alive=True,
+                               last_log_age_seconds=301.0, status_age_seconds=301.0)
         icon, text = judge_bot_health(r)
         self.assertEqual(icon, "❌")
         self.assertIn("ログ停止", text)
 
+    def test_judge_status_recent_overrides_old_log(self):
+        """✅ ステータスが最近ならログが古くても正常"""
+        # status_age=30s(最近), log_age=3600s(1時間前) → heartbeat=30s → ✅
+        r = BotAnalysisResult(symbol="BTC", is_alive=True,
+                               last_log_age_seconds=3600.0, status_age_seconds=30.0)
+        icon, _ = judge_bot_health(r)
+        self.assertEqual(icon, "✅")
+
     def test_judge_log_stale_150s(self):
-        """⚠️ ログ2分以上遅延"""
-        r = BotAnalysisResult(symbol="BTC", is_alive=True, last_log_age_seconds=150.0)
+        """⚠️ ログ・ステータス両方2分以上遅延"""
+        r = BotAnalysisResult(symbol="BTC", is_alive=True,
+                               last_log_age_seconds=150.0, status_age_seconds=150.0)
         icon, text = judge_bot_health(r)
         self.assertEqual(icon, "⚠️")
         self.assertIn("遅延", text)
@@ -377,7 +407,8 @@ class TestJudgeBotHealth(unittest.TestCase):
     def test_judge_many_errors(self):
         """⚠️ ERROR多発"""
         r = BotAnalysisResult(symbol="XAUT", is_alive=True,
-                               last_log_age_seconds=30.0, error_count=600)
+                               last_log_age_seconds=30.0, status_age_seconds=30.0,
+                               error_count=600)
         icon, text = judge_bot_health(r)
         self.assertEqual(icon, "⚠️")
         self.assertIn("ERROR多発", text)

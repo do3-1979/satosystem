@@ -108,6 +108,7 @@ class BotAnalysisResult:
     entry_skipped: int = 0
     entry_executed: int = 0
     no_log: bool = False
+    status_age_seconds: float = float("inf")  # latest_status.json の updated_at からの経過秒
 
 # ==============================================================
 # LogAnalyzer
@@ -126,19 +127,37 @@ class LogAnalyzer:
             return None
         return max(files, key=os.path.getmtime)
 
-    def parse_status_json(self, path: Path) -> dict:
-        """latest_status.json を読み込む。失敗時は空 dict を返す。"""
+    def parse_status_json(self, path: Path) -> tuple[dict, float]:
+        """
+        latest_status.json を読み込む。
+        戻り値: (status_dict, age_seconds)
+        - status_dict: "latest" キー配下の取引データ（なければトップレベル）
+        - age_seconds: updated_at からの経過秒（取得できなければ inf）
+        """
         try:
             with open(path, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+            # ネスト構造対応: データは "latest" キー配下にある
+            status = data.get("latest", data)
+            # updated_at から経過秒を計算
+            age = float("inf")
+            updated_at = data.get("updated_at", "")
+            if updated_at:
+                try:
+                    fmt = "%Y/%m/%d %H:%M:%S"
+                    dt = datetime.strptime(updated_at, fmt).replace(tzinfo=JST)
+                    age = (datetime.now(JST) - dt).total_seconds()
+                except Exception:
+                    pass
+            return status, age
         except FileNotFoundError:
-            return {}
+            return {}, float("inf")
         except json.JSONDecodeError:
             logger.warning(f"JSONパースエラー: {path}")
-            return {}
+            return {}, float("inf")
         except Exception as e:
             logger.warning(f"status JSON 読み込みエラー: {path} - {e}")
-            return {}
+            return {}, float("inf")
 
     def check_bot_alive(self, pid_file: Path) -> tuple[bool, Optional[int]]:
         """
@@ -190,7 +209,7 @@ class LogAnalyzer:
         result.is_alive, result.pid = self.check_bot_alive(pid_file)
 
         # ステータス JSON 読み込み
-        result.status = self.parse_status_json(status_json_path)
+        result.status, result.status_age_seconds = self.parse_status_json(status_json_path)
 
         # 最新ログ
         log_path = self.find_latest_log(logs_dir, symbol)
@@ -238,15 +257,19 @@ def judge_bot_health(result: BotAnalysisResult) -> tuple[str, str]:
     if not result.is_alive:
         return "❌", "プロセス停止"
 
-    if result.last_log_age_seconds > 300:
-        mins = int(result.last_log_age_seconds / 60)
+    # latest_status.json の updated_at を主指標とする（BOTは毎分更新）
+    # ログファイルの mtime は補助指標（hourly memory log のみの場合があるため）
+    heartbeat_age = min(result.status_age_seconds, result.last_log_age_seconds)
+
+    if heartbeat_age > 300:
+        mins = int(heartbeat_age / 60)
         return "❌", f"ログ停止 ({mins}分更新なし)"
 
     if result.main_loop_error_count >= 2:
         return "❌", f"メインループエラー {result.main_loop_error_count}件"
 
-    if result.last_log_age_seconds > 120:
-        secs = int(result.last_log_age_seconds)
+    if heartbeat_age > 120:
+        secs = int(heartbeat_age)
         return "⚠️", f"ログ遅延 ({secs}秒前)"
 
     if result.error_count > 500:
