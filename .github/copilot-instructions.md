@@ -28,8 +28,8 @@
 - **名称**: satosystem gen2
 - **説明**: Bitcoin自動取引システム（Donchian Breakout + PVO + ADX filter）
 - **ブランチ**: gen2
-- **ベースライン性能**: +1282.62 USD（2024-2025, 8四半期、Two-Tier Entry System有効化後）
-- **最終更新**: 2026-02-01
+- **ベースライン性能**: +2481.00 USD（2024Q1-2026Q1, 9四半期、pvo_l_term=26変更後）
+- **最終更新**: 2026-05-02
 
 ## 重大ルール（CRITICAL）
 
@@ -95,10 +95,10 @@
 
 ## テスト品質基準
 
-現在の状態（2026-03-01）：
-- レグレッションテスト: 122/122 (100%) PASS
-- 四半期テスト: 8/8 PASS
-- ベースライン累積損益: +1282.62 USD（Two-Tier Entry System有効化後）
+現在の状態（2026-05-02）：
+- レグレッションテスト: 212/212 (100%) PASS
+- 四半期テスト: 9/9 PASS（BTC）、4/4 PASS（XAUT）
+- ベースライン累積損益: +2481.00 USD（pvo_l_term=26変更後）
 
 必須基準：
 - レグレッションテスト合格率 ≥ 95%
@@ -197,6 +197,11 @@ python3 tools/update_progress.py --task-start "39c" --description "実装開始"
    - コミット実行
    - `python3 tools/update_progress.py --task-complete <ID> --commit`
    - ACTION_LIST.jsonのtasks.doneセクション更新
+
+4. **RPiへのデプロイ時**
+   - ユーザーの許可を得てから実行
+   - `./commands/prj-deploy` — push + BOT停止 + pull + BOT再起動 + 状態確認を一括実行
+   - `./commands/prj-deploy --status-only` — デプロイせず状態確認のみ
 
 ## 注意事項
 

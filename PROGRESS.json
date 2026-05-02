@@ -3,15 +3,17 @@
     "name": "satosystem gen2",
     "description": "Crypto auto-trading system - BTC/USDT + XAUT/USDT dual-asset Donchian Breakout",
     "branch": "gen2",
-    "last_updated": "2026-04-05",
+    "last_updated": "2026-05-02",
     "assets": ["BTC/USDT", "XAUT/USDT"],
     "baseline_performance": {
       "btc": {
-        "cumulative_pnl_usd": 2394.47,
+        "cumulative_pnl_usd": 2481.00,
         "period": "2024Q1-2026Q1 (9四半期)",
-        "baseline_file": "baseline_backup/BASELINE_2394.47USD_Q1_2026_20260404.json",
+        "baseline_file": "baseline_backup/BASELINE_BTC_2481.00USD_PvoL26_20260502.json",
         "config": {
           "donchian_term": 30,
+          "pvo_s_term": 5,
+          "pvo_l_term": 26,
           "pvo_threshold": 10,
           "adx_threshold": 31,
           "leverage": 10,
@@ -86,12 +88,12 @@
     ]
   },
   "test_suite": {
-    "total_tests": 190,
+    "total_tests": 212,
     "pass_rate": "100%",
     "test_files": 28,
     "breakdown": {"btc": 162, "xaut": 28},
-    "last_regression_test": "2026-04-05",
-    "regression_status": "190/190 PASS (100%)"
+    "last_regression_test": "2026-05-02",
+    "regression_status": "212/212 PASS (100%)"
   },
   "configuration": {
     "btc": {
