@@ -597,6 +597,12 @@ class BybitExchange(Exchange):
             if err_occuerd == True and retry_count < max_retries:
                 self.logger.log_error("価格取得エラー復帰")
                 err_occuerd = False  # エラーフラグをリセット（リセット漏れ修正）
+
+            # 空リスト対策: データなしの場合は次のタイムフレームへ（NameError防止）
+            if not ohlcv:
+                get_time += time_frame * 60
+                continue
+
             # データ成型
             for i in range(len(ohlcv)):
                 # 終端時間を超えないかぎり取得
@@ -619,7 +625,7 @@ class BybitExchange(Exchange):
                     })
                 else:
                     break
-            get_time = tmp_time
+            get_time = tmp_time + time_frame * 60  # 無限ループ防止: 必ず1タイムフレーム分進める
             
             if back_test_mode == 1:
                 progress = int((get_time - start_epoch) / 60)
