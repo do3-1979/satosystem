@@ -330,6 +330,65 @@ def test_get_account_balance_union_mode():
     return True, f"✅ 合算証拠金モード: get_account_balance USDT.total={usdt_total:.2f} OK"
 
 
+def test_get_account_balance_total_negative_usdt():
+    """マルチアセットモード（USDT=-27, BTC担保）時に unionAvailable を返すか確認"""
+    from bitget_exchange import BitgetExchange
+    with patch("bitget_exchange.Config") as mock_cfg:
+        mock_cfg.get_back_test_mode.return_value = 0
+        mock_cfg.get_hot_test_dummy_mode.return_value = 0
+        mock_cfg.get_time_frame.return_value = 240
+        mock_cfg.get_market.return_value = "BTC/USDT"
+        mock_cfg.get_server_retry_wait.return_value = 120
+        mock_cfg.get_entry_slippage.return_value = 0.5
+        with patch("bitget_exchange.ccxt") as mock_ccxt:
+            mock_exchange = MagicMock()
+            mock_ccxt.bitget.return_value = mock_exchange
+            ex = BitgetExchange("key", "secret", "pass")
+
+    # USDT が -27 (マルチアセットモード: BTC担保でUSDTがマイナス)
+    mock_exchange.fetchBalance.return_value = {
+        'USDT': {'total': -27.59, 'used': 0.0, 'free': -27.59}
+    }
+    # unionAvailable は全資産USDT換算で 145.0 (173USDT入金 - 27.59 + BTC換算)
+    mock_exchange.privateMixGetV2MixAccountAccounts.return_value = {
+        'data': [{'assetMode': 'union', 'unionAvailable': '145.41', 'available': '0'}]
+    }
+
+    total = ex.get_account_balance_total()
+    assert total > 0, f"❌ マイナス残高が返却: {total}"
+    assert abs(total - 145.41) < 0.01, f"❌ unionAvailable が反映されていません: {total}"
+    return True, f"✅ マルチアセット(USDT=-27.59): get_account_balance_total={total:.2f} USDT (unionAvailable)"
+
+
+def test_get_account_balance_negative_usdt():
+    """マルチアセットモード（USDT=-27）時に get_account_balance が unionAvailable を返すか確認"""
+    from bitget_exchange import BitgetExchange
+    with patch("bitget_exchange.Config") as mock_cfg:
+        mock_cfg.get_back_test_mode.return_value = 0
+        mock_cfg.get_hot_test_dummy_mode.return_value = 0
+        mock_cfg.get_time_frame.return_value = 240
+        mock_cfg.get_market.return_value = "BTC/USDT"
+        mock_cfg.get_server_retry_wait.return_value = 120
+        mock_cfg.get_entry_slippage.return_value = 0.5
+        with patch("bitget_exchange.ccxt") as mock_ccxt:
+            mock_exchange = MagicMock()
+            mock_ccxt.bitget.return_value = mock_exchange
+            ex = BitgetExchange("key", "secret", "pass")
+
+    mock_exchange.fetchBalance.return_value = {
+        'USDT': {'total': -27.59, 'used': 0.0, 'free': -27.59}
+    }
+    mock_exchange.privateMixGetV2MixAccountAccounts.return_value = {
+        'data': [{'assetMode': 'union', 'unionAvailable': '145.41', 'available': '0'}]
+    }
+
+    bal = ex.get_account_balance()
+    usdt_total = bal['USDT']['total']
+    assert usdt_total > 0, f"❌ マイナス残高が返却: {usdt_total}"
+    assert abs(usdt_total - 145.41) < 0.01, f"❌ unionAvailable が反映されていません: {usdt_total}"
+    return True, f"✅ マルチアセット(USDT=-27.59): get_account_balance USDT.total={usdt_total:.2f} OK"
+
+
 def test_get_open_position_dummy():
     """ダミー/バックテスト時に get_open_position が None を返すか確認"""
     for ex in [_make_bitget_backtest(), _make_bitget_papertrading()]:
@@ -437,6 +496,8 @@ def run_all_tests():
         ("get_account_balance_total ダミー動作確認", test_get_account_balance_total_dummy),
         ("get_account_balance_total 合算証拠金モード確認", test_get_account_balance_total_union_mode),
         ("get_account_balance 合算証拠金モード確認",      test_get_account_balance_union_mode),
+        ("get_account_balance_total マルチアセット(USDT負)確認", test_get_account_balance_total_negative_usdt),
+        ("get_account_balance マルチアセット(USDT負)確認",       test_get_account_balance_negative_usdt),
         ("fetch_ticker バックテストダミー確認",    test_fetch_ticker_backtest),
         ("execute_entry_order ダミー動作確認",    test_execute_entry_order_dummy),
         ("execute_entry_order ペーパートレード→実API不呼出確認", test_execute_entry_order_papertrading_no_real_api),

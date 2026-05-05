@@ -192,12 +192,13 @@ class BitgetExchange(Exchange):
         usdt = balance.get('USDT', {})
         total = float(usdt.get('total') or 0)
 
-        # 合算証拠金モード対応: USDT残高が 0 の場合は unionAvailable で補完
-        if total == 0:
+        # 合算証拠金モード対応: USDT残高が 0 以下（マイナス含む）の場合は unionAvailable で補完
+        # マルチアセットモードでは USDT がマイナス（例: -27 USDT）になり、BTC が担保になる場合がある
+        if total <= 0:
             union_available = self._fetch_futures_union_available()
             if union_available is not None and union_available > 0:
                 self.logger.log(
-                    f"💡 合算証拠金モード: USDT残高=0 → unionAvailable={union_available:.4f} USDT を使用"
+                    f"💡 合算証拠金モード: USDT残高={total:.4f} → unionAvailable={union_available:.4f} USDT を使用"
                 )
                 return {
                     'USDT': {
@@ -225,12 +226,13 @@ class BitgetExchange(Exchange):
         balance = self._fetch_balance_from_api()
         usdt_total = float((balance.get('USDT') or {}).get('total') or 0)
 
-        # 合算証拠金モード対応: USDT残高が 0 の場合は unionAvailable で補完
-        if usdt_total == 0:
+        # 合算証拠金モード対応: USDT残高が 0 以下（マイナス含む）の場合は unionAvailable で補完
+        # マルチアセットモードでは USDT がマイナス（例: -27 USDT）になり、BTC が担保になる場合がある
+        if usdt_total <= 0:
             union_available = self._fetch_futures_union_available()
             if union_available is not None and union_available > 0:
                 self.logger.log(
-                    f"💡 合算証拠金モード: USDT残高=0 → unionAvailable={union_available:.4f} USDT を使用"
+                    f"💡 合算証拠金モード: USDT残高={usdt_total:.4f} → unionAvailable={union_available:.4f} USDT を使用"
                 )
                 return union_available
 
