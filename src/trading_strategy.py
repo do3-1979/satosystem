@@ -335,7 +335,9 @@ class TradingStrategy:
             if not enable_mr and allow_entry:
                 if use_new_strategy:
                     if strategy_side is None:
-                        conditions_list.append(f"新指標: なし（ベースライン許可）")
+                        # H-022: strategy_A が NONE = 方向性不明 → エントリー禁止
+                        conditions_list.append(f"新指標: NONE （✗方向性不明）")
+                        allow_entry = False
                     elif strategy_side == desired_side:
                         conditions_list.append(f"新指標: {strategy_side} （✓一致）")
                     else:
