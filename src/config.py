@@ -791,6 +791,27 @@ class Config:
         except (KeyError, ValueError):
             return 14
 
+    @classmethod
+    def get_hurst_filter_enabled(cls):
+        try:
+            return int(cls.config['EntryFilters']['hurst_filter_enabled'])
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_hurst_lookback(cls):
+        try:
+            return int(cls.config['EntryFilters']['hurst_lookback'])
+        except (KeyError, ValueError):
+            return 100
+
+    @classmethod
+    def get_hurst_threshold(cls):
+        try:
+            return float(cls.config['EntryFilters']['hurst_threshold'])
+        except (KeyError, ValueError):
+            return 0.5
+
     # ==================== Seasonality セクション ====================
 
     @classmethod

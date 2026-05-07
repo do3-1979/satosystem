@@ -634,6 +634,63 @@ class TradingStrategy:
                     except Exception as e:
                         filter_results.append(f"MTF日足ADX: ⚠ エラー({str(e)[:30]})")
 
+                # H-006c: ハースト指数フィルター (R/S Analysis - Mandelbrot 1972)
+                # 原理: H < threshold = 平均回帰相場（レンジ） → エントリー禁止
+                #       H >= threshold = トレンド持続性あり → エントリー許可
+                # H = 0.5: ランダムウォーク, H > 0.5: トレンド持続, H < 0.5: 平均回帰
+                if Config.get_hurst_filter_enabled() and desired_side and allow_entry:
+                    try:
+                        lookback = Config.get_hurst_lookback()
+                        h_threshold = Config.get_hurst_threshold()
+                        closes_raw = ohlcv_data if ohlcv_data else []
+                        if len(closes_raw) >= lookback + 1:
+                            px = [float(c['close_price']) for c in closes_raw[-(lookback + 1):]]
+                            # log収益率系列
+                            import math as _math
+                            log_rets = [_math.log(px[i] / px[i-1]) for i in range(1, len(px)) if px[i-1] > 0]
+                            n = len(log_rets)
+                            if n >= 20:
+                                # R/S解析: 複数のサブ期間長でスケーリング則を推定
+                                def _rs(series):
+                                    m = sum(series) / len(series)
+                                    dev = [x - m for x in series]
+                                    cum = [sum(dev[:i+1]) for i in range(len(dev))]
+                                    r = max(cum) - min(cum)
+                                    s = (sum((x - m)**2 for x in series) / len(series)) ** 0.5
+                                    return r / s if s > 0 else 0
+                                # スケール長: 10, 20, n//2 の3点
+                                scales = sorted({max(10, n // 4), max(15, n // 3), max(20, n // 2)})
+                                log_scales, log_rs = [], []
+                                for sc in scales:
+                                    if n >= sc:
+                                        chunks = [log_rets[i:i+sc] for i in range(0, n - sc + 1, sc)]
+                                        if chunks:
+                                            avg_rs = sum(_rs(c) for c in chunks) / len(chunks)
+                                            if avg_rs > 0:
+                                                log_scales.append(_math.log(sc))
+                                                log_rs.append(_math.log(avg_rs))
+                                if len(log_scales) >= 2:
+                                    # 最小二乗でハースト指数を推定
+                                    xs, ys = log_scales, log_rs
+                                    n_pts = len(xs)
+                                    sx = sum(xs); sy = sum(ys)
+                                    sxx = sum(x*x for x in xs); sxy = sum(x*y for x, y in zip(xs, ys))
+                                    hurst = (n_pts * sxy - sx * sy) / (n_pts * sxx - sx * sx) if (n_pts * sxx - sx * sx) != 0 else 0.5
+                                    hurst = max(0.0, min(1.0, hurst))  # [0, 1]にクリップ
+                                    if hurst < h_threshold:
+                                        filter_results.append(f"Hurst: ✗ 平均回帰(H={hurst:.3f}<{h_threshold:.2f})")
+                                        allow_entry = False
+                                    else:
+                                        filter_results.append(f"Hurst: ✓ トレンド(H={hurst:.3f}>={h_threshold:.2f})")
+                                else:
+                                    filter_results.append(f"Hurst: ⚠ スケール不足")
+                            else:
+                                filter_results.append(f"Hurst: ⚠ データ不足({n}<20)")
+                        else:
+                            filter_results.append(f"Hurst: ⚠ OHLCV不足({len(closes_raw)}<{lookback+1})")
+                    except Exception as e:
+                        filter_results.append(f"Hurst: ⚠ エラー({str(e)[:30]})")
+
                 # Funding Rate フィルター (Funding Rate過熱によるエントリー抑制)
                 if Config.get_funding_rate_filter_enabled() and desired_side and allow_entry:
                     try:
