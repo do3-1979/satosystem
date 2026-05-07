@@ -131,6 +131,19 @@ class TradingStrategy:
             except Exception as e:
                 self.logger.log(f"[週末フィルターエラー] {str(e)}")
 
+        # H-013: 時間帯フィルター (Session Filter)
+        # close_time_dtはJST表示なので、UTCエポックからJST時刻に変換してブロック
+        if Config.get_session_filter_enabled():
+            try:
+                epoch = self.price_data_management.get_latest_close_time()
+                block_hours = Config.get_session_filter_block_hours()
+                close_hour_jst = (datetime.utcfromtimestamp(epoch).hour + 9) % 24
+                if close_hour_jst in block_hours:
+                    self.logger.log(f"[時間帯フィルター] JST {close_hour_jst:02d}:00 のエントリーをスキップ")
+                    return
+            except Exception as e:
+                self.logger.log(f"[時間帯フィルターエラー] {str(e)}")
+
         # 新指標ベースのStrategyを評価
         strategy_result = self._evaluate_new_indicator_strategy()
         use_new_strategy = any([
@@ -283,10 +296,10 @@ class TradingStrategy:
                     # === Range Breakout Enhanced (Task 38c) ===
                     enable_rbe = Config.get_enable_range_breakout_enhanced()
                     if enable_rbe:
-                        # ブレイク強度確認
+                        # ブレイク強度確認（シグナル生成と同じ4H/buy_term期間のチャネル値を使用）
                         current_price = self.price_data_management.get_ticker()
-                        donchian_high = self.risk_manager.get_donchian_high()
-                        donchian_low = self.risk_manager.get_donchian_low()
+                        donchian_high = signals["donchian"]["info"]["highest"]
+                        donchian_low = signals["donchian"]["info"]["lowest"]
                         
                         breakout_valid = self._validate_breakout_strength(
                             current_price, donchian_high, donchian_low, desired_side
@@ -691,6 +704,21 @@ class TradingStrategy:
                     except Exception as e:
                         filter_results.append(f"Hurst: ⚠ エラー({str(e)[:30]})")
 
+                # H-011: ADX適応型ポジションサイズ調整
+                # ADX弱い（31〜38）→ weak_multiplier倍, ADX強い（≥38）→ 通常サイズ
+                if Config.get_adx_size_scaling_enabled() and desired_side and allow_entry:
+                    try:
+                        strong_thresh = Config.get_adx_size_strong_threshold()
+                        weak_mult = Config.get_adx_size_weak_multiplier()
+                        adx_for_size = self.risk_manager.get_adx() if hasattr(self.risk_manager, 'get_adx') else 0
+                        if adx_for_size < strong_thresh:
+                            position_size_ratio *= weak_mult
+                            filter_results.append(f"ADXサイズ調整: {weak_mult:.1%}(ADX={adx_for_size:.1f}<{strong_thresh:.0f})")
+                        else:
+                            filter_results.append(f"ADXサイズ調整: 100%(ADX={adx_for_size:.1f}>={strong_thresh:.0f})")
+                    except Exception as e:
+                        filter_results.append(f"ADXサイズ調整: ⚠ エラー({str(e)[:30]})")
+
                 # Funding Rate フィルター (Funding Rate過熱によるエントリー抑制)
                 if Config.get_funding_rate_filter_enabled() and desired_side and allow_entry:
                     try:
@@ -741,8 +769,9 @@ class TradingStrategy:
                 'entry_price': current_price.get('close_price', 0),
                 'entry_adx': self.risk_manager.get_adx(),
                 'entry_pvo': current_price.get('pvo_val', 0) or current_price.get('pvo', 0),
-                'entry_time': current_price.get('timestamp') or current_price.get('close_time', 0),  # タイムスタンプ（数値）を記録
-                'strategy_result': strategy_result,  # Strategy結果も記録
+                'entry_time': current_price.get('timestamp') or current_price.get('close_time', 0),
+                'entry_atr': self.price_data_management.get_volatility(),  # H-014: ATR初期ストップ用
+                'strategy_result': strategy_result,
             }
             # self.logger.log(f"[DEBUG ENTRY RECORD] entry_record保存: entry_time={self.entry_record['entry_time']}, entry_price={self.entry_record['entry_price']}")
             
@@ -1074,6 +1103,48 @@ class TradingStrategy:
         high_price = current_ohlcv.get('high_price', 0)
         low_price = current_ohlcv.get('low_price', 0)
         close_price = current_ohlcv.get('close_price', 0)
+
+        #-------------------------------------------------------
+        # 優先度0.9：H-014 ATR初期ストップロス（固定ストップ）
+        # エントリー時ATR×multiplierで固定ストップを設定
+        # PSARはトレーリングするが、初期ストップはATR×2.0(=PSAR初期値)と同等
+        # multiplier < 2.0（例:1.5）で「PSARより締まった固定ストップ」として機能
+        # → エントリー後に価格が上がらず下落したケースで早期損切りして損失削減
+        #-------------------------------------------------------
+        if Config.get_atr_initial_stop_enabled():
+            try:
+                entry_atr = float(self.entry_record.get('entry_atr', 0) or 0)
+                entry_price = float(self.entry_record.get('entry_price', 0) or 0)
+                multiplier = Config.get_atr_initial_stop_multiplier()
+                if entry_atr > 0 and entry_price > 0:
+                    if position_side == 'BUY':
+                        atr_stop = entry_price - multiplier * entry_atr
+                        if low_price <= atr_stop:
+                            executed_price = atr_stop * 0.995
+                            self.logger.log(f"[条件判定:EXIT] ATR初期ストップ: 安値{low_price:.2f}≤ATR_SL{atr_stop:.2f}(ep={entry_price:.0f}-{multiplier}×ATR{entry_atr:.0f})")
+                            side = "SELL"
+                            decision = "EXIT"
+                            exit_reason = "ATR_INITIAL_STOP"
+                            self.trade_decision["side"] = side
+                            self.trade_decision["decision"] = decision
+                            self.trade_decision["exit_reason"] = exit_reason
+                            self.trade_decision["exec_price"] = executed_price
+                            return
+                    elif position_side == 'SELL':
+                        atr_stop = entry_price + multiplier * entry_atr
+                        if high_price >= atr_stop:
+                            executed_price = atr_stop * 1.005
+                            self.logger.log(f"[条件判定:EXIT] ATR初期ストップ: 高値{high_price:.2f}≥ATR_SL{atr_stop:.2f}(ep={entry_price:.0f}+{multiplier}×ATR{entry_atr:.0f})")
+                            side = "BUY"
+                            decision = "EXIT"
+                            exit_reason = "ATR_INITIAL_STOP"
+                            self.trade_decision["side"] = side
+                            self.trade_decision["decision"] = decision
+                            self.trade_decision["exit_reason"] = exit_reason
+                            self.trade_decision["exec_price"] = executed_price
+                            return
+            except Exception as e:
+                self.logger.log(f"[WARNING] ATR初期ストップチェックエラー: {e}")
 
         if position_side == "BUY":
             if not _skip_psar and low_price <= stop_price:

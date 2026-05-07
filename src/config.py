@@ -675,6 +675,22 @@ class Config:
             return 0  # デフォルト: 無効
 
     @classmethod
+    def get_session_filter_enabled(cls):
+        try:
+            return int(cls.config['EntryFilters']['session_filter_enabled'])
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_session_filter_block_hours(cls):
+        """ブロックするUTC時間のセット(int)を返す。例: '1,3' → {1, 3}"""
+        try:
+            raw = cls.config['EntryFilters']['session_filter_block_hours']
+            return {int(h.strip()) for h in raw.split(',') if h.strip()}
+        except (KeyError, ValueError):
+            return {1}
+
+    @classmethod
     def get_sma_direction_filter_enabled(cls):
         """SMA方向性フィルター有効/無効 (Brock et al. 1992 JF, Faber 2007 JOIM)"""
         try:
@@ -811,6 +827,43 @@ class Config:
             return float(cls.config['EntryFilters']['hurst_threshold'])
         except (KeyError, ValueError):
             return 0.5
+
+    @classmethod
+    def get_adx_size_scaling_enabled(cls):
+        try:
+            return int(cls.config['EntryFilters']['adx_size_scaling_enabled'])
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_adx_size_strong_threshold(cls):
+        try:
+            return float(cls.config['EntryFilters']['adx_size_strong_threshold'])
+        except (KeyError, ValueError):
+            return 38.0
+
+    @classmethod
+    def get_adx_size_weak_multiplier(cls):
+        try:
+            return float(cls.config['EntryFilters']['adx_size_weak_multiplier'])
+        except (KeyError, ValueError):
+            return 0.5
+
+    # ==================== ATRInitialStop セクション ====================
+
+    @classmethod
+    def get_atr_initial_stop_enabled(cls):
+        try:
+            return int(cls.config['ATRInitialStop']['atr_initial_stop_enabled'])
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_atr_initial_stop_multiplier(cls):
+        try:
+            return float(cls.config['ATRInitialStop']['atr_initial_stop_multiplier'])
+        except (KeyError, ValueError):
+            return 2.0
 
     # ==================== Seasonality セクション ====================
 

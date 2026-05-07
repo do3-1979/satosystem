@@ -305,6 +305,11 @@ class Bot:
                     # 初回の分割ポジション計算
                     if trade_decision["decision"] == "ENTRY":
                         position_size = self.risk_management.calculate_position_size(balance_tether)
+                        # H-011: ADX適応型ポジションサイズ調整を適用
+                        size_ratio = trade_decision.get("position_size_ratio", 1.0)
+                        if size_ratio != 1.0:
+                            position_size = round(position_size * size_ratio, 7)
+                            self.logger.log(f"[H-011] ポジションサイズ調整: x{size_ratio:.2f} → {position_size}")
                         quantity = position_size
                     # 追加時は初回の分割サイズを踏襲
                     elif trade_decision["decision"] == "ADD":
