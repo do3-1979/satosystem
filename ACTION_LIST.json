@@ -27,7 +27,7 @@
   "summary": {
     "todo": 7,
     "progress": 0,
-    "done": 33
+    "done": 34
   },
   "tasks": {
     "progress": [],
@@ -83,6 +83,13 @@
       }
     ],
     "done": [
+      {
+        "id": "pdca-H-006b",
+        "category": "PDCA検証",
+        "title": "H-006b: 日足MTFフィルター（4H足→日足ADX集約フィルター）",
+        "completed_date": "2026-05-07",
+        "result": "不採用（全threshold値で2025年が壊滅）: threshold=15→累計+2116 USD (-14%, 2025年+223)、threshold=20→累計+1793 USD (-28%, 2025年+225)、threshold=25→累計+458 USD (-82%)。実装バグ修正あり（Wilder ADX初期値を合計→平均に修正、high_price等をfloat変換）。根本原因: 2025年の利益トレードは日足ADXが低い（= レンジ判定でブロック）一方、2026Q1のフェイクブレイクは日足ADXが20以上（= フィルター通過）。BTCの相場性質上、日足ADXが低くてもトレンドブレイクが発生する時期があり（2025Q2+177 USD）フィルターが正当なトレードも除外してしまう構造的問題。2026Q1のフェイクブレイク（日足ADX=21.4→エントリー）はthreshold=20でも防げない。H-006a(BBW)と同じ教訓: フェイクブレイクが起きる時点の指標（ADX値）は高いか、または正当なトレードを過度に除外してしまうtradeoff解消不能。次回: H-006c（ハースト指数）または撤退してH-009（Chandelier Exit早期損切り）へ移行"
+      },
       {
         "id": "pdca-H-006a",
         "category": "PDCA検証",

@@ -558,6 +558,82 @@ class TradingStrategy:
                     except Exception as e:
                         self.logger.log(f"[方向性フィルターエラー] {str(e)}")
 
+                # H-006b: 日足MTFフィルター (Multi-Timeframe Regime Detection)
+                # 原理: 4H足OHLCVを6本集約→日足ADX計算。日足ADX<threshold=レンジ相場→エントリー禁止
+                # 参考: Elder "Trading for a Living" (1993) - MTFアプローチ
+                if Config.get_mtf_daily_filter_enabled() and desired_side and allow_entry:
+                    try:
+                        daily_adx_threshold = Config.get_mtf_daily_adx_threshold()
+                        adx_period = Config.get_mtf_daily_adx_period()
+                        bars_per_day = 6  # 4H足×6本=24H
+                        needed_4h = (adx_period * 2 + 1) * bars_per_day  # Wilder smoothing用に余裕を持つ
+                        raw_ohlcv = ohlcv_data if ohlcv_data else []
+                        if len(raw_ohlcv) >= needed_4h:
+                            # 4H足→日足OHLCV集約（high_price/low_price/close_priceをfloat変換）
+                            daily_candles = []
+                            start = len(raw_ohlcv) % bars_per_day  # 端数を除いて整列
+                            for i in range(start, len(raw_ohlcv) - bars_per_day + 1, bars_per_day):
+                                chunk = raw_ohlcv[i:i + bars_per_day]
+                                daily_candles.append({
+                                    'high': max(float(c['high_price']) for c in chunk),
+                                    'low': min(float(c['low_price']) for c in chunk),
+                                    'close': float(chunk[-1]['close_price'])
+                                })
+                            if len(daily_candles) >= adx_period + 1:
+                                highs = [c['high'] for c in daily_candles]
+                                lows = [c['low'] for c in daily_candles]
+                                closes = [c['close'] for c in daily_candles]
+                                # True Range / Directional Movement 計算
+                                trs, plus_dms, minus_dms = [], [], []
+                                for j in range(1, len(daily_candles)):
+                                    tr = max(highs[j] - lows[j],
+                                             abs(highs[j] - closes[j-1]),
+                                             abs(lows[j] - closes[j-1]))
+                                    up = highs[j] - highs[j-1]
+                                    dn = lows[j-1] - lows[j]
+                                    trs.append(tr)
+                                    plus_dms.append(up if up > dn and up > 0 else 0)
+                                    minus_dms.append(dn if dn > up and dn > 0 else 0)
+                                # Wilder平滑化（ATR/DM用）: 初期値は合計
+                                def _wilder(data, n):
+                                    if len(data) < n:
+                                        return []
+                                    s = [sum(data[:n])]
+                                    for v in data[n:]:
+                                        s.append(s[-1] - s[-1] / n + v)
+                                    return s
+                                atr14 = _wilder(trs, adx_period)
+                                pdm14 = _wilder(plus_dms, adx_period)
+                                mdm14 = _wilder(minus_dms, adx_period)
+                                dx_list = []
+                                for j in range(len(atr14)):
+                                    if atr14[j] > 0:
+                                        pdi = 100 * pdm14[j] / atr14[j]
+                                        mdi = 100 * mdm14[j] / atr14[j]
+                                        dx_list.append(100 * abs(pdi - mdi) / (pdi + mdi) if (pdi + mdi) > 0 else 0)
+                                # ADX計算: DXのWilderスムージング（初期値は平均、以降はEMA alpha=1/n）
+                                if len(dx_list) >= adx_period:
+                                    adx14 = [sum(dx_list[:adx_period]) / adx_period]
+                                    for v in dx_list[adx_period:]:
+                                        adx14.append(adx14[-1] - adx14[-1] / adx_period + v / adx_period)
+                                else:
+                                    adx14 = []
+                                if adx14:
+                                    daily_adx = adx14[-1]
+                                    if daily_adx < daily_adx_threshold:
+                                        filter_results.append(f"MTF日足ADX: ✗ レンジ(日足ADX={daily_adx:.1f}<{daily_adx_threshold:.0f})")
+                                        allow_entry = False
+                                    else:
+                                        filter_results.append(f"MTF日足ADX: ✓ トレンド(日足ADX={daily_adx:.1f}>={daily_adx_threshold:.0f})")
+                                else:
+                                    filter_results.append(f"MTF日足ADX: ⚠ ADX計算失敗")
+                            else:
+                                filter_results.append(f"MTF日足ADX: ⚠ 日足本数不足({len(daily_candles)}<{adx_period+1})")
+                        else:
+                            filter_results.append(f"MTF日足ADX: ⚠ 4H足不足({len(raw_ohlcv)}<{needed_4h})")
+                    except Exception as e:
+                        filter_results.append(f"MTF日足ADX: ⚠ エラー({str(e)[:30]})")
+
                 # Funding Rate フィルター (Funding Rate過熱によるエントリー抑制)
                 if Config.get_funding_rate_filter_enabled() and desired_side and allow_entry:
                     try:

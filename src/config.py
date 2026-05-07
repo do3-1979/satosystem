@@ -770,6 +770,27 @@ class Config:
         except (KeyError, ValueError):
             return -0.0005
 
+    @classmethod
+    def get_mtf_daily_filter_enabled(cls):
+        try:
+            return int(cls.config['EntryFilters']['mtf_daily_filter_enabled'])
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_mtf_daily_adx_threshold(cls):
+        try:
+            return float(cls.config['EntryFilters']['mtf_daily_adx_threshold'])
+        except (KeyError, ValueError):
+            return 20.0
+
+    @classmethod
+    def get_mtf_daily_adx_period(cls):
+        try:
+            return int(cls.config['EntryFilters']['mtf_daily_adx_period'])
+        except (KeyError, ValueError):
+            return 14
+
     # ==================== Seasonality セクション ====================
 
     @classmethod
