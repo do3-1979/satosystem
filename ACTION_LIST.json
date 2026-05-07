@@ -27,7 +27,7 @@
   "summary": {
     "todo": 7,
     "progress": 0,
-    "done": 37
+    "done": 38
   },
   "tasks": {
     "progress": [],
@@ -83,6 +83,12 @@
       }
     ],
     "done": [
+      {
+        "id": "pdca-H-009",
+        "title": "H-009: Chandelier Exit有効化",
+        "completed_date": "2026-05-07",
+        "description": "不採用。replaces_psar=0ではベースラインと完全一致(+2481)でChandelierが一度もトリガーされず。replaces_psar=1ではトレード数=0, 累計-546 USDで壊滅(PSARがストップ計算にも使われているため)。Chandelier ExitはBTCのエグジット改善に効果なし。"
+      },
       {
         "id": "pdca-H-006c",
         "title": "H-006c: ハースト指数フィルター",
