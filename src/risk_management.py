@@ -62,6 +62,12 @@ class RiskManagement:
         
         # 分割制御
         self.leverage = Config.get_leverage()
+        # H-035: VolatilityTargeting（動的レバレッジ）
+        self.volatility_targeting_enabled = Config.get_config_bool('RiskManagement', 'volatility_targeting_enabled', False)
+        self.vt_atr_median_term = Config.get_config_int('RiskManagement', 'vt_atr_median_term', 50)
+        self.vt_lev_normal = Config.get_config_int('RiskManagement', 'vt_lev_normal', 10)
+        self.vt_lev_medium = Config.get_config_int('RiskManagement', 'vt_lev_medium', 7)
+        self.vt_lev_high = Config.get_config_int('RiskManagement', 'vt_lev_high', 5)
         self.entry_times = Config.get_entry_times()
         self.entry_range = Config.get_entry_range()
         self.add_range = 0
@@ -868,8 +874,31 @@ class RiskManagement:
             # 追加購入時の幅の計算
             self.add_range = self.get_entry_range() * volatility
 
+            # H-035: VolatilityTargeting - 現在ATRと過去中央値を比較して動的にレバレッジ調整
+            effective_leverage = self.leverage
+            if self.volatility_targeting_enabled:
+                ohlcv_data = self.price_data_management.get_ohlcv_data(Config.get_time_frame())
+                if len(ohlcv_data) >= self.vt_atr_median_term:
+                    # 過去N期間のATR（高値-安値の平均）を計算して中央値を求める
+                    recent_atrs = [c['high_price'] - c['low_price'] for c in ohlcv_data[-self.vt_atr_median_term:]]
+                    atr_median = sorted(recent_atrs)[len(recent_atrs) // 2]
+                    current_atr = volatility  # get_volatility()と同値
+                    if atr_median > 0:
+                        atr_ratio = current_atr / atr_median
+                        if atr_ratio >= 2.0:
+                            effective_leverage = self.vt_lev_high
+                        elif atr_ratio >= 1.5:
+                            effective_leverage = self.vt_lev_medium
+                        else:
+                            effective_leverage = self.vt_lev_normal
+                        self.logger.log(
+                            f"VolatilityTargeting: ATR={current_atr:.0f} "
+                            f"中央値={atr_median:.0f} 比率={atr_ratio:.2f}x "
+                            f"→ レバレッジ={effective_leverage}x"
+                        )
+
             # 証拠金から購入可能な上限を得る
-            max_size = round( ( balance_tether * self.leverage  * 100 / price / 100 ) , 7 )
+            max_size = round( ( balance_tether * effective_leverage  * 100 / price / 100 ) , 7 )
             # 分割サイズを購入可能上限未満にする
             position_size = min(max_size, tmp_size)
             # クラスに記憶

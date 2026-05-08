@@ -167,7 +167,7 @@ class OHLCVCache:
     def get_ohlcv_data_partial(self, start_epoch: int, end_epoch: int, time_frame: int, symbol: str) -> Optional[List[Dict]]:
         """
         指定期間がキャッシュに含まれているか確認し、含まれていれば取得
-        キャッシュの期間が要求期間を完全に含んでいる場合に取得する（部分一致）
+        close_timeベースで実データを直接検索（バッチメタデータに依存しない）
 
         Args:
             start_epoch: 開始時刻（エポック秒）
@@ -180,46 +180,49 @@ class OHLCVCache:
         """
         conn = self._get_connection()
         cursor = conn.cursor()
-        
-        # 同じ symbol・time_frame で、要求期間を含むキャッシュを探す
-        # キャッシュの start_epoch <= 要求開始 AND キャッシュの end_epoch >= 要求終了
+
+        # close_timeベースで実際のデータ件数を確認（バッチメタデータを使わない）
         cursor.execute(
             """
-            SELECT start_epoch, end_epoch, COUNT(*) as record_count
+            SELECT COUNT(*), MIN(close_time), MAX(close_time)
             FROM candles
             WHERE symbol = ? AND time_frame = ?
-            AND start_epoch <= ?
-            AND end_epoch >= ?
-            GROUP BY start_epoch, end_epoch
+            AND close_time >= ? AND close_time <= ?
             """,
             (symbol, time_frame, start_epoch, end_epoch)
         )
-        
-        cache_info = cursor.fetchone()
-        
-        if cache_info is None:
+        stats = cursor.fetchone()
+
+        if stats is None or stats["COUNT(*)"] == 0:
             conn.close()
             return None
-        
-        # キャッシュが見つかった場合、要求期間のデータを取得
+
+        # データ密度チェック: 期間に対して十分なデータがあるか（期待件数の90%以上）
+        expected_candles = (end_epoch - start_epoch) / (time_frame * 60)
+        actual_candles = stats["COUNT(*)"]
+        if expected_candles > 10 and actual_candles < expected_candles * 0.9:
+            conn.close()
+            return None
+
+        # データを取得（複数バッチにまたがっていても正しく結合）
         cursor.execute(
             """
             SELECT close_time, close_time_dt, open_price, high_price,
                    low_price, close_price, volume
             FROM candles
-            WHERE symbol = ? AND start_epoch = ? AND end_epoch = ? AND time_frame = ?
+            WHERE symbol = ? AND time_frame = ?
             AND close_time >= ? AND close_time <= ?
             ORDER BY close_time ASC
             """,
-            (symbol, cache_info["start_epoch"], cache_info["end_epoch"], time_frame, start_epoch, end_epoch)
+            (symbol, time_frame, start_epoch, end_epoch)
         )
-        
+
         rows = cursor.fetchall()
         conn.close()
-        
+
         if not rows:
             return None
-        
+
         # Row オブジェクトを辞書に変換
         data = []
         for row in rows:
@@ -232,10 +235,10 @@ class OHLCVCache:
                 "close_price": row["close_price"],
                 "Volume": row["volume"]
             })
-        
+
         self.logger.log(
-            f"キャッシュから {len(data)} 件のOHLCVデータを取得（部分一致） "
-            f"(symbol={symbol}, 要求: {start_epoch}～{end_epoch}, キャッシュ: {cache_info['start_epoch']}～{cache_info['end_epoch']}, time_frame={time_frame})"
+            f"キャッシュから {len(data)} 件のOHLCVデータを取得（close_timeベース） "
+            f"(symbol={symbol}, 要求: {start_epoch}～{end_epoch}, time_frame={time_frame})"
         )
         return data
 

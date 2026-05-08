@@ -27,11 +27,18 @@
   "summary": {
     "todo": 7,
     "progress": 0,
-    "done": 38
+    "done": 42
   },
   "tasks": {
     "progress": [],
     "todo": [
+      {
+        "id": "pdca-H-033b",
+        "category": "PDCA検証",
+        "title": "H-033b: RiskOverlay DDキルスイッチ 閾値/再開期間スイープ",
+        "priority": 4,
+        "description": "max_drawdown_pct(30-70%)×DD回復後再開待機期間のスイープで最適パラメータ探索"
+      },
       {
         "id": "50e",
         "category": "フィルター最適化",
@@ -47,9 +54,20 @@
         "description": "デフォルトでAPIから実残高を取得、use_custom_balance=1のときのみconfig値使用"
       },
       {
-        "id": "40f",
-        "category": "データ品質",
-        "title": "価格データの健全性チェック（欠損/異常値/時間ずれ）",
+        "id": "pdca-H-036",
+        "category": "PDCA検証",
+        "title": "H-036: ハーフケリー基準によるポジションサイズ最適化",
+        "priority": 3,
+        "description": "固定risk_percentage=0.30は勝率・PFに関わらず一定。ハーフケリー基準（f* = (p*b - q) / b * 0.5）で四半期ごとにサイズを動的更新する仕組みを検証。初期値はケリーサイズ=0.30として開始し、直近Nトレードの勝率・平均利益・平均損失から毎四半期更新。過学習リスクがあるため最小0.10/最大0.35でクランプ。採用基準: 累計損益+2700USD以上かつシャープレシオ改善。"
+      },
+      {
+        "id": "pdca-H-037",
+        "category": "PDCA検証",
+        "title": "H-037: BTC+XAUT合算エクスポージャー上限による相関リスク管理",
+        "priority": 3,
+        "description": "BTC・XAUTが同時にポジションを持つとBybit合算証拠金で干渉し強制清算リスクが倍増する。合算エクスポージャー（BTC名目+XAUT名目）が証拠金の80%超ならXAUTの新規エントリーを禁止するルールを実装。bot.pyのcheck_can_trade呼び出し前に他BOTのlatest_status.jsonを参照して判定。採用基準: XAUT累計損益が劣化しないかつBTC保有中のXAUTエントリー頻度が50%減少。"
+      },
+      {
         "priority": 3,
         "description": "OHLCVの欠損・重複・スパイクを検出・補正"
       },
@@ -83,6 +101,27 @@
       }
     ],
     "done": [
+      {
+        "id": "pdca-H-034",
+        "category": "PDCA検証",
+        "title": "H-034: ATR初期ストップ有効化による早期損切り検証",
+        "completed_date": "2026-05-08",
+        "result": "不採用（全multiplier値で四半期合計悪化）: multiplier=1.0→+2657.73(-661), multiplier=1.5→+2831.08(-487), multiplier=2.0→+3059.54(-259), multiplier=2.5→+3251.23(-67)。ベースライン+3318.56を超えず。根本原因: ATR初期ストップがPSARストップより早く発動し、利益トレードを早期損切りしてしまう。PSAR追従型ストップに比べてATR固定ストップは大トレンド継続時に不利。通年DDへの寄与なし。不採用。"
+      },
+      {
+        "id": "pdca-H-033",
+        "category": "PDCA検証",
+        "title": "H-033: RiskOverlay DDキルスイッチによるDD制限検証",
+        "completed_date": "2026-05-08",
+        "result": "不採用（構造的問題）。四半期テストでは全て3318.56（各四半期独立実行のため連続DDが発生せず）。通年連続稼働では_dd_stopが永続停止のため、Q2_2024の損失(-92 USD, DD=92%)でDD_STOP発動→以後全ENTRY永久ブロック→Q4_2024の+2106 USD大利益を完全取り逃がす。現在実装のDD_STOPは回復時自動再開なし。改善策: DD回復後の自動再開機能（auto_resume_dd）追加が必要。新タスクpdca-H-033bとして分離。"
+      },
+      {
+        "id": "pdca-H-032",
+        "category": "PDCA検証",
+        "title": "H-032: risk_percentage縮小によるDD改善検証",
+        "completed_date": "2026-05-08",
+        "result": "不採用（PnL減少が大きすぎる）。通年テスト結果: risk=0.20→PnL=+800.95/DD=60.3%/Sharpe=0.482, risk=0.25→PnL=+1196.29/DD=67.7%/Sharpe=0.538, risk=0.30(現状)→PnL=+1570.97/DD=73.1%/Sharpe=0.588。DD率は比例的に改善（0.30→0.20で-12.8pt）するが、PnLも-48.9%と大幅減少。Sharpeも低下。四半期テストでは全て3318.56（スケーリングで相殺）。根本的解決策にならないため不採用。DDの本質的改善は損失四半期を削減する戦略精度向上（フィルター改善）しかない。"
+      },
       {
         "id": "pdca-H-009",
         "title": "H-009: Chandelier Exit有効化",
@@ -317,6 +356,16 @@
         "title": "Walk-Forward + OOS分析",
         "completed_date": "2026-02-08",
         "result": "フレームワーク実装。3/5ウィンドウで劣化率<-100%検出。戦略過学習リスクを認識"
+      },
+      {
+        "id": "pdca-H-035",
+        "category": "PDCA検証",
+        "title": "H-035: 動的レバレッジ調整（VolatilityTargeting）検証",
+        "priority": 4,
+        "description": "レバレッジ固定10倍の問題: 高ボラ相場でポジション損失が拡大しDDが急増する。ATR（14期間）が中央値の1.5倍超→レバを半減(5倍)、2倍超→最小(3倍)とする動的調整を検証。採用基準: 累計損益がベースライン比-5%以内かつ最大DD率が55%以下に改善。実装はconfig.iniにvolatility_targeting_enabled/atr_lev_tiers追加で対応。",
+        "status": "done",
+        "completed_date": "2026-05-08",
+        "result": "不採用: 通年DD 75.7%→73.3%(2.4%改善のみ・目標65%未達), 四半期-9.5%悪化"
       }
     ]
   }
