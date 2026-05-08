@@ -259,7 +259,7 @@ class LogAnalyzer:
             result.entry_allowed          = self.count_log_pattern(log_path, r"エントリー許可")
             result.entry_skipped          = self.count_log_pattern(log_path, r"エントリー見送り")
             result.entry_executed         = self.count_log_pattern(
-                log_path, r"エントリー実行|注文送信|ポジション取得|Entry order"
+                log_path, r"エントリー注文実行|注文送信|ポジション取得|Entry order"
             )
         else:
             result.no_log = True
