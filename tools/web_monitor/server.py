@@ -1015,9 +1015,14 @@ class Handler(BaseHTTPRequestHandler):
         try:
             body = json.dumps(data, ensure_ascii=False).encode("utf-8")
             self._send(200, "application/json; charset=utf-8", body)
+        except BrokenPipeError:
+            pass
         except Exception as e:
-            body = json.dumps({"error": str(e)}).encode("utf-8")
-            self._send(500, "application/json; charset=utf-8", body)
+            try:
+                body = json.dumps({"error": str(e)}).encode("utf-8")
+                self._send(500, "application/json; charset=utf-8", body)
+            except BrokenPipeError:
+                pass
 
     def _send(self, code: int, ctype: str, body: bytes):
         self.send_response(code)
