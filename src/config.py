@@ -849,6 +849,30 @@ class Config:
         except (KeyError, ValueError):
             return 0.5
 
+    @classmethod
+    def get_atr_breakout_filter_enabled(cls):
+        """H-040: ATRブレイクアウト強度フィルター有効フラグ"""
+        try:
+            return int(cls.config['EntryFilters']['atr_breakout_filter_enabled'])
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_atr_breakout_min_ratio(cls):
+        """H-040: ブレイク幅の最小ATR倍率（デフォルト0.3）"""
+        try:
+            return float(cls.config['EntryFilters']['atr_breakout_min_ratio'])
+        except (KeyError, ValueError):
+            return 0.3
+
+    @classmethod
+    def get_atr_breakout_period(cls):
+        """H-040: ATR計算期間（デフォルト14）"""
+        try:
+            return int(cls.config['EntryFilters']['atr_breakout_period'])
+        except (KeyError, ValueError):
+            return 14
+
     # ==================== ATRInitialStop セクション ====================
 
     @classmethod

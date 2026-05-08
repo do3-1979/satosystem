@@ -468,6 +468,41 @@ class TradingStrategy:
                     else:
                         filter_results.append(f"Volatility: ✓ ({volatility_value:.2f} <= {volatility_threshold:.2f})")
 
+                # H-040: ATRブレイクアウト強度フィルター
+                # 仮説: ブレイク幅 < ATR×ratio の弱いブレイクはフォールスブレイクアウト
+                if Config.get_atr_breakout_filter_enabled() and desired_side and allow_entry:
+                    try:
+                        atr_period = Config.get_atr_breakout_period()
+                        min_ratio  = Config.get_atr_breakout_min_ratio()
+                        atr_ohlcv  = ohlcv_data if ohlcv_data else []
+                        if len(atr_ohlcv) >= atr_period:
+                            trs = [max(
+                                atr_ohlcv[i]['high_price'] - atr_ohlcv[i]['low_price'],
+                                abs(atr_ohlcv[i]['high_price'] - atr_ohlcv[i-1]['close_price']),
+                                abs(atr_ohlcv[i]['low_price']  - atr_ohlcv[i-1]['close_price'])
+                            ) for i in range(-atr_period, 0)]
+                            atr_val = sum(trs) / len(trs)
+                            dc_info = signals['donchian']['info']
+                            cur_close = self.price_data_management.get_ticker()
+                            if desired_side == 'BUY':
+                                break_size = cur_close - dc_info.get('highest', cur_close)
+                            else:
+                                break_size = dc_info.get('lowest', cur_close) - cur_close
+                            threshold = atr_val * min_ratio
+                            if break_size < threshold:
+                                filter_results.append(
+                                    f"ATRBreakout: ✗ 弱いブレイク(幅={break_size:.0f} < ATR×{min_ratio}={threshold:.0f})"
+                                )
+                                allow_entry = False
+                            else:
+                                filter_results.append(
+                                    f"ATRBreakout: ✓ (幅={break_size:.0f} >= ATR×{min_ratio}={threshold:.0f})"
+                                )
+                        else:
+                            filter_results.append(f"ATRBreakout: ⚠ データ不足({len(atr_ohlcv)}<{atr_period})")
+                    except Exception as e:
+                        filter_results.append(f"ATRBreakout: ⚠ エラー({str(e)[:30]})")
+
                 # =========== 方向性フィルター群（論文ベース） ===========
                 # desired_side が確定している場合のみ評価
                 if desired_side and (Config.get_sma_direction_filter_enabled() or
