@@ -18,7 +18,7 @@ from config import Config
 from risk_overlay import RiskOverlay
 
 
-def _make_mock_config(enabled='1', max_dd='50.0', daily='20.0', consec='5', auto='1', balance='100'):
+def _make_mock_config(enabled='1', max_dd='50.0', daily='20.0', consec='5', auto='1', balance='100', dd_resume_bars='0'):
     """テスト用Configモックを作成してConfigに注入"""
     c = configparser.ConfigParser()
     c['RiskOverlay'] = {
@@ -27,8 +27,10 @@ def _make_mock_config(enabled='1', max_dd='50.0', daily='20.0', consec='5', auto
         'daily_loss_limit_pct': daily,
         'consecutive_losses_limit': consec,
         'auto_resume_next_day': auto,
+        'dd_resume_bars': dd_resume_bars,
     }
     c['RiskManagement'] = {'account_balance': balance}
+    c['Market'] = {'time_frame': '240'}
     Config.config = c
 
 
@@ -122,6 +124,49 @@ def test_risk_overlay_get_status():
     print("  ✅ get_status()の構造確認")
 
 
+def test_risk_overlay_dd_resume_bars():
+    """H-033b: dd_resume_bars > 0 のとき、指定バー数経過後にDD停止が解除される"""
+    # time_frame=240分, dd_resume_bars=2 → 2バー=480分=28800秒経過で再開
+    _make_mock_config(enabled='1', max_dd='50.0', dd_resume_bars='2')
+    overlay = RiskOverlay()
+
+    portfolio = _MockPortfolio(dd_rate=55.0)  # DD 55% > 閾値50%
+    t0 = 1000000
+
+    # DD超過直後は停止
+    can, reason = overlay.check_can_trade(portfolio, current_epoch=t0)
+    assert not can, "DD超過直後は停止すべき"
+    assert "DD_STOP" in reason
+
+    # 1バー経過（まだ停止中）
+    t1 = t0 + 240 * 60 * 1  # 1バー分
+    can, reason = overlay.check_can_trade(portfolio, current_epoch=t1)
+    assert not can, "1バー後はまだ停止すべき"
+
+    # 2バー経過（再開）
+    t2 = t0 + 240 * 60 * 2  # 2バー分
+    can, reason = overlay.check_can_trade(portfolio, current_epoch=t2)
+    assert can, f"2バー後は再開すべき: {reason}"
+    print("  ✅ DD停止後の自動再開（dd_resume_bars=2）")
+
+
+def test_risk_overlay_dd_resume_bars_zero():
+    """dd_resume_bars=0（デフォルト）のとき、DD停止は永続する"""
+    _make_mock_config(enabled='1', max_dd='50.0', dd_resume_bars='0')
+    overlay = RiskOverlay()
+
+    portfolio = _MockPortfolio(dd_rate=55.0)
+    t0 = 1000000
+
+    overlay.check_can_trade(portfolio, current_epoch=t0)
+
+    # 1000バー後も停止継続
+    t_far = t0 + 240 * 60 * 1000
+    can, reason = overlay.check_can_trade(portfolio, current_epoch=t_far)
+    assert not can, "dd_resume_bars=0では永続停止すべき"
+    print("  ✅ dd_resume_bars=0で永続停止確認")
+
+
 def run_all_tests():
     tests = [
         test_risk_overlay_disabled,
@@ -130,6 +175,8 @@ def run_all_tests():
         test_risk_overlay_daily_loss,
         test_risk_overlay_win_resets_consecutive,
         test_risk_overlay_get_status,
+        test_risk_overlay_dd_resume_bars,
+        test_risk_overlay_dd_resume_bars_zero,
     ]
     success = 0
     for test in tests:

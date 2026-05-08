@@ -278,7 +278,10 @@ class Bot:
                 # --------------------------------------------
                 # Task 40c: キルスイッチチェック（ENTRY/ADDのみ。EXITは常に許可）
                 if trade_decision["decision"] in ('ENTRY', 'ADD'):
-                    can_trade, stop_reason = self.risk_overlay.check_can_trade(self.portfolio)
+                    can_trade, stop_reason = self.risk_overlay.check_can_trade(
+                        self.portfolio,
+                        current_epoch=self.price_data_management.get_latest_close_time()
+                    )
                     if not can_trade:
                         self.logger.log(f"⛔ RiskOverlay: 取引停止 [{stop_reason}]")
                         # Task 40g: キルスイッチ通知（ライブモードのみ、alert_enabled=0でno-op）

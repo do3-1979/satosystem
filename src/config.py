@@ -1830,6 +1830,14 @@ class Config:
         except (KeyError, ValueError):
             return 1
 
+    @classmethod
+    def get_risk_overlay_dd_resume_bars(cls):
+        """H-033b: DD停止後の自動再開バー数（0=永続停止）"""
+        try:
+            return int(cls.config['RiskOverlay'].get('dd_resume_bars', '0'))
+        except (KeyError, ValueError):
+            return 0
+
     def __str__(self):
         """
         コンフィグ内容を可読性よく文字列として表現するメソッドです。

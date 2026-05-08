@@ -31,6 +31,11 @@ class RiskOverlay:
         self.auto_resume = Config.get_risk_overlay_auto_resume_next_day() == 1
         self.initial_balance = Config.get_account_balance()
 
+        # H-033b: DD停止後の自動再開
+        self.dd_resume_bars = Config.get_risk_overlay_dd_resume_bars()
+        self.time_frame = Config.get_time_frame()  # 分単位
+        self._dd_stop_epoch = None  # DD停止時のepoch（秒）
+
         # 日次損失トラッキング
         self._daily_loss = 0.0
         self._daily_date = date.today()
@@ -39,7 +44,7 @@ class RiskOverlay:
         self._consecutive_losses = 0
 
         # 停止状態管理
-        self._dd_stop = False          # 最大DD超過（永続）
+        self._dd_stop = False          # 最大DD超過
         self._daily_stop = False       # 日次損失超過（翌日リセット可）
         self._consecutive_stop = False  # 連続損失超過（翌日リセット可）
 
@@ -53,12 +58,13 @@ class RiskOverlay:
                 self._daily_stop = False
                 self._consecutive_stop = False
 
-    def check_can_trade(self, portfolio=None) -> tuple:
+    def check_can_trade(self, portfolio=None, current_epoch: int = None) -> tuple:
         """
         取引可否をチェックします。
 
         Args:
             portfolio: Portfolioオブジェクト（DD率取得用、Noneで無効）
+            current_epoch: 現在時刻（epoch秒）。バックテスト時に指定する。
 
         Returns:
             (bool, str): (取引可能か, 停止理由またはOK)
@@ -68,14 +74,25 @@ class RiskOverlay:
 
         self._reset_daily_if_needed()
 
-        # 最大DD超過チェック（永続停止）
+        # 最大DD超過チェック
         if portfolio is not None:
             current_dd = portfolio.get_drawdown_rate()
             if current_dd >= self.max_dd_pct:
-                self._dd_stop = True
+                if not self._dd_stop:
+                    self._dd_stop = True
+                    self._dd_stop_epoch = current_epoch  # 停止時刻を記録
 
         if self._dd_stop:
-            return False, f"DD_STOP: 最大DD {self.max_dd_pct:.1f}% 超過（現在 {portfolio.get_drawdown_rate():.1f}%）"
+            # H-033b: dd_resume_bars > 0 かつ経過バー数が閾値超なら自動再開
+            if self.dd_resume_bars > 0 and self._dd_stop_epoch is not None and current_epoch is not None:
+                elapsed_secs = current_epoch - self._dd_stop_epoch
+                elapsed_bars = elapsed_secs / (self.time_frame * 60)
+                if elapsed_bars >= self.dd_resume_bars:
+                    self._dd_stop = False
+                    self._dd_stop_epoch = None
+                    return True, "OK"
+            current_dd_str = f"{portfolio.get_drawdown_rate():.1f}%" if portfolio else "不明"
+            return False, f"DD_STOP: 最大DD {self.max_dd_pct:.1f}% 超過（現在 {current_dd_str}）"
 
         # 日次損失上限チェック
         if self._daily_stop:
@@ -123,6 +140,7 @@ class RiskOverlay:
         return {
             "enabled": self.enabled,
             "dd_stop": self._dd_stop,
+            "dd_stop_epoch": self._dd_stop_epoch,
             "daily_stop": self._daily_stop,
             "consecutive_stop": self._consecutive_stop,
             "daily_loss_usd": round(self._daily_loss, 2),
