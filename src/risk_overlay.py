@@ -130,6 +130,39 @@ class RiskOverlay:
             # 勝ちトレードで連続損失リセット
             self._consecutive_losses = 0
 
+    def get_dd_size_multiplier(self, current_dd_pct: float) -> float:
+        """
+        H-043: ドローダウン連動ポジションサイズ倍率を返す
+
+        start_pct%以下のDDでは×1.0（フルサイズ）。
+        start_pct〜(start_pct+20)%の範囲で線形補間。
+        (start_pct+20)%以上では×min_ratio（最小サイズ）。
+
+        Args:
+            current_dd_pct: 現在のドローダウン率（%）
+
+        Returns:
+            float: ポジションサイズ倍率（0.0〜1.0）
+        """
+        if not Config.get_dd_sizing_enabled():
+            return 1.0
+
+        try:
+            start_pct = float(Config.get_dd_sizing_start_pct())
+            min_ratio = float(Config.get_dd_sizing_min_ratio())
+        except (TypeError, ValueError):
+            return 1.0
+
+        min_ratio = max(0.0, min(1.0, min_ratio))
+
+        if current_dd_pct <= start_pct:
+            return 1.0
+
+        scale_range = 20.0  # start_pct から +20% の範囲で線形補間
+        progress = min(1.0, (current_dd_pct - start_pct) / scale_range)
+        multiplier = 1.0 - progress * (1.0 - min_ratio)
+        return round(multiplier, 4)
+
     def get_status(self) -> dict:
         """
         現在の状態を返します（ログ・デバッグ用）

@@ -307,12 +307,26 @@ class Bot:
                     
                     # 初回の分割ポジション計算
                     if trade_decision["decision"] == "ENTRY":
-                        position_size = self.risk_management.calculate_position_size(balance_tether)
+                        # H-044: 残高上限サイジング（Cap Balance Sizing）
+                        if Config.get_cap_sizing_enabled():
+                            cap_bal = Config.get_cap_sizing_max_balance_usd()
+                            effective_balance = min(balance_tether, cap_bal)
+                            if effective_balance < balance_tether:
+                                self.logger.log(f"[H-044 CapSizing] 残高={balance_tether:.2f} → 上限={cap_bal:.2f} USD でサイジング")
+                            position_size = self.risk_management.calculate_position_size(effective_balance)
+                        else:
+                            position_size = self.risk_management.calculate_position_size(balance_tether)
                         # H-011: ADX適応型ポジションサイズ調整を適用
                         size_ratio = trade_decision.get("position_size_ratio", 1.0)
                         if size_ratio != 1.0:
                             position_size = round(position_size * size_ratio, 7)
                             self.logger.log(f"[H-011] ポジションサイズ調整: x{size_ratio:.2f} → {position_size}")
+                        # H-043: DDサイジング（ドローダウン連動ポジションサイズ縮小）
+                        current_dd = self.portfolio.get_drawdown_rate()
+                        dd_multiplier = self.risk_overlay.get_dd_size_multiplier(current_dd)
+                        if dd_multiplier < 1.0:
+                            position_size = round(position_size * dd_multiplier, 7)
+                            self.logger.log(f"[H-043 DDSizing] DD={current_dd:.1f}% → サイズ×{dd_multiplier:.2f} → {position_size}")
                         quantity = position_size
                     # 追加時は初回の分割サイズを踏襲
                     elif trade_decision["decision"] == "ADD":

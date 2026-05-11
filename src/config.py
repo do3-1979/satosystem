@@ -1888,6 +1888,50 @@ class Config:
         except (KeyError, ValueError):
             return 0
 
+    # ==================== DDSizing セクション ====================
+
+    @classmethod
+    def get_dd_sizing_enabled(cls):
+        """H-043: DDサイジング有効フラグ（0=無効, 1=有効）"""
+        try:
+            return int(cls.config['DDSizing'].get('dd_sizing_enabled', '0'))
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_dd_sizing_start_pct(cls):
+        """H-043: 縮小開始DD%（この値を超えると縮小開始）"""
+        try:
+            return float(cls.config['DDSizing'].get('dd_sizing_start_pct', '10.0'))
+        except (KeyError, ValueError):
+            return 10.0
+
+    @classmethod
+    def get_dd_sizing_min_ratio(cls):
+        """H-043: 最大縮小時のサイズ倍率（0.0〜1.0）"""
+        try:
+            return float(cls.config['DDSizing'].get('dd_sizing_min_ratio', '0.5'))
+        except (KeyError, ValueError):
+            return 0.5
+
+    # ==================== CapSizing セクション ====================
+
+    @classmethod
+    def get_cap_sizing_enabled(cls):
+        """H-044: 残高上限サイジング有効フラグ（0=無効, 1=有効）"""
+        try:
+            return int(cls.config['CapSizing'].get('cap_sizing_enabled', '0'))
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_cap_sizing_max_balance_usd(cls):
+        """H-044: ポジションサイズ計算に使う残高の上限値（USD）"""
+        try:
+            return float(cls.config['CapSizing'].get('cap_sizing_max_balance_usd', '1000.0'))
+        except (KeyError, ValueError):
+            return 1000.0
+
     def __str__(self):
         """
         コンフィグ内容を可読性よく文字列として表現するメソッドです。
