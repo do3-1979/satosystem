@@ -323,6 +323,11 @@ class Bot:
                         # 保有資産を取得
                         position_size = self.portfolio.get_position_quantity()
                         quantity = position_size['quantity']
+                    # H-042: スケールアウト（部分利確）
+                    elif trade_decision["decision"] == "SCALE_OUT":
+                        position_size = self.portfolio.get_position_quantity()
+                        close_pct = trade_decision.get("scale_out_qty_pct", 0.5)
+                        quantity = round(position_size['quantity'] * close_pct, 7)
                     else:
                         raise
 
@@ -427,6 +432,22 @@ class Bot:
                             self.trade_logger.log_exit(exit_data)
                         except Exception as e:
                             self.logger.log_error(f"トレードログEXIT記録失敗: {e}")
+
+                    # H-042: SCALE_OUT — ポジション部分利確
+                    elif trade_decision["decision"] == "SCALE_OUT":
+                        is_backtest = Config.get_back_test_mode()
+                        close_pct = trade_decision.get("scale_out_qty_pct", 0.5)
+                        partial_pnl = self.portfolio.partial_clear_position_quantity(
+                            close_pct, price, is_backtest=is_backtest
+                        )
+                        # ライブモード通知
+                        if back_test_mode == 0:
+                            self.alert.notify_trade_execution(
+                                side=trade_decision["side"],
+                                price=price,
+                                quantity=quantity,
+                                pnl=partial_pnl
+                            )
                             
                     elif trade_decision["decision"] == "ENTRY" or trade_decision["decision"] == "ADD":
                         is_backtest = Config.get_back_test_mode()  # Task 40b
@@ -632,7 +653,7 @@ class Bot:
             # 内部表記 'BUY'/'SELL' を取引所API用の 'buy'/'sell' に変換
             exchange_side = to_exchange_side(side)
             if exchange_side in ['buy', 'sell']:
-                if decision == 'EXIT':
+                if decision in ('EXIT', 'SCALE_OUT'):
                     # 決済注文: reduceOnly=Trueで既存ポジションのみクローズ
                     order_response = self.exchange.execute_exit_order(
                         side=exchange_side,

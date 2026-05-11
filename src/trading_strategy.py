@@ -47,6 +47,9 @@ class TradingStrategy:
         self.exit_strategy_v2 = ExitStrategyV2()  # ExitStrategyV2を初期化
         self.exit_strategy_v2.load_config(Config)  # Config設定をロード（Task 39d）
         self.entry_record = {}  # エントリー時の指標情報を記録
+        # H-042: スケールアウト状態管理
+        self._scale_out_done  = False   # 1トレードにつき1回のみ
+        self._entry_risk_usd  = 0.0     # エントリー時の初期リスク(USD)
         
         # 市場体制判定の初期化
         self.market_regime_detector = MarketRegimeDetector(
@@ -810,6 +813,8 @@ class TradingStrategy:
                 'entry_atr': self.price_data_management.get_volatility(),  # H-014: ATR初期ストップ用
                 'strategy_result': strategy_result,
             }
+            # H-042: スケールアウト状態リセット
+            self._scale_out_done = False
             # self.logger.log(f"[DEBUG ENTRY RECORD] entry_record保存: entry_time={self.entry_record['entry_time']}, entry_price={self.entry_record['entry_price']}")
             
         return
@@ -912,6 +917,106 @@ class TradingStrategy:
                 self.trade_decision["decision"] = decision
 
         return
+
+    def _evaluate_scale_out(self, current_price):
+        """
+        H-042: 未実現利益スケールアウト（部分利確）判定
+
+        エントリー後、未実現利益が「初期リスク × trigger_multiplier」を
+        超えたら scale_out_quantity_pct 割合で部分決済する。
+        1 トレードにつき 1 回のみ発動。
+
+        Returns:
+            bool: True=SCALE_OUT 発動（trade_decision セット済み）, False=発動なし
+        """
+        enabled = Config.get_scale_out_enabled()
+        # 回帰テストでは Config が MagicMock の場合があるため、非プリミティブは無効扱いにする
+        if isinstance(enabled, bool):
+            enabled_flag = enabled
+        elif isinstance(enabled, (int, float)):
+            enabled_flag = int(enabled) == 1
+        elif isinstance(enabled, str):
+            enabled_flag = enabled.strip() in ('1', 'true', 'True')
+        else:
+            enabled_flag = False
+
+        if not enabled_flag:
+            return False
+        if self._scale_out_done:
+            return False
+
+        position_side = self.portfolio.get_position_side()
+        if position_side not in ('BUY', 'SELL'):
+            return False
+
+        # 未実現損益を計算
+        try:
+            entry_price = float(self.portfolio.get_position_price() or 0)
+        except (TypeError, ValueError):
+            return False
+
+        pos = self.portfolio.get_position_quantity()
+        if not isinstance(pos, dict):
+            return False
+        try:
+            quantity = float(pos.get('quantity', 0) or 0)
+        except (TypeError, ValueError):
+            return False
+
+        try:
+            current_price = float(current_price)
+        except (TypeError, ValueError):
+            return False
+
+        if quantity <= 0 or entry_price <= 0:
+            return False
+
+        if position_side == 'BUY':
+            unrealized_pnl = (current_price - entry_price) * quantity
+        else:
+            unrealized_pnl = (entry_price - current_price) * quantity
+
+        # ATRベース価格移動トリガー（再設計: _entry_risk_usd 依存を廃止）
+        # トリガー条件: (現在価格 - エントリー価格) >= entry_atr × trigger_multiplier
+        entry_atr = 0.0
+        if hasattr(self, 'entry_record') and self.entry_record:
+            try:
+                entry_atr = float(self.entry_record.get('entry_atr', 0) or 0)
+            except (TypeError, ValueError):
+                entry_atr = 0.0
+        if entry_atr <= 0:
+            return False
+
+        try:
+            trigger_multiplier = float(Config.get_scale_out_trigger_multiplier())
+        except (TypeError, ValueError):
+            return False
+
+        trigger_price_move = entry_atr * trigger_multiplier  # ATRの何倍動いたら発動
+
+        if position_side == 'BUY':
+            price_diff = current_price - entry_price
+        else:
+            price_diff = entry_price - current_price
+
+        if price_diff >= trigger_price_move:
+            self._scale_out_done = True
+            self.trade_decision["decision"] = "SCALE_OUT"
+            self.trade_decision["side"]     = position_side
+            try:
+                qty_pct = float(Config.get_scale_out_quantity_pct())
+            except (TypeError, ValueError):
+                qty_pct = 0.5
+            self.trade_decision["scale_out_qty_pct"] = min(max(qty_pct, 0.0), 1.0)
+            self.logger.log(
+                f"[H-042 ScaleOut] 発動: 価格移動={price_diff:.2f} USD >= "
+                f"閾値={trigger_price_move:.2f} USD (ATR={entry_atr:.2f} × {trigger_multiplier}倍)  "
+                f"未実現利益={unrealized_pnl:.2f} USD  "
+                f"利確割合={self.trade_decision['scale_out_qty_pct']:.0%}"
+            )
+            return True
+
+        return False
 
     def evaluate_exit(self):
         """
@@ -1264,6 +1369,10 @@ class TradingStrategy:
         else:
             price = self.price_data_management.get_ticker()
             
+            # H-042: スケールアウト判定（エグジット評価より優先）
+            if self._evaluate_scale_out(price):
+                return self.trade_decision
+
             self.evaluate_add(price)
             self.evaluate_exit()
  

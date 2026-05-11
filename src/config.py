@@ -873,6 +873,32 @@ class Config:
         except (KeyError, ValueError):
             return 14
 
+    # ==================== ScaleOut セクション ====================
+
+    @classmethod
+    def get_scale_out_enabled(cls):
+        """H-042: 未実現利益スケールアウト有効フラグ"""
+        try:
+            return int(cls.config['ScaleOut']['scale_out_enabled'])
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_scale_out_trigger_multiplier(cls):
+        """H-042: 発動倍率（エントリーリスクの何倍で利確）"""
+        try:
+            return float(cls.config['ScaleOut']['scale_out_trigger_multiplier'])
+        except (KeyError, ValueError):
+            return 3.0
+
+    @classmethod
+    def get_scale_out_quantity_pct(cls):
+        """H-042: 利確割合（0.5=50%）"""
+        try:
+            return float(cls.config['ScaleOut']['scale_out_quantity_pct'])
+        except (KeyError, ValueError):
+            return 0.5
+
     # ==================== ATRInitialStop セクション ====================
 
     @classmethod

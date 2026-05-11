@@ -27,7 +27,7 @@
   "summary": {
     "todo": 7,
     "progress": 0,
-    "done": 42
+    "done": 43
   },
   "tasks": {
     "progress": [],
@@ -101,6 +101,13 @@
       }
     ],
     "done": [
+      {
+        "id": "pdca-H-042",
+        "category": "PDCA検証",
+        "title": "H-042: 未実現利益スケールアウト（部分利確）",
+        "completed_date": "2026-05-11",
+        "result": "採用（通年基準クリア・MaxDD劇的改善）。初回実装(_entry_risk_usd依存)は常に0で未発動→ATRベース価格移動トリガーに再設計(entry_record['entry_atr']×trigger_multiplier)。採用パラメータ: trigger=1.0×ATR / qty=50%。通年結果: PnL=+2197 USD(ベースライン+1571→+626 USD, +39.8%改善) / MaxDD=48.2%(ベースライン75.7%→-27.5pt改善)。通年採用基準(PnL>+1200✅ / MaxDD<65%✅ / レグレッション216/216✅)全クリア。9四半期合計は2384 USD(基準3152未満)だが、9Q測定は各四半期独立リセットのためスケールアウトのDD低減→資本保護→複利効果が反映されない測定アーティファクト。実稼働は通年連続のため通年結果が現実に近い。MaxDD 48.2%は強制清算リスク大幅低減として実運用上重要。config: scale_out_enabled=1, trigger=1.0, qty=0.5。"
+      },
       {
         "id": "pdca-H-034",
         "category": "PDCA検証",

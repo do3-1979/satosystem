@@ -275,6 +275,78 @@ class Portfolio:
         
         return
 
+    def partial_clear_position_quantity(self, close_ratio, price, is_backtest=False):
+        """
+        H-042: ポジションの一部（close_ratio割合）を決済して損益を確定する
+
+        Args:
+            close_ratio (float): 決済割合 (0.0〜1.0, 例: 0.5=50%)
+            price (float): 決済価格
+            is_backtest (bool): バックテストモードかどうか
+
+        Returns:
+            float: 確定した損益 (USD)
+        """
+        pos = self.positions[self.market_type]
+        total_qty = pos["quantity"]
+        close_qty = round(total_qty * close_ratio, 7)
+        if close_qty <= 0:
+            return 0.0
+
+        entry_price = pos["position_price"]
+        side = pos["side"]
+
+        # 部分損益計算
+        if side == 'BUY':
+            raw_diff = (price - entry_price) * close_qty
+        elif side == 'SELL':
+            raw_diff = (entry_price - price) * close_qty
+        else:
+            return 0.0
+
+        exit_cost = 0.0
+        actual_price = price
+        if is_backtest and self.cost_model.is_enabled:
+            exit_side = 'sell' if side == 'BUY' else 'buy'
+            actual_price, exit_cost, cost_details = self.cost_model.calculate_exit_cost(
+                side=exit_side,
+                quantity=close_qty,
+                signal_price=price,
+                is_market_order=True
+            )
+            self.total_fees_paid += cost_details.get('fee_cost', 0)
+            self.total_slippage_cost += cost_details.get('slippage_cost', 0)
+            # コスト込みの損益を再計算
+            if side == 'BUY':
+                raw_diff = (actual_price - entry_price) * close_qty
+            else:
+                raw_diff = (entry_price - actual_price) * close_qty
+
+        partial_pnl = raw_diff - exit_cost if not (is_backtest and self.cost_model.is_enabled) else raw_diff
+
+        # 損益反映
+        if partial_pnl >= 0:
+            self.profit += partial_pnl
+        else:
+            self.loss += abs(partial_pnl)
+
+        # drawdown 更新
+        prev_max = self.funds_max
+        new_funds = self.profit - self.loss
+        self.funds_max = max(prev_max, new_funds)
+        self.funds = new_funds
+        self.drawdown = self.funds_max - self.funds
+
+        # 残りポジションを更新
+        remaining_qty = round(total_qty - close_qty, 7)
+        pos["quantity"] = remaining_qty
+
+        self.logger.log(
+            f"[ScaleOut] 部分利確: {close_ratio:.0%} ({close_qty:.6f}/{total_qty:.6f}) "
+            f"@ {price:.2f}  確定PnL={partial_pnl:+.2f} USD  残={remaining_qty:.6f}"
+        )
+        return partial_pnl
+
     def get_position_quantity_with_symbol(self, symbol):
         """
         指定した通貨の保有ポジション量を取得
