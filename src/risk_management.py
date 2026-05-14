@@ -121,6 +121,21 @@ class RiskManagement:
 
     def get_stop_price(self):
         return self.stop_price
+
+    def set_break_even_stop(self, entry_price: float, position_side: str):
+        """H-045: ストップをエントリー価格（ブレイクイーブン）に強制移動する。
+        トレーリングは「上にしか動かない」構造なので、一度エントリー価格に設定すると以後下がらなくなる（BUY）。
+        """
+        if position_side == 'BUY':
+            # BUY: 現在ストップがエントリー価格より下ならエントリー価格に引き上げる
+            if self.stop_price < entry_price:
+                self.stop_price = entry_price
+                self.logger.log(f"[H-045 BreakEven] BUYストップをエントリー価格 {entry_price:.2f} に移動")
+        elif position_side == 'SELL':
+            # SELL: 現在ストップがエントリー価格より上ならエントリー価格に引き下げる
+            if self.stop_price > entry_price or self.stop_price == 0:
+                self.stop_price = entry_price
+                self.logger.log(f"[H-045 BreakEven] SELLストップをエントリー価格 {entry_price:.2f} に移動")
     
     def get_position_size(self):
         return self.position_size
@@ -843,6 +858,20 @@ class RiskManagement:
             volatility = self.price_data_management.get_volatility()
             price = self.price_data_management.get_ticker()
             stop_range = self.initial_stop_range * volatility
+
+            # H-052: PSAR距離ベースのポジションサイジング
+            # 原理: ATR基準でサイズを決めるが、実際のストップはPSARで決まる
+            #      PSAR > ATRの場合、理論リスクを超過する。PSARが遠いほどポジションを小さくする
+            if Config.get_psar_sizing_enabled():
+                psar_val = self.get_psar()
+                if psar_val is not None and psar_val > 0:
+                    psar_distance = abs(price - psar_val)
+                    if psar_distance > stop_range:
+                        self.logger.log(
+                            f"[H-052 PSARSizing] PSAR距離({psar_distance:.0f}) > ATR-stop({stop_range:.0f})"
+                            f" → stop_range={psar_distance:.0f}に拡大（ポジション縮小）"
+                        )
+                        stop_range = psar_distance
 
             # ゼロ除算を防ぐ
             if stop_range == 0 or price == 0:

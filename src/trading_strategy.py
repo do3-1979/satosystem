@@ -49,6 +49,7 @@ class TradingStrategy:
         self.entry_record = {}  # エントリー時の指標情報を記録
         # H-042: スケールアウト状態管理
         self._scale_out_done  = False   # 1トレードにつき1回のみ
+        self._scale_in_done   = False   # H-056: スケールイン状態管理
         self._entry_risk_usd  = 0.0     # エントリー時の初期リスク(USD)
         
         # 市場体制判定の初期化
@@ -446,6 +447,16 @@ class TradingStrategy:
                             allow_entry = False
                     else:
                         filter_results.append(f"ADX: ✓ ({adx_value:.2f} >= {adx_threshold})")
+
+                # H-050: ADX上限フィルター (過熱トレンドのフォールスブレイクアウトを排除)
+                if Config.get_adx_upper_filter_enabled() and desired_side and allow_entry:
+                    adx_value = self.risk_manager.get_adx() if hasattr(self.risk_manager, 'get_adx') else 0
+                    upper_thr = Config.get_adx_upper_filter_threshold()
+                    if adx_value >= upper_thr:
+                        filter_results.append(f"ADX上限: ✗ BUY却下(ADX={adx_value:.1f} >= {upper_thr})")
+                        allow_entry = False
+                    else:
+                        filter_results.append(f"ADX上限: ✓ (ADX={adx_value:.1f} < {upper_thr})")
                 
                 # Volume フィルター
                 enable_volume_filter = Config.get_enable_volume_filter()
@@ -506,12 +517,39 @@ class TradingStrategy:
                     except Exception as e:
                         filter_results.append(f"ATRBreakout: ⚠ エラー({str(e)[:30]})")
 
+                # H-051: PSAR/ATR比フィルター（ストップが遠すぎるエントリーを除外）
+                # 原理: |entry_price - PSAR| / ATR > threshold の場合は損失ポテンシャルが大きすぎる
+                # T24(ratio≈3.2/-44%) や T14(ratio高/-47%) を事前排除することを目的とする
+                if Config.get_psar_atr_filter_enabled() and desired_side and allow_entry:
+                    try:
+                        atr_val = self.price_data_management.get_volatility()
+                        psar_val = self.risk_manager.get_psar() if hasattr(self.risk_manager, 'get_psar') else None
+                        cur_close = self.price_data_management.get_ticker()
+                        thr = Config.get_psar_atr_filter_threshold()
+                        if atr_val and atr_val > 0 and psar_val is not None:
+                            psar_dist = abs(cur_close - psar_val)
+                            ratio = psar_dist / atr_val
+                            if ratio > thr:
+                                filter_results.append(
+                                    f"PSAR/ATR: ✗ ({ratio:.2f} > {thr:.1f}, dist={psar_dist:.0f}, ATR={atr_val:.0f})"
+                                )
+                                allow_entry = False
+                            else:
+                                filter_results.append(
+                                    f"PSAR/ATR: ✓ ({ratio:.2f} <= {thr:.1f}, dist={psar_dist:.0f}, ATR={atr_val:.0f})"
+                                )
+                        else:
+                            filter_results.append("PSAR/ATR: ⚠ データ不足(PSAR/ATR未計算)")
+                    except Exception as e:
+                        filter_results.append(f"PSAR/ATR: ⚠ エラー({str(e)[:30]})")
+
                 # =========== 方向性フィルター群（論文ベース） ===========
                 # desired_side が確定している場合のみ評価
                 if desired_side and (Config.get_sma_direction_filter_enabled() or
                                      Config.get_rsi_direction_filter_enabled() or
                                      Config.get_macd_direction_filter_enabled() or
-                                     Config.get_tsmom_filter_enabled()):
+                                     Config.get_tsmom_filter_enabled() or
+                                     Config.get_ema_trend_filter_enabled()):
                     try:
                         dir_ohlcv = ohlcv_data if ohlcv_data else []
                         dir_closes = [c['close_price'] for c in dir_ohlcv]
@@ -535,6 +573,26 @@ class TradingStrategy:
                                     filter_results.append(f"SMA方向: ✓ ({desired_side}, SMA{sma_period}={sma_val:.0f})")
                             else:
                                 filter_results.append(f"SMA方向: ⚠ データ不足({len(dir_closes)}<{sma_period})")
+
+                        # EMAトレンドフィルター H-048 (Elder 1993; Faber 2007 JOIM)
+                        # 原理: 価格>EMA(N)=中期上昇トレンド → BUYのみ / 価格<EMA(N)=中期下降 → SELLのみ
+                        # BTC下落相場でのフォールスブレイクアウトを排除
+                        if Config.get_ema_trend_filter_enabled() and dir_closes:
+                            ema_period = Config.get_ema_trend_filter_period()
+                            if len(dir_closes) >= ema_period:
+                                ema_val = NewIndicators._calc_ema(dir_closes[-(ema_period * 3):], ema_period)
+                                cur_px = self.price_data_management.get_ticker()
+                                above = cur_px > ema_val
+                                if desired_side == "BUY" and not above:
+                                    filter_results.append(f"EMA方向: ✗ BUY却下(現値<EMA{ema_period}={ema_val:.0f})")
+                                    allow_entry = False
+                                elif desired_side == "SELL" and above:
+                                    filter_results.append(f"EMA方向: ✗ SELL却下(現値>EMA{ema_period}={ema_val:.0f})")
+                                    allow_entry = False
+                                else:
+                                    filter_results.append(f"EMA方向: ✓ ({desired_side}, EMA{ema_period}={ema_val:.0f})")
+                            else:
+                                filter_results.append(f"EMA方向: ⚠ データ不足({len(dir_closes)}<{ema_period})")
 
                         # RSI方向性フィルター (Wilder 1978; Liu & Tsyvinski 2021 RFS)
                         # 原理: RSI>50=上昇モメンタム → BUYのみ / RSI<50=下降 → SELLのみ
@@ -815,6 +873,7 @@ class TradingStrategy:
             }
             # H-042: スケールアウト状態リセット
             self._scale_out_done = False
+            self._scale_in_done  = False  # H-056: リセット
             # self.logger.log(f"[DEBUG ENTRY RECORD] entry_record保存: entry_time={self.entry_record['entry_time']}, entry_price={self.entry_record['entry_price']}")
             
         return
@@ -1013,6 +1072,87 @@ class TradingStrategy:
                 f"閾値={trigger_price_move:.2f} USD (ATR={entry_atr:.2f} × {trigger_multiplier}倍)  "
                 f"未実現利益={unrealized_pnl:.2f} USD  "
                 f"利確割合={self.trade_decision['scale_out_qty_pct']:.0%}"
+            )
+            return True
+
+        return False
+
+    def _evaluate_scale_in(self, current_price):
+        """
+        H-056: スケールイン（追加エントリー）判定
+
+        スケールアウト後（トレンド確認済み）に価格がさらに
+        scale_in_trigger_multiplier × ATR 動いたら追加エントリーする。
+        1トレードにつき1回のみ発動。スケールアウト後のみ発動。
+
+        Returns:
+            bool: True=SCALE_IN発動（trade_decisionセット済み）, False=発動なし
+        """
+        enabled = Config.get_scale_in_enabled()
+        if isinstance(enabled, bool):
+            enabled_flag = enabled
+        elif isinstance(enabled, (int, float)):
+            enabled_flag = int(enabled) == 1
+        else:
+            enabled_flag = False
+
+        if not enabled_flag:
+            return False
+        if not self._scale_out_done:  # スケールアウト未発動なら追加しない（トレンド未確認）
+            return False
+        if self._scale_in_done:
+            return False
+
+        position_side = self.portfolio.get_position_side()
+        if position_side not in ('BUY', 'SELL'):
+            return False
+
+        try:
+            entry_price = float(self.portfolio.get_position_price() or 0)
+        except (TypeError, ValueError):
+            return False
+        if entry_price <= 0:
+            return False
+
+        entry_atr = 0.0
+        if hasattr(self, 'entry_record') and self.entry_record:
+            try:
+                entry_atr = float(self.entry_record.get('entry_atr', 0) or 0)
+            except (TypeError, ValueError):
+                entry_atr = 0.0
+        if entry_atr <= 0:
+            return False
+
+        try:
+            trigger_multiplier = float(Config.get_scale_in_trigger_multiplier())
+        except (TypeError, ValueError):
+            return False
+
+        trigger_price_move = entry_atr * trigger_multiplier
+
+        try:
+            current_price = float(current_price)
+        except (TypeError, ValueError):
+            return False
+
+        if position_side == 'BUY':
+            price_diff = current_price - entry_price
+        else:
+            price_diff = entry_price - current_price
+
+        if price_diff >= trigger_price_move:
+            self._scale_in_done = True
+            self.trade_decision["decision"] = "SCALE_IN"
+            self.trade_decision["side"]     = position_side
+            try:
+                qty_pct = float(Config.get_scale_in_quantity_pct())
+            except (TypeError, ValueError):
+                qty_pct = 0.3
+            self.trade_decision["scale_in_qty_pct"] = min(max(qty_pct, 0.0), 1.0)
+            self.logger.log(
+                f"[H-056 ScaleIn] 発動: 価格移動={price_diff:.2f} USD >= "
+                f"閾値={trigger_price_move:.2f} USD (ATR={entry_atr:.2f} × {trigger_multiplier}倍)  "
+                f"追加割合={self.trade_decision['scale_in_qty_pct']:.0%}"
             )
             return True
 
@@ -1371,6 +1511,10 @@ class TradingStrategy:
             
             # H-042: スケールアウト判定（エグジット評価より優先）
             if self._evaluate_scale_out(price):
+                return self.trade_decision
+
+            # H-056: スケールイン判定（スケールアウト確認後のみ発動）
+            if self._evaluate_scale_in(price):
                 return self.trade_decision
 
             self.evaluate_add(price)

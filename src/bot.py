@@ -72,6 +72,8 @@ class Bot:
         self.trade_results = []  # list of bool win( True ) / loss( False )
         # per-trade損益リスト (期待値・RR比率計算用)
         self.trade_pnls = []  # list of float per-trade PnL (USD)
+        # H-046: 連続損失カウンター（RiskOverlay非依存）
+        self._consq_loss_count = 0
         # Task 40c: リスク・オーバーレイ（キルスイッチ）
         self.risk_overlay = RiskOverlay()
         # Task 40g: アラート通知（Discord Webhook, alert_enabled=0でデフォルト無効）
@@ -307,12 +309,16 @@ class Bot:
                     
                     # 初回の分割ポジション計算
                     if trade_decision["decision"] == "ENTRY":
-                        # H-044: 残高上限サイジング（Cap Balance Sizing）
+                        # H-044/H-044b: 残高上限サイジング（Cap Balance Sizing + ソフトキャップ）
                         if Config.get_cap_sizing_enabled():
                             cap_bal = Config.get_cap_sizing_max_balance_usd()
-                            effective_balance = min(balance_tether, cap_bal)
-                            if effective_balance < balance_tether:
-                                self.logger.log(f"[H-044 CapSizing] 残高={balance_tether:.2f} → 上限={cap_bal:.2f} USD でサイジング")
+                            taper = Config.get_cap_sizing_taper_rate()
+                            if balance_tether <= cap_bal:
+                                effective_balance = balance_tether
+                            else:
+                                # ソフトキャップ: cap超過分にtaper_rate倍を適用
+                                effective_balance = cap_bal + (balance_tether - cap_bal) * taper
+                                self.logger.log(f"[H-044 CapSizing] 残高={balance_tether:.2f} → effective={effective_balance:.2f} USD (cap={cap_bal},taper={taper})")
                             position_size = self.risk_management.calculate_position_size(effective_balance)
                         else:
                             position_size = self.risk_management.calculate_position_size(balance_tether)
@@ -327,6 +333,21 @@ class Bot:
                         if dd_multiplier < 1.0:
                             position_size = round(position_size * dd_multiplier, 7)
                             self.logger.log(f"[H-043 DDSizing] DD={current_dd:.1f}% → サイズ×{dd_multiplier:.2f} → {position_size}")
+                        # H-046: 連続損失後サイズ縮小
+                        if Config.get_consq_sizing_enabled():
+                            trigger = Config.get_consq_sizing_trigger()
+                            if self._consq_loss_count >= trigger:
+                                min_r = Config.get_consq_sizing_min_ratio()
+                                position_size = round(position_size * min_r, 7)
+                                self.logger.log(f"[H-046 ConseqSizing] 連続{self._consq_loss_count}敗 → サイズ×{min_r:.2f} → {position_size}")
+                        # H-047: 残高連動可変risk_pct
+                        if Config.get_var_risk_enabled():
+                            base_risk = Config.get_risk_percentage()
+                            actual_risk = Config.get_var_risk_for_balance(balance_tether)
+                            if actual_risk < base_risk and base_risk > 0:
+                                ratio = actual_risk / base_risk
+                                position_size = round(position_size * ratio, 7)
+                                self.logger.log(f"[H-047 VarRisk] balance={balance_tether:.2f} → risk={actual_risk:.2f} (×{ratio:.3f}) → size={position_size}")
                         quantity = position_size
                     # 追加時は初回の分割サイズを踏襲
                     elif trade_decision["decision"] == "ADD":
@@ -342,6 +363,21 @@ class Bot:
                         position_size = self.portfolio.get_position_quantity()
                         close_pct = trade_decision.get("scale_out_qty_pct", 0.5)
                         quantity = round(position_size['quantity'] * close_pct, 7)
+                    # H-056: スケールイン（追加エントリー）
+                    elif trade_decision["decision"] == "SCALE_IN":
+                        if Config.get_cap_sizing_enabled():
+                            cap_bal = Config.get_cap_sizing_max_balance_usd()
+                            taper = Config.get_cap_sizing_taper_rate()
+                            if balance_tether <= cap_bal:
+                                _si_balance = balance_tether
+                            else:
+                                _si_balance = cap_bal + (balance_tether - cap_bal) * taper
+                        else:
+                            _si_balance = balance_tether
+                        _si_base = self.risk_management.calculate_position_size(_si_balance)
+                        _si_pct  = trade_decision.get("scale_in_qty_pct", 0.3)
+                        position_size = round(_si_base * _si_pct, 7)
+                        quantity = position_size
                     else:
                         raise
 
@@ -412,6 +448,11 @@ class Bot:
                         self.trade_results.append(pnl >= 0)
                         # per-trade損益を記録 (期待値・RR比率計算用)
                         self.trade_pnls.append(pnl)
+                        # H-046: 連続損失カウンター更新
+                        if pnl < 0:
+                            self._consq_loss_count += 1
+                        else:
+                            self._consq_loss_count = 0
                         # Task 40c: RiskOverlayに損益を通知
                         self.risk_overlay.notify_trade_result(pnl)
                         # Task 40g: EXIT取引実行通知（ライブモードのみ）
@@ -454,6 +495,12 @@ class Bot:
                         partial_pnl = self.portfolio.partial_clear_position_quantity(
                             close_pct, price, is_backtest=is_backtest
                         )
+                        # H-045: スケールアウト後ブレイクイーブンストップ
+                        if Config.get_break_even_after_scale_out():
+                            entry_price = self.risk_management.get_last_entry_price()
+                            side = trade_decision.get("side", "")
+                            if entry_price > 0 and side:
+                                self.risk_management.set_break_even_stop(entry_price, side)
                         # ライブモード通知
                         if back_test_mode == 0:
                             self.alert.notify_trade_execution(
@@ -462,7 +509,22 @@ class Bot:
                                 quantity=quantity,
                                 pnl=partial_pnl
                             )
-                            
+
+                    # H-056: SCALE_IN — スケールイン（追加エントリー）
+                    elif trade_decision["decision"] == "SCALE_IN":
+                        is_backtest = Config.get_back_test_mode()
+                        if quantity > 0:
+                            self.portfolio.add_position_quantity(quantity, trade_decision["side"], price, is_backtest=is_backtest)
+                            self.risk_management.update_last_entry_price(price)
+                            self.logger.log(f"[H-056 ScaleIn] 追加: {trade_decision['side']} {quantity} @ {price:.2f}")
+                        if back_test_mode == 0:
+                            self.alert.notify_trade_execution(
+                                side=trade_decision["side"],
+                                price=price,
+                                quantity=quantity,
+                                pnl=0
+                            )
+
                     elif trade_decision["decision"] == "ENTRY" or trade_decision["decision"] == "ADD":
                         is_backtest = Config.get_back_test_mode()  # Task 40b
                         self.portfolio.add_position_quantity(quantity, trade_decision["side"], price, is_backtest=is_backtest)

@@ -609,6 +609,22 @@ class Config:
             return 70  # デフォルト: 70
 
     @classmethod
+    def get_adx_upper_filter_enabled(cls):
+        """H-050: ADX上限フィルター有効フラグ (ADX過熱トレンドを除外)"""
+        try:
+            return int(cls.config['EntryFilters']['adx_upper_filter_enabled'])
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_adx_upper_filter_threshold(cls):
+        """H-050: ADX上限閾値 (これ以上のADXではエントリー不可)"""
+        try:
+            return float(cls.config['EntryFilters']['adx_upper_filter_threshold'])
+        except (KeyError, ValueError):
+            return 60.0
+
+    @classmethod
     def get_enable_volume_filter(cls):
         """
         Volumeフィルターの有効/無効を取得します.
@@ -873,6 +889,38 @@ class Config:
         except (KeyError, ValueError):
             return 14
 
+    @classmethod
+    def get_psar_atr_filter_enabled(cls):
+        """H-051: PSAR/ATR比フィルター有効フラグ（ストップが遠すぎるエントリーを除外）"""
+        try:
+            return int(cls.config['EntryFilters']['psar_atr_filter_enabled'])
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_psar_atr_filter_threshold(cls):
+        """H-051: PSAR/ATR比の上限閾値（デフォルト2.5）"""
+        try:
+            return float(cls.config['EntryFilters']['psar_atr_filter_threshold'])
+        except (KeyError, ValueError):
+            return 2.5
+
+    @classmethod
+    def get_ema_trend_filter_enabled(cls):
+        """H-048: EMA中期トレンドフィルター有効フラグ"""
+        try:
+            return int(cls.config['EntryFilters']['ema_trend_filter_enabled'])
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_ema_trend_filter_period(cls):
+        """H-048: EMAトレンドフィルター期間（デフォルト200）"""
+        try:
+            return int(cls.config['EntryFilters']['ema_trend_filter_period'])
+        except (KeyError, ValueError):
+            return 200
+
     # ==================== ScaleOut セクション ====================
 
     @classmethod
@@ -898,6 +946,98 @@ class Config:
             return float(cls.config['ScaleOut']['scale_out_quantity_pct'])
         except (KeyError, ValueError):
             return 0.5
+
+    @classmethod
+    def get_break_even_after_scale_out(cls):
+        """H-045: スケールアウト後にブレイクイーブンストップを適用（0=無効, 1=有効）"""
+        try:
+            return int(cls.config['ScaleOut'].get('break_even_after_scale_out', '0'))
+        except (KeyError, ValueError):
+            return 0
+
+    # ==================== ScaleIn セクション ====================
+
+    @classmethod
+    def get_scale_in_enabled(cls):
+        """H-056: スケールイン（追加エントリー）有効フラグ"""
+        try:
+            return int(cls.config['ScaleIn'].get('scale_in_enabled', '0'))
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_scale_in_trigger_multiplier(cls):
+        """H-056: スケールイントリガー（ATR倍数）"""
+        try:
+            return float(cls.config['ScaleIn'].get('scale_in_trigger_multiplier', '1.5'))
+        except (KeyError, ValueError):
+            return 1.5
+
+    @classmethod
+    def get_scale_in_quantity_pct(cls):
+        """H-056: 追加量（calculate_position_size基準に対する割合）"""
+        try:
+            return float(cls.config['ScaleIn'].get('scale_in_quantity_pct', '0.3'))
+        except (KeyError, ValueError):
+            return 0.3
+
+    # ==================== ConseqSizing セクション ====================
+
+    @classmethod
+    def get_consq_sizing_enabled(cls):
+        """H-046: 連続損失後サイズ縮小有効フラグ（0=無効, 1=有効）"""
+        try:
+            return int(cls.config['ConseqSizing'].get('consq_sizing_enabled', '0'))
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_consq_sizing_trigger(cls):
+        """H-046: 連続損失何回で発動するか"""
+        try:
+            return int(cls.config['ConseqSizing'].get('consq_sizing_trigger', '2'))
+        except (KeyError, ValueError):
+            return 2
+
+    @classmethod
+    def get_consq_sizing_min_ratio(cls):
+        """H-046: 発動後の最小サイズ倍率（0.0〜1.0）"""
+        try:
+            return float(cls.config['ConseqSizing'].get('consq_sizing_min_ratio', '0.5'))
+        except (KeyError, ValueError):
+            return 0.5
+
+    # ==================== VarRisk セクション ====================
+
+    @classmethod
+    def get_var_risk_enabled(cls):
+        """H-047: 残高連動可変risk_pct有効フラグ（0=無効, 1=有効）"""
+        try:
+            return int(cls.config['VarRisk'].get('var_risk_enabled', '0'))
+        except (KeyError, ValueError):
+            return 0
+
+    @classmethod
+    def get_var_risk_for_balance(cls, balance: float) -> float:
+        """H-047: 実残高に応じたrisk_pctを返す。4ティア段階制。"""
+        try:
+            t1_bal = float(cls.config['VarRisk'].get('var_risk_t1_balance', '500.0'))
+            t1_pct = float(cls.config['VarRisk'].get('var_risk_t1_pct', '0.30'))
+            t2_bal = float(cls.config['VarRisk'].get('var_risk_t2_balance', '1500.0'))
+            t2_pct = float(cls.config['VarRisk'].get('var_risk_t2_pct', '0.25'))
+            t3_bal = float(cls.config['VarRisk'].get('var_risk_t3_balance', '3000.0'))
+            t3_pct = float(cls.config['VarRisk'].get('var_risk_t3_pct', '0.20'))
+            t4_pct = float(cls.config['VarRisk'].get('var_risk_t4_pct', '0.15'))
+        except (KeyError, ValueError):
+            return 0.30
+        if balance <= t1_bal:
+            return t1_pct
+        elif balance <= t2_bal:
+            return t2_pct
+        elif balance <= t3_bal:
+            return t3_pct
+        else:
+            return t4_pct
 
     # ==================== ATRInitialStop セクション ====================
 
@@ -1931,6 +2071,25 @@ class Config:
             return float(cls.config['CapSizing'].get('cap_sizing_max_balance_usd', '1000.0'))
         except (KeyError, ValueError):
             return 1000.0
+
+    @classmethod
+    def get_cap_sizing_taper_rate(cls):
+        """H-044b: cap超過分の成長率（0=ハードキャップ, 1=制限なし）"""
+        try:
+            return float(cls.config['CapSizing'].get('cap_sizing_taper_rate', '0.0'))
+        except (KeyError, ValueError):
+            return 0.0
+
+    # ==================== PSARSizing セクション ====================
+
+    @classmethod
+    def get_psar_sizing_enabled(cls):
+        """H-052: PSAR距離ベースのポジションサイジング有効フラグ
+        有効時: stop_range = max(ATR, PSAR距離) で割り当てリスクを固定"""
+        try:
+            return int(cls.config['PSARSizing'].get('psar_sizing_enabled', '0'))
+        except (KeyError, ValueError):
+            return 0
 
     def __str__(self):
         """

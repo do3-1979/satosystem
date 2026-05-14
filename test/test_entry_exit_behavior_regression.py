@@ -40,6 +40,15 @@ def _make_mock_config(**overrides):
         'get_macd_direction_filter_enabled': False,
         'get_tsmom_filter_enabled': False,
         'get_adx_slope_filter_enabled': False,
+        'get_adx_upper_filter_enabled': False,
+        'get_adx_upper_filter_threshold': 55.0,
+        'get_ema_trend_filter_enabled': False,
+        'get_ema_trend_filter_period': 200,
+        'get_psar_atr_filter_enabled': False,
+        'get_psar_atr_filter_threshold': 2.5,
+        'get_scale_in_enabled': False,          # H-056
+        'get_scale_in_trigger_multiplier': 1.5, # H-056
+        'get_scale_in_quantity_pct': 0.3,       # H-056
         'get_funding_rate_filter_enabled': False,
         'get_funding_rate_buy_threshold': 0.0005,
         'get_funding_rate_sell_threshold': -0.0005,
