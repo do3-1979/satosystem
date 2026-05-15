@@ -35,6 +35,7 @@ case $COMMAND in
     commit)
         echo "📝 最新コミット情報をPROGRESS.jsonに反映..."
         python3 tools/update_progress.py --commit
+        python3 tools/generate_action_list_html.py
         ;;
 
     status)
@@ -120,6 +121,7 @@ PYEOF
 
         echo "✅ タスク完了を記録: $TASK_ID"
         python3 tools/update_progress.py --task-complete "$TASK_ID" --description "$TASK_DESC"
+        python3 tools/generate_action_list_html.py
         echo "💡 ACTION_LIST.json の tasks.progress → tasks.done への移動を忘れずに"
         ;;
 
@@ -152,6 +154,7 @@ PYEOF
 
         echo "🚀 タスク開始を記録: $TASK_ID"
         python3 tools/update_progress.py --task-start "$TASK_ID" --description "$TASK_DESC"
+        python3 tools/generate_action_list_html.py
         echo "💡 ACTION_LIST.json の tasks.todo → tasks.progress への移動を忘れずに"
         ;;
 

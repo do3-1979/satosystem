@@ -3,395 +3,581 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>satosystem gen2 — Action List</title>
+  <title>Action List — satosystem gen2</title>
   <style>
-    :root {
-      --bg: #0d1117;
-      --surface: #161b22;
-      --surface2: #1c2128;
-      --border: #30363d;
-      --text: #c9d1d9;
-      --muted: #8b949e;
-      --accent: #58a6ff;
-      --green: #3fb950;
-      --yellow: #d29922;
-      --red: #f85149;
-      --purple: #bc8cff;
-      --orange: #f0883e;
-      --teal: #39d353;
-    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; line-height: 1.6; }
-
-    /* Header */
-    .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 20px 32px; display: flex; align-items: center; gap: 16px; }
-    .header h1 { font-size: 20px; font-weight: 600; color: #fff; }
-    .header .badge { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600; }
-    .badge-green { background: rgba(63,185,80,.2); color: var(--green); border: 1px solid rgba(63,185,80,.4); }
-    .badge-blue  { background: rgba(88,166,255,.15); color: var(--accent); border: 1px solid rgba(88,166,255,.3); }
-    .badge-gray  { background: rgba(139,148,158,.15); color: var(--muted); border: 1px solid rgba(139,148,158,.3); }
-    .updated { margin-left: auto; color: var(--muted); font-size: 12px; }
-
-    /* Layout */
-    .container { max-width: 1200px; margin: 0 auto; padding: 24px 32px; }
-
-    /* Metric cards */
-    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 28px; }
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
-    .card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
-    .card .value { font-size: 22px; font-weight: 700; color: #fff; }
-    .card .sub   { font-size: 11px; color: var(--muted); margin-top: 4px; }
-    .card.green .value { color: var(--green); }
-    .card.blue  .value { color: var(--accent); }
-    .card.orange .value { color: var(--orange); }
-
-    /* Summary bar */
-    .summary-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 20px; margin-bottom: 28px; display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
-    .sum-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-    .sum-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .dot-progress { background: var(--yellow); }
-    .dot-todo     { background: var(--accent); }
-    .dot-done     { background: var(--green); }
-    .sum-label { color: var(--muted); }
-    .sum-val   { font-weight: 700; color: #fff; }
-    .progress-track { flex: 1; min-width: 200px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
-    .progress-fill  { height: 100%; background: var(--green); border-radius: 3px; }
-
-    /* Section */
-    .section { margin-bottom: 32px; }
-    .section-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
-    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-
-    /* Task cards */
-    .task { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; margin-bottom: 8px; position: relative; transition: border-color .15s; }
-    .task:hover { border-color: #444c56; }
-    .task.progress-card { border-left: 3px solid var(--yellow); }
-    .task.todo-card     { border-left: 3px solid var(--accent); }
-    .task.done-card     { border-left: 3px solid var(--green); opacity: .75; }
-    .task.done-card:hover { opacity: 1; }
-
-    .task-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
-    .task-id { font-size: 11px; font-family: monospace; color: var(--muted); background: var(--surface2); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border); white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
-    .task-title { font-size: 14px; font-weight: 600; color: #e6edf3; flex: 1; }
-    .task-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
-    .tag { font-size: 11px; padding: 1px 8px; border-radius: 10px; }
-    .tag-cat  { background: rgba(139,148,158,.15); color: var(--muted); }
-    .tag-date { background: rgba(63,185,80,.1);  color: var(--green); }
-    .tag-pri  { background: rgba(240,136,62,.15); color: var(--orange); }
-    .task-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
-    .task-result { font-size: 12px; color: #8b949e; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; margin-top: 8px; line-height: 1.6; }
-    .task-result b { color: var(--text); }
-
-    /* Subtask list */
-    .subtasks { margin-top: 10px; }
-    .subtask-group { font-size: 11px; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
-    .subtask-list { list-style: none; }
-    .subtask-list li { font-size: 12px; color: var(--muted); padding: 2px 0 2px 16px; position: relative; }
-    .subtask-list li::before { content: '·'; position: absolute; left: 4px; color: var(--border); }
-    .subtask-list li.done-sub { color: var(--green); }
-    .subtask-list li.todo-sub { color: var(--yellow); }
-
-    /* Priority stars */
-    .stars { color: var(--orange); font-size: 11px; }
-
-    /* Baseline info */
-    .baseline-row { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
-    .baseline-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; font-size: 12px; color: var(--muted); }
-    .baseline-chip span { color: var(--green); font-weight: 700; }
-
-    /* Rules */
-    .rules { background: rgba(88,166,255,.07); border: 1px solid rgba(88,166,255,.25); border-radius: 10px; padding: 14px 18px; margin-bottom: 28px; }
-    .rules .rule-title { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 8px; }
-    .rules ul { padding-left: 16px; }
-    .rules li { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
-
-    @media (max-width: 640px) {
-      .container { padding: 16px; }
-      .header    { padding: 16px; }
-      .metrics   { grid-template-columns: 1fr 1fr; }
+    body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; background: #0f1117; color: #e0e0e0; padding: 24px; }
+    h1 { font-size: 1.6rem; color: #fff; margin-bottom: 4px; }
+    .subtitle { color: #888; font-size: 0.85rem; margin-bottom: 32px; }
+    .summary-bar { display: flex; gap: 16px; margin-bottom: 32px; flex-wrap: wrap; }
+    .summary-card { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; padding: 16px 24px; min-width: 120px; text-align: center; }
+    .summary-card .num { font-size: 2rem; font-weight: bold; }
+    .summary-card .label { font-size: 0.8rem; color: #888; margin-top: 4px; }
+    .todo-num { color: #e67e22; }
+    .prog-num { color: #3498db; }
+    .done-num { color: #27ae60; }
+    .section { margin-bottom: 40px; }
+    .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #2a2d3a; }
+    .section-title { font-size: 1.1rem; font-weight: bold; color: #fff; }
+    .section-count { background: #2a2d3a; color: #aaa; font-size: 0.8rem; padding: 2px 8px; border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th { background: #1a1d27; color: #aaa; text-align: left; padding: 10px 12px; font-weight: 600; border-bottom: 2px solid #2a2d3a; }
+    td { padding: 10px 12px; border-bottom: 1px solid #1e2130; vertical-align: top; }
+    tr:hover td { background: #1a1d27; }
+    .id-cell code { background: #2a2d3a; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; color: #7ec8e3; }
+    .title-cell { max-width: 480px; }
+    .desc { color: #888; font-size: 0.8rem; margin-top: 4px; line-height: 1.5; }
+    .date-cell { color: #888; white-space: nowrap; font-size: 0.82rem; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; color: #fff; white-space: nowrap; }
+    .empty { color: #555; font-style: italic; padding: 12px 0; }
+    .footer { color: #444; font-size: 0.78rem; margin-top: 40px; text-align: right; }
+    @media (max-width: 768px) {
+      body { padding: 12px; }
+      table { font-size: 0.8rem; }
+      .title-cell { max-width: 240px; }
     }
   </style>
 </head>
 <body>
 
-<div class="header">
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-  </svg>
-  <h1>satosystem gen2</h1>
-  <span class="badge badge-green">✓ 212/212 PASS</span>
-  <span class="badge badge-blue">BTC + XAUT</span>
-  <span class="updated">Updated: 2026-04-18</span>
+<h1>📋 Action List — satosystem gen2</h1>
+<p class="subtitle">自動生成: 2026-05-16 00:27 | ソース: ACTION_LIST.json</p>
+
+<div class="summary-bar">
+  <div class="summary-card"><div class="num todo-num">8</div><div class="label">TODO</div></div>
+  <div class="summary-card"><div class="num prog-num">0</div><div class="label">進行中</div></div>
+  <div class="summary-card"><div class="num done-num">48</div><div class="label">完了</div></div>
 </div>
 
-<div class="container">
-
-  <!-- Metric cards -->
-  <div class="metrics">
-    <div class="card green">
-      <div class="label">BTC Baseline PnL</div>
-      <div class="value">+$1,739.61</div>
-      <div class="sub">2024Q1 – 2026Q1 (9四半期)</div>
-    </div>
-    <div class="card green">
-      <div class="label">XAUT Baseline PnL</div>
-      <div class="value">+$65.07</div>
-      <div class="sub">2025Q2 – 2026Q1 (4四半期)</div>
-    </div>
-    <div class="card blue">
-      <div class="label">Regression Tests</div>
-      <div class="value">212 / 212</div>
-      <div class="sub">100% PASS</div>
-    </div>
-    <div class="card orange">
-      <div class="label">Tasks</div>
-      <div class="value">27 Done</div>
-      <div class="sub">0 進行中 · 6 TODO</div>
-    </div>
+<div class="section">
+  <div class="section-header">
+    <span class="section-title">🚀 進行中</span>
+    <span class="section-count">0 件</span>
   </div>
+  <p class="empty">現在 進行中タスクはありません</p>
+</div>
 
-  <!-- Progress bar -->
-  <div class="summary-bar">
-    <div class="sum-item"><span class="sum-dot dot-done"></span><span class="sum-label">完了</span>&nbsp;<span class="sum-val">27</span></div>
-    <div class="sum-item"><span class="sum-dot dot-progress"></span><span class="sum-label">進行中</span>&nbsp;<span class="sum-val">0</span></div>
-    <div class="sum-item"><span class="sum-dot dot-todo"></span><span class="sum-label">TODO</span>&nbsp;<span class="sum-val">6</span></div>
-    <div class="progress-track"><div class="progress-fill" style="width:81.8%"></div></div>
-    <span style="font-size:12px;color:var(--muted)">82% 完了</span>
+<div class="section">
+  <div class="section-header">
+    <span class="section-title">📌 TODO</span>
+    <span class="section-count">7 件</span>
   </div>
+  
+    <table>
+      <thead><tr><th>ID</th><th>カテゴリ</th><th>タイトル / 説明</th><th>優先度</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="id-cell"><code>47</code></td>
+          <td><span class="badge" style="background:#9b59b6">仕様改善</span></td>
+          <td class="title-cell">残高取得・指定モードの修正
+            <div class="desc">デフォルトでAPIから実残高を取得、use_custom_balance=1のときのみconfig値使用</div>
+          </td>
+          <td style="color:#e67e22;font-weight:bold;white-space:nowrap">★★★★☆</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>pdca-H-037</code></td>
+          <td><span class="badge" style="background:#3498db">PDCA検証</span></td>
+          <td class="title-cell">H-037: BTC+XAUT合算エクスポージャー上限による相関リスク管理
+            <div class="desc">BTC・XAUTが同時にポジションを持つとBybit合算証拠金で干渉し強制清算リスクが倍増する。合算エクスポージャー（BTC名目+XAUT名目）が証拠金の80%超ならXAUTの新規エントリーを禁止するルールを実装。bot.pyのcheck_can_trade呼び出し前に他BOTのlatest_status.jsonを参照して判定。採用基準: XAUT累計損益が劣化しないかつBTC保有中のXAUTエントリー頻度が50%減少。</div>
+          </td>
+          <td style="color:#f1c40f;font-weight:bold;white-space:nowrap">★★★☆☆</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code></code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">
+            <div class="desc">OHLCVの欠損・重複・スパイクを検出・補正</div>
+          </td>
+          <td style="color:#f1c40f;font-weight:bold;white-space:nowrap">★★★☆☆</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>23a</code></td>
+          <td><span class="badge" style="background:#7f8c8d">補助フィルター</span></td>
+          <td class="title-cell">Fear &amp; Greed Index 統合
+            <div class="desc">過度な楽観/恐怖でのエントリー抑制</div>
+          </td>
+          <td style="color:#f1c40f;font-weight:bold;white-space:nowrap">★★★☆☆</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>40i</code></td>
+          <td><span class="badge" style="background:#7f8c8d">ポートフォリオ</span></td>
+          <td class="title-cell">銘柄分散・相関管理（ETH等複数候補）
+            <div class="desc">ETH等の複数銘柄検証。Task 31/40i-eth-pdca1でETH不採用のため慎重に</div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold;white-space:nowrap">★★☆☆☆</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>38d</code></td>
+          <td><span class="badge" style="background:#7f8c8d">補助フィルター</span></td>
+          <td class="title-cell">Volume Profile Analysis 実装
+            <div class="desc">出来高集中価格帯判定</div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold;white-space:nowrap">★★☆☆☆</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>6</code></td>
+          <td><span class="badge" style="background:#7f8c8d">ログ制御</span></td>
+          <td class="title-cell">ログファイル自動整理・定期クリーンアップ
+            <div class="desc">手動実施完了(2026-02-08)、自動化は低優先度</div>
+          </td>
+          <td style="color:#95a5a6;font-weight:bold;white-space:nowrap">★☆☆☆☆</td>
+        </tr></tbody>
+    </table>
+</div>
 
-  <!-- Workflow rules -->
-  <div class="rules">
-    <div class="rule-title">⚙ ワークフロールール</div>
-    <ul>
-      <li>アクション実行前に必ずレグレッションテストを実行し、PROGRESS.json の baseline_regression に保存すること</li>
-      <li>比較元として PROGRESS.json baseline_regression を活用すること</li>
-      <li><b>Baseline:</b> CostModel有効 + ファンディングレート保有コスト反映後の値を使用</li>
-    </ul>
+<div class="section">
+  <div class="section-header">
+    <span class="section-title">✅ 完了</span>
+    <span class="section-count">49 件（最新順）</span>
   </div>
+  
+    <table>
+      <thead><tr><th>ID</th><th>カテゴリ</th><th>タイトル / 説明</th><th>結果</th><th>完了日</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="id-cell"><code>H-057</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">Stage-2 ScaleOut (2xATR二段階利食い)
+            <div class="desc">Stage-2 ScaleOut — 43取引で0回発動。PSARエグジットが2.0xATR到達前に発動するため効果なし。</div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">不採用</td>
+          <td class="date-cell">2026-05-15</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>H-058</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">ScaleIn ADXフィルター追加
+            <div class="desc">ScaleIn ADX&gt;=31フィルター — 追加効果なし。ScaleInは既にトレンド相場で発動。PnL変化ゼロ。</div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">不採用</td>
+          <td class="date-cell">2026-05-15</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>H-059</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">BreakEven Stop (スケールアウト後損益分岐点ストップ)
+            <div class="desc">PnL: +3417→+2878 USD (-539 USD), MaxDD: 22.80→25.00% (+2.2%)。2025大トレンドを一時的押し目で早期ストップ。11取引改善vs25取引悪化。PSARトレイリングが最適。</div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">不採用</td>
+          <td class="date-cell">2026-05-15</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>50e</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">ADXフィルタ閾値の再調査・最適化
+            <div class="desc">BTC(None/10/15/20/25/31) + XAUT(None/12/15/18/20/22/26)スイープ。BTC: adx=28現設定が最良(+3062.87 USD)。adx&lt;=25で-1000 USD以上悪化。XAUT: 全閾値で変化なし(±1 USD誤差)。現設定(BTC:28/XAUT:26)が最適、変更不要。</div>
+          </td>
+          <td style="color:#555;font-weight:bold">現状維持</td>
+          <td class="date-cell">2026-05-15</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>pdca-H-036</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">H-036: ハーフケリー基準によるポジションサイズ最適化
+            <div class="desc">リスクスケール因子スイープ(0.33~1.00)。scale=1.00(risk=0.30)が最良: PnL=+3417 USD, MaxDD=22.8%, PnL/DD=149.9。Half-Kelly相当(scale≈0.31)はPnL=+800 USDに激減。現在のrisk=0.30はすでにFullKellyを上回る水準であり、ダウンスケールはデメリットのみ。変更不要。</div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">不採用</td>
+          <td class="date-cell">2026-05-15</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>pdca-H-033b</code></td>
+          <td><span class="badge" style="background:#3498db">PDCA検証</span></td>
+          <td class="title-cell">H-033b: RiskOverlay DDキルスイッチ 閾値/再開期間スイープ
+            <div class="desc">DD&lt;=40%/resume=200bars採用。年間PnL+4086 USD(+669 vs ベースライン3417), MaxDD=20.0%(-2.8pt), 9Q合計+3064.87 USD(+2). 216/216 PASS。新ベースライン: BTC_4086.15USD_H033b_20260515</div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">採用</td>
+          <td class="date-cell">2026-05-15</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>pdca-H-042</code></td>
+          <td><span class="badge" style="background:#3498db">PDCA検証</span></td>
+          <td class="title-cell">H-042: 未実現利益スケールアウト（部分利確）
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">採用（通年基準クリア・MaxDD劇的改善）。初回実装(_entry_risk_usd依存)は常に0で未発動→ATRベース価格移動トリガーに再設計(entry_record['entry_atr']×trigger_multiplier)。採用パラメータ: trigger=1.0×ATR / qty=50%。通年結果: PnL=+2197 USD(ベースライン+1571→+626 USD, +39.8%改善) / MaxDD=48.2%(ベースライン75.7%→-27.5pt改善)。通年採用基準(PnL&gt;+1200✅ / MaxDD&lt;65%✅ / レグレッション216/216✅)全クリア。9四半期合計は2384 USD(基準3152未満)だが、9Q測定は各四半期独立リセットのためスケールアウトのDD低減→資本保護→複利効果が反映されない測定アーティファクト。実稼働は通年連続のため通年結果が現実に近い。MaxDD 48.2%は強制清算リスク大幅低減として実運用上重要。config: scale_out_enabled=1, trigger=1.0, qty=0.5。</td>
+          <td class="date-cell">2026-05-11</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>pdca-H-034</code></td>
+          <td><span class="badge" style="background:#3498db">PDCA検証</span></td>
+          <td class="title-cell">H-034: ATR初期ストップ有効化による早期損切り検証
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">不採用（全multiplier値で四半期合計悪化）: multiplier=1.0→+2657.73(-661), multiplier=1.5→+2831.08(-487), multiplier=2.0→+3059.54(-259), multiplier=2.5→+3251.23(-67)。ベースライン+3318.56を超えず。根本原因: ATR初期ストップがPSARストップより早く発動し、利益トレードを早期損切りしてしまう。PSAR追従型ストップに比べてATR固定ストップは大トレンド継続時に不利。通年DDへの寄与なし。不採用。</td>
+          <td class="date-cell">2026-05-08</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>pdca-H-033</code></td>
+          <td><span class="badge" style="background:#3498db">PDCA検証</span></td>
+          <td class="title-cell">H-033: RiskOverlay DDキルスイッチによるDD制限検証
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">不採用（構造的問題）。四半期テストでは全て3318.56（各四半期独立実行のため連続DDが発生せず）。通年連続稼働では_dd_stopが永続停止のため、Q2_2024の損失(-92 USD, DD=92%)でDD_STOP発動→以後全ENTRY永久ブロック→Q4_2024の+2106 USD大利益を完全取り逃がす。現在実装のDD_STOPは回復時自動再開なし。改善策: DD回復後の自動再開機能（auto_resume_dd）追加が必要。新タスクpdca-H-033bとして分離。</td>
+          <td class="date-cell">2026-05-08</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>pdca-H-032</code></td>
+          <td><span class="badge" style="background:#3498db">PDCA検証</span></td>
+          <td class="title-cell">H-032: risk_percentage縮小によるDD改善検証
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">不採用（PnL減少が大きすぎる）。通年テスト結果: risk=0.20→PnL=+800.95/DD=60.3%/Sharpe=0.482, risk=0.25→PnL=+1196.29/DD=67.7%/Sharpe=0.538, risk=0.30(現状)→PnL=+1570.97/DD=73.1%/Sharpe=0.588。DD率は比例的に改善（0.30→0.20で-12.8pt）するが、PnLも-48.9%と大幅減少。Sharpeも低下。四半期テストでは全て3318.56（スケーリングで相殺）。根本的解決策にならないため不採用。DDの本質的改善は損失四半期を削減する戦略精度向上（フィルター改善）しかない。</td>
+          <td class="date-cell">2026-05-08</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>pdca-H-035</code></td>
+          <td><span class="badge" style="background:#3498db">PDCA検証</span></td>
+          <td class="title-cell">H-035: 動的レバレッジ調整（VolatilityTargeting）検証
+            <div class="desc">レバレッジ固定10倍の問題: 高ボラ相場でポジション損失が拡大しDDが急増する。ATR（14期間）が中央値の1.5倍超→レバを半減(5倍)、2倍超→最小(3倍)とする動的調整を検証。採用基準: 累計損益がベースライン比-5%以内かつ最大DD率が55%以下に改善。実装はconfig.iniにvolatility_targeting_enabled/atr_lev_tiers追加で対応。</div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">不採用: 通年DD 75.7%→73.3%(2.4%改善のみ・目標65%未達), 四半期-9.5%悪化</td>
+          <td class="date-cell">2026-05-08</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>pdca-H-009</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">H-009: Chandelier Exit有効化
+            <div class="desc">不採用。replaces_psar=0ではベースラインと完全一致(+2481)でChandelierが一度もトリガーされず。replaces_psar=1ではトレード数=0, 累計-546 USDで壊滅(PSARがストップ計算にも使われているため)。Chandelier ExitはBTCのエグジット改善に効果なし。</div>
+          </td>
+          <td style="color:#555;font-weight:bold"></td>
+          <td class="date-cell">2026-05-07</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>pdca-H-006c</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">H-006c: ハースト指数フィルター
+            <div class="desc">不採用。R/S解析によるハースト指数(H&lt;0.5=平均回帰でエントリー禁止)。最良(T=0.40,L=100)でも2026Q1=+20(ベースライン同水準)でフェイクブレイク抑制不可。累計+2354(-127)でベースライン超えず。H-006a/b/c共通の構造的問題: ブレイク直前はレンジ状態(H&lt;0.5)が普通→正当なブレイクアウトもブロック。H-006系全て不採用→H-009(Chandelier Exit)へ方針転換。</div>
+          </td>
+          <td style="color:#555;font-weight:bold"></td>
+          <td class="date-cell">2026-05-07</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>pdca-H-006b</code></td>
+          <td><span class="badge" style="background:#3498db">PDCA検証</span></td>
+          <td class="title-cell">H-006b: 日足MTFフィルター（4H足→日足ADX集約フィルター）
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">不採用（全threshold値で2025年が壊滅）: threshold=15→累計+2116 USD (-14%, 2025年+223)、threshold=20→累計+1793 USD (-28%, 2025年+225)、threshold=25→累計+458 USD (-82%)。実装バグ修正あり（Wilder ADX初期値を合計→平均に修正、high_price等をfloat変換）。根本原因: 2025年の利益トレードは日足ADXが低い（= レンジ判定でブロック）一方、2026Q1のフェイクブレイクは日足ADXが20以上（= フィルター通過）。BTCの相場性質上、日足ADXが低くてもトレンドブレイクが発生する時期があり（2025Q2+177 USD）フィルターが正当なトレードも除外してしまう構造的問題。2026Q1のフェイクブレイク（日足ADX=21.4→エントリー）はthreshold=20でも防げない。H-006a(BBW)と同じ教訓: フェイクブレイクが起きる時点の指標（ADX値）は高いか、または正当なトレードを過度に除外してしまうtradeoff解消不能。次回: H-006c（ハースト指数）または撤退してH-009（Chandelier Exit早期損切り）へ移行</td>
+          <td class="date-cell">2026-05-07</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>pdca-H-006a</code></td>
+          <td><span class="badge" style="background:#3498db">PDCA検証</span></td>
+          <td class="title-cell">H-006a: BBWスクイーズフィルター（ボリンジャーバンド幅パーセンタイル）
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">不採用（全threshold値で2024年が壊滅）: threshold=60%→累計+289 USD (-88%), threshold=80%→累計+793 USD (-68%), threshold=90%→累計+1353 USD (-45%)。全パターンで採用基準（累計≥+2200 USD, 2024年≥+1500 USD）を満たせず。根本原因: ドンチャンブレイクアウト発生時点でBBは既に拡張状態にあることが多く、正当なトレンドトレード（2024Q4の大相場+1105 USD）もフェイクブレイク（2026Q1）も区別できない。BBW高値でフィルタをかけると2024Q4の大トレンドを除外してしまう構造的問題。2026Q1はthreshold=90%で+58.74 USDに改善するが2024年が+955 USDに半減し全体として劣化。教訓: H-001〜H-006aの共通教訓：エントリー時点でのフィルター（ADX値/PVO/DC期間/BBW）はドンチャンブレイクアウト戦略に対して構造的に無効。ブレイクアウトが発生する瞬間、それらの指標は必然的にエントリー許可条件を満たす状態になっている（またはなっていない）ため、閾値変更の効果が極めて限定的。次回: H-006b（日足MTFフィルター）またはH-009（Chandelier Exit早期損切り）を試す</td>
+          <td class="date-cell">2026-05-07</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>pdca-H-005</code></td>
+          <td><span class="badge" style="background:#3498db">PDCA検証</span></td>
+          <td class="title-cell">H-005: TSMOMフィルター期間調整（150→100/200）
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">不採用（両方向で悪化）: lookback=100→累計+2209.57 USD（-271 USD）、2025年+300 USD（-256 USD）。lookback=200→累計+2196.86 USD（-284 USD）、2025年+184 USD（-372 USD）。2026Q1のみlookback=200で+20.65→+97.11 USD（大幅改善）だが、2025Q1で追加の損失トレード（-146 USD）・2025Q3でも追加損失（-82 USD）が発生し2025年全体が壊滅。うまくいかなかったこと: TSMOMは単純な「エントリー減少フィルター」ではなく、モメンタム方向が一致すれば追加エントリーを許可するケースもある。期間変更が期待通りの方向（フィルター強化）に働かず、むしろ別の損失トレードを呼び込む副作用がある。次回改善案: H-006a（BBWスクイーズフィルター）へ移行。ブレイクアウト時点のボラティリティ状態（圧縮→爆発 vs 既に拡張済み）で選別する根本的に異なるアプローチ</td>
+          <td class="date-cell">2026-05-07</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>pdca-H-004</code></td>
+          <td><span class="badge" style="background:#3498db">PDCA検証</span></td>
+          <td class="title-cell">H-004: ドンチャン期間延長（30→40）
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">不採用（大幅劣化）: donchian_buy/sell_term=30→40に変更。累計: +2481.00→+1706.10 USD（-775 USD、-31%劣化）。2024年: +1903.63→+1204.17 USD（-699 USD、-37%）。2026Q1: +20.65→-54.80 USD（赤転）。うまくいかなかったこと: 期間を延ばすことでドンチャン上限/下限のハードルが上がり、2024Q4の大トレンドを捉えるタイミングが遅れ、利益が大幅減少（+1557.70→+804.49 USD）。2026Q1の小さなブレイクには対応できず赤転。H-001〜H-004の教訓: ADX/PVO閾値変更もDC期間変更も、『発生時点の値/条件』に依存するフィルターはこの戦略では効かない。根本的に別のアプローチが必要。次回改善案: H-005（TSMOMフィルター期間調整）またはH-010（ADXスロープフィルター - ADX値ではなくADXの傾きを使う）</td>
+          <td class="date-cell">2026-05-07</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>pdca-H-003</code></td>
+          <td><span class="badge" style="background:#3498db">PDCA検証</span></td>
+          <td class="title-cell">H-003: PVOフィルター閾値引き上げ（10→20）
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">不採用（効果なし）: pvo_threshold=10→20に変更。全9四半期の結果が完全にベースラインと同一（累計+2481.00 USD）。2026Q1も+20.65 USDで変化ゼロ。うまくいかなかったこと: H-001/H-002と同じ構造的問題。ドンチャンブレイクアウトが発生する瞬間にはPVOはすでに20以上の値を示しており、閾値=20への変更がフィルタリングとして全く機能しない（ADX変更がTask49aで効かなかったことと同じ原理）。次回改善案: ブレイクアウト後の価格動作をフィルターとするH-004（ドンチャン期間延長30→40/50）を試す。期間延長は真のトレンドブレイクのハードルを上げる効果があり、ADX/PVOのような『発生時点の値』依存フィルターとは異なるアプローチ</td>
+          <td class="date-cell">2026-05-07</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>pdca-H-002</code></td>
+          <td><span class="badge" style="background:#3498db">PDCA検証</span></td>
+          <td class="title-cell">H-002: ADXフィルター閾値引き上げ（31→35）
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">不採用: adx_filter_threshold=31→35に変更。2026Q1: +20.65→-47.01 USD（赤字悪化）/ 2024年: +1903.63→+1728.12 USD（-175 USD）/ 2025年: +556.73→+407.49 USD（-149 USD）/ 累計: +2481.00→+2088.59 USD（-392 USD、採用基準-11%を超える劣化）。うまくいかなかったこと: Task49a（ADXスイープ）の知見通り、ブレイクアウト発生時点でADXはすでに高い値を示しており、閾値変更がエントリー条件の絞り込みとして機能しない。ADX=35でも2026Q1では弱いブレイクがエントリーし損失拡大。次回改善案: ADXの現在値ではなくADXのトレンド（上昇中かどうか）をフィルターとするH-010（ADXスロープフィルター）を試す。またはH-003（PVO閾値引き上げ）でエントリーの出来高基準を強化する</td>
+          <td class="date-cell">2026-05-07</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>pdca-H-001</code></td>
+          <td><span class="badge" style="background:#3498db">PDCA検証</span></td>
+          <td class="title-cell">H-001: Donchian確認バー有効化（bars=2）
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">不採用: donchian_confirmation_enabled=1, bars=2に変更。2026Q1: +20.65→+32.09 USD（+11.44改善）だが、2024年: +1903.63→+278.23 USD（-1625 USD壊滅）/ 2025年: +556.73→-14.57 USD（赤転）/ 累計: +2481.00→+295.74 USD（-88%劣化）。うまくいかなかったこと: 確認バー待機中に新ドンチャン上限が更新されてエントリー条件が失効、2024Q2/Q3/2025Q2〜Q4でトレード0件に。フェイクブレイク除外の効果より正当トレードの消失が圧倒的に大きかった。bars=1での実装は実質エントリーを遅らせるだけで機能しない設計的制約がある。次回改善案: H-002（ADXフィルター閾値調整）を試す。または別のフェイクブレイク対策としてH-010（ADXスロープフィルター）の方が有望かもしれない</td>
+          <td class="date-cell">2026-05-07</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>48</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">Gold (XAUT/USDT) 自動取引システム実装
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">BTC BOTと並列稼働。config_xaut.ini最適化(donchian=40, pvo=0, adx=26, lev=7, chandelier_exit=1)。XAUT OHLCVデータ取得・ベースライン65.07USD確定。PID分離・monitor_web/monitor_botデュアル表示対応。レグレッションテスト212/212 PASS。RPi本番並列稼働中</td>
+          <td class="date-cell">2026-04-18</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>46</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">RPi USB安定稼働 Ubuntu Server設定最適化
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">rpi_stability_setup.sh適用確認済み。Storage=volatile / vm.dirty_ratio=40 / dirty_background_ratio=15 / dirty_writeback_centisecs=1500 / noatime+nodiratime(両パーティション) — 全設定適用済み</td>
+          <td class="date-cell">2026-04-18</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>23b</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">RSI 二重確認実装
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">trading_strategy.py にrsi_direction_filter実装済み(RSI&gt;50=BUYのみ/RSI&lt;50=SELLのみ)。risk_management.py にevaluate_strategy_b_bb_rsi_sma実装済み(RSI過買過売70/30)。config.iniでデフォルト無効(enabled=0)。Task 45スイープにて採用不採用。コード実装完了</td>
+          <td class="date-cell">2026-04-18</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>50d</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">E2Eバックテスト検証テスト追加
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">test_e2e_backtest_regression.py(5件): 完走/必須キー/メトリクス範囲/決定論的再現性/サンプル数妥当性を検証。regression_test_suiteに登録(212/212 PASS)</td>
+          <td class="date-cell">2026-04-18</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>50c</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">エントリー/エグジット条件の動作テスト追加
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">test_entry_exit_behavior_regression.py(17件): Donchian+PVO+ADX/FRフィルター/コストモデル計算/make_trade_decision統合をモックで検証。regression_test_suiteに登録</td>
+          <td class="date-cell">2026-04-18</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>50b</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">ファンディングレート保有コストのPnL反映
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">cost_model.py:calculate_funding_cost実装。portfolio.py:apply_funding_cost実装。bot.py:バー毎FR算出統合。BTC-6.7%/XAUT-7.0%のコスト影響を正確に反映。ベースライン更新: BTC 1739.61USD/XAUT 65.07USD</td>
+          <td class="date-cell">2026-04-18</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>50a</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">バックテスト精度検証 + CostModel有効化
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">Phase 0-4検証によりCostModel(enabled=0)が無効設定のまま本番稼働していたバグを発見・修正。enabled=1に変更。BTC 2373.22→1864.29USD(-21.5%)、実際の手数料・スリッページを反映した正確なバックテストに修正</td>
+          <td class="date-cell">2026-04-18</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>49a</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">ADX Filter Threshold スイープ検証
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">BTC: ADX 20-35全値で完全同一結果(2373.22USD, 35trades)。ADXフィルタはDonchian Breakoutに対して非拘束（ブレイクアウト時点でADX&gt;35）。変更不要。XAUT: ADX=16が最適(158.79USD vs 現行ADX=26の110.15USD, +44.2%)。ただし4四半期のみでQ4 2025に偏重(+67.22)しており過学習リスク高。採用保留、データ蓄積後に再評価推奨。結果: sweep_results/adx_sweep_20260418_113234.json</td>
+          <td class="date-cell">2026-04-18</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>49b</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">Market Regime Detection 再検証
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">BTC: Regime ON→2393.90USD(OFF時2373.22, +20.68USD, +0.87%)。Q2 2024損失-103.85→-85.08に改善。効果は軽微だが悪化する四半期なし。XAUT: Regime ON→110.01USD(OFF時110.15, -0.14USD, 変化なし)。組合せテスト(XAUT ADX=16+Regime ON)→161.51USD(+51.36)だがQ4 2025依存度高。BTC単体での採用は検討余地あり(+0.87%、ダウンサイドなし)。</td>
+          <td class="date-cell">2026-04-18</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>44</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">取引所移行（Bybit Close-Only対応）
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">Bybit=データ取得(公開API)、Bitget=注文執行のデュアル構成で解決。Bybit Japan Close-Only(2026-03-23)後も公開APIでOHLCV取得可能を確認</td>
+          <td class="date-cell">2026-04-04</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>40i-eth-pdca1</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">ETH/USDT パラメータスイープ検証
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">BTC優位(2402.94 vs ETH 421 USD)。PVO閾値がETHで無効。ETH採用保留</td>
+          <td class="date-cell">2026-03-13</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>43</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">RPi Live BOT 5日間稼働監視
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">5日間安定稼働。RATE LIMIT 16回全自動回復。残高65.67→68.63 USDT(+2.96)</td>
+          <td class="date-cell">2026-03-13</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>45</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">シグナル・フィルター最適組み合わせ探索
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">36ケーススイープ。C04 SMA(300)+TSMOM(150)が+101.52USD(+4.2%)だが誤差範囲で不採用。現状維持</td>
+          <td class="date-cell">2026-03-07</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>ohlcv-db-tool</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">OHLCVキャッシュDB更新ツール実装
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">tools/update_ohlcv_db.py実装。Bybit公開API経由で4H足データ取得・蓄積</td>
+          <td class="date-cell">2026-03-06</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>web-monitor</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">Web Monitor ダッシュボード実装
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">ブラウザ向けBOT監視ダッシュボード。BTC+XAUTデュアル表示対応(2026-04-05更新)</td>
+          <td class="date-cell">2026-03-06</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>archive-analysis</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">docs/analysis JSONアーカイブ化
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">26ファイルを_archive/に移動。AI直接ソース分析に統一</td>
+          <td class="date-cell">2026-03-06</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>40d</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">戦略監査（エントリー精度PDCA）
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">5回PDCA。PDCA#3採用: psar_lookback=300+tsmom(200)で+172USD(1985→2157)。ベースライン後にtsmom_lookback=150に最適化</td>
+          <td class="date-cell">2026-03-04</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>sweep_metrics</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">パラメータスイープ tsmom_lookback最適化
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">tsmom_lookback=150採用。8Q: 2402.94USD。9Q(2026Q1追加): 2394.47USD</td>
+          <td class="date-cell">2026-03-04</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>44-exit</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">イグジット戦略PDCA改善(5案)
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">全5案不採用。PSARトレイリングストップが既に最適。追加EXIT条件はマクロトレンド利益を阻害</td>
+          <td class="date-cell">2026-03-03</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>40e</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">トレンドフォロー以外の優位性検証(14 trials)
+            <div class="desc"></div>
+          </td>
+          <td style="color:#27ae60;font-weight:bold">Volatility Filter(ATR&gt;2500)採用: +581.65USD(+41.4%)。方向性フィルター群はDonchianと冗長で全て不採用</td>
+          <td class="date-cell">2026-03-02</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>40b</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">コストモデル導入
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">cost_model.py実装、portfolio.pyに統合済み</td>
+          <td class="date-cell">2026-03-02</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>40g</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">API耐障害性（リトライ/バックオフ）
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">実装完了。本番稼働で安定動作確認済み</td>
+          <td class="date-cell">2026-03-02</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>40c</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">リスクオーバーレイ（DDキルスイッチ）
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">DD/日次損失/連続損失の3種停止実装。enabled=0でデフォルト無効</td>
+          <td class="date-cell">2026-03-01</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>42</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">キャッシュベースホットテスト
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">パリティ検証で損益・トレード数完全一致。use_cached_data_for_hot_test=1</td>
+          <td class="date-cell">2026-03-01</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>41a</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">最大ドローダウン率計算バグ修正
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">初期資本考慮に修正。DD&gt;100%誤判定を解消、全8QでDD≤50%</td>
+          <td class="date-cell">2026-02-08</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>39e</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">Dynamic Stop Loss Width
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">ADXベース3段階ストップ幅。安全網として実装</td>
+          <td class="date-cell">2026-02-08</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>39d</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">Time-Based Exit
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">72時間強制決済。PSAR優先で通常未発動。安全網として機能</td>
+          <td class="date-cell">2026-02-08</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>40a</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">Walk-Forward + OOS分析
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">フレームワーク実装。3/5ウィンドウで劣化率&lt;-100%検出。戦略過学習リスクを認識</td>
+          <td class="date-cell">2026-02-08</td>
+        </tr>
+        <tr>
+          <td class="id-cell"><code>39b</code></td>
+          <td><span class="badge" style="background:#7f8c8d"></span></td>
+          <td class="title-cell">Two-Tier Entry System
+            <div class="desc"></div>
+          </td>
+          <td style="color:#555;font-weight:bold">+378.27USD改善(904→1282USD)</td>
+          <td class="date-cell">2026-02-01</td>
+        </tr></tbody>
+    </table>
+</div>
 
-  <!-- IN PROGRESS (none) -->
-
-  <!-- TODO -->
-  <div class="section">
-    <div class="section-title">📋 TODO (6)</div>
-
-    <div class="task todo-card">
-      <div class="task-header"><span class="task-id">#47</span><span class="task-title">残高取得・指定モードの修正</span></div>
-      <div class="task-meta"><span class="tag tag-cat">仕様改善</span><span class="tag tag-pri">★★★★ 高</span></div>
-      <div class="task-desc">デフォルトでAPIから実残高を取得、use_custom_balance=1のときのみconfig値使用</div>
-    </div>
-
-    <div class="task todo-card">
-      <div class="task-header"><span class="task-id">#40f</span><span class="task-title">価格データの健全性チェック（欠損/異常値/時間ずれ）</span></div>
-      <div class="task-meta"><span class="tag tag-cat">データ品質</span><span class="tag tag-pri">★★★ 中</span></div>
-      <div class="task-desc">OHLCVの欠損・重複・スパイクを検出・補正</div>
-    </div>
-
-    <div class="task todo-card">
-      <div class="task-header"><span class="task-id">#23a</span><span class="task-title">Fear &amp; Greed Index 統合</span></div>
-      <div class="task-meta"><span class="tag tag-cat">補助フィルター</span><span class="tag tag-pri">★★★ 中</span></div>
-      <div class="task-desc">過度な楽観/恐怖でのエントリー抑制</div>
-    </div>
-
-    <div class="task todo-card">
-      <div class="task-header"><span class="task-id">#40i</span><span class="task-title">銘柄分散・相関管理（ETH等複数候補）</span></div>
-      <div class="task-meta"><span class="tag tag-cat">ポートフォリオ</span><span class="tag tag-pri">★★ 低</span></div>
-      <div class="task-desc">ETH等の複数銘柄検証。Task 31/40i-eth-pdca1でETH不採用のため慎重に</div>
-    </div>
-
-    <div class="task todo-card">
-      <div class="task-header"><span class="task-id">#38d</span><span class="task-title">Volume Profile Analysis 実装</span></div>
-      <div class="task-meta"><span class="tag tag-cat">補助フィルター</span><span class="tag tag-pri">★★ 低</span></div>
-      <div class="task-desc">出来高集中価格帯判定</div>
-    </div>
-
-    <div class="task todo-card">
-      <div class="task-header"><span class="task-id">#6</span><span class="task-title">ログファイル自動整理・定期クリーンアップ</span></div>
-      <div class="task-meta"><span class="tag tag-cat">ログ制御</span><span class="tag tag-pri">★ 最低</span></div>
-      <div class="task-desc">手動実施完了(2026-02-08)、自動化は低優先度</div>
-    </div>
-  </div>
-
-  <!-- DONE -->
-  <div class="section">
-    <div class="section-title">✅ 完了 (27)</div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#48</span><span class="task-title">Gold (XAUT/USDT) 自動取引システム実装</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-04-18</span></div>
-      <div class="task-result">BTC BOTと並列稼働。config_xaut.ini最適化(donchian=40, pvo=0, adx=26, lev=7, chandelier_exit=1)。OHLCV取得・ベースライン<b>65.07 USD</b>確定。PID分離・monitor_web/bot デュアル表示対応。<b>212/212 PASS</b>。RPi本番並列稼働中</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#46</span><span class="task-title">RPi USB安定稼働 Ubuntu Server設定最適化</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-04-18</span></div>
-      <div class="task-result">rpi_stability_setup.sh適用済み確認。<b>Storage=volatile</b> / vm.dirty_ratio=40 / dirty_background_ratio=15 / dirty_writeback_centisecs=1500 / <b>noatime+nodiratime</b>（両パーティション）— 全設定適用済み</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#23b</span><span class="task-title">RSI 二重確認実装</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-04-18</span><span class="tag tag-cat">補助フィルター</span></div>
-      <div class="task-result"><code>rsi_direction_filter</code>(RSI&gt;50=BUYのみ/RSI&lt;50=SELLのみ)おsmallび<code>evaluate_strategy_b_bb_rsi_sma</code>(RSI 70/30過買過売)を実装済み。デフォルト無効(<code>enabled=0</code>)。Task 45スイープで不採用。<b>実装完了</b></div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#50d</span><span class="task-title">E2Eバックテスト検証テスト追加</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-04-18</span></div>
-      <div class="task-result">test_e2e_backtest_regression.py (5件): 完走 / 必須キー / メトリクス範囲 / <b>決定論的再現性</b> / サンプル数妥当性を検証。regression_test_suite に登録 → <b>212/212 PASS</b></div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#50c</span><span class="task-title">エントリー/エグジット条件の動作テスト追加</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-04-18</span></div>
-      <div class="task-result">test_entry_exit_behavior_regression.py (17件): Donchian+PVO+ADX / FRフィルター / コストモデル計算 / make_trade_decision 統合をモックで検証</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#50b</span><span class="task-title">ファンディングレート保有コストの PnL 反映</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-04-18</span></div>
-      <div class="task-result">cost_model.py: calculate_funding_cost 実装。portfolio.py: apply_funding_cost 実装。bot.py: バー毎 FR 算出統合。BTC -6.7% / XAUT -7.0% のコスト影響を正確に反映。ベースライン更新: <b>BTC 1,739.61 USD / XAUT 65.07 USD</b></div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#50a</span><span class="task-title">バックテスト精度検証 + CostModel 有効化</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-04-18</span></div>
-      <div class="task-result">Phase 0-4 検証により CostModel(enabled=0) が無効のまま本番稼働していたバグを発見・修正。BTC 2,373.22 → 1,864.29 USD (-21.5%)。実際の手数料・スリッページを反映した正確なバックテストに修正</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#49a</span><span class="task-title">ADX Filter Threshold スイープ検証</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-04-18</span></div>
-      <div class="task-result">BTC: ADX 20-35 全値で完全同一結果 (2,373.22 USD, 35 trades)。変更不要。XAUT: ADX=16 が最適 (+44.2%) だが 4 四半期のみで過学習リスク高 → <b>採用保留</b></div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#49b</span><span class="task-title">Market Regime Detection 再検証</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-04-18</span></div>
-      <div class="task-result">BTC: Regime ON → +20.68 USD (+0.87%)、悪化する四半期なし。XAUT: ほぼ変化なし。BTC 単体での採用は<b>検討余地あり</b></div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#44</span><span class="task-title">取引所移行（Bybit Close-Only 対応）</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-04-04</span></div>
-      <div class="task-result">Bybit=データ取得(公開API)、Bitget=注文執行のデュアル構成で解決。Bybit Japan Close-Only (2026-03-23) 後も OHLCV 取得可能を確認</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#45</span><span class="task-title">シグナル・フィルター最適組み合わせ探索</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-03-07</span></div>
-      <div class="task-result">36 ケーススイープ。C04 SMA(300)+TSMOM(150) が +101.52 USD (+4.2%) だが誤差範囲で不採用。現状維持</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#40i-eth</span><span class="task-title">ETH/USDT パラメータスイープ検証</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-03-13</span></div>
-      <div class="task-result">BTC 優位 (2,402.94 vs ETH 421 USD)。PVO 閾値が ETH で無効。ETH 採用保留</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#43</span><span class="task-title">RPi Live BOT 5日間稼働監視</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-03-13</span></div>
-      <div class="task-result">5日間安定稼働。RATE LIMIT 16回全自動回復。残高 65.67 → 68.63 USDT (+2.96)</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">ohlcv-db</span><span class="task-title">OHLCV キャッシュ DB 更新ツール実装</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-03-06</span></div>
-      <div class="task-result">tools/update_ohlcv_db.py 実装。Bybit 公開 API 経由で 4H 足データ取得・蓄積</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">web-mon</span><span class="task-title">Web Monitor ダッシュボード実装</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-03-06</span></div>
-      <div class="task-result">ブラウザ向け BOT 監視ダッシュボード。BTC+XAUT デュアル表示対応 (2026-04-05 更新)</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#40d</span><span class="task-title">戦略監査（エントリー精度 PDCA）</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-03-04</span></div>
-      <div class="task-result">5 回 PDCA。PDCA#3 採用: psar_lookback=300+tsmom(200) で +172 USD (1,985 → 2,157)。tsmom_lookback=150 に最適化後 2,402.94 USD</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#44-exit</span><span class="task-title">イグジット戦略 PDCA 改善 (5案)</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-03-03</span></div>
-      <div class="task-result">全 5 案不採用。PSAR トレイリングストップが既に最適。追加 EXIT 条件はマクロトレンド利益を阻害</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#40e</span><span class="task-title">トレンドフォロー以外の優位性検証 (14 trials)</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-03-02</span></div>
-      <div class="task-result">Volatility Filter (ATR>2500) 採用: +581.65 USD (+41.4%)。方向性フィルター群は Donchian と冗長で全て不採用</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#40b</span><span class="task-title">コストモデル導入</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-03-02</span></div>
-      <div class="task-result">cost_model.py 実装、portfolio.py に統合済み</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#40g</span><span class="task-title">API 耐障害性（リトライ/バックオフ）</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-03-02</span></div>
-      <div class="task-result">実装完了。本番稼働で安定動作確認済み</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#40c</span><span class="task-title">リスクオーバーレイ（DD キルスイッチ）</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-03-01</span></div>
-      <div class="task-result">DD / 日次損失 / 連続損失の 3 種停止実装。enabled=0 でデフォルト無効</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#42</span><span class="task-title">キャッシュベースホットテスト</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-03-01</span></div>
-      <div class="task-result">パリティ検証で損益・トレード数完全一致。use_cached_data_for_hot_test=1</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#41a</span><span class="task-title">最大ドローダウン率計算バグ修正</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-02-08</span></div>
-      <div class="task-result">初期資本考慮に修正。DD>100% 誤判定を解消、全 8Q で DD≤50%</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#40a</span><span class="task-title">Walk-Forward + OOS 分析</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-02-08</span></div>
-      <div class="task-result">フレームワーク実装。3/5 ウィンドウで劣化率 &lt;-100% 検出。戦略過学習リスクを認識</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#39e</span><span class="task-title">Dynamic Stop Loss Width</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-02-08</span></div>
-      <div class="task-result">ADX ベース 3 段階ストップ幅。安全網として実装</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#39d</span><span class="task-title">Time-Based Exit</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-02-08</span></div>
-      <div class="task-result">72 時間強制決済。PSAR 優先で通常未発動。安全網として機能</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">#39b</span><span class="task-title">Two-Tier Entry System</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-02-01</span></div>
-      <div class="task-result"><b>+378.27 USD 改善</b> (904 → 1,282 USD)</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">sweep</span><span class="task-title">パラメータスイープ tsmom_lookback 最適化</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-03-04</span></div>
-      <div class="task-result">tsmom_lookback=150 採用。8Q: 2,402.94 USD。9Q (2026Q1 追加): 2,394.47 USD</div>
-    </div>
-
-    <div class="task done-card">
-      <div class="task-header"><span class="task-id">archive</span><span class="task-title">docs/analysis JSON アーカイブ化</span></div>
-      <div class="task-meta"><span class="tag tag-date">2026-03-06</span></div>
-      <div class="task-result">26 ファイルを _archive/ に移動。AI 直接ソース分析に統一</div>
-    </div>
-
-  </div><!-- /done -->
-
-</div><!-- /container -->
+<p class="footer">satosystem gen2 &copy; 2026 | <a href="ACTION_LIST.json" style="color:#3498db">ACTION_LIST.json</a></p>
 </body>
 </html>
