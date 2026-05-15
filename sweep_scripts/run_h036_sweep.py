@@ -12,7 +12,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-WORKSPACE = Path(__file__).parent
+WORKSPACE = Path(__file__).parent.parent
 CONFIG_PATH = WORKSPACE / "src/config.ini"
 
 # ベーstierを乗数で一括スケール
@@ -22,8 +22,8 @@ SCALE_FACTORS = [0.33, 0.50, 0.60, 0.70, 0.80, 1.00]  # 1.00=現状
 
 YEAR_START = "2024/01/01 00:00"
 YEAR_END   = "2026/05/08 23:59"
-BASELINE_PNL = 1571.0
-BASELINE_DD  = 75.7
+BASELINE_PNL = 3417.0  # H-056 ScaleIn採用後の通年ベースライン
+BASELINE_DD  = 22.80
 
 
 def run_annual_backtest():
@@ -65,8 +65,8 @@ def set_config(scale, tiers):
 def restore_config():
     c = configparser.ConfigParser()
     c.read(CONFIG_PATH)
-    c['Period']['start_time'] = '2026/01/01 00:00'
-    c['Period']['end_time']   = '2026/03/31 23:59'
+    c['Period']['start_time'] = YEAR_START
+    c['Period']['end_time']   = YEAR_END
     c['RiskManagement']['risk_percentage']        = str(BASE_TIERS[0])
     c['RiskManagement']['dynamic_tier_90_risk']   = str(BASE_TIERS[0])
     c['RiskManagement']['dynamic_tier_70_risk']   = str(BASE_TIERS[1])

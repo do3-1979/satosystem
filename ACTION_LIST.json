@@ -25,9 +25,9 @@
     }
   },
   "summary": {
-    "todo": 9,
+    "todo": 8,
     "progress": 0,
-    "done": 47,
+    "done": 48,
     "in_progress": 0
   },
   "tasks": {
@@ -46,13 +46,6 @@
         "title": "残高取得・指定モードの修正",
         "priority": 4,
         "description": "デフォルトでAPIから実残高を取得、use_custom_balance=1のときのみconfig値使用"
-      },
-      {
-        "id": "pdca-H-036",
-        "category": "PDCA検証",
-        "title": "H-036: ハーフケリー基準によるポジションサイズ最適化",
-        "priority": 3,
-        "description": "固定risk_percentage=0.30は勝率・PFに関わらず一定。ハーフケリー基準（f* = (p*b - q) / b * 0.5）で四半期ごとにサイズを動的更新する仕組みを検証。初期値はケリーサイズ=0.30として開始し、直近Nトレードの勝率・平均利益・平均損失から毎四半期更新。過学習リスクがあるため最小0.10/最大0.35でクランプ。採用基準: 累計損益+2700USD以上かつシャープレシオ改善。"
       },
       {
         "id": "pdca-H-037",
@@ -395,6 +388,13 @@
         "completed_date": "2026-05-15",
         "result": "現状維持",
         "description": "BTC(None/10/15/20/25/31) + XAUT(None/12/15/18/20/22/26)スイープ。BTC: adx=28現設定が最良(+3062.87 USD)。adx<=25で-1000 USD以上悪化。XAUT: 全閾値で変化なし(±1 USD誤差)。現設定(BTC:28/XAUT:26)が最適、変更不要。"
+      },
+      {
+        "id": "pdca-H-036",
+        "title": "H-036: ハーフケリー基準によるポジションサイズ最適化",
+        "completed_date": "2026-05-15",
+        "result": "不採用",
+        "description": "リスクスケール因子スイープ(0.33~1.00)。scale=1.00(risk=0.30)が最良: PnL=+3417 USD, MaxDD=22.8%, PnL/DD=149.9。Half-Kelly相当(scale≈0.31)はPnL=+800 USDに激減。現在のrisk=0.30はすでにFullKellyを上回る水準であり、ダウンスケールはデメリットのみ。変更不要。"
       }
     ]
   }

@@ -13,7 +13,7 @@ import configparser, subprocess, re
 from datetime import datetime
 from pathlib import Path
 
-WORKSPACE   = Path(__file__).parent
+WORKSPACE   = Path(__file__).parent.parent
 CONFIG_PATH = WORKSPACE / "src/config.ini"
 
 YEAR_START = "2024/01/01 00:00"

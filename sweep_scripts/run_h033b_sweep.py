@@ -12,7 +12,7 @@ import itertools
 from datetime import datetime
 from pathlib import Path
 
-WORKSPACE = Path(__file__).parent
+WORKSPACE = Path(__file__).parent.parent
 CONFIG_PATH = WORKSPACE / "src/config.ini"
 
 # スキャン範囲
