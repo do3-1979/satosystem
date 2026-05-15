@@ -44,7 +44,7 @@ from copy import deepcopy
 # -------------------------------------------------------
 # パス設定
 # -------------------------------------------------------
-WORKSPACE_ROOT = os.path.dirname(os.path.abspath(__file__))
+WORKSPACE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC_DIR         = os.path.join(WORKSPACE_ROOT, 'src')
 CONFIG_FILE     = os.path.join(SRC_DIR, 'config.ini')
 CONFIG_BACKUP   = os.path.join(WORKSPACE_ROOT, 'sweep_results', 'config_btc_backup.ini')

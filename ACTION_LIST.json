@@ -1,33 +1,34 @@
 {
   "meta": {
     "version": "2.0",
-    "last_updated": "2026-04-18",
+    "last_updated": "2026-05-15",
     "description": "satosystem gen2 - Task management (BTC+XAUTデュアルアセット運用体制)",
     "replaces": "docs/ACTION_LIST.md",
     "baselines": {
       "btc": {
-        "cumulative_pnl_usd": 1739.61,
+        "cumulative_pnl_usd": 3062.87,
         "period": "2024Q1-2026Q1 (9四半期)",
-        "note": "CostModel有効+ファンディングレート保有コスト反映後",
-        "file": "baseline_backup/BASELINE_BTC_1739.61USD_FundingRate_20260418.json"
+        "note": "H-056 スケールイン採用後 (trigger=2.0×ATR, qty=50%)",
+        "file": "baseline_backup/BASELINE_BTC_3062.87USD_H056_20260515.json"
       },
       "xaut": {
-        "cumulative_pnl_usd": 65.07,
+        "cumulative_pnl_usd": 89.36,
         "period": "2025Q2-2026Q1 (4四半期)",
-        "note": "CostModel有効+ファンディングレート保有コスト反映後",
-        "file": "baseline_backup/BASELINE_XAUT_65.07USD_FundingRate_20260418.json"
+        "note": "H-056採用後時点のXAUT基準値",
+        "file": "baseline_backup/BASELINE_XAUT_89.36USD_H056era_20260515.json"
       }
     },
-    "test_suite": "212/212 PASS",
+    "test_suite": "216/216 PASS",
     "workflow_rules": {
       "baseline_before_action": "アクションリスト実行前に必ずレグレッションテストを実行し、PROGRESS.json baseline_regressionに保存すること",
       "comparison_source": "アクションリスト実行時の比較元としてPROGRESS.json baseline_regressionを活用すること"
     }
   },
   "summary": {
-    "todo": 7,
+    "todo": 9,
     "progress": 0,
-    "done": 43
+    "done": 47,
+    "in_progress": 0
   },
   "tasks": {
     "progress": [],
@@ -38,13 +39,6 @@
         "title": "H-033b: RiskOverlay DDキルスイッチ 閾値/再開期間スイープ",
         "priority": 4,
         "description": "max_drawdown_pct(30-70%)×DD回復後再開待機期間のスイープで最適パラメータ探索"
-      },
-      {
-        "id": "50e",
-        "category": "フィルター最適化",
-        "title": "ADXフィルタ閾値の再調査・最適化",
-        "priority": 4,
-        "description": "本番ログ分析(2026-04-12〜04-24)でBTC 192件・XAUT 317件のBreakoutが発生したが、ADX不足(BTC: 141件, XAUT: 258件)で全件見送りとなりエントリーゼロ。BTC閾値31はADX=12の現相場では過剰に厳しい可能性あり。バックテストでADX閾値をスイープ(BTC: 20/25/28/31, XAUT: 20/22/24/26)し、利益とリスクのトレードオフを再検証すること。エントリーゼロ期間が長期化するようであれば閾値引き下げを検討する。"
       },
       {
         "id": "47",
@@ -373,6 +367,34 @@
         "status": "done",
         "completed_date": "2026-05-08",
         "result": "不採用: 通年DD 75.7%→73.3%(2.4%改善のみ・目標65%未達), 四半期-9.5%悪化"
+      },
+      {
+        "id": "H-057",
+        "title": "Stage-2 ScaleOut (2xATR二段階利食い)",
+        "completed_date": "2026-05-15",
+        "result": "不採用",
+        "description": "Stage-2 ScaleOut — 43取引で0回発動。PSARエグジットが2.0xATR到達前に発動するため効果なし。"
+      },
+      {
+        "id": "H-058",
+        "title": "ScaleIn ADXフィルター追加",
+        "completed_date": "2026-05-15",
+        "result": "不採用",
+        "description": "ScaleIn ADX>=31フィルター — 追加効果なし。ScaleInは既にトレンド相場で発動。PnL変化ゼロ。"
+      },
+      {
+        "id": "H-059",
+        "title": "BreakEven Stop (スケールアウト後損益分岐点ストップ)",
+        "completed_date": "2026-05-15",
+        "result": "不採用",
+        "description": "PnL: +3417→+2878 USD (-539 USD), MaxDD: 22.80→25.00% (+2.2%)。2025大トレンドを一時的押し目で早期ストップ。11取引改善vs25取引悪化。PSARトレイリングが最適。"
+      },
+      {
+        "id": "50e",
+        "title": "ADXフィルタ閾値の再調査・最適化",
+        "completed_date": "2026-05-15",
+        "result": "現状維持",
+        "description": "BTC(None/10/15/20/25/31) + XAUT(None/12/15/18/20/22/26)スイープ。BTC: adx=28現設定が最良(+3062.87 USD)。adx<=25で-1000 USD以上悪化。XAUT: 全閾値で変化なし(±1 USD誤差)。現設定(BTC:28/XAUT:26)が最適、変更不要。"
       }
     ]
   }

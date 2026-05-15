@@ -23,7 +23,7 @@ import subprocess
 import argparse
 from datetime import datetime
 
-WORKSPACE_ROOT = os.path.dirname(os.path.abspath(__file__))
+WORKSPACE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BTC_CONFIG_FILE  = os.path.join(WORKSPACE_ROOT, 'src', 'config.ini')
 XAUT_CONFIG_FILE = os.path.join(WORKSPACE_ROOT, 'src', 'config_xaut.ini')
 BTC_RESULTS_DIR  = os.path.join(WORKSPACE_ROOT, 'docs', 'quarterly_backtest_results', 'BTC')

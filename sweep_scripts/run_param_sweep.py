@@ -25,7 +25,7 @@ from datetime import datetime
 from copy import deepcopy
 
 # ワークスペースのルートディレクトリ
-WORKSPACE_ROOT = os.path.dirname(os.path.abspath(__file__))
+WORKSPACE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG_FILE = os.path.join(WORKSPACE_ROOT, 'src', 'config.ini')
 RESULTS_DIR = os.path.join(WORKSPACE_ROOT, 'docs', 'quarterly_backtest_results')
 SWEEP_RESULTS_DIR = os.path.join(WORKSPACE_ROOT, 'sweep_results')
