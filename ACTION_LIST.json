@@ -34,13 +34,6 @@
     "progress": [],
     "todo": [
       {
-        "id": "pdca-H-033b",
-        "category": "PDCA検証",
-        "title": "H-033b: RiskOverlay DDキルスイッチ 閾値/再開期間スイープ",
-        "priority": 4,
-        "description": "max_drawdown_pct(30-70%)×DD回復後再開待機期間のスイープで最適パラメータ探索"
-      },
-      {
         "id": "47",
         "category": "仕様改善",
         "title": "残高取得・指定モードの修正",
@@ -395,7 +388,20 @@
         "completed_date": "2026-05-15",
         "result": "不採用",
         "description": "リスクスケール因子スイープ(0.33~1.00)。scale=1.00(risk=0.30)が最良: PnL=+3417 USD, MaxDD=22.8%, PnL/DD=149.9。Half-Kelly相当(scale≈0.31)はPnL=+800 USDに激減。現在のrisk=0.30はすでにFullKellyを上回る水準であり、ダウンスケールはデメリットのみ。変更不要。"
+      },
+      {
+        "id": "pdca-H-033b",
+        "category": "PDCA検証",
+        "title": "H-033b: RiskOverlay DDキルスイッチ 閾値/再開期間スイープ",
+        "completed_date": "2026-05-15",
+        "result": "採用",
+        "description": "DD<=40%/resume=200bars採用。年間PnL+4086 USD(+669 vs ベースライン3417), MaxDD=20.0%(-2.8pt), 9Q合計+3064.87 USD(+2). 216/216 PASS。新ベースライン: BTC_4086.15USD_H033b_20260515"
       }
-    ]
+    ],
+    "summary": {
+      "todo": 7,
+      "progress": 0,
+      "done": 49
+    }
   }
 }

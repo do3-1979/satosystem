@@ -21,8 +21,8 @@ RESUME_BARS  = [0, 100, 200, 300, 500]    # dd_resume_bars (4H足数)
 # dd_resume_bars=0 は永続停止（ベースラインとして含む）
 
 # ベースライン（enabled=0）
-BASELINE_PNL = 1571.0   # USD（通年）
-BASELINE_DD  = 75.7     # %（通年MaxDD）
+BASELINE_PNL = 3417.0   # USD（通年, H-056 ScaleIn採用後）
+BASELINE_DD  = 22.80    # %（通年MaxDD）
 
 # 通年テスト期間
 YEAR_START = "2024/01/01 00:00"
