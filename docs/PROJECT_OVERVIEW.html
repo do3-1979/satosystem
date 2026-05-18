@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>satosystem gen2 — プロジェクト概要</title>
+<title>satosystem gen2 — プロジェクト統合ドキュメント</title>
 <style>
   :root {
     --bg: #0d1117;
@@ -393,6 +393,8 @@
   <a href="#performance">パフォーマンス</a>
   <a href="#config">設定パラメータ</a>
   <a href="#exit">エグジット戦略</a>
+  <a href="#operations">運用ガイド</a>
+  <a href="#static-analysis">静的解析</a>
   <a href="#roadmap">ロードマップ</a>
   <a href="#improvement">改善アイデア</a>
 </nav>
@@ -406,8 +408,8 @@
     <div class="card highlight">
       <div class="icon">₿</div>
       <div class="label">BTC 累積損益（バックテスト）</div>
-      <div class="value" style="color: var(--green)">+$2,394.47</div>
-      <div class="desc">2024 Q1〜2026 Q1（9四半期）</div>
+      <div class="value" style="color: var(--green)">+$2,197.00</div>
+      <div class="desc">2024/01〜2026/05（H-042 ScaleOut採用後）</div>
     </div>
     <div class="card" style="border-color:#e3b341">
       <div class="icon">🥇</div>
@@ -1147,10 +1149,133 @@ flowchart TB
   </div>
 </section>
 
+<!-- ===================== OPERATIONS ===================== -->
+<section id="operations">
+  <h2>🚀 運用ガイド・デプロイ</h2>
+
+  <h3>デプロイ前チェックリスト</h3>
+  <div class="alert-box warn">⚠️ 両BOTがポジションなし（position_side = "NONE"）を確認してからデプロイすること。ポジション保有中の停止は損失のリスクがある。</div>
+  <ol class="step-list">
+    <li>レグレッションテスト全PASS: <code>./commands/prj-run-regression</code></li>
+    <li>ポジション確認: <code>./commands/prj-deploy --status-only</code></li>
+    <li>ユーザー承認後コミット・プッシュ</li>
+    <li>一括デプロイ: <code>./commands/prj-deploy</code></li>
+    <li>起動ログ確認: <code>head -35 &lt;最新ログ&gt;</code> で back_test=0, dummy=0 を確認</li>
+  </ol>
+
+  <h3>コマンド早見表</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>目的</th><th>コマンド</th></tr></thead>
+    <tbody>
+      <tr><td>レグレッションテスト</td><td><code>./commands/prj-run-regression</code></td></tr>
+      <tr><td>RPiデプロイ（push+停止+pull+再起動）</td><td><code>./commands/prj-deploy</code></td></tr>
+      <tr><td>BOT状態確認のみ</td><td><code>./commands/prj-deploy --status-only</code></td></tr>
+      <tr><td>OHLCVデータDB更新</td><td><code>./commands/prj-update-ohlcv-db</code></td></tr>
+      <tr><td>ターミナルBOTモニター（RPi）</td><td><code>./commands/monitor_bot --host raspberry_pi</code></td></tr>
+      <tr><td>WebBOTモニター（ブラウザ）</td><td><code>./commands/monitor_web --host raspberry_pi --port 8080</code></td></tr>
+      <tr><td>TODO一覧表示</td><td><code>./commands/prj-action-list</code></td></tr>
+      <tr><td>四半期バックテスト（BTC）</td><td><code>python3 run_quarterly_backtest.py</code></td></tr>
+      <tr><td>四半期バックテスト（XAUT）</td><td><code>python3 run_quarterly_backtest.py --config config_xaut.ini</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>本番設定（RPi config.ini）</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>パラメータ</th><th>開発デフォルト</th><th>本番値</th></tr></thead>
+    <tbody>
+      <tr><td><code>[General] back_test</code></td><td>1</td><td><strong>0</strong>（必須）</td></tr>
+      <tr><td><code>[General] dummy</code></td><td>1</td><td><strong>0</strong>（実取引）/ 1（ペーパー）</td></tr>
+      <tr><td><code>[RiskOverlay] enabled</code></td><td>0</td><td>任意（0推奨）</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>BOT監視指標（latest_status.json）</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>フィールド</th><th>説明</th><th>正常値の目安</th></tr></thead>
+    <tbody>
+      <tr><td><code>updated_at</code></td><td>最終更新時刻</td><td>現在時刻の1〜2分以内</td></tr>
+      <tr><td><code>decision</code></td><td>現在判断</td><td>NONE / ENTRY / EXIT</td></tr>
+      <tr><td><code>position_side</code></td><td>ポジション方向</td><td>NONE（未保有）/ LONG / SHORT</td></tr>
+      <tr><td><code>pnl</code></td><td>含み損益</td><td>ポジションなし時: 0</td></tr>
+      <tr><td><code>total_pnl</code></td><td>累積損益</td><td>増加傾向が理想</td></tr>
+      <tr><td><code>adx</code></td><td>ADX値</td><td>BTC≥31 or XAUT≥26 でエントリー候補</td></tr>
+      <tr><td><code>pvo_val</code></td><td>PVO値</td><td>BTC: &gt;10、XAUT: &gt;0 でフィルター通過</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ===================== STATIC ANALYSIS ===================== -->
+<section id="static-analysis">
+  <h2>🔍 ソースコード静的解析サマリー</h2>
+  <p>詳細は <a href="STATIC_ANALYSIS_REPORT.md">STATIC_ANALYSIS_REPORT.md</a> を参照。</p>
+
+  <h3>バグ（修正済み）</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>ファイル:行</th><th>種別</th><th>内容</th><th>状態</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>bot.py:381</code></td>
+        <td>潜在バグ</td>
+        <td><code>else: raise</code> — アクティブ例外なしのbare raiseはRuntimeErrorを引き起こす。未知のdecisionタイプが来た場合のみ発動。</td>
+        <td><span class="badge red">修正済み</span></td>
+      </tr>
+    </tbody>
+  </table></div>
+
+  <h3>冗長コード（修正済み）</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>ファイル:行</th><th>内容</th><th>状態</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>risk_management.py:79-82</code></td>
+        <td><code>stop_AF_add</code> / <code>stop_AF_max</code> が2行連続で同一代入（重複）</td>
+        <td><span class="badge red">修正済み</span></td>
+      </tr>
+      <tr>
+        <td><code>bot.py:execute_order()</code></td>
+        <td><code>symbol = order['symbol']</code> — コメント通り未使用のdead variable</td>
+        <td><span class="badge yellow">軽微・低優先</span></td>
+      </tr>
+      <tr>
+        <td><code>exit_strategy_v2.py</code></td>
+        <td><code>trailing_profit_enabled = False</code>（破棄済み機能）とTier1〜3パラメータ — 不使用dead code</td>
+        <td><span class="badge yellow">軽微・低優先</span></td>
+      </tr>
+    </tbody>
+  </table></div>
+
+  <h3>プロジェクト意図との乖離</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>ファイル</th><th>内容</th><th>影響</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>mean_reversion_strategy.py</code></td>
+        <td>RSI計算がWilder平滑化（EMA方式）でなくSMA方式。標準RSIと値が異なる。</td>
+        <td>MR戦略無効時は影響なし。有効化時は非標準RSI値を使用することになる。</td>
+      </tr>
+      <tr>
+        <td><code>vcp_strategy.py</code></td>
+        <td>VCP検出結果（<code>vcp_signal_latest</code>）はログ記録のみに使用。エントリー判定には反映されない。</td>
+        <td>VCPの計算コストだけが発生し、実際のトレードに影響しない。</td>
+      </tr>
+      <tr>
+        <td><code>trading_strategy.py</code></td>
+        <td>Mean Reversion戦略有効時（<code>enable_mean_reversion_strategy=1</code>）は Donchian ブレイクアウト戦略を完全に無効化し、BUYシグナルのみ発行（一方向性）。</td>
+        <td>本番では無効（0）のため問題なし。有効化時はSELLエントリーが完全に失われる。</td>
+      </tr>
+      <tr>
+        <td><code>risk_management.py</code></td>
+        <td><code>get_donchian_high()</code>/<code>get_donchian_low()</code>がタイムフレームを1H固定（実際は4H稼働）。VCP戦略専用メソッドのため主要Donchianシグナルとは別系統。</td>
+        <td>VCP戦略無効（デフォルト）なら影響なし。VCP有効時はDonchian参照が1Hベースになる。</td>
+      </tr>
+    </tbody>
+  </table></div>
+</section>
+
 </div><!-- /container -->
 
 <footer>
-  satosystem gen2 — 最終更新: 2026-04-05 | Branch: gen2 | BTC + XAUT Dual-Asset | Python 3 + ccxt + Raspberry Pi
+  satosystem gen2 — 最終更新: 2026-05-16 | Branch: gen2 | BTC + XAUT Dual-Asset | Python 3 + ccxt + Raspberry Pi
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>

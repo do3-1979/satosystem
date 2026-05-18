@@ -3,11 +3,14 @@
     "name": "satosystem gen2",
     "description": "Crypto auto-trading system - BTC/USDT + XAUT/USDT dual-asset Donchian Breakout",
     "branch": "gen2",
-    "last_updated": "2026-05-02",
-    "assets": ["BTC/USDT", "XAUT/USDT"],
+    "last_updated": "2026-05-16",
+    "assets": [
+      "BTC/USDT",
+      "XAUT/USDT"
+    ],
     "baseline_performance": {
       "btc": {
-        "cumulative_pnl_usd": 2481.00,
+        "cumulative_pnl_usd": 2481.0,
         "period": "2024Q1-2026Q1 (9四半期)",
         "baseline_file": "baseline_backup/BASELINE_BTC_2481.00USD_PvoL26_20260502.json",
         "config": {
@@ -50,9 +53,9 @@
     }
   },
   "latest_commit": {
-    "hash": "88fde01",
-    "date": "2026-04-05",
-    "message": "fix: split bot PID lock by symbol and add config-aware start/stop scripts",
+    "hash": "db12368",
+    "date": "2026-05-16",
+    "message": "feat: ACTION_LIST HTML自動生成機能追加",
     "description": "BTC/XAUT並列稼働のためのPID分離・start_bot.sh/stop_bot.sh --config対応"
   },
   "current_status": {
@@ -64,12 +67,24 @@
           "title": "XAUT/USDT自動取引システム",
           "status": "実装ほぼ完了、RPiデプロイ待ち",
           "priority": 5,
-          "remaining": ["48-H: RPi並列稼働テスト", "48-I: ペーパートレード", "48-J: 本番稼働"]
+          "remaining": [
+            "48-H: RPi並列稼働テスト",
+            "48-I: ペーパートレード",
+            "48-J: 本番稼働"
+          ]
         }
       ],
       "next_priority": [
-        {"task_id": "47", "title": "残高取得モード修正", "priority": 4},
-        {"task_id": "40f", "title": "価格データ健全性チェック", "priority": 3}
+        {
+          "task_id": "47",
+          "title": "残高取得モード修正",
+          "priority": 4
+        },
+        {
+          "task_id": "40f",
+          "title": "価格データ健全性チェック",
+          "priority": 3
+        }
       ]
     },
     "recently_completed": [
@@ -91,7 +106,10 @@
     "total_tests": 212,
     "pass_rate": "100%",
     "test_files": 28,
-    "breakdown": {"btc": 162, "xaut": 28},
+    "breakdown": {
+      "btc": 162,
+      "xaut": 28
+    },
     "last_regression_test": "2026-05-02",
     "regression_status": "212/212 PASS (100%)"
   },
