@@ -428,11 +428,12 @@ class PriceDataManagement:
                 # 現在時刻
                 now = int(time.time())
                 # 過去N期間分のデータを取得
-                # ADX計算には adx_term * 2 本のデータが必要（Task 40g最適化で不足が発生していた）
-                # volatility_term(14) と adx_term*2(28) のうち大きい方に安全マージンを加算
+                # ADX, Donchian, TSMOM等の全指標で必要な最大バー数を確保する
                 volatility_term = Config.get_volatility_term()
                 adx_term = Config.get_config_int('Strategy', 'adx_term', 14)
-                required_candles = max(volatility_term, adx_term * 2) + 10
+                donchian_term = Config.get_config_int('Strategy', 'donchian_buy_term', 30)
+                tsmom_lookback = Config.get_config_int('Strategy', 'tsmom_filter_lookback', 150)
+                required_candles = max(volatility_term, adx_term * 2, donchian_term, tsmom_lookback) + 10
                 lookback_minutes = required_candles * self.time_frame  # ADX計算に十分なデータを確保
                 start_epoch = now - (lookback_minutes * 60)
                 end_epoch = now
