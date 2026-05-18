@@ -78,8 +78,6 @@ class RiskManagement:
         self.stop_AF = Config.get_stop_AF()
         self.stop_AF_add = Config.get_stop_AF_add()
         self.stop_AF_max = Config.get_stop_AF_max()
-        self.stop_AF_add = Config.get_stop_AF_add()
-        self.stop_AF_max = Config.get_stop_AF_max()
         self.surge_follow_price_ratio = Config.get_surge_follow_price_ratio()
         self.stop_ATR = 0
 

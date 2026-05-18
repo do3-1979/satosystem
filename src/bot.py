@@ -379,7 +379,7 @@ class Bot:
                         position_size = round(_si_base * _si_pct, 7)
                         quantity = position_size
                     else:
-                        raise
+                        raise ValueError(f"Unknown trade decision: {trade_decision['decision']}")
 
                     # 注文クラス作成
                     order = Order(config_instance.get_market(),
@@ -713,7 +713,6 @@ class Bot:
         """
         from side import to_exchange_side
         
-        symbol = order['symbol'] # execute orderには使わない
         side = order['side']
         quantity = order['quantity']
         order_type = order['order_type']
