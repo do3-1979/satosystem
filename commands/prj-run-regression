@@ -99,6 +99,11 @@ if [ $FULL_MODE -eq 1 ]; then
     echo -e "${YELLOW}========================================${NC}"
     echo -e "${YELLOW}📈 Test 3b: バックテスト＋可視化実行 [XAUT]${NC}"
     echo -e "${YELLOW}========================================${NC}"
+    # quarterly 実行後に config_xaut.ini の日付が Q1 2026 になるため、
+    # 通年テスト用に全期間（2024/01/01〜2026/05/08）へ戻す
+    sed -i 's|^start_time = .*|start_time = 2024/01/01 00:00|' src/config_xaut.ini
+    sed -i 's|^end_time = .*|end_time = 2026/05/08 23:59|' src/config_xaut.ini
+    echo "config_xaut.ini: 通年テスト期間 2024/01/01〜2026/05/08 に設定"
     if bash backtest_and_visualize_xaut.sh; then
         echo -e "${GREEN}✅ backtest_and_visualize_xaut.sh [XAUT] - 完了${NC}"
     else

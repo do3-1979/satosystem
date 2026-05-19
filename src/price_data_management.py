@@ -253,9 +253,16 @@ class PriceDataManagement:
         # --------------------------------------------
         # 初回の値取得
         if self.prev_close_time == 0:
-            # 120分足をサーバから取得
-            # TODO 取得済テーブルから取得
-            tmp_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch, self.time_frame)
+            # キャッシュ済みデータから初期ウィンドウを構築（APIコール回避）
+            all_data = self.get_back_test_ohlcv_data_by_time_frame(self.time_frame)
+            tmp_ohlcv_data = [d for d in all_data if start_epoch <= d['close_time'] <= end_epoch] if all_data else []
+            if not tmp_ohlcv_data and all_data:
+                tmp_ohlcv_data = [d for d in all_data if d['close_time'] <= end_epoch]
+            if not tmp_ohlcv_data:
+                # キャッシュにデータがない場合はAPIから取得（フォールバック）
+                tmp_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch, self.time_frame)
+            if not tmp_ohlcv_data:
+                return False
             last_ohlcv_data = tmp_ohlcv_data[-1]
 
             self.prev_close_time = last_ohlcv_data['close_time']
@@ -268,9 +275,15 @@ class PriceDataManagement:
             self.latest_ohlcv_data.append(latest_ohlcv_data[-1])
             # pprint.pprint(self.latest_ohlcv_data)
 
-            # PSAR用データをサーバから取得
-            tmp_ohlcv_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch, self.psar_time_frame)
-            self.set_ohlcv_data_by_time_frame(tmp_ohlcv_data, self.psar_time_frame)
+            # PSAR用データもキャッシュから取得
+            all_psar_data = self.get_back_test_ohlcv_data_by_time_frame(self.psar_time_frame)
+            tmp_psar_data = [d for d in all_psar_data if start_epoch <= d['close_time'] <= end_epoch] if all_psar_data else []
+            if not tmp_psar_data and all_psar_data:
+                tmp_psar_data = [d for d in all_psar_data if d['close_time'] <= end_epoch]
+            if not tmp_psar_data:
+                tmp_psar_data = self.exchange.fetch_ohlcv(start_epoch, end_epoch, self.psar_time_frame)
+            if tmp_psar_data:
+                self.set_ohlcv_data_by_time_frame(tmp_psar_data, self.psar_time_frame)
 
             # 初期化時に close_time を設定（1970/01/01 対策）
             self.close_time = last_ohlcv_data['close_time']

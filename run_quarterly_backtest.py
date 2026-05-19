@@ -46,9 +46,10 @@ def get_market_from_config(config_file):
 def get_quarters(symbol="BTC"):
     """シンボルに応じた四半期リストを返す"""
     quarters = []
-    # BTC: 2024/Q1 から開始、XAUT: データ開始が 2025/04 なので 2025/Q2 から
+    # BTC: 2024/Q1 から開始、XAUT: PAXG補完後データ 2023/Q1 から取得可能だが、
+    # required_candles=160本(640h≒27日)のウォームアップを確保するため 2023/Q2 から開始
     if symbol == "XAUT":
-        start = datetime(2025, 4, 14)  # XAUT データ開始2025-04-03から初期ルックバック(40*4H=6.7日)を確保するため
+        start = datetime(2023, 4, 1)  # 2023/Q2 から（2023-01-01 PAXGデータでウォームアップ確保）
     else:
         start = datetime(2024, 1, 1)   # 2024/Q1 から開始
     end = datetime(2026, 3, 31)    # 2026/Q1 まで（フルカバレッジ）

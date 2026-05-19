@@ -49,6 +49,9 @@ RATE_LIMIT_SLEEP = 0.3       # リクエスト間のスリープ（秒）
 # グローバル変数（--symbolで動的に設定される）
 SYMBOL = DEFAULT_SYMBOL
 
+# PAXGをXAUTとして取得する場合の開始日（Bybit PAXG は 2023-01-01 から利用可能）
+PAXG_AS_XAUT_START = datetime(2023, 1, 1, 0, 0)
+
 # シンボル変換マップ: ショート名 → ccxt形式
 SYMBOL_MAP = {
     'BTC':       'BTC/USDT:USDT',
@@ -277,7 +280,8 @@ def upsert_candles(
     conn: sqlite3.Connection,
     candles: list,
     new_start_epoch: int,
-    new_end_epoch: int
+    new_end_epoch: int,
+    store_symbol: str = None
 ) -> int:
     """
     ローソク足をDBにupsertし、全既存行のstart/end_epochを統一する。
@@ -286,17 +290,21 @@ def upsert_candles(
     既存行のstart/end_epochも new_start / new_end に揃えるため、
     backtestの partial match クエリが確実にヒットするようにする。
 
+    Args:
+        store_symbol: DBに保存するシンボル名（省略時は SYMBOL）。
+                      --as-symbol 指定時はこちらを使う（例: PAXGをXAUTとして保存）。
     Returns:
         保存した件数
     """
     if not candles:
         return 0
 
+    target_symbol = store_symbol or SYMBOL
     cur = conn.cursor()
 
     # 新規ローソク足をupsert
     records = [
-        (SYMBOL, new_start_epoch, new_end_epoch, TIMEFRAME_MIN,
+        (target_symbol, new_start_epoch, new_end_epoch, TIMEFRAME_MIN,
          c['close_time'], c['close_time_dt'],
          c['open_price'], c['high_price'], c['low_price'],
          c['close_price'], c['volume'])
@@ -310,12 +318,24 @@ def upsert_candles(
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, records)
 
-    # 既存行のstart/end_epochを統一（partial matchクエリのため必須）
+    # INSERT後の実際のclose_time範囲を再確認し、全行のstart/end_epochを統一
+    # （partial matchクエリのため必須。--as-symbol使用時も既存データの範囲を尊重）
+    cur.execute(
+        "SELECT MIN(close_time), MAX(close_time) FROM candles WHERE symbol=? AND time_frame=?",
+        (target_symbol, TIMEFRAME_MIN)
+    )
+    actual = cur.fetchone()
+    actual_start = int(actual[0]) if actual[0] else new_start_epoch
+    actual_end   = int(actual[1]) if actual[1] else new_end_epoch
+
+    unified_start = min(new_start_epoch, actual_start)
+    unified_end   = max(new_end_epoch,   actual_end)
+
     cur.execute("""
         UPDATE candles
            SET start_epoch = ?, end_epoch = ?
          WHERE symbol = ? AND time_frame = ?
-    """, (new_start_epoch, new_end_epoch, SYMBOL, TIMEFRAME_MIN))
+    """, (unified_start, unified_end, target_symbol, TIMEFRAME_MIN))
 
     conn.commit()
     return len(candles)
@@ -354,6 +374,8 @@ def main():
                         help='DBのデータ抜けをBybitから取得して補完')
     parser.add_argument('--stats',  action='store_true',
                         help='DB統計を表示して終了')
+    parser.add_argument('--as-symbol', type=str, default=None, dest='as_symbol',
+                        help='DBに保存するシンボル名（例: --symbol PAXG/USDT --as-symbol XAUT/USDT でPAXGをXAUTとして保存）')
     args = parser.parse_args()
 
     # --symbol指定時はグローバルSYMBOLを更新
@@ -365,6 +387,18 @@ def main():
             SYMBOL = args.symbol  # 既にccxt形式
         else:
             SYMBOL = f"{args.symbol}:USDT"  # 汎用変換
+
+    # --as-symbol: DB保存時のシンボル名を変換
+    store_symbol = None
+    if args.as_symbol:
+        raw = args.as_symbol
+        if raw in SYMBOL_MAP:
+            store_symbol = SYMBOL_MAP[raw]
+        elif ':' in raw:
+            store_symbol = raw
+        else:
+            store_symbol = f"{raw}:USDT"
+        print(f"  ※ 取得シンボル: {SYMBOL}  → DB保存シンボル: {store_symbol}")
 
     conn = get_connection()
     now_ts = int(time.time())
@@ -450,9 +484,29 @@ def main():
 
     if args.full:
         # 全件re-fetch
-        fetch_start = FULL_FETCH_START
-        fetch_end_ts = now_ts
-        print(f"\n[全件re-fetch] {fetch_start.strftime('%Y/%m/%d')} 〜 今日")
+        # PAXG→XAUT補完の場合は2023-01-01から取得し、既存XAUT開始時刻の直前で止める
+        if store_symbol:
+            fetch_start = PAXG_AS_XAUT_START
+            # 既存の保存先シンボル(store_symbol)の最小close_timeを確認
+            cur_cap = conn.cursor()
+            cur_cap.execute(
+                "SELECT MIN(close_time) FROM candles WHERE symbol=? AND time_frame=?",
+                (store_symbol, TIMEFRAME_MIN)
+            )
+            target_min_ts = cur_cap.fetchone()[0]
+            if target_min_ts:
+                # 既存データの1期間前で止める（上書き防止）
+                fetch_end_ts = int(target_min_ts) - TIMEFRAME_MIN * 60
+                print(f"\n[全件re-fetch ({SYMBOL}→{store_symbol})] {fetch_start.strftime('%Y/%m/%d')} 〜 "
+                      f"{datetime.fromtimestamp(fetch_end_ts).strftime('%Y/%m/%d')} "
+                      f"（既存{store_symbol}開始前まで）")
+            else:
+                fetch_end_ts = now_ts
+                print(f"\n[全件re-fetch ({SYMBOL}→{store_symbol})] {fetch_start.strftime('%Y/%m/%d')} 〜 今日")
+        else:
+            fetch_start = FULL_FETCH_START
+            fetch_end_ts = now_ts
+            print(f"\n[全件re-fetch] {fetch_start.strftime('%Y/%m/%d')} 〜 今日")
         fetch_start_ms = int(fetch_start.timestamp() * 1000)
         fetch_end_ms   = fetch_end_ts * 1000
 
@@ -505,9 +559,11 @@ def main():
         new_end_epoch = max(new_end_epoch, int(candles[-1]['close_time']))
         print(f"  取得件数: {len(candles):,} candles")
         print(f"  範囲    : {candles[0]['close_time_dt']} 〜 {candles[-1]['close_time_dt']}")
+        if store_symbol:
+            print(f"  保存先  : {store_symbol}（取得元: {SYMBOL}）")
         print()
         print("[DB保存中...]")
-        n = upsert_candles(conn, candles, new_start_epoch, new_end_epoch)
+        n = upsert_candles(conn, candles, new_start_epoch, new_end_epoch, store_symbol=store_symbol)
         print(f"  {n:,} candles を保存しました")
     else:
         print("  新規データなし（最新データのみ）")

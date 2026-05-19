@@ -1,0 +1,289 @@
+{
+  "baseline_info": {
+    "name": "XAUT_81.21USD_FundingRateFix_20260519",
+    "version": "v2026.05.19-H-XAUT-02-FundingRateThreshold0.2pct",
+    "created_at": "2026-05-19T09:35:31.321774",
+    "description": "funding_rate_buy_threshold=0.002 (0.2%)に緩和。金強気相場でFRブロックされていたBUYが解禁。+81.21 USD (fr=0.0005比 +5.11 USD, +6.7%改善)",
+    "symbol": "XAUT/USDT:USDT",
+    "config": "config_xaut.ini",
+    "cumulative_pnl_usd": 81.21,
+    "total_trades": 73,
+    "key_params": {
+      "donchian_buy_term": 40,
+      "donchian_sell_term": 40,
+      "adx_filter_threshold": 26,
+      "stop_range": 1.0,
+      "relative_volume_threshold": 1.5,
+      "funding_rate_buy_threshold": 0.002,
+      "funding_rate_sell_threshold": -0.002,
+      "risk_percentage": 0.3,
+      "leverage": 7
+    }
+  },
+  "quarterly_results": [
+    {
+      "year": 2023,
+      "quarter": 2,
+      "start_date": "2023/04/01 00:00",
+      "end_date": "2023/06/30 23:59",
+      "metrics": {
+        "total_pnl": -7.540778,
+        "profit_factor": 0.40674,
+        "max_drawdown": 11.453845,
+        "max_drawdown_rate": 21.245026,
+        "sharpe": -0.883593,
+        "sortino": -0.268951,
+        "recovery_factor": -0.658362,
+        "win_rate": 25.0,
+        "payoff_ratio": 1.564046,
+        "expectancy": -0.725257,
+        "max_consec_losses": 2,
+        "trades": 4,
+        "samples": 546
+      },
+      "timestamp": "2026-05-19T09:32:23.574030"
+    },
+    {
+      "year": 2023,
+      "quarter": 3,
+      "start_date": "2023/07/01 00:00",
+      "end_date": "2023/09/30 23:59",
+      "metrics": {
+        "total_pnl": -2.924524,
+        "profit_factor": 0.707926,
+        "max_drawdown": 8.846619,
+        "max_drawdown_rate": 15.819541,
+        "sharpe": -0.427755,
+        "sortino": -0.19489,
+        "recovery_factor": -0.330581,
+        "win_rate": 83.333333,
+        "payoff_ratio": 3.798876,
+        "expectancy": 1.807464,
+        "max_consec_losses": 1,
+        "trades": 6,
+        "samples": 552
+      },
+      "timestamp": "2026-05-19T09:32:29.197601"
+    },
+    {
+      "year": 2023,
+      "quarter": 4,
+      "start_date": "2023/10/01 00:00",
+      "end_date": "2023/12/31 23:59",
+      "metrics": {
+        "total_pnl": -12.580869,
+        "profit_factor": 0.469501,
+        "max_drawdown": 13.643199,
+        "max_drawdown_rate": 26.718716,
+        "sharpe": -1.331333,
+        "sortino": -0.807058,
+        "recovery_factor": -0.922135,
+        "win_rate": 18.181818,
+        "payoff_ratio": 0.051228,
+        "expectancy": -3.969021,
+        "max_consec_losses": 6,
+        "trades": 11,
+        "samples": 552
+      },
+      "timestamp": "2026-05-19T09:32:35.320420"
+    },
+    {
+      "year": 2024,
+      "quarter": 1,
+      "start_date": "2024/01/01 00:00",
+      "end_date": "2024/03/31 23:59",
+      "metrics": {
+        "total_pnl": 3.363997,
+        "profit_factor": 1.578772,
+        "max_drawdown": 4.06482,
+        "max_drawdown_rate": 8.129639,
+        "sharpe": 0.357651,
+        "sortino": 0.39473,
+        "recovery_factor": 0.827588,
+        "win_rate": 0.0,
+        "payoff_ratio": 0.0,
+        "expectancy": -2.375132,
+        "max_consec_losses": 2,
+        "trades": 2,
+        "samples": 546
+      },
+      "timestamp": "2026-05-19T09:32:41.230270"
+    },
+    {
+      "year": 2024,
+      "quarter": 2,
+      "start_date": "2024/04/01 00:00",
+      "end_date": "2024/06/30 23:59",
+      "metrics": {
+        "total_pnl": 1.101029,
+        "profit_factor": 1.123318,
+        "max_drawdown": 6.411164,
+        "max_drawdown_rate": 11.153691,
+        "sharpe": 0.135462,
+        "sortino": 0.077813,
+        "recovery_factor": 0.171736,
+        "win_rate": 83.333333,
+        "payoff_ratio": 5.539924,
+        "expectancy": 3.119318,
+        "max_consec_losses": 1,
+        "trades": 6,
+        "samples": 546
+      },
+      "timestamp": "2026-05-19T09:32:46.670030"
+    },
+    {
+      "year": 2024,
+      "quarter": 3,
+      "start_date": "2024/07/01 00:00",
+      "end_date": "2024/09/30 23:59",
+      "metrics": {
+        "total_pnl": -5.281901,
+        "profit_factor": 0.579827,
+        "max_drawdown": 5.6271,
+        "max_drawdown_rate": 11.223269,
+        "sharpe": -0.792908,
+        "sortino": -0.338604,
+        "recovery_factor": -0.938654,
+        "win_rate": 0.0,
+        "payoff_ratio": 0.0,
+        "expectancy": -2.880278,
+        "max_consec_losses": 8,
+        "trades": 8,
+        "samples": 552
+      },
+      "timestamp": "2026-05-19T09:32:50.799165"
+    },
+    {
+      "year": 2024,
+      "quarter": 4,
+      "start_date": "2024/10/01 00:00",
+      "end_date": "2024/12/31 23:59",
+      "metrics": {
+        "total_pnl": 13.838009,
+        "profit_factor": 5.082105,
+        "max_drawdown": 1.297527,
+        "max_drawdown_rate": 2.407953,
+        "sharpe": 1.260781,
+        "sortino": 3.652673,
+        "recovery_factor": 10.664913,
+        "win_rate": 66.666667,
+        "payoff_ratio": 7.221517,
+        "expectancy": 5.395031,
+        "max_consec_losses": 1,
+        "trades": 3,
+        "samples": 552
+      },
+      "timestamp": "2026-05-19T09:32:55.671392"
+    },
+    {
+      "year": 2025,
+      "quarter": 1,
+      "start_date": "2025/01/01 00:00",
+      "end_date": "2025/03/31 23:59",
+      "metrics": {
+        "total_pnl": 0.540288,
+        "profit_factor": 1.054022,
+        "max_drawdown": 6.197111,
+        "max_drawdown_rate": 12.394221,
+        "sharpe": 0.064007,
+        "sortino": 0.037357,
+        "recovery_factor": 0.087184,
+        "win_rate": 0.0,
+        "payoff_ratio": 0.0,
+        "expectancy": -4.539458,
+        "max_consec_losses": 7,
+        "trades": 7,
+        "samples": 540
+      },
+      "timestamp": "2026-05-19T09:33:02.016879"
+    },
+    {
+      "year": 2025,
+      "quarter": 2,
+      "start_date": "2025/04/14 00:00",
+      "end_date": "2025/07/13 23:59",
+      "metrics": {
+        "total_pnl": 7.555042,
+        "profit_factor": 1.641877,
+        "max_drawdown": 9.689697,
+        "max_drawdown_rate": 18.961663,
+        "sharpe": 0.601148,
+        "sortino": 0.366954,
+        "recovery_factor": 0.779698,
+        "win_rate": 33.333333,
+        "payoff_ratio": 0.13838,
+        "expectancy": -2.651236,
+        "max_consec_losses": 3,
+        "trades": 6,
+        "samples": 546
+      },
+      "timestamp": "2026-05-19T09:33:10.062233"
+    },
+    {
+      "year": 2025,
+      "quarter": 3,
+      "start_date": "2025/07/01 00:00",
+      "end_date": "2025/09/30 23:59",
+      "metrics": {
+        "total_pnl": 9.78817,
+        "profit_factor": 1.89475,
+        "max_drawdown": 6.77899,
+        "max_drawdown_rate": 13.55798,
+        "sharpe": 0.941583,
+        "sortino": 1.023731,
+        "recovery_factor": 1.443898,
+        "win_rate": 37.5,
+        "payoff_ratio": 1.681822,
+        "expectancy": 0.019786,
+        "max_consec_losses": 5,
+        "trades": 8,
+        "samples": 552
+      },
+      "timestamp": "2026-05-19T09:33:15.195864"
+    },
+    {
+      "year": 2025,
+      "quarter": 4,
+      "start_date": "2025/10/01 00:00",
+      "end_date": "2025/12/31 23:59",
+      "metrics": {
+        "total_pnl": 69.900992,
+        "profit_factor": 14.810481,
+        "max_drawdown": 1.066575,
+        "max_drawdown_rate": 1.182802,
+        "sharpe": 1.914816,
+        "sortino": 11.705939,
+        "recovery_factor": 65.537792,
+        "win_rate": 83.333333,
+        "payoff_ratio": 68.762834,
+        "expectancy": 34.551413,
+        "max_consec_losses": 1,
+        "trades": 6,
+        "samples": 552
+      },
+      "timestamp": "2026-05-19T09:33:19.978025"
+    },
+    {
+      "year": 2026,
+      "quarter": 1,
+      "start_date": "2026/01/01 00:00",
+      "end_date": "2026/03/31 23:59",
+      "metrics": {
+        "total_pnl": 3.450349,
+        "profit_factor": 1.126263,
+        "max_drawdown": 24.658821,
+        "max_drawdown_rate": 37.640521,
+        "sharpe": 0.11438,
+        "sortino": 0.042466,
+        "recovery_factor": 0.139924,
+        "win_rate": 16.666667,
+        "payoff_ratio": 6.556862,
+        "expectancy": 0.59086,
+        "max_consec_losses": 3,
+        "trades": 6,
+        "samples": 540
+      },
+      "timestamp": "2026-05-19T09:33:26.669002"
+    }
+  ]
+}

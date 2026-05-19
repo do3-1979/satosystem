@@ -25,7 +25,7 @@
     }
   },
   "summary": {
-    "todo": 8,
+    "todo": 9,
     "progress": 0,
     "done": 48,
     "in_progress": 0
@@ -33,6 +33,15 @@
   "tasks": {
     "progress": [],
     "todo": [
+      {
+        "id": "48",
+        "category": "データ管理",
+        "title": "Bybit廃止対策: PAXGデータでXAUT履歴を補完",
+        "priority": 5,
+        "status": "in_progress",
+        "started_date": "2026-05-18",
+        "description": "Bybitの日本市場サービス終了リスクへの対応。PAXG/USDT:USDT (Bybit, 2023-01〜)をXAUT代替履歴としてキャッシュDBに追加。prj-update-ohlcv-db --symbol PAXG/USDT --as-symbol XAUT/USDT --full でXAUT 2023-01〜2025-04-02の欠損期間を補完し四半期バックテストの期間を9四半期以上に拡大。"
+      },
       {
         "id": "47",
         "category": "仕様改善",

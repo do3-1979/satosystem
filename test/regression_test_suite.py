@@ -569,6 +569,7 @@ def run_individual_test_modules():
             "test_xaut_regression",
             "test_entry_exit_behavior_regression",
             "test_e2e_backtest_regression",
+            "test_quarterly_backtest_regression",
         ]
         
         all_results = []
