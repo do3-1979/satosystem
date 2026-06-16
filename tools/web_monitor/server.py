@@ -263,13 +263,13 @@ def fetch_candles_local(max_candles: int = MAX_CHART_CANDLES, log_dir: str = Non
     for fpath in files:
         entries = _read_log_file_safe(fpath)
         candles.extend(_entries_to_candles(entries))
-    # zip アーカイブからも読み込む（YYYYMMDDHHMMSS_N.zip 形式）– 最新 20 ファイルまで
+    # zip アーカイブからも読み込む（YYYYMMDDHHMMSS_N.zip 形式）– 最新 90 ファイルまで
     zip_files = sorted(
         [f for f in glob.glob(os.path.join(log_dir, "*.zip"))
          if _ZIP_LOG_RE.match(os.path.basename(f))],
         reverse=True,
     )
-    for zpath in zip_files[:20]:
+    for zpath in zip_files[:90]:
         try:
             with zipfile.ZipFile(zpath) as zf:
                 for info in sorted(zf.infolist(), key=lambda i: i.filename, reverse=True):
@@ -402,13 +402,13 @@ for fpath in files:
     except Exception:
         pass
 
-# zip アーカイブからも読み込む（YYYYMMDDHHMMSS_N.zip 形式）– 最新 20 ファイルまで
+# zip アーカイブからも読み込む（YYYYMMDDHHMMSS_N.zip 形式）– 最新 90 ファイルまで
 zip_files = sorted(
     [f for f in glob.glob(os.path.join(log_dir, '*.zip'))
      if ZIP_LOG_RE.match(os.path.basename(f))],
     reverse=True
 )
-for zpath in zip_files[:20]:
+for zpath in zip_files[:90]:
     try:
         with zipfile.ZipFile(zpath) as zf:
             for info in sorted(zf.infolist(), key=lambda i: i.filename, reverse=True):
