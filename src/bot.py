@@ -440,10 +440,12 @@ class Bot:
                     # portfolio更新
                     # --------------------------------------------
                     if trade_decision["decision"] == "EXIT":
-                        exit_price = price
+                        # ストップ発動時は stop±slippage(exec_price)で約定させる（本番の60秒stop監視相当）。
+                        # exec_price が無いシグナル系EXITは終値約定。バックテストの約定忠実度修正。
+                        exit_price = trade_decision.get("exec_price") or price
                         pnl = self.portfolio.get_profit_and_loss()
                         is_backtest = Config.get_back_test_mode()  # Task 40b
-                        self.portfolio.clear_position_quantity(price, is_backtest=is_backtest)
+                        self.portfolio.clear_position_quantity(exit_price, is_backtest=is_backtest)
                         # EXITで確定した損益を勝敗判定 (正なら勝ち)
                         self.trade_results.append(pnl >= 0)
                         # per-trade損益を記録 (期待値・RR比率計算用)
