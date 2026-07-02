@@ -1,0 +1,19 @@
+# secrets — 絶対にコミットしない
+.api_key
+.api_secret
+*.key
+*.pem
+.env
+secrets/
+
+# data / results
+ohlcv_data/
+out/
+state/
+*.log
+
+# python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
