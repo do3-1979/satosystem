@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>分散CTAボット 仕組み・エッジ・レポートの読み方</title>
+<style>
+  :root {
+    --surface: #fcfcfb; --page: #f9f9f7;
+    --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
+    --grid: #e1e0d9; --axis: #c3c2b7;
+    --blue: #2a78d6; --aqua: #1baf7a; --yellow: #eda100;
+    --green: #008300; --violet: #4a3aa7; --red: #e34948;
+    --orange: #eb6834; --critical: #d03b3b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--page); color: var(--ink); margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.7;
+  }
+  main { max-width: 880px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { font-size: 24px; margin-bottom: 4px; }
+  .subtitle { color: var(--ink2); font-size: 14px; margin-top: 0; }
+  h2 {
+    font-size: 18px; margin-top: 48px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--grid);
+  }
+  h3 { font-size: 15px; color: var(--ink); margin-top: 28px; }
+  p, li { font-size: 14.5px; color: var(--ink); }
+  .lead { font-size: 15.5px; color: var(--ink2); }
+  code, .mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.92em; background: var(--surface);
+    border: 1px solid var(--grid); border-radius: 4px; padding: 1px 5px;
+  }
+  pre {
+    background: var(--surface); border: 1px solid var(--grid);
+    border-radius: 8px; padding: 14px 16px; overflow-x: auto;
+    font-size: 13px; line-height: 1.6;
+  }
+  pre code { border: none; background: none; padding: 0; }
+  table {
+    border-collapse: collapse; width: 100%; font-size: 13.5px;
+    background: var(--surface); margin: 12px 0 8px;
+  }
+  th, td {
+    border-bottom: 1px solid var(--grid); padding: 8px 10px; text-align: left;
+    vertical-align: top;
+  }
+  th { color: var(--ink2); font-weight: 600; background: var(--page); }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .card {
+    background: var(--surface); border: 1px solid var(--grid);
+    border-radius: 8px; padding: 16px 18px; margin: 14px 0;
+  }
+  .callout {
+    border-left: 3px solid var(--blue); background: var(--surface);
+    border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 16px 0;
+    font-size: 14px; color: var(--ink2);
+  }
+  .callout.warn { border-left-color: var(--critical); }
+  .callout b { color: var(--ink); }
+  .pipeline {
+    display: flex; flex-wrap: wrap; gap: 6px; align-items: stretch;
+    margin: 18px 0; font-size: 13px;
+  }
+  .pipeline .step {
+    flex: 1 1 140px; background: var(--surface); border: 1px solid var(--grid);
+    border-radius: 8px; padding: 12px; text-align: center; color: var(--ink);
+  }
+  .pipeline .arrow {
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 18px; padding: 0 2px;
+  }
+  .pipeline .step .tag {
+    display: block; font-size: 11px; color: var(--muted); margin-top: 4px;
+  }
+  .loopnote { text-align: center; color: var(--muted); font-size: 12.5px; margin-top: -6px; }
+  .pos { color: var(--blue); font-weight: 600; }
+  .neg { color: var(--red); font-weight: 600; }
+  .status-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--aqua); margin-right: 6px;
+  }
+  .toc { font-size: 13.5px; color: var(--ink2); }
+  .toc a { color: var(--blue); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  a { color: var(--blue); }
+  .badge {
+    display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px;
+    background: var(--page); border: 1px solid var(--grid); color: var(--ink2);
+  }
+  footer { color: var(--muted); font-size: 12px; margin-top: 56px; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>分散CTAボット — 仕組み・エッジ・レポートの読み方</h1>
+<p class="subtitle">satosystem <code>main</code>ブランチ / 対象読者: トレード用語に詳しくないソフトウェアエンジニア</p>
+
+<p class="lead">
+このボットは現在<b>ペーパートレード段階</b>（実発注なし）で、RPi上で4時間ごとに自動実行されています。
+本ページはコードそのもの（<code>cta/</code>以下）が何をしていて、なぜ利益が出ると期待しているのか、
+そして生成される<a href="results/2026-07-03/report.html">バックテストレポート</a>の数字をどう読むかを、
+エンジニア向けの比喩で説明します。
+</p>
+
+<p class="toc">
+目次:
+<a href="#mechanism">① 仕組み</a> ·
+<a href="#edge">② なぜ優位性があるか</a> ·
+<a href="#report">③ レポートの読み方</a> ·
+<a href="#glossary">④ 用語集</a> ·
+<a href="#status">⑤ 現状</a>
+</p>
+
+<h2 id="mechanism">① 仕組み — 4時間ごとに回る制御ループ</h2>
+
+<p>ボットの本体は、以下を4時間足（4H）が確定するたびに実行するパイプラインです（<code>cta/paper.py</code> の
+<code>run_once()</code>、バックテストでは <code>cta/engine.py</code> が同じロジックを時系列全体に適用）。</p>
+
+<div class="pipeline">
+  <div class="step">価格データ取得<span class="tag">cta/data.py</span></div>
+  <div class="arrow">→</div>
+  <div class="step">トレンド判定<span class="tag">cta/strategy.py</span></div>
+  <div class="arrow">→</div>
+  <div class="step">ポジションサイズ計算<span class="tag">vol targeting</span></div>
+  <div class="arrow">→</div>
+  <div class="step">発注（約定）<span class="tag">cta/execution.py</span></div>
+  <div class="arrow">→</div>
+  <div class="step">リスク監視<span class="tag">circuit breaker</span></div>
+</div>
+<p class="loopnote">↻ 4時間ごとにこのループが回る</p>
+
+<h3>① トレンド判定（シグナル生成）</h3>
+<p>
+対象7銘柄（金2種 <code>PAXG</code><code>XAUT</code> ＋ 暗号資産5種 <code>BTC</code><code>ETH</code><code>SOL</code><code>BNB</code><code>XRP</code>）
+それぞれについて、「速い移動平均」と「遅い移動平均」を比較します。速い方が上なら+1（買い方向）、下なら−1（売り方向）。
+これを3種類の時間スケール（短期・中期・長期）で計算し、平均をシグナル強度とします。
+</p>
+<p>
+信号処理でいう<b>ローパスフィルタを複数の時定数で重ねて多数決を取る</b>ようなものです。
+根拠にしている経験則は「直近上がっているものは、しばらく上がり続ける傾向がある」（momentum、詳細は次章）。
+</p>
+
+<h3>② ポジションサイズ計算（ボラティリティ・ターゲティング）</h3>
+<p>この戦略の核です。各銘柄の値動きの荒さ（ボラティリティ）を測定し、荒い銘柄ほど小さく、
+穏やかな銘柄ほど大きくポジションを持ちます。さらにポートフォリオ全体のリスク量が常に
+一定水準（年率15%程度の変動）になるよう自動調整します。</p>
+<div class="callout">
+<b>比喩：</b> auto-scaling / rate limiter に近い発想です。トラフィック（＝市場の荒さ）が急増したら
+自動的に処理量（＝ポジションサイズ）を絞り、落ち着いたら増やす。これにより「暴落時にフルポジションを
+抱えて爆死する」という事故を構造的に防ぎます。
+</div>
+
+<h3>③ 発注（約定モデル）</h3>
+<p>
+シグナルはバー<b>確定後</b>に判定し、実際の注文は<b>次の4H足の始値±スリッページ</b>で約定させます。
+「判定した瞬間の終値で約定した」という同足約定は、コードの構造上そもそも不可能です
+（<code>cta/execution.py</code> がバックテストとペーパートレードの両方で使われる唯一の約定処理で、
+実装を2箇所に分けていません）。
+</p>
+<div class="callout warn">
+<b>これが前身プロジェクト最大の反省点への対策です。</b> 前身botは「損切りは安値/高値で正しく判定していたのに、
+実際の約定価格計算だけが死にコードになっていて、実際は4H終値で約定していた」というバグがあり、
+本番では絶対に取れない利益を1年以上「儲かっている」と誤認していました。
+本プロジェクトでは約定ロジックを一本化し、この種の乖離が構造的に起こり得ないようにしています。
+</div>
+
+<h3>④ リスク監視（サーキットブレーカー）</h3>
+<p>
+文字通り、分散システムのCircuit Breakerパターンと同じです。含み損が資産のピークから35%に達したら
+リスク量を半分に、40%に達したら全ポジションを強制クローズして停止します。一度停止したら
+人間が確認するまで自動再開しません。</p>
+
+<h2 id="edge">② なぜ優位性（エッジ）があると考えるか</h2>
+
+<p>2つの独立した根拠を組み合わせています。</p>
+
+<h3>根拠1: トレンドフォロー自体の経済的合理性</h3>
+<p>
+人間は新しい情報に最初は反応が鈍く（アンダーリアクション）、後から追随して群がる（herding）傾向があるため、
+価格トレンドは統計的にランダムウォークより持続しやすい、というのが1970年代以降の商品先物運用
+（CTA: Commodity Trading Advisor）業界で数十年観測されてきた現象です。
+「なぜ儲かるか説明できないパターンマッチング」ではなく、行動経済学的な裏付けのある仮説です。
+</p>
+
+<h3>根拠2: 分散によるリスク低減</h3>
+<p>
+金と暗号資産はほとんど独立して動きます。<b>独立した複数の冗長系を組み合わせると全体の可用性が上がる</b>のと
+同じ理屈で、複数の値動きの発生源を持つことで「1つの相場が外れても全滅しない」構造にしています。
+実際、後述のとおり単一資産・単一四半期への依存度は低く出ています（利益集中度 参照）。
+</p>
+
+<div class="callout warn">
+<b>正直な限界：</b> これは「証明されたエッジ」ではなく「統計的に有望だが未確定」の段階です
+（<a href="#report">③ 統計的検出力</a> 参照）。だからこそ実発注をせず、ペーパートレードで
+実績を積んでいる段階にあります。
+</div>
+
+<h2 id="report">③ レポートの読み方</h2>
+
+<p>
+<a href="results/2026-07-03/report.html">実際のバックテストレポート（2026-07-03生成）</a>
+の主要な数字を、エンジニア向けに翻訳します。期間は2021-09〜2026-07（約4.76年）、
+連続運用・初期資金 $1,000 の想定です。
+</p>
+
+<table>
+<thead><tr><th>レポートの表記</th><th>値</th><th>エンジニア的翻訳</th></tr></thead>
+<tbody>
+<tr><td>最終資産</td><td class="num">$1,000 → $2,156</td><td>4.76年で資産2.16倍</td></tr>
+<tr><td>年率リターン</td><td class="num pos">+17.5%/yr</td><td>複利ベースの年間平均成長率</td></tr>
+<tr><td>Sharpe比</td><td class="num">1.00</td>
+    <td><b>リターンのS/N比</b>だと思ってください。利益(signal)を値動きの荒さ=ボラティリティ(noise)で割った値。
+    1.0は「悪くないがトップクラスではない」水準（業界の優良ファンドは1.5〜2.0）</td></tr>
+<tr><td>Sortino比</td><td class="num">1.32</td>
+    <td>Sharpeの改良版。上振れ変動を「ノイズ」として罰しない版（下落だけを分母に使う）</td></tr>
+<tr><td>最大ドローダウン</td><td class="num neg">28.1%（437日）</td>
+    <td>資産のピークから最大28.1%含み損に沈んだ。回復に437日（約1.2年）かかった —
+    レイテンシで言えばp100みたいなもの</td></tr>
+<tr><td>取引数</td><td class="num">1,654件</td><td>4.76年で1,654回発注</td></tr>
+<tr><td>コスト負担率</td><td class="num">4.4%/yr</td>
+    <td>手数料+スプレッド+資金調達コストで年利を4.4ポイント押し下げている</td></tr>
+<tr><td>利益集中度（四半期）</td><td class="num">22%</td>
+    <td>最も儲かった四半期が全利益の22%を占める。<b>低いほど良い</b>
+    （前身botは63%＝ほぼ1回のギャンブルで勝っていた）</td></tr>
+<tr><td>利益集中度（銘柄）</td><td class="num">28%</td>
+    <td>同上を銘柄で。金2種+BTCで大半を稼ぎ、ETHは損失</td></tr>
+</tbody>
+</table>
+
+<h3>Walk-forward（年ごとの独立検証）</h3>
+<p>
+「1年分のデータで学習し次の年で試す」のではなく、「固定ルールを各年に当てて機能するか」を見ています
+（テストスイートを複数の環境で回すのと同じ発想。パラメータは全期間共通で、年ごとにチューニングしていません）。
+</p>
+<table>
+<thead><tr><th>年</th><th>年率</th><th>Sharpe</th><th>何が起きたか</th></tr></thead>
+<tbody>
+<tr><td>2022</td><td class="num pos">+11.0%</td><td class="num">0.68</td><td>良好</td></tr>
+<tr><td>2023</td><td class="num neg">−15.8%</td><td class="num neg">−1.06</td>
+    <td><b>唯一の負け年。</b>トレンドが頻繁に反転し、そのたびに損切り→再エントリーのコストだけがかさむ
+    「往復ビンタ」相場（whipsaw）。制御システムで言えば発振して収束しない状態</td></tr>
+<tr><td>2024</td><td class="num pos">+31.1%</td><td class="num">1.57</td><td>良好</td></tr>
+<tr><td>2025</td><td class="num pos">+39.9%</td><td class="num">2.11</td><td>好調</td></tr>
+<tr><td>2026(上期)</td><td class="num pos">+50.9%</td><td class="num">2.55</td><td>好調（半年分のみ、参考程度）</td></tr>
+</tbody>
+</table>
+
+<h3>コストストレステスト</h3>
+<p>
+手数料・スリッページを意図的に3倍・5倍にして耐性を確認します
+（負荷テストで想定の3倍トラフィックを流すのと同じ発想）。
+</p>
+<table>
+<thead><tr><th>倍率</th><th>年率</th><th>Sharpe</th><th>状態</th></tr></thead>
+<tbody>
+<tr><td>1x（現実想定）</td><td class="num pos">+17.5%</td><td class="num">1.00</td><td>正常</td></tr>
+<tr><td>3x</td><td class="num pos">+6.1%</td><td class="num">0.37</td><td>生き残るが劣化</td></tr>
+<tr><td>5x</td><td class="num neg">−8.6%</td><td class="num neg">−0.91</td>
+    <td><b>死亡</b>（サーキットブレーカー作動）</td></tr>
+</tbody>
+</table>
+<p>想定コストの3倍までは耐えるが5倍だと破綻する、という耐性の限界が定量的にわかっています。</p>
+
+<h3>統計的検出力</h3>
+<div class="callout">
+Sharpe比の t値（統計的な確からしさの指標）は <b>1.78</b> です。目安として2.0以上で
+「かなり自信を持てる」水準とされ、1.78は<b>「有望なシグナルだが、まだ確定と言い切れる域には
+届いていない」</b>という位置づけです。これが実発注をせずペーパートレードで実績を積んでいる理由そのものです。
+仮に本当はエッジが無く偶然この結果になっていた場合、これから半年〜1年運用すると成績が悪化していくはずで、
+それを見極めるのが今の段階の目的です。
+</div>
+
+<h2 id="glossary">④ 用語集</h2>
+<table>
+<tbody>
+<tr><td class="mono">シグナル価格 / signal_price</td><td>判定した瞬間（バー確定時）の価格。ここでは絶対に約定しない</td></tr>
+<tr><td class="mono">ref価格 / fill価格</td><td>ref=約定基準価格（次足始値）、fill=そこにスリッページを乗せた実際の約定価格</td></tr>
+<tr><td class="mono">スリッページ</td><td>「欲しい価格」と「実際に約定する価格」の差。買いは高く、売りは安く滑る想定でコストに織り込む</td></tr>
+<tr><td class="mono">funding（資金調達コスト）</td><td>暗号資産の無期限先物（perp）特有の、ロング/ショート間でやり取りされる定期的な手数料</td></tr>
+<tr><td class="mono">グロスレバレッジ</td><td>保有ポジションの絶対値合計 ÷ 資産額。1.0xなら「資産と同額だけ持っている」</td></tr>
+<tr><td class="mono">turnover</td><td>年間の売買代金の回転率。高いほど手数料コストがかさむ</td></tr>
+</tbody>
+</table>
+
+<h2 id="status">⑤ 現状</h2>
+<div class="card">
+<p><span class="status-dot"></span><b>ペーパートレード稼働中</b>（実発注なし） <span class="badge">RPi常時稼働</span></p>
+<ul>
+<li>4時間足確定の5分後、1日6回、RPi上のcronで自動実行（<code>run_paper.py --once</code>）</li>
+<li>全取引の signal価格・ref価格・fill価格・手数料・スリッページを <code>state/paper_trades.csv</code> にロギング中</li>
+<li>実発注コードは未実装。実運用に進む場合はユーザーの明示的承認後、最小サイズから段階的に移行する方針</li>
+<li>次の確認ポイント: 数週間〜1ヶ月分のペーパー実績が貯まった時点で、
+    バックテストの想定コスト・約定価格とのズレ（乖離）を検証する</li>
+</ul>
+</div>
+
+<footer>
+生成: 2026-07-03 / 関連ファイル: <code>cta/strategy.py</code> <code>cta/execution.py</code>
+<code>cta/engine.py</code> <code>cta/paper.py</code> /
+<a href="../README.md">README</a> ·
+<a href="results/2026-07-03/report.html">バックテストレポート</a>
+</footer>
+
+</main>
+</body>
+</html>
