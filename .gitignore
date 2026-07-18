@@ -1,6 +1,7 @@
 # secrets — 絶対にコミットしない
 .api_key
 .api_secret
+.gmail
 *.key
 *.pem
 .env
