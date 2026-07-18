@@ -119,6 +119,25 @@ class PaperTrader:
         t = int(np.searchsorted(times, now, side="right")) - 1
         if t < 0:
             raise RuntimeError("no completed bar in cache")
+        is_new_bar = times[t] > self.last_bar
+
+        # 0) funding授受（バーtへ持ち越したポジションに、当バー区間のレートで課す）。
+        #    cta/engine.py のバックテストと同じタイミング（このバーの新規リバランス
+        #    より前）で、新バーを検出した回だけ1回課す。
+        #    【2026-07-18判明】これまでpaper.pyにはfunding計上が一切無く、
+        #    バックテストで最大のコスト要因(funding>fee>slip)が抜け落ちていた。
+        funding_paid_this_cycle = 0.0
+        if is_new_bar:
+            fr, fr_conservative = data_mod.load_funding(
+                cfg.funding_pkl, cfg.symbols, times, cfg.timeframe_min,
+                cfg.funding_default_annual)
+            for j, sym in enumerate(cfg.symbols):
+                px = closes[t, j]
+                if np.isnan(px):
+                    continue
+                cost = self.pf.apply_funding(sym, px, fr[t, j],
+                                             conservative=bool(fr_conservative[j]))
+                funding_paid_this_cycle += cost
 
         # 1) 時価評価とブレーカーを最優先で判定する。
         #    バーが未更新（API障害等）でも暴落時のキルスイッチは作動させる。
@@ -143,7 +162,7 @@ class PaperTrader:
                                   reason="circuit_breaker")
                     fills.append(ex.execute_order(od, prices[sym],
                                                   self.cost_model, ts=now))
-        elif times[t] <= self.last_bar:
+        elif not is_new_bar:
             self._log_equity(now, eq, self.pf.gross_notional(prices), vol_scale)
             self._save_state()
             return {"skipped": "bar already processed", "bar": float(times[t]),
@@ -184,4 +203,5 @@ class PaperTrader:
         return {"bar": float(times[t]), "equity": eq_after,
                 "n_fills": len(fills), "vol_scale": vol_scale,
                 "halted": self.breaker.halted,
+                "funding_paid_usd": funding_paid_this_cycle,
                 "positions": dict(self.pf.positions)}

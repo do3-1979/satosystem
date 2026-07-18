@@ -3,6 +3,7 @@
 執行コードパスがバックテストと共有されていること（独自の約定式が無いこと）を
 前提に、状態永続化・冪等性・killswitchを検証する。ネットワークは使わない。"""
 import numpy as np
+import pytest
 
 from cta.paper import PaperTrader
 from tests.test_engine import make_db, make_cfg, trending_market, T0, STEP
@@ -48,6 +49,47 @@ def test_state_persists_across_instances(tmp_path):
     trader2 = PaperTrader(cfg, base_dir=str(tmp_path))
     assert trader2.pf.positions == r1["positions"]
     assert trader2.pf.cash_usd == trader.pf.cash_usd
+
+
+def test_funding_is_charged_on_new_bar_for_held_position(tmp_path):
+    """2026-07-18判明の重大な欠落の回帰テスト: paper.pyにはfunding計上が
+    一切無く、backtest(cta/engine.py)で最大のコスト要因(funding>fee>slip)と
+    されていたものが常にゼロ扱いになっていた。
+
+    前バーから持ち越したポジションに対し、新バー検出時に必ず1回だけ
+    fundingが課金されることを検証する（cta/execution.funding_cost_usdと
+    同じ計算式・makeCfgのconservative年率5%を使用）。"""
+    db, _, closes = trending_market(tmp_path, drift=0.004, noise=0.005)
+    trader, cfg = _mk_trader(tmp_path, db)
+    now1 = T0 + (len(closes) - 2) * STEP + 60
+    r1 = trader.run_once(refresh=False, price_fn=lambda s: closes[-3], now=now1)
+    assert r1["positions"]["A"] != 0.0  # ポジションを持った状態を作る
+    cash_before = trader.pf.cash_usd
+    held_qty = trader.pf.positions["A"]
+
+    now2 = now1 + STEP  # 次のバー
+    r2 = trader.run_once(refresh=False, price_fn=lambda s: closes[-3], now=now2)
+
+    assert r2["funding_paid_usd"] > 0  # conservativeモードなので符号に関わらずコスト
+    # 期待値: |held_qty| * price * annual_rate(0.05) / bars_per_year
+    from cta import execution as ex
+    price = closes[-2]
+    expected = ex.funding_cost_usd(held_qty, price, 0.05 / cfg.bars_per_year,
+                                   conservative=True)
+    assert r2["funding_paid_usd"] == pytest.approx(expected, rel=1e-6)
+
+
+def test_funding_not_double_charged_on_duplicate_cron_call(tmp_path):
+    db, _, closes = trending_market(tmp_path, drift=0.004, noise=0.005)
+    trader, cfg = _mk_trader(tmp_path, db)
+    now = T0 + len(closes) * STEP + 60
+    trader.run_once(refresh=False, price_fn=lambda s: closes[-1], now=now)
+    cash_after_first = trader.pf.cash_usd
+
+    trader2 = PaperTrader(cfg, base_dir=str(tmp_path))
+    r2 = trader2.run_once(refresh=False, price_fn=lambda s: closes[-1], now=now)
+    assert "skipped" in r2
+    assert trader2.pf.cash_usd == cash_after_first  # funding再課金されていない
 
 
 def test_killswitch_closes_all_and_stays_halted(tmp_path):
