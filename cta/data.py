@@ -100,9 +100,17 @@ def fetch_and_cache(db_path, symbol, timeframe_min, since_epoch, until_epoch,
                 time.sleep(2 ** attempt)
         if not batch:
             break
+        now_ms = time.time() * 1000
         for o in batch:
             open_ms = o[0]
             close_time = open_ms // 1000 + timeframe_min * 60
+            if close_time * 1000 > now_ms:
+                # まだ確定していない(形成中の)バーはキャッシュしない。
+                # 取引所のfetch_ohlcvは末尾に形成中バーを含めて返すため、
+                # ここで弾かないと未確定値が「確定値」として永久に固定される
+                # （INSERT ... WHERE NOT EXISTSのため後から真の終値で上書きされない。
+                #   2026-07-18判明: 全銘柄で発生していた重大バグ）。
+                continue
             cur.execute(
                 """INSERT INTO candles (symbol, start_epoch, end_epoch, time_frame,
                        close_time, close_time_dt, open_price, high_price, low_price,
