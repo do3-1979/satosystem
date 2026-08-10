@@ -52,8 +52,12 @@ def run_backtest(cfg, start_epoch=None, end_epoch=None, cost_mult=1.0,
     vol_window_days = vol_window_days or cfg.vol_window_days
     target_vol = target_vol if target_vol is not None else cfg.target_vol
 
-    times, opens_df, closes_df = data_mod.load_universe(
-        cfg.db_path, cfg.symbols, cfg.timeframe_min)
+    if cfg.is_etf:
+        from . import etf_data
+        times, opens_df, closes_df = etf_data.load_universe(cfg.db_path, cfg.symbols)
+    else:
+        times, opens_df, closes_df = data_mod.load_universe(
+            cfg.db_path, cfg.symbols, cfg.timeframe_min)
     opens = opens_df.to_numpy(float)
     closes = closes_df.to_numpy(float)
     T, N = closes.shape
@@ -67,9 +71,14 @@ def run_backtest(cfg, start_epoch=None, end_epoch=None, cost_mult=1.0,
                            for j in range(N)])
     vol = np.column_stack([st.trailing_vol(rets[:, j], vol_window_days * bpd, bpy)
                            for j in range(N)])
-    fr, fr_conservative = data_mod.load_funding(
-        cfg.funding_pkl, cfg.symbols, times, cfg.timeframe_min,
-        cfg.funding_default_annual)
+    if cfg.is_etf:
+        # ETFにfundingは無い（保有コストは信託報酬として価格に内包済み）
+        fr = np.zeros((T, N))
+        fr_conservative = np.zeros(N, dtype=bool)
+    else:
+        fr, fr_conservative = data_mod.load_funding(
+            cfg.funding_pkl, cfg.symbols, times, cfg.timeframe_min,
+            cfg.funding_default_annual)
 
     # 時価評価用: 上場前/欠損バーは直近有効終値で評価
     closes_ff = closes_df.ffill().to_numpy(float)
@@ -155,7 +164,8 @@ def run_backtest(cfg, start_epoch=None, end_epoch=None, cost_mult=1.0,
         # 5) リバランス判定（終値ベース → 注文は次バー始値で執行される）
         if (t - t_begin) % reb == 0 and eq > 0:
             w = st.target_weights(sig[t], vol[t], rets[t - vol_window_days * bpd:t],
-                                  target_vol * vol_scale, cfg.max_gross, bpy)
+                                  target_vol * vol_scale, cfg.max_gross, bpy,
+                                  long_only=cfg.long_only)
             pending = []
             for j, sym in enumerate(cfg.symbols):
                 px = closes[t, j]

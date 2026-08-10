@@ -26,13 +26,24 @@ class Config:
     init_capital_usd: float = 1000.0
     config_path: str = ""
     config_sha1: str = ""
+    # market='crypto': 4H足・ccxt・funding課金あり（従来）
+    # market='etf'   : 日足・yfinance・funding無し・年間営業日252日
+    market: str = "crypto"
+    long_only: bool = False
+
+    @property
+    def is_etf(self):
+        return self.market == "etf"
 
     @property
     def bars_per_day(self):
-        return 24 * 60 // self.timeframe_min
+        return max(1, 24 * 60 // self.timeframe_min)
 
     @property
     def bars_per_year(self):
+        # ETFは取引所の営業日ベース（年252日）。暦日365日で計算するとvol推定が狂う
+        if self.is_etf:
+            return 252
         return self.bars_per_day * 365
 
 
@@ -48,16 +59,21 @@ def load_config(path):
         f_, s_ = pair.strip().split(":")
         horizons.append((int(f_), int(s_)))
 
-    gold_annual = cp.getfloat("costs", "funding_default_annual_gold")
-    crypto_annual = cp.getfloat("costs", "funding_default_annual_crypto")
-    funding_default = {
-        s: (gold_annual if s.startswith(("XAUT", "PAXG")) else crypto_annual)
-        for s in symbols
-    }
+    market = cp.get("data", "market", fallback="crypto").strip()
+    if market == "etf":
+        # ETFにfundingは存在しない（保有コストは信託報酬のみで、価格に内包済み）
+        funding_default = {s: 0.0 for s in symbols}
+    else:
+        gold_annual = cp.getfloat("costs", "funding_default_annual_gold")
+        crypto_annual = cp.getfloat("costs", "funding_default_annual_crypto")
+        funding_default = {
+            s: (gold_annual if s.startswith(("XAUT", "PAXG")) else crypto_annual)
+            for s in symbols
+        }
 
     base = os.path.dirname(os.path.dirname(os.path.abspath(path)))
-    funding_pkl = cp.get("data", "funding_pkl")
-    if not os.path.isabs(funding_pkl):
+    funding_pkl = cp.get("data", "funding_pkl", fallback="")
+    if funding_pkl and not os.path.isabs(funding_pkl):
         funding_pkl = os.path.join(base, funding_pkl)
 
     return Config(
@@ -80,4 +96,6 @@ def load_config(path):
         init_capital_usd=cp.getfloat("capital", "init_capital_usd"),
         config_path=os.path.abspath(path),
         config_sha1=hashlib.sha1(raw.encode()).hexdigest()[:12],
+        market=market,
+        long_only=cp.getboolean("strategy", "long_only", fallback=False),
     )

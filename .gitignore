@@ -12,6 +12,8 @@ ohlcv_data/
 out/
 state/
 *.log
+# ETFキャッシュは fetch_and_cache で再生成できるためコミットしない(13MB)
+data/*.db
 
 # python
 __pycache__/

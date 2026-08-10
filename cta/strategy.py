@@ -76,12 +76,19 @@ def portfolio_vol(weights, rets_window, bars_per_year):
     return float(np.sqrt(max(w @ cov @ w, 0.0)))
 
 
-def target_weights(sig_t, vol_t, rets_window, target_vol, max_gross, bars_per_year):
+def target_weights(sig_t, vol_t, rets_window, target_vol, max_gross, bars_per_year,
+                   long_only=False):
     """時点tの目標ウェイト（対equity比、符号付き）を返す。
 
     1. 逆volでシグナルを配分（リスク均等化）
     2. ポートフォリオvolがtarget_volになるようスケール
     3. グロスレバレッジをmax_grossでキャップ
+
+    long_only=True の場合、下降トレンド銘柄はショートせず現金化する。
+    2026-08の検証で、ETFユニバースではロングのみのほうが全指標で優れると判明
+    （Sharpe 0.50→0.73, MaxDD 33%→23%）。株式・債券・商品は長期的に上昇する
+    性質があり、ショートはそれに逆らうため。実務上も信用取引口座・貸株調達が
+    不要になり、端数株（fractional shares）が使える利点がある。
     """
     N = len(sig_t)
     raw = np.zeros(N)
@@ -89,6 +96,8 @@ def target_weights(sig_t, vol_t, rets_window, target_vol, max_gross, bars_per_ye
         s, v = sig_t[j], vol_t[j]
         if not np.isnan(s) and not np.isnan(v) and v > 1e-6:
             raw[j] = s / v
+    if long_only:
+        raw = np.maximum(raw, 0.0)
     gross_raw = np.abs(raw).sum()
     if gross_raw < 1e-12:
         return np.zeros(N)
