@@ -27,13 +27,17 @@ EQUITY_CSV = "state/paper_equity.csv"
 
 
 class PaperTrader:
-    def __init__(self, cfg, base_dir=".", exchange_id="bybit"):
+    def __init__(self, cfg, base_dir=".", exchange_id="bybit", state_prefix=None):
         self.cfg = cfg
         self.base = base_dir
         self.exchange_id = exchange_id
-        self.state_path = os.path.join(base_dir, STATE_FILE)
-        self.trades_path = os.path.join(base_dir, TRADES_CSV)
-        self.equity_path = os.path.join(base_dir, EQUITY_CSV)
+        # 暗号資産版とETF版を並走させるため、状態ファイルはmarketごとに分ける。
+        # 既存の暗号資産の記録(state/paper_*)はファイル名を変えず互換を保つ。
+        pre = state_prefix if state_prefix is not None else (
+            "etf_" if cfg.is_etf else "")
+        self.state_path = os.path.join(base_dir, f"state/{pre}paper_state.json")
+        self.trades_path = os.path.join(base_dir, f"state/{pre}paper_trades.csv")
+        self.equity_path = os.path.join(base_dir, f"state/{pre}paper_equity.csv")
         os.makedirs(os.path.dirname(self.state_path), exist_ok=True)
         self.cost_model = ex.CostModel(cfg.fee_rate, cfg.slip_rate,
                                        cfg.min_notional_usd)
@@ -91,13 +95,34 @@ class PaperTrader:
 
     # --- データ取得 -----------------------------------------------
     def refresh_cache(self, lookback_days=3):
+        if self.cfg.is_etf:
+            from . import etf_data
+            start = dt.datetime.utcfromtimestamp(
+                time.time() - lookback_days * 86400).strftime('%Y-%m-%d')
+            etf_data.fetch_and_cache(self.cfg.db_path, self.cfg.symbols, start=start)
+            return
         since = time.time() - lookback_days * 86400
         for sym in self.cfg.symbols:
             data_mod.fetch_and_cache(self.cfg.db_path, sym,
                                      self.cfg.timeframe_min, since,
                                      time.time(), self.exchange_id)
 
+    def _load_universe(self):
+        if self.cfg.is_etf:
+            from . import etf_data
+            return etf_data.load_universe(self.cfg.db_path, self.cfg.symbols)
+        return data_mod.load_universe(self.cfg.db_path, self.cfg.symbols,
+                                      self.cfg.timeframe_min)
+
     def live_mid(self, symbol):
+        if self.cfg.is_etf:
+            # ETFは取引時間外が長いため、直近の確定終値を基準価格とする。
+            # 実発注時(Phase 5)はIBKRのリアルタイム気配に差し替える。
+            import yfinance as yf
+            h = yf.Ticker(symbol).history(period='1d', auto_adjust=True)
+            if len(h) == 0:
+                raise RuntimeError(f"no price for {symbol}")
+            return float(h['Close'].iloc[-1])
         import ccxt
         ex_ = getattr(ccxt, self.exchange_id)({"enableRateLimit": True})
         t = ex_.fetch_ticker(symbol)
@@ -112,8 +137,7 @@ class PaperTrader:
         cfg = self.cfg
         if refresh:
             self.refresh_cache()
-        times, opens_df, closes_df = data_mod.load_universe(
-            cfg.db_path, cfg.symbols, cfg.timeframe_min)
+        times, opens_df, closes_df = self._load_universe()
         closes = closes_df.to_numpy(float)
         now = now or time.time()
         t = int(np.searchsorted(times, now, side="right")) - 1
@@ -127,7 +151,7 @@ class PaperTrader:
         #    【2026-07-18判明】これまでpaper.pyにはfunding計上が一切無く、
         #    バックテストで最大のコスト要因(funding>fee>slip)が抜け落ちていた。
         funding_paid_this_cycle = 0.0
-        if is_new_bar:
+        if is_new_bar and not cfg.is_etf:   # ETFにfundingは存在しない
             fr, fr_conservative = data_mod.load_funding(
                 cfg.funding_pkl, cfg.symbols, times, cfg.timeframe_min,
                 cfg.funding_default_annual)
@@ -180,7 +204,8 @@ class PaperTrader:
                               for j in range(closes.shape[1])])
             w = st.target_weights(sig_t, vol_t,
                                   rets[t - cfg.vol_window_days * bpd:t],
-                                  cfg.target_vol * vol_scale, cfg.max_gross, bpy)
+                                  cfg.target_vol * vol_scale, cfg.max_gross, bpy,
+                                  long_only=cfg.long_only)
             for j, sym in enumerate(cfg.symbols):
                 if sym not in prices or np.isnan(closes[t, j]):
                     continue
