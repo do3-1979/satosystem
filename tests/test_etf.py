@@ -80,6 +80,26 @@ def test_provisional_value_gets_corrected_on_rerun(tmp_path, monkeypatch):
     assert len(rows) == 1 and rows[0][0] == pytest.approx(77.7)  # 上書きされている
 
 
+def test_times_are_epoch_seconds_regardless_of_pandas_version(tmp_path, monkeypatch):
+    """timesが必ずepoch「秒」で返ること。
+
+    pandas 2.x は datetime64[ns]、3.x は datetime64[us] が既定のため、
+    astype('int64')//10**9 では環境により1000倍ずれる（2026-08-11のRPi
+    デプロイで実際に発生）。バージョン非依存であることを保証する。"""
+    db = str(tmp_path / 'etf.db')
+    now = dt.datetime(2026, 8, 10, 23, 30, tzinfo=dt.timezone.utc)
+    idx = pd.to_datetime(['2026-08-07'])
+    _fake_yf(monkeypatch, pd.DataFrame(
+        {'Open': [10.], 'High': [10.], 'Low': [10.], 'Close': [10.], 'Volume': [1]},
+        index=idx))
+    etf_data.fetch_and_cache(db, ['SPY'], now_utc=now)
+    times, _, _ = etf_data.load_universe(db, ['SPY'])
+    expected = dt.datetime(2026, 8, 7, tzinfo=dt.timezone.utc).timestamp()
+    assert times[0] == pytest.approx(expected)
+    # 秒スケールであること（ミリ秒・マイクロ秒だと桁が変わる）
+    assert 1.7e9 < times[0] < 2.0e9
+
+
 def test_load_universe_aligns_symbols(tmp_path, monkeypatch):
     db = str(tmp_path / 'etf.db')
     now = dt.datetime(2026, 8, 10, 23, 30, tzinfo=dt.timezone.utc)

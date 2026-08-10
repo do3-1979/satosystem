@@ -115,7 +115,11 @@ def load_universe(db_path, symbols):
     idx = idx.sort_values()
     opens = pd.DataFrame({s: frames[s]['open'].reindex(idx) for s in frames})
     closes = pd.DataFrame({s: frames[s]['close'].reindex(idx) for s in frames})
-    times = (idx.astype('int64') // 10**9).to_numpy(dtype=float)
+    # pandasのバージョンで内部解像度が異なる（2.x=ns / 3.x=us）ため、
+    # astype('int64')//10**9 では環境によって1000倍ずれる。
+    # datetime64[s] に明示変換してから整数化することでバージョン非依存にする。
+    # （2026-08-11のRPiデプロイ時に実際に発生したバグ）
+    times = idx.to_numpy(dtype='datetime64[s]').astype('int64').astype(float)
     return times, opens, closes
 
 
