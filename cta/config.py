@@ -30,6 +30,10 @@ class Config:
     # market='etf'   : 日足・yfinance・funding無し・年間営業日252日
     market: str = "crypto"
     long_only: bool = False
+    # True の場合、目標数量を1株単位に切り捨てて発注する。
+    # 端数株のAPI発注に対応しない証券会社(moomoo証券等)で必須。
+    # 暗号資産は小数点以下で建てられるため False。
+    integer_shares: bool = False
 
     @property
     def is_etf(self):
@@ -98,4 +102,5 @@ def load_config(path):
         config_sha1=hashlib.sha1(raw.encode()).hexdigest()[:12],
         market=market,
         long_only=cp.getboolean("strategy", "long_only", fallback=False),
+        integer_shares=cp.getboolean("strategy", "integer_shares", fallback=False),
     )

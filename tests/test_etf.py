@@ -145,6 +145,43 @@ def test_long_only_all_downtrend_is_flat():
 
 # --- config ---------------------------------------------------------
 
+def test_integer_shares_truncates_target_quantity():
+    """1株単位モードでは目標数量を0方向へ切り捨てる。
+
+    moomoo証券は端数株のAPI発注に非対応のため必須。バックテスト・ペーパー・
+    実発注がすべて execution.plan_rebalance を通るので、
+    「バックテストだけ端数で計算していた」という乖離が起こらない。"""
+    from cta import execution as ex
+    cm = ex.CostModel(fee_rate=0.00132, slip_rate=0.0003, min_notional_usd=1.0)
+    # 目標$250 / 株価$83 = 3.01株 → 3株に切り捨て
+    od = ex.plan_rebalance("IAU", 0.0, 250.0, 83.0, 1000.0, cm, 0.05,
+                           integer_shares=True)
+    assert od is not None and od.qty == pytest.approx(3.0)
+    # 端数株モードなら3.012...株のまま
+    od2 = ex.plan_rebalance("IAU", 0.0, 250.0, 83.0, 1000.0, cm, 0.05,
+                            integer_shares=False)
+    assert od2.qty == pytest.approx(250.0 / 83.0)
+
+
+def test_integer_shares_below_one_share_is_no_order():
+    """1株に満たない目標なら発注しない（切り捨てで0株になる）。"""
+    from cta import execution as ex
+    cm = ex.CostModel(fee_rate=0.00132, slip_rate=0.0003, min_notional_usd=1.0)
+    # 目標$50 / 株価$170(ITOT) = 0.29株 → 0株
+    od = ex.plan_rebalance("ITOT", 0.0, 50.0, 170.0, 1000.0, cm, 0.01,
+                           integer_shares=True)
+    assert od is None
+
+
+def test_integer_shares_closing_position_still_works():
+    """保有を閉じる方向は1株単位でも正しく出る。"""
+    from cta import execution as ex
+    cm = ex.CostModel(fee_rate=0.00132, slip_rate=0.0003, min_notional_usd=1.0)
+    od = ex.plan_rebalance("IAU", 5.0, 0.0, 83.0, 1000.0, cm, 0.05,
+                           integer_shares=True)
+    assert od is not None and od.qty == pytest.approx(-5.0)
+
+
 def test_etf_config_uses_trading_days_per_year(tmp_path):
     from cta.config import load_config
     cfg = load_config('config/etf.ini')

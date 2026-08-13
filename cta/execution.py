@@ -9,6 +9,7 @@ fill価格・手数料・funding・最小ロットの計算は必ずここを経
 - ライブ:       ref_price = 発注時点の板mid/ticker を渡す
 どちらも fill_price() が slippage を同一式で適用する。
 """
+import math
 from dataclasses import dataclass, field
 
 
@@ -56,13 +57,21 @@ def fill_price(ref_price, qty, slip_rate):
 
 
 def plan_rebalance(symbol, current_qty, target_notional_usd, price, equity_usd,
-                   cost_model, no_trade_band_pct):
+                   cost_model, no_trade_band_pct, integer_shares=False):
     """目標ノーショナルとの差分から注文を作る。バンド未満・最小ロット未満はスキップ。
+
+    integer_shares=True の場合、目標数量を1株単位に切り捨てる。
+    端数株のAPI発注に対応しない証券会社(moomoo証券等)向け。
+    バックテスト・ペーパー・実発注のすべてがこの同一関数を通るため、
+    「バックテストだけ端数で計算していた」という乖離が構造的に起こらない。
 
     Returns Order or None."""
     if price <= 0:
         return None
     target_qty = target_notional_usd / price
+    if integer_shares:
+        # 0方向へ切り捨て（ロングは切り下げ、ショートは切り上げ）
+        target_qty = float(math.trunc(target_qty))
     delta_qty = target_qty - current_qty
     delta_notional = abs(delta_qty) * price
     # 完全クローズ（target=0）は最小ロット制約の対象外（残骸ポジションを許さない）

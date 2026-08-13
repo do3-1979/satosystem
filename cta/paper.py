@@ -211,7 +211,8 @@ class PaperTrader:
                     continue
                 od = ex.plan_rebalance(sym, self.pf.positions.get(sym, 0.0),
                                        w[j] * eq, closes[t, j], eq,
-                                       self.cost_model, cfg.no_trade_band_pct)
+                                       self.cost_model, cfg.no_trade_band_pct,
+                                       integer_shares=cfg.integer_shares)
                 if od is not None:
                     # ref価格=発注時のlive mid（backtestでは次足始値に相当）
                     fills.append(ex.execute_order(od, prices[sym],
