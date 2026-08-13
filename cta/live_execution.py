@@ -205,6 +205,47 @@ class BitgetLiveExecutor:
                        fill_price=avg_price, fee_usd=total_fee,
                        reason=order.reason, ts=ts)
 
+    def fetch_equity_usd(self):
+        """取引所の実残高からequity(USD)を取得する。
+
+        Bitgetの合算証拠金(union)モードでは USDT の available がマイナスに
+        なり得る（他通貨を担保にUSDTを借りている状態）。その場合に
+        available をそのまま使うとequityを誤るため、口座全体の評価額である
+        unionTotalMargin / accountEquity を優先して使う。
+        """
+        bal = self.exchange.fetch_balance()
+        info = bal.get('info')
+        rec = info[0] if isinstance(info, list) and info else (info or {})
+        for key in ('unionTotalMargin', 'accountEquity', 'usdtEquity'):
+            v = rec.get(key)
+            if v not in (None, ''):
+                try:
+                    fv = float(v)
+                except (TypeError, ValueError):
+                    continue
+                if fv > 0:
+                    return fv
+        total = bal.get('USDT', {}).get('total')
+        if total is not None:
+            return float(total)
+        raise OrderPlacementError("残高からequityを判定できませんでした")
+
+    def fetch_available_usd(self):
+        """発注余力(USD)。ガード③の残高確認に使う。"""
+        bal = self.exchange.fetch_balance()
+        info = bal.get('info')
+        rec = info[0] if isinstance(info, list) and info else (info or {})
+        for key in ('unionAvailable', 'crossedMaxAvailable', 'available'):
+            v = rec.get(key)
+            if v not in (None, ''):
+                try:
+                    fv = float(v)
+                except (TypeError, ValueError):
+                    continue
+                if fv > 0:
+                    return fv
+        return 0.0
+
     def reconcile_positions(self, symbols, internal_positions):
         """取引所の実ポジションを正として内部帳簿と比較する。
 
