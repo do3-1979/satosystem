@@ -32,7 +32,13 @@ def send_alert(subject, body, config_path=None):
     """アラートメールを送信する。成功したらTrue、設定不備/送信失敗ならFalse。
 
     例外は投げない（通知失敗が本体のcron処理を止めてはならないため）。
+
+    pytest実行中は常に送信しない。2026-08-13にテストスイートが
+    実メールを送り続ける事故があったため、tests/conftest.py のモックに
+    加えてここでも二重に防ぐ（モック漏れがあっても外部送信されない）。
     """
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        return False
     cfg = _load_config(config_path)
     if cfg is None:
         return False

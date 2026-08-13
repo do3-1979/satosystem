@@ -1,6 +1,8 @@
 """cta/notify.py の回帰テスト。実際のSMTP送信は一切行わない（モック）。"""
 import json
 
+import pytest
+
 from cta import notify
 
 
@@ -17,7 +19,12 @@ def test_incomplete_config_skips_silently(tmp_path):
     assert ok is False
 
 
+@pytest.mark.sends_alert
 def test_valid_config_sends_via_smtp(tmp_path, monkeypatch):
+    # send_alert の実装自体を検証するテスト。conftest による関数差し替えを
+    # markerで免除し、pytest実行中の送信拒否ガードも一時的に外す。
+    # 実SMTPには繋がず、下のFakeSMTPが呼ばれることだけを確認する。
+    monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
     path = tmp_path / ".gmail"
     path.write_text(json.dumps({
         "gmail_address": "sender@example.com",
