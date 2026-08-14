@@ -186,6 +186,32 @@ def test_no_margin_skips_orders(tmp_path, monkeypatch):
 
 # --- 冪等性 -------------------------------------------------------------
 
+def test_dry_run_does_not_block_subsequent_live_run(tmp_path):
+    """ドライランは状態を書き換えず、直後の実発注を妨げないこと。
+
+    【2026-08-15、実発注開始の直前に発覚】ドライランが last_bar を進めて
+    しまい、続けて実行した実発注が「処理済みバー」としてスキップされた。
+    検証のための実行が本番の発注を止めてしまう設計上の不具合だった。"""
+    db, _, closes = trending_market(tmp_path, drift=0.004, noise=0.005)
+    cfg = make_cfg(db, ["A"])
+    now = T0 + len(closes) * STEP + 60
+
+    fx_dry = FakeExecutor()
+    dry = LiveTrader(cfg, fx_dry, base_dir=str(tmp_path), enable_live=False,
+                     max_order_pct_of_equity=5.0)
+    r_dry = dry.run_once(refresh=False, now=now)
+    assert fx_dry.placed == []
+    assert r_dry["mode"] == "dry_run"
+
+    # 同じバーで実発注 → スキップされず発注されること
+    fx_live = FakeExecutor()
+    live = LiveTrader(cfg, fx_live, base_dir=str(tmp_path), enable_live=True,
+                      max_order_pct_of_equity=5.0)
+    r_live = live.run_once(refresh=False, now=now)
+    assert "skipped" not in r_live, "ドライランが実発注を妨げている"
+    assert len(fx_live.placed) >= 1
+
+
 def test_same_bar_not_reprocessed(tmp_path):
     fx = FakeExecutor()
     tr, now, _ = _mk(tmp_path, fx, enable_live=True)

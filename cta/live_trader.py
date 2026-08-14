@@ -254,4 +254,9 @@ class LiveTrader:
     def _finish(self, now, equity, positions, vol_scale, note, fills):
         gross = sum(abs(v) for v in positions.values())
         self._log_equity(now, equity, gross, vol_scale, note)
-        self._save_state(equity, positions)
+        # ドライランは状態を書き換えない。
+        # 【2026-08-15、実発注開始の直前に発覚】ドライランが last_bar を
+        # 進めてしまい、直後の実発注が「処理済みバー」としてスキップされた。
+        # 検証のための実行が本番の発注を妨げてはならない。
+        if self.enable_live and not self.dry_run:
+            self._save_state(equity, positions)
