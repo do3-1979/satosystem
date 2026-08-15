@@ -33,8 +33,11 @@ class PaperTrader:
         self.exchange_id = exchange_id
         # 暗号資産版とETF版を並走させるため、状態ファイルはmarketごとに分ける。
         # 既存の暗号資産の記録(state/paper_*)はファイル名を変えず互換を保つ。
+        # 優先順: 引数 > configのstate_prefix > marketからの自動決定。
+        # 同じmarketの戦略を並走させる場合はconfigで必ず分けること
+        # （米国ETFと東証ETFはどちらも market=etf なので自動決定だと衝突する）。
         pre = state_prefix if state_prefix is not None else (
-            "etf_" if cfg.is_etf else "")
+            cfg.state_prefix or ("etf_" if cfg.is_etf else ""))
         self.state_path = os.path.join(base_dir, f"state/{pre}paper_state.json")
         self.trades_path = os.path.join(base_dir, f"state/{pre}paper_trades.csv")
         self.equity_path = os.path.join(base_dir, f"state/{pre}paper_equity.csv")
@@ -212,7 +215,8 @@ class PaperTrader:
                 od = ex.plan_rebalance(sym, self.pf.positions.get(sym, 0.0),
                                        w[j] * eq, closes[t, j], eq,
                                        self.cost_model, cfg.no_trade_band_pct,
-                                       integer_shares=cfg.integer_shares)
+                                       integer_shares=cfg.integer_shares,
+                                       lot_size=cfg.lot_size(sym))
                 if od is not None:
                     # ref価格=発注時のlive mid（backtestでは次足始値に相当）
                     fills.append(ex.execute_order(od, prices[sym],

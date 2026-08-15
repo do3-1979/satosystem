@@ -88,3 +88,37 @@ def test_equity_ok_when_stale_symbol_is_flat():
     """保有ゼロの銘柄が残っていても評価は通る（決済済みなら無害）。"""
     pf = ex.Portfolio(cash_usd=1000.0, positions={"SPY": 0.0, "ITOT": 2.0})
     assert pf.equity({"ITOT": 170.0}) == pytest.approx(1000.0 + 340.0)
+
+
+def test_plan_rebalance_respects_lot_size():
+    """売買単位が10口の銘柄は10の倍数に切り捨てること。
+
+    東証ETFは銘柄ごとに1口/10口と異なる。1固定にすると10口単位の銘柄で
+    発注が通らないか、意図しない数量になる。
+    """
+    # 目標27口 → 10口単位なら20口
+    od = ex.plan_rebalance("1306.T", current_qty=0.0, target_notional_usd=2700.0,
+                           price=100.0, equity_usd=100000.0, cost_model=CM,
+                           no_trade_band_pct=0.0, integer_shares=True, lot_size=10)
+    assert od.qty == pytest.approx(20.0)
+    # 同じ条件でも1口単位なら27口
+    od = ex.plan_rebalance("1540.T", current_qty=0.0, target_notional_usd=2700.0,
+                           price=100.0, equity_usd=100000.0, cost_model=CM,
+                           no_trade_band_pct=0.0, integer_shares=True, lot_size=1)
+    assert od.qty == pytest.approx(27.0)
+
+
+def test_plan_rebalance_lot_size_below_one_lot_is_skipped():
+    """1単位に満たない目標は発注しない（切り捨てで0になる）。"""
+    od = ex.plan_rebalance("1306.T", current_qty=0.0, target_notional_usd=900.0,
+                           price=100.0, equity_usd=100000.0, cost_model=CM,
+                           no_trade_band_pct=0.0, integer_shares=True, lot_size=10)
+    assert od is None
+
+
+def test_lot_size_does_not_affect_fractional_markets():
+    """integer_shares=False（暗号資産）ではlot_sizeを無視すること。"""
+    od = ex.plan_rebalance("BTC", current_qty=0.0, target_notional_usd=2700.0,
+                           price=100.0, equity_usd=100000.0, cost_model=CM,
+                           no_trade_band_pct=0.0, integer_shares=False, lot_size=10)
+    assert od.qty == pytest.approx(27.0)

@@ -34,10 +34,23 @@ class Config:
     # 端数株のAPI発注に対応しない証券会社(moomoo証券等)で必須。
     # 暗号資産は小数点以下で建てられるため False。
     integer_shares: bool = False
+    # symbol -> 売買単位。東証ETFは1口/10口が銘柄ごとに異なる。
+    # 未指定の銘柄は1として扱う（米国ETF・暗号資産はすべて1）。
+    lot_sizes: dict = field(default_factory=dict)
+    # 状態ファイル(state/*)の接頭辞。空なら market から自動決定する。
+    # ★同じ market の戦略を複数並走させるとき（米国ETFと東証ETFなど）は
+    #   必ず別の値を明示すること。共有すると別ユニバースの保有が混ざり、
+    #   Portfolio.equity が価格の無い銘柄で落ちる（2026-08-15に実際に発生）。
+    state_prefix: str = ""
 
     @property
     def is_etf(self):
         return self.market == "etf"
+
+    def lot_size(self, symbol):
+        """売買単位。実発注前に取引所APIの値と必ず突き合わせること
+        （kabuステーションAPI GET /symbol の TradingUnit）。"""
+        return int(self.lot_sizes.get(symbol, 1))
 
     @property
     def bars_per_day(self):
@@ -62,6 +75,13 @@ def load_config(path):
     for pair in cp.get("strategy", "horizons_days").split(","):
         f_, s_ = pair.strip().split(":")
         horizons.append((int(f_), int(s_)))
+
+    # [universe] lot_sizes = 1306.T:10, 1540.T:1  形式（省略時は全銘柄1）
+    lot_sizes = {}
+    for item in cp.get("universe", "lot_sizes", fallback="").split(","):
+        if item.strip():
+            sym, _, n = item.partition(":")
+            lot_sizes[sym.strip()] = int(n)
 
     market = cp.get("data", "market", fallback="crypto").strip()
     if market == "etf":
@@ -103,4 +123,6 @@ def load_config(path):
         market=market,
         long_only=cp.getboolean("strategy", "long_only", fallback=False),
         integer_shares=cp.getboolean("strategy", "integer_shares", fallback=False),
+        lot_sizes=lot_sizes,
+        state_prefix=cp.get("data", "state_prefix", fallback="").strip(),
     )

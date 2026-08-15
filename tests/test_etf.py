@@ -199,3 +199,30 @@ def test_crypto_config_unchanged(tmp_path):
     assert cfg.is_etf is False
     assert cfg.long_only is False          # 既存の暗号資産版は挙動不変
     assert cfg.bars_per_year == 6 * 365
+
+
+def test_state_prefix_separates_same_market_strategies(tmp_path):
+    """market が同じ戦略を並走させても状態ファイルが衝突しないこと。
+
+    米国ETF(config/etf.ini)と東証ETF(config/etf_jp.ini)はどちらも market=etf。
+    自動決定のままだと state/etf_paper_* を共有し、別ユニバースの保有が
+    混ざって Portfolio.equity が価格の無い銘柄で落ちる（2026-08-15に発生）。
+    """
+    from cta.config import Config
+    from cta.paper import PaperTrader
+
+    def mk(prefix):
+        return Config(db_path=str(tmp_path / "x.db"), timeframe_min=1440,
+                      funding_pkl="", symbols=["A"], horizons_days=[(10, 40)],
+                      vol_window_days=30, target_vol=0.15, max_gross=3.0,
+                      rebalance_days=21, no_trade_band_pct=0.05, dd_soft=0.35,
+                      dd_hard=0.40, fee_rate=0.0, slip_rate=0.0,
+                      min_notional_usd=1.0, market="etf", state_prefix=prefix)
+
+    us = PaperTrader(mk(""), base_dir=str(tmp_path))
+    jp = PaperTrader(mk("etf_jp_"), base_dir=str(tmp_path))
+    assert us.state_path != jp.state_path
+    assert us.state_path.endswith("etf_paper_state.json")     # 既存の名前を維持
+    assert jp.state_path.endswith("etf_jp_paper_state.json")
+    assert us.trades_path != jp.trades_path
+    assert us.equity_path != jp.equity_path

@@ -174,7 +174,8 @@ def run_backtest(cfg, start_epoch=None, end_epoch=None, cost_mult=1.0,
                 od = ex.plan_rebalance(sym, pf.positions.get(sym, 0.0),
                                        w[j] * eq, px, eq, cost_model,
                                        cfg.no_trade_band_pct,
-                                       integer_shares=cfg.integer_shares)
+                                       integer_shares=cfg.integer_shares,
+                                       lot_size=cfg.lot_size(sym))
                 if od is not None:
                     pending.append(od)
 

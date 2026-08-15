@@ -19,6 +19,8 @@ import time
 import numpy as np
 import pandas as pd
 
+from . import jp_repair
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS etf_bars (
     symbol TEXT NOT NULL,
@@ -34,6 +36,16 @@ CREATE TABLE IF NOT EXISTS etf_bars (
 # 安全側に倒し「UTCで当日23:00を過ぎた取引日」のみ確定とみなす。
 SETTLED_HOUR_UTC = 23
 
+# 東証は15:00 JST（06:00 UTC）に引ける。09:00 UTC（18:00 JST）を確定時刻とする。
+#
+# 【重要】米国用の23:00 UTCを東証にも使ってはいけない。
+#   23:00 UTCは翌日08:00 JSTにあたるため、月曜の終値で判定できるのが
+#   火曜の朝08:00になり、寄成注文（寄付板は08:00頃から受付）にほとんど
+#   間に合わない。09:00 UTC（当日18:00 JST）にすれば、引け後2〜3時間で
+#   判定し、翌朝の寄成注文を余裕をもって出せる。
+#   これはバックテストの「判定=バー終値 / 約定=次足始値」とも整合する。
+SETTLED_HOUR_UTC_JP = 9
+
 
 def _connect(db_path):
     os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
@@ -42,17 +54,53 @@ def _connect(db_path):
     return con
 
 
-def is_settled(bar_date, now_utc=None):
-    """その取引日のバーが確定済みか。当日中・未確定のバーを弾く唯一の判定。"""
+def settled_hour_utc(symbol=None):
+    """その銘柄の属する市場の「確定とみなす時刻」(UTC)。"""
+    return SETTLED_HOUR_UTC_JP if jp_repair.is_jp_symbol(symbol) else SETTLED_HOUR_UTC
+
+
+def is_settled(bar_date, now_utc=None, symbol=None):
+    """その取引日のバーが確定済みか。当日中・未確定のバーを弾く唯一の判定。
+
+    市場ごとに引け時刻が違うため symbol で切り替える。東証銘柄に米国用の
+    23:00 UTC を適用すると判定が翌朝08:00 JSTまでずれ込み、寄成注文に
+    間に合わなくなる（symbol未指定なら従来どおり米国基準）。
+    """
     now = now_utc or dt.datetime.now(dt.timezone.utc)
     d = pd.Timestamp(bar_date).date()
-    settled_at = dt.datetime(d.year, d.month, d.day, SETTLED_HOUR_UTC,
+    settled_at = dt.datetime(d.year, d.month, d.day, settled_hour_utc(symbol),
                              tzinfo=dt.timezone.utc)
     return now >= settled_at
 
 
-def fetch_and_cache(db_path, symbols, start='2006-01-01', now_utc=None):
-    """yfinanceから取得し、確定済みバーのみキャッシュへ書き込む。"""
+def _repair_jp_frame(d, sym, log=None):
+    """東証銘柄のOHLCを修復する（終値の修復係数をOHLC全体へ適用）。
+
+    Yahooは日本銘柄の分割を記録し損ねるため、そのまま使うと偽の暴落になる。
+    詳細と根拠は cta/jp_repair.py を参照。
+    """
+    fixed, notes = jp_repair.repair_close_series(d['Close'])
+    if log is not None and notes:
+        log.setdefault(sym, []).extend(notes)
+    if len(fixed) == 0:
+        return d.iloc[0:0]
+    scale = (fixed / d['Close'].reindex(fixed.index)).replace(
+        [np.inf, -np.inf], np.nan).fillna(1.0)
+    out = d.loc[fixed.index].copy()
+    for col in ('Open', 'High', 'Low', 'Close'):
+        if col in out.columns:
+            out[col] = out[col] * scale
+    return out
+
+
+def fetch_and_cache(db_path, symbols, start='2006-01-01', now_utc=None,
+                    repair_log=None):
+    """yfinanceから取得し、確定済みバーのみキャッシュへ書き込む。
+
+    東証銘柄('.T')は書き込み前に必ず jp_repair を通す。分割調整漏れを
+    そのまま保存すると、後から真値で上書きされず誤りが固定される。
+    repair_log に dict を渡すと、適用した修復内容を symbol 別に受け取れる。
+    """
     import yfinance as yf
     con = _connect(db_path)
     cur = con.cursor()
@@ -67,9 +115,11 @@ def fetch_and_cache(db_path, symbols, start='2006-01-01', now_utc=None):
             continue
         if isinstance(d.columns, pd.MultiIndex):
             d.columns = d.columns.get_level_values(0)
+        if jp_repair.is_jp_symbol(sym):
+            d = _repair_jp_frame(d, sym, log=repair_log)
         for ts, row in d.iterrows():
             bar_date = pd.Timestamp(ts).strftime('%Y-%m-%d')
-            if not is_settled(bar_date, now_utc):
+            if not is_settled(bar_date, now_utc, symbol=sym):
                 # まだ確定していないバーは書き込まない（永久固定バグの防止）
                 continue
             if pd.isna(row.get('Close')):

@@ -57,11 +57,18 @@ def fill_price(ref_price, qty, slip_rate):
 
 
 def plan_rebalance(symbol, current_qty, target_notional_usd, price, equity_usd,
-                   cost_model, no_trade_band_pct, integer_shares=False):
+                   cost_model, no_trade_band_pct, integer_shares=False,
+                   lot_size=1):
     """目標ノーショナルとの差分から注文を作る。バンド未満・最小ロット未満はスキップ。
 
-    integer_shares=True の場合、目標数量を1株単位に切り捨てる。
-    端数株のAPI発注に対応しない証券会社(moomoo証券等)向け。
+    integer_shares=True の場合、目標数量を lot_size の整数倍に切り捨てる。
+    端数株のAPI発注に対応しない証券会社(moomoo証券・三菱UFJ eスマート証券等)向け。
+
+    lot_size は売買単位。東証ETFは銘柄ごとに1口または10口と異なり、
+    ここを1固定にすると10口単位の銘柄で発注が通らないか数量が狂う
+    （kabuステーションAPIの GET /symbol が返す TradingUnit を使うこと）。
+    米国ETFは1株単位なので lot_size=1。
+
     バックテスト・ペーパー・実発注のすべてがこの同一関数を通るため、
     「バックテストだけ端数で計算していた」という乖離が構造的に起こらない。
 
@@ -70,8 +77,9 @@ def plan_rebalance(symbol, current_qty, target_notional_usd, price, equity_usd,
         return None
     target_qty = target_notional_usd / price
     if integer_shares:
+        lot = max(1, int(lot_size or 1))
         # 0方向へ切り捨て（ロングは切り下げ、ショートは切り上げ）
-        target_qty = float(math.trunc(target_qty))
+        target_qty = float(math.trunc(target_qty / lot) * lot)
     delta_qty = target_qty - current_qty
     delta_notional = abs(delta_qty) * price
     # 完全クローズ（target=0）は最小ロット制約の対象外（残骸ポジションを許さない）

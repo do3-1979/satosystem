@@ -52,7 +52,8 @@ def plan_orders(cfg, closes, t, positions, equity, vol_scale, cost_model,
             continue
         od = ex.plan_rebalance(sym, positions.get(sym, 0.0), w[j] * equity,
                                px, equity, cost_model, cfg.no_trade_band_pct,
-                               integer_shares=cfg.integer_shares)
+                               integer_shares=cfg.integer_shares,
+                               lot_size=cfg.lot_size(sym))
         if od is not None:
             orders.append(od)
     return orders
