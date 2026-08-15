@@ -126,7 +126,25 @@ class Portfolio:
         self.cash_usd -= cost
         return cost
 
+    def _missing_priced_positions(self, prices):
+        return [s for s, q in self.positions.items()
+                if q != 0.0 and s not in prices]
+
     def equity(self, prices):
+        """時価評価。保有銘柄の価格が欠けていたら**必ず落とす**。
+
+        価格の無い保有をゼロ扱いで飛ばすとequityを過小評価し、
+        サーキットブレーカーの誤作動や誤ったポジションサイズにつながる。
+        黙って続行するより止めるほうが安全なので、原因が分かる形で例外にする。
+        （ユニバース変更後に旧銘柄の保有が残っている場合に起きる。
+          2026-08-15、ETFを19銘柄構成へ変えた後のWSLで実際に発生した）"""
+        missing = self._missing_priced_positions(prices)
+        if missing:
+            raise ValueError(
+                f"保有銘柄 {missing} の価格が取得できず時価評価できません。"
+                f"configのユニバース変更後に旧銘柄の保有が state に残っている"
+                f"可能性があります（state/ を退避して再スタートするか、"
+                f"該当銘柄を決済してください）")
         eq = self.cash_usd
         for sym, qty in self.positions.items():
             if qty != 0.0:
@@ -134,4 +152,7 @@ class Portfolio:
         return eq
 
     def gross_notional(self, prices):
+        missing = self._missing_priced_positions(prices)
+        if missing:
+            raise ValueError(f"保有銘柄 {missing} の価格が無くグロス計算不可")
         return sum(abs(q) * prices[s] for s, q in self.positions.items() if q != 0.0)

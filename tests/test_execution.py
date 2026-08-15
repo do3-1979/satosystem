@@ -67,3 +67,24 @@ def test_portfolio_equity_marks_to_market():
     eq = pf.equity({"BTC": 110.0})
     assert eq > 1000.0  # 値上がりが反映される
     assert pf.gross_notional({"BTC": 110.0}) == pytest.approx(220.0)
+
+
+def test_equity_raises_on_unpriced_position():
+    """価格の無い保有があれば黙って続行せず落とすこと。
+
+    ゼロ扱いで飛ばすとequityを過小評価し、サーキットブレーカーの誤作動や
+    誤ったサイジングにつながる。ユニバース変更後に旧銘柄の保有が state に
+    残っている場合に起きる（2026-08-15にETFを19銘柄構成へ変えた後、
+    WSLで実際に発生）。"""
+    pf = ex.Portfolio(cash_usd=1000.0, positions={"SPY": 3.0})
+    with pytest.raises(ValueError) as e:
+        pf.equity({"ITOT": 170.0})          # SPYの価格が無い
+    assert "SPY" in str(e.value)
+    with pytest.raises(ValueError):
+        pf.gross_notional({"ITOT": 170.0})
+
+
+def test_equity_ok_when_stale_symbol_is_flat():
+    """保有ゼロの銘柄が残っていても評価は通る（決済済みなら無害）。"""
+    pf = ex.Portfolio(cash_usd=1000.0, positions={"SPY": 0.0, "ITOT": 2.0})
+    assert pf.equity({"ITOT": 170.0}) == pytest.approx(1000.0 + 340.0)
