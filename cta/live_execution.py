@@ -59,6 +59,26 @@ class BitgetLiveExecutor:
         self.backoff_multiplier = backoff_multiplier
         self.max_delay = max_delay
 
+    def fetch_hedged(self, symbol="BTC/USDT:USDT"):
+        """口座がヘッジモードかを取引所に問い合わせて返す（結果はキャッシュ）。
+
+        【2026-08-15判明】ccxt 4.5系はパラメータ `hedged` が True のときだけ
+        Bitgetに必須の `tradeSide`(Open/Close) を送る。4.2系は無条件に
+        送っていたため、ccxtを上げた環境(RPi)だけ全発注が code 40774
+        "The order type for unilateral position must also be the unilateral
+        position type." で拒否された。
+        モードをハードコードせず実口座に問い合わせることで、設定変更にも追随する。
+        """
+        if getattr(self, "_hedged", None) is None:
+            try:
+                r = self.exchange.privateMixGetV2MixAccountAccount({
+                    'symbol': symbol.split('/')[0] + 'USDT',
+                    'productType': 'USDT-FUTURES', 'marginCoin': 'USDT'})
+                self._hedged = r.get('data', {}).get('posMode') == 'hedge_mode'
+            except Exception:
+                self._hedged = False   # 判定不能なら一方向モード扱い（安全側）
+        return self._hedged
+
     def _round_amount(self, symbol, amount):
         """取引所の最小刻みに丸める。ccxtは丸めた結果が0になる量を渡すと
         InvalidOrderを投げる仕様のため、その場合は0.0として扱う（発注しない）。"""
@@ -92,7 +112,9 @@ class BitgetLiveExecutor:
         # code 40774 "The order type for unilateral position must also be
         # the unilateral position type." で全件拒否された。
         # holdSide は「どちらのlegを閉じるか」の指定なので、決済時のみ送る。
-        params = {'clientOid': coid}
+        # hedged はccxtに建玉モードを伝えるフラグ。これが無いと
+        # ccxt 4.5系は tradeSide を送らず、ヘッジモード口座で全件拒否される。
+        params = {'clientOid': coid, 'hedged': self.fetch_hedged(symbol)}
         if reduce_only:
             params['reduceOnly'] = True
             params['holdSide'] = hold_side
