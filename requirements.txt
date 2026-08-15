@@ -1,5 +1,30 @@
-numpy>=1.26
-pandas>=2.0
+# 本番(RPi: Ubuntu 24.04 / Python 3.12)で実際に動いているバージョン。
+# 新しい環境を立てるときはこれをそのまま使うこと。
+#
+# ■なぜ固定するのか
+# バージョン差で「片方の環境でだけ壊れる」バグが2回発生している:
+#   1. pandas 2.x(ns)/3.x(us) の差で epoch秒が1000倍ずれた (2026-08-11)
+#   2. ccxt 4.2/4.5 の差で Bitgetヘッジモード発注が全件拒否 (2026-08-15)
+#      WSLでは成功しRPiで全滅。本番機での実弾検証で初めて発覚した
+#
+# ■注意: WSL(Ubuntu22.04/Python3.10)ではこの構成を再現できない
+# numpy2.5・pandas3.0 は Python3.11以上を要求するため。
+# WSLを本番に合わせるには Python3.12 の導入が必要（下記参照）。
+# それまでは **実発注に関わる変更の最終確認は必ずRPiで行うこと**。
+#
+#   sudo add-apt-repository ppa:deadsnakes/ppa
+#   sudo apt update
+#   sudo apt install python3.12 python3.12-venv
+#   python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
+#
+# 環境の照合: python3 tools/check_env.py
+
+numpy==2.5.0
+pandas==3.0.3
+ccxt==4.5.63
+yfinance==1.5.2
+pytest==9.1.1
+requests==2.34.2
+
+# レポート生成用（本番機には不要。WSLでのみ使用）
 matplotlib>=3.8
-ccxt>=4.0
-pytest>=7.0
