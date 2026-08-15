@@ -86,9 +86,16 @@ class BitgetLiveExecutor:
         if existing is not None:
             return existing
 
-        params = {'clientOid': coid, 'holdSide': hold_side}
+        # 【2026-08-15、実発注開始時に判明】
+        # ccxtは tradeSide(Open/Close) を自動設定する。そこへ holdSide を
+        # 重ねて送ると Bitget が一方向モードの注文と誤認し、ヘッジモード口座で
+        # code 40774 "The order type for unilateral position must also be
+        # the unilateral position type." で全件拒否された。
+        # holdSide は「どちらのlegを閉じるか」の指定なので、決済時のみ送る。
+        params = {'clientOid': coid}
         if reduce_only:
             params['reduceOnly'] = True
+            params['holdSide'] = hold_side
         if side == 'buy' and not reduce_only:
             params['price'] = ref_price  # Bitget成行買いはコスト計算にpriceが必要
 
