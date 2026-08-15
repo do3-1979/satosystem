@@ -203,7 +203,9 @@ def test_place_order_no_opposite_leg_places_single_open_order():
     side, amount, params = fake.create_call_log[0]
     assert side == 'buy' and amount == pytest.approx(0.5)
     assert params.get('reduceOnly') is None
-    assert params.get('holdSide') == 'long'
+    # 新規建てでは holdSide を送らない（送るとBitgetが一方向モードの注文と
+    # 誤認し code 40774 で拒否される。2026-08-15に実機で判明）
+    assert params.get('holdSide') is None
     assert fill.qty == pytest.approx(0.5)
 
 
@@ -223,10 +225,12 @@ def test_place_order_reduces_opposite_leg_before_opening_remainder():
     (side1, amt1, params1), (side2, amt2, params2) = fake.create_call_log
     # 1段階目: shortを縮小(reduceOnly)
     assert side1 == 'buy' and amt1 == pytest.approx(0.2)
+    # 決済側は holdSide でどちらのlegを閉じるか指定する
     assert params1.get('reduceOnly') is True and params1.get('holdSide') == 'short'
     # 2段階目: 残り0.3をlongで新規開設(reduceOnlyではない)
     assert side2 == 'buy' and amt2 == pytest.approx(0.3)
-    assert params2.get('reduceOnly') is None and params2.get('holdSide') == 'long'
+    # 新規開設側は holdSide を送らない
+    assert params2.get('reduceOnly') is None and params2.get('holdSide') is None
     # 2件のfilled合計が要求量と一致する
     assert fill.qty == pytest.approx(0.5)
 
